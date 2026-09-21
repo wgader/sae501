@@ -25,8 +25,8 @@ class Association
     #[ORM\Column(length: 14)]
     private ?string $numeroSiret = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTime $dateCreation = null;
+    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    private ?\DateTimeImmutable $dateCreation = null;
 
     #[ORM\Column]
     private ?int $nombreMembres = null;
@@ -57,7 +57,9 @@ class Association
 
     public function __construct()
     {
-        $this->users = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
+        $this->statut = 'PENDING_VALIDATION';
+        $this->users = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     public function getId(): ?int
@@ -101,12 +103,12 @@ class Association
         return $this;
     }
 
-    public function getDateCreation(): ?\DateTime
+    public function getDateCreation(): ?\DateTimeImmutable
     {
         return $this->dateCreation;
     }
 
-    public function setDateCreation(\DateTime $dateCreation): static
+    public function setDateCreation(\DateTimeImmutable $dateCreation): static
     {
         $this->dateCreation = $dateCreation;
 
