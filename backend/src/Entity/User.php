@@ -59,6 +59,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $emailVerificationCodeExpiresAt = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $cguValidateAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $inactivatedAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $deletedAt = null;
+    
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+        $this->roles = ['ROLE_USER'];
+        $this->isVerified = false;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -223,7 +239,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->emailVerificationCode;
     }
 
-    public function setEmailVerificationCode(string $emailVerificationCode): static
+    public function setEmailVerificationCode(?string $emailVerificationCode): static    
     {
         $this->emailVerificationCode = $emailVerificationCode;
 
@@ -235,9 +251,45 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->emailVerificationCodeExpiresAt;
     }
 
-    public function setEmailVerificationCodeExpiresAt(\DateTimeImmutable $emailVerificationCodeExpiresAt): static
+    public function setEmailVerificationCodeExpiresAt(?\DateTimeImmutable $emailVerificationCodeExpiresAt): static    
     {
         $this->emailVerificationCodeExpiresAt = $emailVerificationCodeExpiresAt;
+
+        return $this;
+    }
+
+    public function getCguValidateAt(): ?\DateTimeImmutable
+    {
+        return $this->cguValidateAt;
+    }
+
+    public function setCguValidateAt(?\DateTimeImmutable $cguValidateAt): static
+    {
+        $this->cguValidateAt = $cguValidateAt;
+
+        return $this;
+    }
+
+    public function getInactivatedAt(): ?\DateTimeImmutable
+    {
+        return $this->inactivatedAt;
+    }
+
+    public function setInactivatedAt(?\DateTimeImmutable $inactivatedAt): static
+    {
+        $this->inactivatedAt = $inactivatedAt;
+
+        return $this;
+    }
+
+    public function getDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
+    {
+        $this->deletedAt = $deletedAt;
 
         return $this;
     }
