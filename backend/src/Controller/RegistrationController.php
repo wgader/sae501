@@ -211,6 +211,7 @@ class RegistrationController extends AbstractController
         $em->persist($user);
         $em->flush();
 
+        
         // ── 9. Envoi du code de vérification par email ────────────────────────────
         $email = (new Email())
             ->from($_ENV['MAILER_FROM'])
