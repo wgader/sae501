@@ -42,7 +42,7 @@ class RegistrationController extends AbstractController
      * Payload JSON attendu :
      * {
      *   "email": "contact@asso.fr",
-     *   "password": "MotDePasse123!",
+     *   "password": "...",
      *   "nom": "Dupont",
      *   "prenom": "Jean",
      *   "telephone": "0612345678",
@@ -213,7 +213,7 @@ class RegistrationController extends AbstractController
 
         // ── 9. Envoi du code de vérification par email ────────────────────────────
         $email = (new Email())
-            ->from($_ENV['MAILER_FROM'] ?? 'noreply@sae501.fr')
+            ->from($_ENV['MAILER_FROM'])
             ->to($user->getEmail())
             ->subject('Vérification de votre adresse email — SAE501')
             ->html(sprintf(
