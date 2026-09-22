@@ -215,9 +215,9 @@ class RegistrationController extends AbstractController
         $email = (new Email())
             ->from($_ENV['MAILER_FROM'])
             ->to($user->getEmail())
-            ->subject('Vérification de votre adresse email — Feytiat Association')
+            ->subject('Vérification de votre adresse email — SAE501')
             ->html(sprintf(
-                '<h2>Bienvenue sur Feytiat Association</h2>
+                '<h2>Bienvenue sur SAE501</h2>
                 <p>Bonjour %s,</p>
                 <p>Votre code de vérification est :</p>
                 <h1 style="letter-spacing: 8px; font-size: 36px; color: #2563eb;">%s</h1>
