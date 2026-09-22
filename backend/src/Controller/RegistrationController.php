@@ -211,14 +211,13 @@ class RegistrationController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        
         // ── 9. Envoi du code de vérification par email ────────────────────────────
         $email = (new Email())
             ->from($_ENV['MAILER_FROM'])
             ->to($user->getEmail())
-            ->subject('Vérification de votre adresse email — SAE501')
+            ->subject('Vérification de votre adresse email — Feytiat Association')
             ->html(sprintf(
-                '<h2>Bienvenue sur SAE501</h2>
+                '<h2>Bienvenue sur Feytiat Association</h2>
                 <p>Bonjour %s,</p>
                 <p>Votre code de vérification est :</p>
                 <h1 style="letter-spacing: 8px; font-size: 36px; color: #2563eb;">%s</h1>
