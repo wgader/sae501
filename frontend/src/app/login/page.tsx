@@ -1,175 +1,79 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import FormField from '../../components/ui/FormField';
 
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  
-  const router = useRouter();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
 
-    if (!identifier || !password) {
+    if (!formData.get('identifier') || !password) {
       setSubmitError('Veuillez renseigner votre identifiant et votre mot de passe.');
       return;
     }
 
     setSubmitError('');
-
-    try {
-     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-  method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: identifier, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Identifiants incorrects');
-      }
-
-      // Le backend peut renvoyer un 200 avec error: true (compte non vérifié, suspendu, etc.)
-      if (data.error) {
-        throw new Error(data.message || 'Une erreur est survenue');
-      }
-
-      if (!data.token) {
-        throw new Error('Réponse invalide du serveur');
-      }
-
-      localStorage.setItem('token', data.token);
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      router.push('/admin/dashboard'); 
-      
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setSubmitError(err.message);
-      } else {
-        setSubmitError('Une erreur est survenue');
-      }
-    }
   }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-20 font-sans text-black sm:px-10">
-      <section className="mx-auto w-full max-w-2xl">
-        
-        <header className="mb-12">
-          <h1 className="text-2xl font-bold uppercase tracking-[0.1em]">
+    <main className="min-h-screen bg-[#f7f8f4] px-6 py-10 text-[#1e2420] sm:px-10 sm:py-14">
+      <section className="mx-auto w-full max-w-lg">
+        <header className="mb-10">
+          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-[#496a56]">
+            Bon retour
+          </p>
+          <h1 className="text-3xl font-black uppercase tracking-[-0.055em] sm:text-[40px]">
             Se connecter
           </h1>
         </header>
         
-        {submitError && (
-          <p className="mb-6 border-l-4 border-red-500 bg-red-50 p-4 text-sm font-bold text-red-700" role="alert">
-            {submitError}
-          </p>
-        )}
-        
-        <form className="flex flex-col w-full" noValidate onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-7" noValidate onSubmit={handleSubmit}>
+          <FormField
+            label="Adresse électronique ou téléphone"
+            type="text"
+            name="identifier"
+            placeholder="exemple : monadresse@domaine.fr"
+            autoComplete="username"
+            required
+          />
           
-          {/* CHAMP : IDENTIFIANT */}
-          <div className="mb-8 w-full">
-            <label className="mb-3 block text-xs font-bold uppercase tracking-widest">
-              Identifiant / E-mail
-            </label>
-            <input
-              type="text"
-              name="identifier"
-              autoComplete="username"
-              value={identifier}
-              onChange={(e) => {
-                setIdentifier(e.target.value);
-                setSubmitError('');
-              }}
-              placeholder="Exemple: monadresse@domaine.fr ou 05 XX XX XX XX"
-              className="w-full bg-[#d9d9d9] p-4 text-sm text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#116c60]"
-              required
-            />
-          </div>
+          <FormField
+            label="Votre mot de passe"
+            type="password"
+            name="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setSubmitError('');
+            }}
+            required
+          />
           
-          {/* CHAMP : MOT DE PASSE */}
-          <div className="mb-4 w-full">
-            <label className="mb-3 block text-xs font-bold uppercase tracking-widest">
-              Votre mot de passe
-            </label>
-            <div className="relative w-full">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setSubmitError('');
-                }}
-                className="w-full bg-[#d9d9d9] p-4 pr-12 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#116c60]"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 transform text-gray-600 hover:text-black focus:outline-none"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {showPassword ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
+          {submitError && (
+            <p className="-mt-3 border-l-2 border-[#b54b4b] pl-3 text-xs leading-5 text-[#b54b4b]" role="alert">
+              {submitError}
+            </p>
+          )}
           
-          {/* LIENS (ALIGNÉS À DROITE) */}
-          <div className="mb-10 flex w-full flex-col items-end space-y-2">
-            <a href="/signup/step1" className="text-xs font-bold tracking-wide underline hover:text-gray-600">
-              Pas encore de compte ?
-            </a>
-            <a href="#" className="text-xs font-bold tracking-wide underline hover:text-gray-600">
-              Mot de passe oublié ?
-            </a>
-          </div>
-          
-          {/* CHECKBOX "RESTER CONNECTÉ" */}
-          <div className="mb-12 flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={() => setRememberMe(!rememberMe)}
-              className="flex h-7 w-7 items-center justify-center bg-[#d9d9d9] focus:outline-none"
-            >
-              {rememberMe && (
-                <svg className="h-5 w-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-            </button>
-            <span className="text-xs font-bold tracking-wide">Rester connecté ?</span>
-          </div>
-          
-          {/* BOUTON SOUMETTRE (ALIGNÉ À GAUCHE) */}
-          <div>
-            <button
-              className="bg-[#116c60] px-8 py-3 text-sm font-bold tracking-widest text-white transition hover:bg-[#0d554a] focus:outline-none"
-              type="submit"
-            >
-              SE CONNECTER
-            </button>
-          </div>
-
+          <button
+            className="w-full bg-[#1e2420] px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-white transition hover:bg-[#496a56] focus:outline-none focus:ring-4 focus:ring-[#496a56]/20"
+            type="submit"
+          >
+            Connexion
+          </button>
         </form>
+        
+        <p className="mt-6 text-center text-xs text-[#1e2420]">
+          Vous n&apos;avez pas encore de compte ?{' '}
+          <a className="font-bold text-[#496a56] underline underline-offset-2" href="/signup/step1">
+            Sinscrire
+          </a>
+        </p>
       </section>
     </main>
   );
