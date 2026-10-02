@@ -19,14 +19,14 @@ export default function LoginPage() {
       return;
     }
 
-    setSubmitError('');
+    setSubmitError(' ');
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
+         },
         body: JSON.stringify({ email: identifier, password }),
       });
 

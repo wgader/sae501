@@ -1,0 +1,25 @@
+[33mcommit 47c680af0f17d821100b859d64aaaf994b525740[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/us2-1-login[m[33m)[m
+Author: Vivien-Pain <vivien.pain@etu.unilim.fr>
+Date:   Fri Oct 2 10:53:46 2026 +0200
+
+    fix: implement association login fetch logic and update home connection state
+
+[33mcommit 3410789cca428d5601b7ef08633defa50c967a4b[m
+Author: Vivien-Pain <vivien.pain@etu.unilim.fr>
+Date:   Fri Oct 2 10:55:21 2026 +0200
+
+    feat: implement multi-step association signup context and Mairie auth routes
+    
+    - Add SignupContext for state management across registration steps
+    
+    - Fix API endpoint for Mairie login
+    
+    - Add react-google-recaptcha dependency
+    
+    - Clean up unused frontend routes per step-by-step strategy
+
+[33mcommit f03f18b8c72ed7b17672a5e6f49f8a1dbbf53fe9[m
+Author: Wgader <wahel.gader@etu.unilim.fr>
+Date:   Tue Sep 29 15:11:51 2026 +0200
+
+    chore: setup Antigravity 2 configuration
