@@ -2,10 +2,24 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        setIsConnected(true);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsConnected(false);
+  };
 
   return (
     <main className="home-page">
@@ -17,7 +31,7 @@ export default function Home() {
         {isConnected ? (
           <div className="home-account">
             <Link href="/profile">Profil</Link>
-            <button type="button" onClick={() => setIsConnected(false)}>Déconnexion</button>
+            <button type="button" onClick={handleLogout}>Déconnexion</button>
           </div>
         ) : (
           <div className="home-auth">

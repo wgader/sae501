@@ -1,22 +1,54 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import FormField from '../../components/ui/FormField';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const router = useRouter();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const identifier = formData.get('identifier');
 
-    if (!formData.get('identifier') || !password) {
+    if (!identifier || !password) {
       setSubmitError('Veuillez renseigner votre identifiant et votre mot de passe.');
       return;
     }
 
     setSubmitError('');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: identifier, password }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Identifiants incorrects');
+      }
+
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      
+      router.push('/'); 
+      
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setSubmitError(err.message);
+      } else {
+        setSubmitError('Une erreur est survenue lors de la connexion');
+      }
+    }
   }
 
   return (
