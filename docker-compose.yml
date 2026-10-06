@@ -1,11 +1,14 @@
 services:
 
   frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile
+    image: node:26-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       NEXT_PUBLIC_API_URL: http://localhost
     depends_on:
@@ -20,14 +23,16 @@ services:
       dockerfile: docker/backend/Dockerfile
     ports:
       - "80:80"
-      - "443:443"
     env_file: .env
+    environment:
+      SERVER_NAME: ":80"
+      SERVER_ROOT: "/app/public"
     volumes:
       - ./backend:/app
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost/api"]
+      test: ["CMD", "curl", "-sf", "http://localhost/api/docs"]
       interval: 10s
       timeout: 5s
       retries: 5
