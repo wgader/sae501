@@ -61,24 +61,11 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         $status = $payload['status'] ?? null;
-        $permissions = $payload['permissions'] ?? [];
-
         if (!is_string($status) || !in_array($status, self::STATUSES, true)) {
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        if (
-            !is_array($permissions)
-            || array_filter($permissions, static fn (mixed $permission): bool => !is_string($permission)) !== []
-            || array_diff($permissions, self::MODULES) !== []
-        ) {
-            return $this->json(['message' => 'Les modules sélectionnés sont invalides.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-        $normalizedPermissions = array_values(array_unique($permissions));
-        if ($status === 'VALIDATED' && $normalizedPermissions === []) {
-            return $this->json(['message' => 'Au moins un module est requis pour valider une association.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
         $previousStatus = $association->getStatut();
+        $normalizedPermissions = self::MODULES;
 
         $this->entityManager->wrapInTransaction(function () use ($association, $status, $normalizedPermissions): void {
             $association->setStatut($status);

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   type Association,
-  type AssociationModule,
   type AssociationStatus,
   getAssociations,
   updateAssociationStatus,
@@ -36,13 +35,12 @@ export function useAssociations(page: number, status: AssociationStatus | '') {
 
   const updateStatus = useCallback(async (
     association: Association,
-    nextStatus: Exclude<AssociationStatus, 'PENDING_VALIDATION'>,
-    permissions: AssociationModule[],
+    nextStatus: AssociationStatus,
   ) => {
     setUpdatingId(association.id);
     setError('');
     try {
-      const updated = await updateAssociationStatus(association.id, nextStatus, permissions);
+      const updated = await updateAssociationStatus(association.id, nextStatus);
       setAssociations((current) => current.map((item) => item.id === updated.id ? updated : item));
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Impossible de modifier cette association.';

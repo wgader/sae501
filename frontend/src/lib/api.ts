@@ -76,11 +76,10 @@ export function getAssociations(page: number, status: AssociationStatus | ''): P
 export function updateAssociationStatus(
   id: number,
   status: AssociationStatus,
-  permissions: AssociationModule[],
 ): Promise<Association> {
   return request<Association>(`/api/admin/associations/${id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status, permissions }),
+    body: JSON.stringify({ status }),
   });
 }
