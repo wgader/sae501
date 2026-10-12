@@ -4,3 +4,7 @@ parameters:
         - src
     ignoreErrors:
         - '#Method App\\Kernel::getAllowedEnvs\(\) is unused#'
+        - 
+            identifier: doctrine.columnType
+        -
+            identifier: doctrine.associationType

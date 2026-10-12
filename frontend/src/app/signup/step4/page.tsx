@@ -93,14 +93,14 @@ export default function ConfirmationPage() {
             Demande envoyée
           </h1>
           <p className="mb-8 text-base text-[#4f5851]">
-            Votre dossier d'inscription pour l'association a bien été transmis à la mairie de Feytiat.<br className="hidden sm:block" />
+            Votre dossier d&apos;inscription pour l&apos;association a bien été transmis à la mairie de Feytiat.<br className="hidden sm:block" />
             Il sera examiné sous <strong>48h ouvrées</strong>. Vous recevrez un email de confirmation de la part de nos services.
           </p>
           <Link
             href="/"
             className="rounded-md bg-[#0b644d] px-8 py-4 text-sm font-bold text-white transition-colors hover:bg-[#084e3c]"
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </Link>
         </main>
       </div>

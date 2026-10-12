@@ -118,7 +118,7 @@ export default function AssociationPage() {
                 />
 
                 <div className="sm:col-span-2">
-                  <label className="mb-2 block text-xs font-bold text-[#1e2420]">Catégorie d'activité *</label>
+                  <label className="mb-2 block text-xs font-bold text-[#1e2420]">Catégorie d&apos;activité *</label>
                   <select name="categorieActivite" value={association.categorieActivite} onChange={(e) => setAssociation({ categorieActivite: e.target.value })} className="w-full rounded-md border border-[#d9ded9] bg-white px-3 py-3 text-sm outline-none focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]" required>
                     <option value="Sportive">Sportive</option>
                     <option value="Culturelle">Culturelle</option>
