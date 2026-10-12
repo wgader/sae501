@@ -14,14 +14,23 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Seul le nom est obligatoire à l'inscription.
  * nombreMembres est renseigné ultérieurement (demande de subvention, etc.).
  *
- * Statuts : PENDING_VALIDATION | ACTIVE | REJECTED | SUSPENDED
+ * Statuts :
+ *   PENDING_VALIDATION → en attente de validation par la mairie
+ *   VALIDATED          → validée par la mairie, lien d'activation envoyé
+ *   REFUSED            → refusée par la mairie
+ *   SUSPENDED          → suspendue par l'admin
  *
  * Modules activés par la mairie selon les besoins de l'association.
  */
 #[ORM\Entity(repositoryClass: AssociationRepository::class)]
 class Association
 {
-    public const STATUTS = ['PENDING_VALIDATION', 'ACTIVE', 'REJECTED', 'SUSPENDED'];
+    public const STATUTS = [
+        'PENDING_VALIDATION',
+        'VALIDATED',
+        'REFUSED',
+        'SUSPENDED',
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -41,8 +50,8 @@ class Association
 
     /**
      * PENDING_VALIDATION → en attente de validation par la mairie
-     * ACTIVE             → validée, compte activé
-     * REJECTED           → refusée
+     * VALIDATED          → validée, lien d'activation envoyé à l'asso
+     * REFUSED            → refusée par la mairie
      * SUSPENDED          → suspendue par l'admin
      */
     #[ORM\Column(length: 30)]
@@ -70,9 +79,7 @@ class Association
     #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'association')]
     private Collection $users;
 
-    /**
-     * @var Collection<int, DocumentJustificatif>
-     */
+    /** @var Collection<int, DocumentJustificatif> */
     #[ORM\OneToMany(targetEntity: DocumentJustificatif::class, mappedBy: 'association')]
     private Collection $documentJustificatifs;
 
@@ -86,6 +93,8 @@ class Association
         $this->users                 = new ArrayCollection();
         $this->documentJustificatifs = new ArrayCollection();
     }
+
+    // ── Getters / Setters ────────────────────────────────────────────────────
 
     public function getId(): ?int { return $this->id; }
 
@@ -113,6 +122,7 @@ class Association
     public function getValideAt(): ?\DateTimeImmutable { return $this->valideAt; }
     public function setValideAt(?\DateTimeImmutable $v): static { $this->valideAt = $v; return $this; }
 
+    /** @return Collection<int, User> */
     public function getUsers(): Collection { return $this->users; }
 
     public function addUser(User $user): static
@@ -134,36 +144,39 @@ class Association
         return $this;
     }
 
-    public function isActive(): bool { return $this->statut === 'ACTIVE'; }
-    public function isPending(): bool { return $this->statut === 'PENDING_VALIDATION'; }
+    /** @return Collection<int, DocumentJustificatif> */
+    public function getDocumentJustificatifs(): Collection { return $this->documentJustificatifs; }
 
-    /**
-     * @return Collection<int, DocumentJustificatif>
-     */
-    public function getDocumentJustificatifs(): Collection
+    public function addDocumentJustificatif(DocumentJustificatif $doc): static
     {
-        return $this->documentJustificatifs;
-    }
-
-    public function addDocumentJustificatif(DocumentJustificatif $documentJustificatif): static
-    {
-        if (!$this->documentJustificatifs->contains($documentJustificatif)) {
-            $this->documentJustificatifs->add($documentJustificatif);
-            $documentJustificatif->setAssociation($this);
+        if (!$this->documentJustificatifs->contains($doc)) {
+            $this->documentJustificatifs->add($doc);
+            $doc->setAssociation($this);
         }
-
         return $this;
     }
 
-    public function removeDocumentJustificatif(DocumentJustificatif $documentJustificatif): static
+    public function removeDocumentJustificatif(DocumentJustificatif $doc): static
     {
-        if ($this->documentJustificatifs->removeElement($documentJustificatif)) {
-            // set the owning side to null (unless already changed)
-            if ($documentJustificatif->getAssociation() === $this) {
-                $documentJustificatif->setAssociation(null);
+        if ($this->documentJustificatifs->removeElement($doc)) {
+            if ($doc->getAssociation() === $this) {
+                $doc->setAssociation(null);
             }
         }
-
         return $this;
     }
+
+    // ── Helpers métier ───────────────────────────────────────────────────────
+
+    /** L'association est en attente de validation */
+    public function isPending(): bool { return $this->statut === 'PENDING_VALIDATION'; }
+
+    /** L'association a été validée par la mairie */
+    public function isValidated(): bool { return $this->statut === 'VALIDATED'; }
+
+    /** L'association a été refusée par la mairie */
+    public function isRefused(): bool { return $this->statut === 'REFUSED'; }
+
+    /** L'association est suspendue */
+    public function isSuspended(): bool { return $this->statut === 'SUSPENDED'; }
 }
