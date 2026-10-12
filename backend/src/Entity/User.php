@@ -110,7 +110,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * true  → compte actif, connexion possible
      */
     #[ORM\Column]
-    private ?bool $isVerified = false;
+    private bool $isVerified = false;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -225,7 +225,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getTypeCompte(): ?string { return $this->typeCompte; }
     public function setTypeCompte(string $typeCompte): static { $this->typeCompte = $typeCompte; return $this; }
 
-    public function isVerified(): ?bool { return $this->isVerified; }
+    public function isVerified(): bool { return $this->isVerified; }
     public function setIsVerified(bool $isVerified): static { $this->isVerified = $isVerified; return $this; }
 
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }

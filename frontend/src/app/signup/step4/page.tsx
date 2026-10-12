@@ -128,7 +128,7 @@ export default function ConfirmationPage() {
 
             <div className="mb-8 text-center sm:text-left">
               <h2 className="mb-2 text-2xl font-black uppercase tracking-tight text-[#1e2420]">
-                Dernière étape avant l'envoi
+                Dernière étape avant l&apos;envoi
               </h2>
               <p className="text-sm text-[#6d746e]">
                 Veuillez vérifier que vous avez bien complété toutes les étapes avant de soumettre votre dossier.
@@ -174,7 +174,7 @@ export default function ConfirmationPage() {
                 className="mt-1 h-5 w-5 shrink-0 rounded border-[#d9ded9] text-[#0b644d] focus:ring-[#0b644d]"
               />
               <label htmlFor="consent" className="text-sm leading-relaxed text-[#4f5851]">
-                Je certifie sur l'honneur l'exactitude des informations fournies dans ce formulaire et j'accepte que ces données soient traitées par la mairie de Feytiat dans le cadre de la gestion des associations, conformément aux <button type="button" onClick={() => setIsTermsOpen(true)} className="font-bold text-[#0b644d] underline">conditions générales d'utilisation</button>. *
+                Je certifie sur l&apos;honneur l&apos;exactitude des informations fournies dans ce formulaire et j&apos;accepte que ces données soient traitées par la mairie de Feytiat dans le cadre de la gestion des associations, conformément aux <button type="button" onClick={() => setIsTermsOpen(true)} className="font-bold text-[#0b644d] underline">conditions générales d&apos;utilisation</button>. *
               </label>
             </div>
 
@@ -189,7 +189,7 @@ export default function ConfirmationPage() {
 
             <div className="flex flex-col-reverse justify-between gap-6 border-t border-[#d9ded9] pt-6 sm:flex-row sm:items-center">
               <a href="#" className="text-center text-xs text-[#6d746e] hover:text-[#1e2420] hover:underline sm:text-left">
-                Besoin d'aide ? Contactez la mairie 
+                Besoin d&apos;aide ? Contactez la mairie 
               </a>
               
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">

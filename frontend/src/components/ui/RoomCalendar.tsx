@@ -20,7 +20,13 @@ const getRoomBg = (colorClass: string) => {
   return map[colorClass] || 'bg-transparent';
 };
 
-export const getMockReservations = (date: Date, filter: string, rooms: any[]) => {
+interface Room {
+  name: string;
+  capacity: string;
+  color: string;
+}
+
+export const getMockReservations = (date: Date, filter: string, rooms: Room[]) => {
   const seed = date.getDate() + date.getMonth();
   const numRes = seed % 4;
   
@@ -45,11 +51,6 @@ export const getMockReservations = (date: Date, filter: string, rooms: any[]) =>
   return uniqueRooms;
 };
 
-interface Room {
-  name: string;
-  capacity: string;
-  color: string;
-}
 
 interface RoomCalendarProps {
   rooms: Room[];

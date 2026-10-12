@@ -7,7 +7,6 @@ import Stepper from '@/components/shared/Stepper';
 import ValidatedInput from '@/components/ui/ValidatedInput';
 import PasswordRequirements, { isPasswordValid } from '@/components/ui/PasswordRequirements';
 import TermsModal from '@/components/ui/TermsModal';
-import VerificationModal from '@/components/ui/VerificationModal';
 import Link from 'next/link';
 import { useSignupContext } from '@/context/SignupContext';
 
@@ -19,7 +18,6 @@ export default function ContactsPage() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [formError, setFormError] = useState('');
   
-  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +75,7 @@ export default function ContactsPage() {
 
             <div className="mb-8">
               <h2 className="mb-6 border-l-4 border-[#0b644d] pl-3 text-xs font-bold uppercase tracking-widest text-[#1e2420] sm:mb-8">
-                CONTACT DE L'ASSOCIATION *
+                CONTACT DE L&apos;ASSOCIATION *
               </h2>
               
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
@@ -171,7 +169,7 @@ export default function ContactsPage() {
                     className="mt-1 h-4 w-4 shrink-0 accent-[#0b644d]"
                   />
                   <label htmlFor="contact-terms" className="text-xs leading-relaxed text-[#6d746e]">
-                    J'accepte les <button type="button" onClick={() => setIsTermsOpen(true)} className="font-bold text-[#0b644d] underline">conditions générales d'utilisation</button>.
+                    J&apos;accepte les <button type="button" onClick={() => setIsTermsOpen(true)} className="font-bold text-[#0b644d] underline">conditions générales d&apos;utilisation</button>.
                   </label>
                 </div>
               </div>
@@ -179,7 +177,7 @@ export default function ContactsPage() {
 
             <div className="mt-8 flex flex-col-reverse justify-between gap-6 border-t border-[#d9ded9] pt-6 sm:mt-12 sm:flex-row sm:items-center">
                 <a href="#" className="text-center text-xs text-[#6d746e] hover:text-[#1e2420] hover:underline sm:text-left">
-                  Besoin d'aide ? Contactez la mairie 
+                  Besoin d&apos;aide ? Contactez la mairie 
                </a>
               
               <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:gap-6">

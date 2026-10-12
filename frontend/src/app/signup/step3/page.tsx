@@ -105,7 +105,7 @@ const FileUploader = ({
               <PdfIcon />
               <div className="overflow-hidden">
                 <p className="truncate text-sm font-bold text-[#1e2420]" title={file.name}>{file.name}</p>
-                <p className="text-xs text-[#6d746e]">{formatFileSize(file.size)} - à l'instant</p>
+                <p className="text-xs text-[#6d746e]">{formatFileSize(file.size)} - à l&apos;instant</p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#4CAF50] px-2.5 py-1 text-[10px] font-bold text-white">
@@ -322,7 +322,7 @@ export default function DocumentsPage() {
 
             <div className="mt-10 flex flex-col-reverse justify-between gap-6 border-t border-[#d9ded9] pt-6 sm:flex-row sm:items-center">
               <a href="#" className="text-center text-xs text-[#6d746e] hover:text-[#1e2420] hover:underline sm:text-left">
-                Besoin d'aide ? Contactez la mairie 
+                Besoin d&apos;aide ? Contactez la mairie 
               </a>
               
               <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:gap-6">
