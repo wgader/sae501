@@ -40,23 +40,16 @@ class AuthenticationSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Bloquer les comptes non vérifiés
+        // Compte non activé (pas encore de mot de passe défini)
         if (!$user->isVerified()) {
-            $event->setData([]);
-            $response = new JsonResponse(
-                ['message' => 'Votre email n\'est pas encore vérifié. Vérifiez votre boîte mail.'],
-                Response::HTTP_FORBIDDEN
-            );
-            // On ne peut pas changer la réponse directement ici
-            // On passe les données vides — le front gèrera le 200 avec data vide
             $event->setData([
                 'error' => true,
-                'message' => 'Votre email n\'est pas encore vérifié. Vérifiez votre boîte mail.',
+                'message' => 'Votre compte n\'est pas encore activé.',
             ]);
             return;
         }
 
-        // Bloquer les comptes inactivés
+        // Compte suspendu
         if ($user->getInactivatedAt() !== null) {
             $event->setData([
                 'error' => true,
@@ -65,16 +58,15 @@ class AuthenticationSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Enrichir la réponse avec les infos du user
         $event->setData(array_merge($event->getData(), [
             'user' => [
-                'id'          => $user->getId(),
-                'email'       => $user->getEmail(),
-                'nom'         => $user->getNom(),
-                'prenom'      => $user->getPrenom(),
-                'roles'       => $user->getRoles(),
-                'typeCompte'  => $user->getTypeCompte(),
-                'isVerified'  => $user->isVerified(),
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'nom' => $user->getNom(),
+                'prenom' => $user->getPrenom(),
+                'roles' => $user->getRoles(),
+                'typeCompte' => $user->getTypeCompte(),
+                'isVerified' => $user->isVerified(),
             ],
         ]));
     }

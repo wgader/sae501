@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demande d'inscription reçue</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* ── Variables ────────────────────────────────────────────────── */
+    :root {
+      --color-primary:   #146E67;
+      --color-accent:    #D8EC95;
+      --color-black:     #000000;
+      --color-white:     #FFFFFF;
+      --color-grey:      #61646B;
+      --color-bg:        #F4F4F0;
+      --color-primary-light: #1a8a81;
+      --font:            'Lato', Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #F4F4F0;
+      font-family: 'Lato', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#F4F4F0;font-family:'Lato',Helvetica,Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+         style="background-color:#F4F4F0;padding:48px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" role="presentation"
+               style="max-width:600px;width:100%;">
+
+          {# ── Header ────────────────────────────────────────────────── #}
+          <tr>
+            <td style="background-color:#146E67;border-radius:12px 12px 0 0;padding:48px 48px 40px;">
+
+              {# Label #}
+              <p style="margin:0 0 20px 0;color:#D8EC95;font-size:11px;font-weight:700;
+                         letter-spacing:3px;text-transform:uppercase;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                — Espace Associations
+              </p>
+
+              {# Titre style maquette #}
+              <h1 style="margin:0;font-family:'Lato',Helvetica,Arial,sans-serif;
+                          font-size:36px;font-weight:900;line-height:1.2;color:#FFFFFF;">
+                Demande reçue<br>
+                <span style="color:#D8EC95;">avec succès.</span>
+              </h1>
+
+              <p style="margin:16px 0 0 0;color:rgba(255,255,255,1);font-size:15px;
+                         font-weight:300;line-height:1.6;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                Créez votre espace pour accéder aux démarches municipales de votre association.
+              </p>
+
+            </td>
+          </tr>
+
+          {# ── Body ──────────────────────────────────────────────────── #}
+          <tr>
+            <td style="background-color:#FFFFFF;padding:48px;">
+
+              <p style="margin:0 0 8px 0;color:#61646B;font-size:13px;font-weight:700;
+                         letter-spacing:2px;text-transform:uppercase;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                Bonjour {{ prenom }},
+              </p>
+
+              <p style="margin:0 0 24px 0;color:#000000;font-size:22px;font-weight:700;
+                         line-height:1.3;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                Votre dossier est entre de bonnes mains.
+              </p>
+
+              <p style="margin:0 0 16px 0;color:#61646B;font-size:15px;font-weight:400;
+                         line-height:1.8;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                La demande d'inscription pour l'association
+                <strong style="color:#146E67;font-weight:700;">{{ nomAssociation }}</strong>
+                a bien été transmise aux services de la mairie de Feytiat.
+              </p>
+
+              <p style="margin:0 0 32px 0;color:#61646B;font-size:15px;font-weight:400;
+                         line-height:1.8;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                Une fois votre dossier validé, vous recevrez un nouvel email avec un lien
+                pour <strong style="color:#000000;">finaliser la création de votre compte</strong>
+                et définir votre mot de passe.
+              </p>
+
+              {# ── Récap box ───────────────────────────────────────── #}
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                     style="margin-bottom:32px;">
+                <tr>
+                  <td style="background-color:#F4F4F0;border-left:3px solid #D8EC95;
+                              border-radius:0 8px 8px 0;padding:20px 24px;">
+                    <p style="margin:0 0 12px 0;color:#146E67;font-size:11px;font-weight:700;
+                               letter-spacing:2px;text-transform:uppercase;
+                               font-family:'Lato',Helvetica,Arial,sans-serif;">
+                      Récapitulatif
+                    </p>
+                    <table cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td style="color:#61646B;font-size:13px;font-weight:400;
+                                   padding:3px 0;font-family:'Lato',Helvetica,Arial,sans-serif;
+                                   padding-right:16px;white-space:nowrap;">
+                          Association
+                        </td>
+                        <td style="color:#000000;font-size:13px;font-weight:700;
+                                   padding:3px 0;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                          {{ nomAssociation }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="color:#61646B;font-size:13px;font-weight:400;
+                                   padding:3px 0;font-family:'Lato',Helvetica,Arial,sans-serif;
+                                   padding-right:16px;white-space:nowrap;">
+                          Contact
+                        </td>
+                        <td style="color:#000000;font-size:13px;font-weight:700;
+                                   padding:3px 0;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                          {{ prenom }} {{ nom }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="color:#61646B;font-size:13px;font-weight:400;
+                                   padding:3px 0;font-family:'Lato',Helvetica,Arial,sans-serif;
+                                   padding-right:16px;white-space:nowrap;">
+                          Email
+                        </td>
+                        <td style="color:#000000;font-size:13px;font-weight:700;
+                                   padding:3px 0;font-family:'Lato',Helvetica,Arial,sans-serif;">
+                          {{ emailContact }}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              {# ── Délai #}
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="background-color:#146E67;border-radius:8px;padding:20px 24px;
+                              text-align:center;">
+                    <p style="margin:0;color:#FFFFFF;font-size:14px;font-weight:300;
+                               font-family:'Lato',Helvetica,Arial,sans-serif;line-height:1.6;">
+                      Ce processus peut prendre quelques jours ouvrés.<br>
+                      <strong style="font-weight:700;">Pensez à vérifier vos spams.</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          {# ── Footer ────────────────────────────────────────────────── #}
+          <tr>
+            <td style="background-color:#000000;border-radius:0 0 12px 12px;padding:28px 48px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 4px 0;color:#FFFFFF;font-size:13px;font-weight:700;
+                               font-family:'Lato',Helvetica,Arial,sans-serif;">
+                      Mairie de Feytiat
+                    </p>
+                    <p style="margin:0;color:#61646B;font-size:12px;font-weight:400;
+                               font-family:'Lato',Helvetica,Arial,sans-serif;">
+                      Plateforme Associations — {{ "now"|date("Y") }}
+                    </p>
+                  </td>
+                  <td align="right">
+                    <p style="margin:0;color:#61646B;font-size:11px;font-weight:400;
+                               font-family:'Lato',Helvetica,Arial,sans-serif;line-height:1.6;">
+                      Ne pas répondre à cet email.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
