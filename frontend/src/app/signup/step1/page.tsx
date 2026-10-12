@@ -6,7 +6,6 @@ import Header from '@/components/layout/Header';
 import HelpSidebar from '@/components/shared/HelpSidebar';
 import Stepper from '@/components/shared/Stepper';
 import ValidatedInput from '@/components/ui/ValidatedInput';
-import CategorySelector from '@/components/ui/CategorySelector';
 import Link from 'next/link';
 import { useSignupContext } from '@/context/SignupContext';
 
@@ -119,7 +118,7 @@ export default function AssociationPage() {
                 />
 
                 <div className="sm:col-span-2">
-                  <label className="mb-2 block text-xs font-bold text-[#1e2420]">Catégorie d'activité *</label>
+                  <label className="mb-2 block text-xs font-bold text-[#1e2420]">Catégorie d&apos;activité *</label>
                   <select name="categorieActivite" value={association.categorieActivite} onChange={(e) => setAssociation({ categorieActivite: e.target.value })} className="w-full rounded-md border border-[#d9ded9] bg-white px-3 py-3 text-sm outline-none focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]" required>
                     <option value="Sportive">Sportive</option>
                     <option value="Culturelle">Culturelle</option>
@@ -130,7 +129,7 @@ export default function AssociationPage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label htmlFor="objet" className="mb-2 block text-xs font-bold text-[#1e2420]">Objet de l'association *</label>
+                  <label htmlFor="objet" className="mb-2 block text-xs font-bold text-[#1e2420]">Objet de l&apos;association *</label>
                   <textarea id="objet" name="objet" required rows={3} value={association.objet} onChange={(e) => setAssociation({ objet: e.target.value })} placeholder="Décrivez brièvement les activités de votre association..." className="w-full resize-y rounded-md border border-[#d9ded9] bg-white px-3 py-3 text-sm outline-none focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]" />
                 </div>
 
@@ -142,7 +141,7 @@ export default function AssociationPage() {
 
             <div className="mt-8 flex flex-col-reverse justify-between gap-6 border-t border-[#d9ded9] pt-6 sm:mt-12 sm:flex-row sm:items-center">
               <a href="#" className="text-center text-xs text-[#6d746e] hover:text-[#1e2420] hover:underline sm:text-left">
-                  Besoin d'aide ? Contactez la mairie 
+                  Besoin d&apos;aide ? Contactez la mairie
               </a>
               
               <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:gap-6">

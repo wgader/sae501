@@ -159,7 +159,7 @@ export default function AdminSignupPage() {
           
           <div>
             <Button type="submit">
-              S'INSCRIRE
+              S&apos;INSCRIRE
             </Button>
           </div>
 

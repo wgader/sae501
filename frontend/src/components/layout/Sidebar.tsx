@@ -1,4 +1,3 @@
-// components/signup/Sidebar.tsx
 export default function Sidebar() {
   return (
     <aside className="flex flex-col gap-4">
@@ -12,7 +11,7 @@ export default function Sidebar() {
           </li>
           <li className="flex items-center gap-3">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0b644d] text-white text-xs">✓</span>
-            Statuts de l'association (PDF)
+            Statuts de l&apos;association (PDF)
           </li>
           <li className="flex items-center gap-3">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0b644d] text-white text-xs">✓</span>
@@ -24,7 +23,7 @@ export default function Sidebar() {
           </li>
           <li className="flex items-center gap-3">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0b644d] text-white text-xs">✓</span>
-            Coordonnées du contact de l'association
+            Coordonnées du contact de l&apos;association
           </li>
         </ul>
       </div>
@@ -34,7 +33,7 @@ export default function Sidebar() {
           ⏱ Délai de validation
         </h3>
         <p className="leading-relaxed text-[#4f5851]">
-          Une fois votre dossier complet soumis, la mairie l'examine sous 48h ouvrées.
+          Une fois votre dossier complet soumis, la mairie l&apos;examine sous 48h ouvrées.
           Vous recevrez un email de confirmation.
         </p>
       </div>

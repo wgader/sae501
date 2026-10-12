@@ -56,7 +56,7 @@ class Association
      */
     #[ORM\Column(length: 30)]
     #[Assert\Choice(choices: self::STATUTS)]
-    private ?string $statut = 'PENDING_VALIDATION';
+    private string $statut = 'PENDING_VALIDATION';
 
     /** Modules activés/désactivés par la mairie depuis l'interface admin */
     #[ORM\Column(options: ['default' => false])]
