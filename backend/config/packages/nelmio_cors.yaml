@@ -7,5 +7,9 @@ nelmio_cors:
         expose_headers: ['Link']
         max_age: 3600
     paths:
+        '^/api/auth/admin':
+            allow_origin: ['^http://localhost(:[0-9]+)?$']
+            allow_methods: ['POST', 'OPTIONS']
+            allow_headers: ['Content-Type']
+            max_age: 3600
         '^/': null
-

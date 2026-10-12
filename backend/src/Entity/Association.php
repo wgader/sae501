@@ -2,13 +2,37 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use App\Repository\AssociationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AssociationRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            paginationEnabled: true,
+            paginationClientItemsPerPage: true,
+            security: "is_granted('ROLE_ADMIN')",
+            normalizationContext: []
+        ),
+        new Patch(
+            security: "is_granted('ROLE_ADMIN')",
+            denormalizationContext: [],
+            processor: \App\State\AssociationStatusProcessor::class
+        )
+    ],
+    normalizationContext: []
+)]
+#[ApiFilter(SearchFilter::class, properties: ['statut' => 'exact'])]
 class Association
 {
     #[ORM\Id]
@@ -49,16 +73,21 @@ class Association
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $permissions = [];
+
     /**
      * @var Collection<int, User>
      */
     #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'association')]
+    #[ApiProperty(readable: false, writable: false)]
     private Collection $users;
 
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->statut = 'PENDING_VALIDATION';
+        $this->permissions = [];
         $this->users = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
@@ -198,6 +227,18 @@ class Association
 
         return $this;
     }
+    
+    public function getPermissions(): ?array
+    {
+        return $this->permissions;
+    }
+    
+    public function setPermissions(?array $permissions): static
+    {
+        $this->permissions = $permissions;
+        
+        return $this;
+    }
 
     /**
      * @return Collection<int, User>
@@ -227,5 +268,17 @@ class Association
         }
 
         return $this;
+    }
+    
+    #[Assert\Callback]
+    public function validate(\Symfony\Component\Validator\Context\ExecutionContextInterface $context, $payload): void
+    {
+        if ($this->statut === 'VALIDATED') {
+            if (empty($this->permissions)) {
+                $context->buildViolation('Veuillez sélectionner au moins un module pour valider l\'association.')
+                    ->atPath('permissions')
+                    ->addViolation();
+            }
+        }
     }
 }

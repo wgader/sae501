@@ -16,28 +16,37 @@ class AssociationRepository extends ServiceEntityRepository
         parent::__construct($registry, Association::class);
     }
 
-//    /**
-//     * @return Association[] Returns an array of Association objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('a')
-//            ->andWhere('a.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('a.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * @return list<Association>
+     */
+    public function findForAdministration(?string $status, int $page, int $itemsPerPage): array
+    {
+        $queryBuilder = $this->createQueryBuilder('association')
+            ->orderBy('association.createdAt', 'DESC')
+            ->addOrderBy('association.id', 'DESC')
+            ->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage);
 
-//    public function findOneBySomeField($value): ?Association
-//    {
-//        return $this->createQueryBuilder('a')
-//            ->andWhere('a.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        if ($status !== null) {
+            $queryBuilder
+                ->andWhere('association.statut = :status')
+                ->setParameter('status', $status);
+        }
+
+        return $queryBuilder->getQuery()->getResult();
+    }
+
+    public function countForAdministration(?string $status): int
+    {
+        $queryBuilder = $this->createQueryBuilder('association')
+            ->select('COUNT(association.id)');
+
+        if ($status !== null) {
+            $queryBuilder
+                ->andWhere('association.statut = :status')
+                ->setParameter('status', $status);
+        }
+
+        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+    }
 }

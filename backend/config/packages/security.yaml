@@ -16,7 +16,18 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        
+
+        admin_login:
+            pattern: ^/api/auth/admin/login
+            stateless: true
+            user_checker: App\Security\AdminUserChecker
+            json_login:
+                check_path: /api/auth/admin/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: App\Security\AdminAuthenticationFailureHandler
+
         login:
             pattern: ^/api/auth/login
             stateless: true
@@ -34,11 +45,12 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
+        - { path: ^/api/auth/admin/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }       
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 
