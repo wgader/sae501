@@ -5,207 +5,115 @@ namespace App\Entity;
 use App\Repository\AssociationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * Représente une association inscrite sur la plateforme.
+ *
+ * Seul le nom est obligatoire à l'inscription.
+ * nombreMembres est renseigné ultérieurement (demande de subvention, etc.).
+ *
+ * Statuts : PENDING_VALIDATION | ACTIVE | REJECTED | SUSPENDED
+ *
+ * Modules activés par la mairie selon les besoins de l'association.
+ */
 #[ORM\Entity(repositoryClass: AssociationRepository::class)]
 class Association
 {
+    public const STATUTS = ['PENDING_VALIDATION', 'ACTIVE', 'REJECTED', 'SUSPENDED'];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    /** Seul champ obligatoire à l'inscription */
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom de l'association est obligatoire.")]
+    #[Assert\Length(max: 255)]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 20)]
-    private ?string $numeroRna = null;
-
-    #[ORM\Column(length: 14)]
-    private ?string $numeroSiret = null;
-
-    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
-    private ?\DateTimeImmutable $dateCreation = null;
-
-    #[ORM\Column]
+    /** Renseigné plus tard (demande de subvention, profil, etc.) */
+    #[ORM\Column(nullable: true)]
+    #[Assert\Positive(message: "Le nombre de membres doit être positif.")]
     private ?int $nombreMembres = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $categorieActivite = null;
-
-    #[ORM\Column(type: Types::TEXT)]
-    private ?string $objet = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $adresseSiegeSocial = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $siteWeb = null;
-
+    /**
+     * PENDING_VALIDATION → en attente de validation par la mairie
+     * ACTIVE             → validée, compte activé
+     * REJECTED           → refusée
+     * SUSPENDED          → suspendue par l'admin
+     */
     #[ORM\Column(length: 30)]
-    private ?string $statut = null;
+    #[Assert\Choice(choices: self::STATUTS)]
+    private ?string $statut = 'PENDING_VALIDATION';
+
+    /** Modules activés/désactivés par la mairie depuis l'interface admin */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $moduleSubventionActif = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $moduleMaterielActif = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $moduleSalleActif = false;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    /**
-     * @var Collection<int, User>
-     */
+    /** Date de validation par la mairie — null tant que PENDING_VALIDATION */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $valideAt = null;
+
+    /** @var Collection<int, User> */
     #[ORM\OneToMany(targetEntity: User::class, mappedBy: 'association')]
     private Collection $users;
 
+    /**
+     * @var Collection<int, DocumentJustificatif>
+     */
+    #[ORM\OneToMany(targetEntity: DocumentJustificatif::class, mappedBy: 'association')]
+    private Collection $documentJustificatifs;
+
     public function __construct()
     {
-        $this->createdAt = new \DateTimeImmutable();
-        $this->statut = 'PENDING_VALIDATION';
-        $this->users = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->createdAt             = new \DateTimeImmutable();
+        $this->statut                = 'PENDING_VALIDATION';
+        $this->moduleSubventionActif = false;
+        $this->moduleMaterielActif   = false;
+        $this->moduleSalleActif      = false;
+        $this->users                 = new ArrayCollection();
+        $this->documentJustificatifs = new ArrayCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getNom(): ?string
-    {
-        return $this->nom;
-    }
+    public function getNom(): ?string { return $this->nom; }
+    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
 
-    public function setNom(string $nom): static
-    {
-        $this->nom = $nom;
+    public function getNombreMembres(): ?int { return $this->nombreMembres; }
+    public function setNombreMembres(?int $v): static { $this->nombreMembres = $v; return $this; }
 
-        return $this;
-    }
+    public function getStatut(): ?string { return $this->statut; }
+    public function setStatut(string $statut): static { $this->statut = $statut; return $this; }
 
-    public function getNumeroRna(): ?string
-    {
-        return $this->numeroRna;
-    }
+    public function isModuleSubventionActif(): bool { return $this->moduleSubventionActif; }
+    public function setModuleSubventionActif(bool $v): static { $this->moduleSubventionActif = $v; return $this; }
 
-    public function setNumeroRna(string $numeroRna): static
-    {
-        $this->numeroRna = $numeroRna;
+    public function isModuleMaterielActif(): bool { return $this->moduleMaterielActif; }
+    public function setModuleMaterielActif(bool $v): static { $this->moduleMaterielActif = $v; return $this; }
 
-        return $this;
-    }
+    public function isModuleSalleActif(): bool { return $this->moduleSalleActif; }
+    public function setModuleSalleActif(bool $v): static { $this->moduleSalleActif = $v; return $this; }
 
-    public function getNumeroSiret(): ?string
-    {
-        return $this->numeroSiret;
-    }
+    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
+    public function setCreatedAt(\DateTimeImmutable $v): static { $this->createdAt = $v; return $this; }
 
-    public function setNumeroSiret(string $numeroSiret): static
-    {
-        $this->numeroSiret = $numeroSiret;
+    public function getValideAt(): ?\DateTimeImmutable { return $this->valideAt; }
+    public function setValideAt(?\DateTimeImmutable $v): static { $this->valideAt = $v; return $this; }
 
-        return $this;
-    }
-
-    public function getDateCreation(): ?\DateTimeImmutable
-    {
-        return $this->dateCreation;
-    }
-
-    public function setDateCreation(\DateTimeImmutable $dateCreation): static
-    {
-        $this->dateCreation = $dateCreation;
-
-        return $this;
-    }
-
-    public function getNombreMembres(): ?int
-    {
-        return $this->nombreMembres;
-    }
-
-    public function setNombreMembres(int $nombreMembres): static
-    {
-        $this->nombreMembres = $nombreMembres;
-
-        return $this;
-    }
-
-    public function getCategorieActivite(): ?string
-    {
-        return $this->categorieActivite;
-    }
-
-    public function setCategorieActivite(string $categorieActivite): static
-    {
-        $this->categorieActivite = $categorieActivite;
-
-        return $this;
-    }
-
-    public function getObjet(): ?string
-    {
-        return $this->objet;
-    }
-
-    public function setObjet(string $objet): static
-    {
-        $this->objet = $objet;
-
-        return $this;
-    }
-
-    public function getAdresseSiegeSocial(): ?string
-    {
-        return $this->adresseSiegeSocial;
-    }
-
-    public function setAdresseSiegeSocial(string $adresseSiegeSocial): static
-    {
-        $this->adresseSiegeSocial = $adresseSiegeSocial;
-
-        return $this;
-    }
-
-    public function getSiteWeb(): ?string
-    {
-        return $this->siteWeb;
-    }
-
-    public function setSiteWeb(string $siteWeb): static
-    {
-        $this->siteWeb = $siteWeb;
-
-        return $this;
-    }
-
-    public function getStatut(): ?string
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(string $statut): static
-    {
-        $this->statut = $statut;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, User>
-     */
-    public function getUsers(): Collection
-    {
-        return $this->users;
-    }
+    public function getUsers(): Collection { return $this->users; }
 
     public function addUser(User $user): static
     {
@@ -213,16 +121,46 @@ class Association
             $this->users->add($user);
             $user->setAssociation($this);
         }
-
         return $this;
     }
 
     public function removeUser(User $user): static
     {
         if ($this->users->removeElement($user)) {
-            // set the owning side to null (unless already changed)
             if ($user->getAssociation() === $this) {
                 $user->setAssociation(null);
+            }
+        }
+        return $this;
+    }
+
+    public function isActive(): bool { return $this->statut === 'ACTIVE'; }
+    public function isPending(): bool { return $this->statut === 'PENDING_VALIDATION'; }
+
+    /**
+     * @return Collection<int, DocumentJustificatif>
+     */
+    public function getDocumentJustificatifs(): Collection
+    {
+        return $this->documentJustificatifs;
+    }
+
+    public function addDocumentJustificatif(DocumentJustificatif $documentJustificatif): static
+    {
+        if (!$this->documentJustificatifs->contains($documentJustificatif)) {
+            $this->documentJustificatifs->add($documentJustificatif);
+            $documentJustificatif->setAssociation($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDocumentJustificatif(DocumentJustificatif $documentJustificatif): static
+    {
+        if ($this->documentJustificatifs->removeElement($documentJustificatif)) {
+            // set the owning side to null (unless already changed)
+            if ($documentJustificatif->getAssociation() === $this) {
+                $documentJustificatif->setAssociation(null);
             }
         }
 
