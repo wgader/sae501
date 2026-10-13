@@ -51,7 +51,6 @@ export default function Home() {
       <section className="home-content" aria-labelledby="home-title">
         <p className="home-welcome">Accueil</p>
         <h1 id="home-title">Bienvenue</h1>
-
         <div className="home-actions">
           <Link href="/subvention">Demande de subvention</Link>
           <Link href="/salle">Demande de salle</Link>
