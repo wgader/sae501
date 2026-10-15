@@ -17,7 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 final class AssociationAdministrationController extends AbstractController
 {
-    private const STATUSES = ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED'];
+    private const STATUSES = ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED'];
     private const MODULES = ['subventions', 'materiel', 'salles'];
 
     public function __construct(
@@ -64,12 +64,24 @@ final class AssociationAdministrationController extends AbstractController
         if (!is_string($status) || !in_array($status, self::STATUSES, true)) {
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        $previousStatus = $association->getStatut();
-        $normalizedPermissions = self::MODULES;
 
-        $this->entityManager->wrapInTransaction(function () use ($association, $status, $normalizedPermissions): void {
+        $permissions = $payload['permissions'] ?? [];
+        if (!is_array($permissions)) {
+            return $this->json(['message' => 'Les permissions doivent être un tableau.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $invalidModules = array_diff($permissions, self::MODULES);
+        if (!empty($invalidModules)) {
+            return $this->json(['message' => 'Un ou plusieurs modules sont invalides.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $previousStatus = $association->getStatut();
+
+        $this->entityManager->wrapInTransaction(function () use ($association, $status, $permissions): void {
             $association->setStatut($status);
-            $association->setPermissions($normalizedPermissions);
+            $association->setModuleSubventionActif(in_array('subventions', $permissions, true));
+            $association->setModuleMaterielActif(in_array('materiel', $permissions, true));
+            $association->setModuleSalleActif(in_array('salles', $permissions, true));
             $this->entityManager->flush();
         });
 
@@ -85,12 +97,22 @@ final class AssociationAdministrationController extends AbstractController
      */
     private static function serializeAssociation(Association $association): array
     {
+        $permissions = [];
+        if ($association->isModuleSubventionActif()) {
+            $permissions[] = 'subventions';
+        }
+        if ($association->isModuleMaterielActif()) {
+            $permissions[] = 'materiel';
+        }
+        if ($association->isModuleSalleActif()) {
+            $permissions[] = 'salles';
+        }
+
         return [
             'id' => $association->getId(),
             'nom' => $association->getNom(),
-            'numeroRna' => $association->getNumeroRna(),
             'statut' => $association->getStatut(),
-            'permissions' => $association->getPermissions() ?? [],
+            'permissions' => $permissions,
             'createdAt' => $association->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ];
     }

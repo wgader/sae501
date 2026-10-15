@@ -75,6 +75,16 @@ services:
         condition: service_healthy
     networks:
       - app_network
+  
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: sae_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"   # UI web
+      - "1025:1025"   # SMTP 
+    networks:
+      - app_network 
 
 networks:
   app_network:

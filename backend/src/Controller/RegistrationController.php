@@ -83,7 +83,7 @@ class RegistrationController extends AbstractController
         // ── Vérification des champs obligatoires ──────────────────────────────
         $required = ['nomAssociation', 'nom', 'prenom', 'email', 'cguAccepted'];
         foreach ($required as $field) {
-            if (empty($data[$field]) && $data[$field] !== false) {
+            if (!array_key_exists($field, $data) || ($data[$field] === '' || $data[$field] === null)) {
                 return $this->json(
                     ['errors' => [$field => 'Ce champ est obligatoire.']],
                     Response::HTTP_BAD_REQUEST
@@ -155,10 +155,10 @@ class RegistrationController extends AbstractController
             ->subject('Votre demande d\'inscription a bien été reçue')
             ->htmlTemplate('emails/registration_confirmation.html.twig')
             ->context([
-                'prenom'         => $user->getPrenom(),
-                'nom'            => $user->getNom(),
+                'prenom' => $user->getPrenom(),
+                'nom' => $user->getNom(),
                 'nomAssociation' => $association->getNom(),
-                'emailContact'          => $user->getEmail(),
+                'emailContact' => $user->getEmail(),
             ]);
 
         $mailer->send($email);

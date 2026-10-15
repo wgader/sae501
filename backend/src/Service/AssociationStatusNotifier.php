@@ -3,53 +3,126 @@
 namespace App\Service;
 
 use App\Entity\Association;
+use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Address;
 
+/**
+ * Envoie les emails de notification lors d'un changement de statut d'une association.
+ *
+ * Statuts gérés :
+ *   VALIDATED → génère un token d'activation (72h) + envoie l'email avec le lien
+ *   REFUSED   → envoie un email de refus (pas de token)
+ *
+ * Les autres statuts (PENDING_VALIDATION, SUSPENDED) sont ignorés.
+ */
 final class AssociationStatusNotifier
 {
-    public function __construct(private readonly MailerInterface $mailer)
-    {
+    public function __construct(
+        private readonly MailerInterface $mailer,
+        private readonly EntityManagerInterface $entityManager,
+        #[Autowire(env: 'MAILER_FROM')] private readonly string $mailerFrom,
+        #[Autowire(env: 'FRONTEND_URL')] private readonly string $frontendUrl,
+    ) {
     }
 
+    /**
+     * Point d'entrée principal — appelé par AssociationAdministrationController
+     * après chaque changement de statut.
+     */
     public function notify(Association $association, string $status): void
     {
         if (!in_array($status, ['VALIDATED', 'REFUSED'], true)) {
             return;
         }
 
+        // Construit la liste des modules accordés à l'association
+        $modules = self::buildModulesList($association);
+
+        // Envoie un email à chaque utilisateur rattaché à l'association
         foreach ($association->getUsers() as $user) {
-            $emailAddress = $user->getEmail();
-            if ($emailAddress === null) {
+            if ($user->getEmail() === null) {
                 continue;
             }
 
-            $name = htmlspecialchars((string) $user->getPrenom(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $associationName = htmlspecialchars((string) $association->getNom(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-
             if ($status === 'VALIDATED') {
-                $subject = 'Votre inscription a été validée — SAE501';
-                $html = sprintf(
-                    '<h2>Félicitations %s,</h2><p>Le compte de votre association <strong>%s</strong> a été validé par la mairie.</p><p>Vous pouvez dès à présent vous connecter pour accéder à vos services.</p>',
-                    $name,
-                    $associationName,
-                );
+                $this->sendValidatedEmail($association, $user, $modules);
             } else {
-                $subject = 'Votre inscription a été refusée — SAE501';
-                $html = sprintf(
-                    '<h2>Bonjour %s,</h2><p>Nous sommes au regret de vous informer que le compte de votre association <strong>%s</strong> a été refusé par la mairie.</p><p>Pour plus d’informations, vous pouvez contacter nos services.</p>',
-                    $name,
-                    $associationName,
-                );
+                $this->sendRefusedEmail($association, $user);
             }
-
-            $this->mailer->send(
-                (new Email())
-                    ->from($_ENV['MAILER_FROM'] ?? 'noreply@sae501.fr')
-                    ->to($emailAddress)
-                    ->subject($subject)
-                    ->html($html),
-            );
         }
+    }
+
+    /**
+     * Génère un token d'activation sécurisé (72h), le persiste,
+     * puis envoie l'email de validation avec le lien d'activation.
+     *
+     * @param string[] $modules Liste des modules accordés (ex: ['Subventions', 'Matériel'])
+     */
+    private function sendValidatedEmail(Association $association, User $user, array $modules): void
+    {
+        // Token cryptographiquement sûr — 64 caractères hexadécimaux
+        $token = bin2hex(random_bytes(32));
+        $user->setActivationToken($token);
+        $user->setActivationTokenExpiresAt(new \DateTimeImmutable('+72 hours'));
+        $this->entityManager->flush();
+
+        $this->mailer->send(
+            (new TemplatedEmail())
+                ->from(new Address($this->mailerFrom, 'Mairie de Feytiat'))
+                ->to((string) $user->getEmail())
+                ->subject('Votre inscription a été validée — Mairie de Feytiat')
+                ->htmlTemplate('emails/association_validated.html.twig')
+                ->context([
+                    'prenom'         => $user->getPrenom(),
+                    'nom'            => $user->getNom(),
+                    'nomAssociation' => $association->getNom(),
+                    'modules'        => $modules,
+                    'activationUrl'  => $this->frontendUrl . '/activer-compte?token=' . $token . '&ref=' . base64_encode((string) $user->getEmail()),
+                ]),
+        );
+    }
+
+    /**
+     * Envoie l'email de refus — pas de token, pas de lien d'activation.
+     */
+    private function sendRefusedEmail(Association $association, User $user): void
+    {
+        $this->mailer->send(
+            (new TemplatedEmail())
+                ->from(new Address($this->mailerFrom, 'Mairie de Feytiat'))
+                ->to((string) $user->getEmail())
+                ->subject('Votre inscription a été refusée — Mairie de Feytiat')
+                ->htmlTemplate('emails/association_refused.html.twig')
+                ->context([
+                    'prenom'         => $user->getPrenom(),
+                    'nom'            => $user->getNom(),
+                    'nomAssociation' => $association->getNom(),
+                ]),
+        );
+    }
+
+    /**
+     * Retourne la liste lisible des modules actifs de l'association.
+     * Utilisé dans les templates email.
+     *
+     * @return string[]
+     */
+    public static function buildModulesList(Association $association): array
+    {
+        $modules = [];
+        if ($association->isModuleSubventionActif()) {
+            $modules[] = 'Subventions';
+        }
+        if ($association->isModuleMaterielActif()) {
+            $modules[] = 'Matériel';
+        }
+        if ($association->isModuleSalleActif()) {
+            $modules[] = 'Réservation de salles';
+        }
+        return $modules;
     }
 }

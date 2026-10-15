@@ -58,15 +58,14 @@ class Association
     #[Assert\Choice(choices: self::STATUTS)]
     private string $statut = 'PENDING_VALIDATION';
 
-    /** Modules activés/désactivés par la mairie depuis l'interface admin */
-    #[ORM\Column(options: ['default' => false])]
-    private bool $moduleSubventionActif = false;
+    #[ORM\Column(options: ['default' => true])]
+    private bool $moduleSubventionActif = true;
 
-    #[ORM\Column(options: ['default' => false])]
-    private bool $moduleMaterielActif = false;
+    #[ORM\Column(options: ['default' => true])]
+    private bool $moduleMaterielActif = true;
 
-    #[ORM\Column(options: ['default' => false])]
-    private bool $moduleSalleActif = false;
+    #[ORM\Column(options: ['default' => true])]
+    private bool $moduleSalleActif = true;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -87,9 +86,9 @@ class Association
     {
         $this->createdAt             = new \DateTimeImmutable();
         $this->statut                = 'PENDING_VALIDATION';
-        $this->moduleSubventionActif = false;
-        $this->moduleMaterielActif   = false;
-        $this->moduleSalleActif      = false;
+        $this->moduleSubventionActif = true;
+        $this->moduleMaterielActif   = true;
+        $this->moduleSalleActif      = true;
         $this->users                 = new ArrayCollection();
         $this->documentJustificatifs = new ArrayCollection();
     }
