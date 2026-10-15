@@ -12,10 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use OpenApi\Attributes as OA;
 
-#[OA\Tag(name: 'Administration')]
-#[OA\SecurityScheme(securityScheme: 'bearerAuth', type: 'http', scheme: 'bearer', bearerFormat: 'JWT')]
+
 #[Route('/api/admin/associations')]
 #[IsGranted('ROLE_ADMIN')]
 final class AssociationAdministrationController extends AbstractController
@@ -30,21 +28,6 @@ final class AssociationAdministrationController extends AbstractController
     ) {
     }
 
-    #[OA\Get(
-        path: '/api/admin/associations',
-        summary: 'Liste paginée des associations',
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
-            new OA\Parameter(name: 'itemsPerPage', in: 'query', schema: new OA\Schema(type: 'integer', default: 10)),
-            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string', enum: ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED'])),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Liste des associations'),
-            new OA\Response(response: 400, description: 'Statut invalide'),
-            new OA\Response(response: 403, description: 'Accès refusé'),
-        ]
-    )]
     #[Route('', name: 'admin_associations_list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
@@ -58,7 +41,7 @@ final class AssociationAdministrationController extends AbstractController
 
         $totalItems = $this->associationRepository->countForAdministration($status);
         $items = array_map(
-            static fn(Association $association): array => self::serializeAssociation($association),
+            static fn (Association $association): array => self::serializeAssociation($association),
             $this->associationRepository->findForAdministration($status, $page, $itemsPerPage),
         );
 
@@ -70,27 +53,6 @@ final class AssociationAdministrationController extends AbstractController
         ]);
     }
 
-    #[OA\Patch(
-        path: '/api/admin/associations/{id}/status',
-        summary: 'Modifier le statut et les permissions d\'une association',
-        security: [['bearerAuth' => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(properties: [
-                new OA\Property(property: 'status', type: 'string', enum: ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED']),
-                new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string', enum: ['subventions', 'materiel', 'salles'])),
-            ])
-        ),
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Association mise à jour'),
-            new OA\Response(response: 400, description: 'Payload invalide'),
-            new OA\Response(response: 403, description: 'Accès refusé'),
-            new OA\Response(response: 422, description: 'Statut ou module invalide'),
-        ]
-    )]
     #[Route('/{id}/status', name: 'admin_association_status', methods: ['PATCH'])]
     public function updateStatus(Association $association, Request $request): JsonResponse
     {

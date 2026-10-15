@@ -16,7 +16,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use OpenApi\Attributes as OA;
 
 /**
  * Gère l'inscription des associations sur la plateforme.
@@ -28,7 +27,6 @@ use OpenApi\Attributes as OA;
  *   4. La mairie valide → envoie le lien d'activation (ActivationController)
  *   5. L'asso clique le lien → définit son mot de passe → auto-login
  */
-#[OA\Tag(name: 'Authentification')]
 #[Route('/api/auth')]
 class RegistrationController extends AbstractController
 {
@@ -52,28 +50,6 @@ class RegistrationController extends AbstractController
      *   422 → erreur de validation Symfony
      *   429 → trop de tentatives (rate limiting)
      */
-    #[OA\Post(
-        path: '/api/auth/register/association',
-        summary: 'Inscription d\'une association',
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(properties: [
-                new OA\Property(property: 'nomAssociation', type: 'string', example: 'Foot Club Nord'),
-                new OA\Property(property: 'nom', type: 'string', example: 'Dupont'),
-                new OA\Property(property: 'prenom', type: 'string', example: 'Jean'),
-                new OA\Property(property: 'email', type: 'string', format: 'email', example: 'jean@example.fr'),
-                new OA\Property(property: 'telephone', type: 'string', example: '0612345678'),
-                new OA\Property(property: 'cguAccepted', type: 'boolean', example: true),
-            ])
-        ),
-        responses: [
-            new OA\Response(response: 201, description: 'Demande soumise, email envoyé'),
-            new OA\Response(response: 400, description: 'Champ manquant ou CGU non acceptées'),
-            new OA\Response(response: 409, description: 'Email déjà utilisé'),
-            new OA\Response(response: 422, description: 'Erreur de validation'),
-            new OA\Response(response: 429, description: 'Trop de tentatives'),
-        ]
-    )]
     #[Route('/register/association', name: 'api_register_association', methods: ['POST'])]
     public function registerAssociation(
         Request $request,
