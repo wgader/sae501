@@ -18,6 +18,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use OpenApi\Attributes as OA;
+
 
 /**
  * Gère l'activation de compte et le renvoi du lien d'activation.
@@ -26,6 +28,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  *   POST /api/auth/activate          → définit le mot de passe + auto-login
  *   POST /api/auth/resend-activation → renvoie un email d'activation
  */
+#[OA\Tag(name: 'Authentification')]
 #[Route('/api/auth')]
 final class AccountActivationController extends AbstractController
 {
