@@ -14,7 +14,7 @@ export default function Stepper({ currentStep = 1 }: { currentStep?: number }) {
           Inscrire mon association
         </h1>
         <p className="text-xs text-[#6d746e] sm:text-sm">
-          Complétez votre dossier en 4 étapes — la mairie validera votre inscription sous 48h ouvrées ⚙️
+          Tous les champs suivis d’un astérisque (*) sont obligatoires.
         </p>
       </div>
       

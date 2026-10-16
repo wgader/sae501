@@ -3,10 +3,14 @@
 import { type FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import FormField from '../../components/ui/FormField';
+import Button from '@/components/ui/Button';
+import ButtonView from '@/components/ui/ButtonView';
+import BackButton from '@/components/ui/BackButton';
 
 export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -19,14 +23,14 @@ export default function LoginPage() {
       return;
     }
 
-    setSubmitError(' ');
+    setSubmitError('');
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-         },
+        },
         body: JSON.stringify({ email: identifier, password }),
       });
 
@@ -38,6 +42,7 @@ export default function LoginPage() {
 
       if (data.token) {
         localStorage.setItem('token', data.token);
+        window.dispatchEvent(new Event('auth-change'));
       }
       
       router.push('/'); 
@@ -52,12 +57,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f8f4] px-6 py-10 text-[#1e2420] sm:px-10 sm:py-14">
+    <main className="min-h-screen bg-[var(--paper)] px-6 py-10 text-[var(--ink)] sm:px-10 sm:py-14">
       <section className="mx-auto w-full max-w-lg">
         <header className="mb-10">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-[#496a56]">
-            Bon retour
-          </p>
+          <BackButton className='text-[var(--ink)]' />
           <h1 className="text-3xl font-black uppercase tracking-[-0.055em] sm:text-[40px]">
             Se connecter
           </h1>
@@ -65,7 +68,7 @@ export default function LoginPage() {
         
         <form className="flex flex-col gap-7" noValidate onSubmit={handleSubmit}>
           <FormField
-            label="Adresse électronique ou téléphone"
+            label="Votre adresse électronique "
             type="text"
             name="identifier"
             placeholder="exemple : monadresse@domaine.fr"
@@ -75,37 +78,53 @@ export default function LoginPage() {
           
           <FormField
             label="Votre mot de passe"
-            type="password"
+            type={showPassword ? 'text' : 'password'} 
             name="password"
             autoComplete="current-password"
+            placeholder="●●●●●●●"
             value={password}
             onChange={(event) => {
               setPassword(event.target.value);
               setSubmitError('');
             }}
             required
-          />
+          >
+          <ButtonView
+                type="button"
+                variant={showPassword ? 'selected' : 'unselected'}
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                className="absolute right-[18px] top-1/2 flex -translate-y-1/2 items-center justify-center text-[#111111]/70 hover:text-[#111111]"
+              >
+                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3.5" />
+                  {showPassword ? <path d="M3 3L21 21" strokeLinecap="round" /> : null}
+                </svg>
+              </ButtonView>
+          </FormField>
           
           {submitError && (
-            <p className="-mt-3 border-l-2 border-[#b54b4b] pl-3 text-xs leading-5 text-[#b54b4b]" role="alert">
+            <p className="-mt-3 border-l-2 border-[var(--Flush-Mahogany)] pl-3 text-xs leading-5 text-[var(--Flush-Mahogany)]" role="alert">
               {submitError}
             </p>
           )}
-          
-          <button
-            className="w-full bg-[#1e2420] px-5 py-4 text-xs font-bold uppercase tracking-[0.15em] text-white transition hover:bg-[#496a56] focus:outline-none focus:ring-4 focus:ring-[#496a56]/20"
+          <a className="text-end text-xs font-bold text-[var(--ink)] underline underline-offset-2" href="/signup">
+            Pas encore de compte ? 
+          </a>
+          <a className="mb-6 text-end text-xs font-bold text-[var(--ink)] underline underline-offset-2" href="/signup">
+            Mot de passe oublié ?
+          </a>
+        
+          <Button variant="primary"
+           
             type="submit"
           >
-            Connexion
-          </button>
+            se connecter
+          </Button>
         </form>
         
-        <p className="mt-6 text-center text-xs text-[#1e2420]">
-          Vous n&apos;avez pas encore de compte ?{' '}
-          <a className="font-bold text-[#496a56] underline underline-offset-2" href="/signup/step1">
-            Sinscrire
-          </a>
-        </p>
+        
       </section>
     </main>
   );

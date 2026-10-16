@@ -2,15 +2,32 @@
 
 @theme {
     --font-sans: var(--font-lato), sans-serif;
+    --color-Primary: var(--Mosaic-Tile);
+    --color-Neutral: var(--White);
+    --color-Indigo: var(--Indigo-Bloom);
+    --color-Error: var(--Flush-Mahogany);
 }
 
 :root {
-    --ink: #1e2420;
-    --muted: #6d746e;
-    --line: #d9ded9;
-    --sage: #dfe9df;
-    --moss: #496a56;
-    --paper: #f7f8f4;
+    /* Base palette from the Figma design */
+    --ink: #1E2420;
+    --muted: #6D746E;
+    --line: #D9DED9;
+    --sage: #DFE9DF;
+    --moss: #496A56;
+    --paper: #F7F8F4;
+
+    /* Primary Colors */
+    --Mosaic-Tile: #146E67;
+    --Lime-Cream: #D8EC95;
+    --Indigo-Bloom: #6C3EB5;
+    --Misty-Rose: #FFE3E7;
+    --Flush-Mahogany: #CD2429;
+
+    /* Neutral Colors */
+    --White: #FFFFFF;
+    --Black: #000000;
+    --Grey: #D9D9D9;
 }
 
 * {
@@ -439,6 +456,7 @@ body {
     display: block;
     width: 112px;
     height: 48px;
+    flex: none;
     object-fit: contain;
     object-position: left center;
 }
@@ -1687,11 +1705,6 @@ body {
         padding: 9px 18px;
     }
 
-    .home-logo {
-        width: 92px;
-        height: 40px;
-    }
-
     .home-auth,
     .home-account {
         gap: 10px;
@@ -2407,7 +2420,7 @@ body {
 }
 
 a {
-    color: inherit;
+    /* color: inherit; */
     font-weight: 700;
 }
 

@@ -12,15 +12,21 @@ export default function ValidatedInput({
   isValid, 
   children,
   className = '', 
+  id,
+  name,
   ...props 
 }: ValidatedInputProps) {
+  const inputId = id ?? name;
+
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-xs font-bold text-[#1e2420]">{label}</label>
-      <div className="relative">
+    <div className="flex w-full max-w-[616px] flex-col gap-[18px]">
+      <label htmlFor={inputId} className="text-[15px] font-bold uppercase tracking-[3px] text-black">{label}</label>
+      <div className="relative flex h-[64px] w-full items-center border-2 border-transparent bg-[#d9d9d9] px-4 py-3 transition-all duration-200 focus-within:border-black">
         <input
           {...props}
-          className={`w-full rounded-md border border-[#d9ded9] bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d] sm:px-4 sm:py-3 ${className}`}
+          id={inputId}
+          name={name}
+          className={`w-full bg-transparent text-[15px] font-normal tracking-[0.5px] text-black placeholder:text-black/70 outline-none ${isValid ? 'pr-10' : ''} ${className}`}
         />
         {isValid && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4CAF50]">

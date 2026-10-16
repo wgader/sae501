@@ -29,28 +29,28 @@ interface Room {
 export const getMockReservations = (date: Date, filter: string, rooms: Room[]) => {
   const seed = date.getDate() + date.getMonth();
   const numRes = seed % 4;
-  
-  let dayRooms = [];
+
+  let dayRooms: Room[] = [];
   for (let i = 0; i < numRes; i++) {
-    dayRooms.push(rooms[(seed + i) % rooms.length]);
+    const room = rooms[(seed + i) % rooms.length];
+    if (room) dayRooms.push(room);
   }
-  
+
   if (filter !== 'Toutes les salles') {
-    dayRooms = dayRooms.filter(r => r.name === filter);
+    dayRooms = dayRooms.filter((room) => room.name === filter);
   }
-  
-  const uniqueRooms = [];
-  const map = new Map();
+
+  const uniqueRooms: Room[] = [];
+  const map = new Map<string, boolean>();
   for (const item of dayRooms) {
-    if(!map.has(item.name)){
-        map.set(item.name, true);
-        uniqueRooms.push(item);
+    if (!map.has(item.name)) {
+      map.set(item.name, true);
+      uniqueRooms.push(item);
     }
   }
-  
+
   return uniqueRooms;
 };
-
 
 interface RoomCalendarProps {
   rooms: Room[];
