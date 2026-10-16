@@ -159,11 +159,7 @@ export default function AdminSignupPage() {
           
           <div>
             <Button type="submit">
-<<<<<<< HEAD
-              S&apos;INSCRIRE
-=======
               S'INSCRIRE
->>>>>>> faeture/us2-1-login
             </Button>
           </div>
 

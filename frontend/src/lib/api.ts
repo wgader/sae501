@@ -19,6 +19,20 @@ export type AssociationPage = {
   totalItems: number;
 };
 
+export type Salle = {
+  id: number;
+  nom: string;
+  description: string | null;
+  adresse: string;
+  capaciteMax: number;
+  accesPmr: boolean;
+  equipementsInclus: string[];
+  createdAt: string | null;
+  updatedAt: string | null;
+  isActive: boolean;
+  deletedAt: string | null;
+};
+
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -81,5 +95,34 @@ export function updateAssociationStatus(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
+  });
+}
+
+export type CreateSalleInput = {
+  nom: string;
+  adresse: string;
+  description?: string;
+  capaciteMax: number;
+  accesPmr: boolean;
+  equipementsInclus: string[];
+};
+
+export function createSalle(input: CreateSalleInput): Promise<Salle> {
+  return request<Salle>('/api/admin/salles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export function getSalles(): Promise<Salle[]> {
+  return request<Salle[]>('/api/admin/salles');
+}
+
+export function updateSalle(id: number, input: Partial<CreateSalleInput>): Promise<Salle> {
+  return request<Salle>(`/api/admin/salles/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
   });
 }
