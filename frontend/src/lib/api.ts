@@ -126,3 +126,17 @@ export function updateSalle(id: number, input: Partial<CreateSalleInput>): Promi
     body: JSON.stringify(input),
   });
 }
+
+export function updateSalleStatus(id: number, isActive: boolean): Promise<Salle> {
+  return request<Salle>(`/api/admin/salles/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isActive }),
+  });
+}
+
+export function archiveSalle(id: number): Promise<Salle> {
+  return request<Salle>(`/api/admin/salles/${id}`, {
+    method: 'DELETE',
+  });
+}

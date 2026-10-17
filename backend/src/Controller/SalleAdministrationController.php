@@ -23,10 +23,7 @@ final class SalleAdministrationController extends AbstractController
     #[Route('', name: 'admin_salle_list', methods: ['GET'])]
     public function list(): JsonResponse
     {
-        $salles = $this->entityManager->getRepository(Salle::class)->findBy(
-            ['deletedAt' => null],
-            ['id' => 'DESC'],
-        );
+        $salles = $this->entityManager->getRepository(Salle::class)->findBy([], ['id' => 'DESC']);
 
         return $this->json(array_map(
             static fn (Salle $salle): array => self::serializeSalle($salle),
@@ -172,6 +169,43 @@ final class SalleAdministrationController extends AbstractController
             $salle->setEquipementsInclus($payload['equipementsInclus']);
         }
 
+        $salle->setUpdatedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+
+        return $this->json(self::serializeSalle($salle));
+    }
+
+    #[Route('/{id}/status', name: 'admin_salle_status', methods: ['PATCH'])]
+    public function updateStatus(Salle $salle, Request $request): JsonResponse
+    {
+        $payload = json_decode($request->getContent(), true);
+
+        if (!is_array($payload) || !is_bool($payload['isActive'] ?? null)) {
+            return $this->json(
+                ['errors' => ['isActive' => 'Le champ isActive doit être un booléen.']],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        $salle->setIsActive($payload['isActive']);
+        $salle->setUpdatedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+
+        return $this->json(self::serializeSalle($salle));
+    }
+
+    #[Route('/{id}', name: 'admin_salle_archive', methods: ['DELETE'])]
+    public function archive(Salle $salle): JsonResponse
+    {
+        if ($salle->getDeletedAt() !== null) {
+            return $this->json(
+                ['message' => 'Cette salle est déjà archivée.'],
+                Response::HTTP_CONFLICT,
+            );
+        }
+
+        $salle->setDeletedAt(new \DateTimeImmutable());
+        $salle->setIsActive(false);
         $salle->setUpdatedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSalles, type Salle, updateSalle } from '@/lib/api';
+import { archiveSalle, getSalles, type Salle, updateSalle, updateSalleStatus } from '@/lib/api';
 
 const EQUIPMENT_OPTIONS = [
   { value: 'CUISINE', label: 'Cuisine' },
@@ -60,6 +60,34 @@ export default function SallesList() {
     }
   }
 
+  async function toggleStatus(salle: Salle) {
+    setError('');
+    setMessage('');
+    try {
+      const updated = await updateSalleStatus(salle.id, !salle.isActive);
+      setSalles((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setMessage(updated.isActive ? 'La salle est de nouveau disponible.' : 'La salle a été rendu indisponible.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de modifier le statut de la salle.');
+    }
+  }
+
+  async function archive(salle: Salle) {
+    if (!window.confirm(`Archiver la salle « ${salle.nom} » ?`)) {
+      return;
+    }
+
+    setError('');
+    setMessage('');
+    try {
+      const updated = await archiveSalle(salle.id);
+      setSalles((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setMessage('La salle a été archivée et bloquée pour les réservations.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible d’archiver la salle.');
+    }
+  }
+
   return (
     <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="mb-5 text-lg font-semibold text-slate-900">Salles du catalogue</h2>
@@ -112,8 +140,23 @@ export default function SallesList() {
                     <h3 className="font-semibold text-slate-900">{salle.nom}</h3>
                     <p className="text-sm text-slate-600">{salle.adresse} · {salle.capaciteMax} places</p>
                     <p className="text-xs text-slate-500">{salle.equipementsInclus.join(', ') || 'Aucun équipement indiqué'}</p>
+                    {salle.deletedAt && <p className="mt-1 text-xs font-semibold text-red-700">Archivée</p>}
                   </div>
-                  <button type="button" onClick={() => startEditing(salle)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                  <div className="flex gap-2">
+                    {!salle.deletedAt && (
+                      <>
+                        <button type="button" onClick={() => startEditing(salle)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Modifier</button>
+                        <button
+                          type="button"
+                          onClick={() => void toggleStatus(salle)}
+                          className={`rounded-lg px-3 py-2 text-sm font-semibold ${salle.isActive ? 'border border-amber-300 text-amber-700 hover:bg-amber-50' : 'bg-emerald-700 text-white hover:bg-emerald-800'}`}
+                        >
+                          {salle.isActive ? 'Indisponible' : 'Disponible'}
+                        </button>
+                        <button type="button" onClick={() => void archive(salle)} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">Archiver</button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
