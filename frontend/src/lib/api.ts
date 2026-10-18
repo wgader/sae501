@@ -3,13 +3,26 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED';
 export type AssociationModule = 'subventions' | 'materiel' | 'salles';
 
+export type AssociationContact = {
+  nomComplet: string;
+  email: string;
+  telephone: string;
+};
+
 export type Association = {
   id: number;
   nom: string;
   numeroRna: string;
+  numeroSiret?: string;
   statut: AssociationStatus;
   permissions: AssociationModule[];
   createdAt: string | null;
+  adresseSiegeSocial?: string;
+  siteWeb?: string;
+  categorieActivite?: string;
+  objet?: string;
+  nombreMembres?: number;
+  contact?: AssociationContact | null;
 };
 
 export type AssociationPage = {
@@ -66,9 +79,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
-export function getAssociations(page: number, status: AssociationStatus | ''): Promise<AssociationPage> {
+export function getAssociations(
+  page: number,
+  status: AssociationStatus | '',
+  search = '',
+): Promise<AssociationPage> {
   const params = new URLSearchParams({ page: String(page), itemsPerPage: '10' });
   if (status) params.set('status', status);
+  if (search.trim()) params.set('search', search.trim());
 
   return request<AssociationPage>(`/api/admin/associations?${params.toString()}`);
 }

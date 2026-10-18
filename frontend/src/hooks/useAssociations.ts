@@ -6,7 +6,7 @@ import {
   updateAssociationStatus,
 } from '@/lib/api';
 
-export function useAssociations(page: number, status: AssociationStatus | '') {
+export function useAssociations(page: number, status: AssociationStatus | '', search: string = '') {
   const [associations, setAssociations] = useState<Association[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ export function useAssociations(page: number, status: AssociationStatus | '') {
     setLoading(true);
     setError('');
     try {
-      const result = await getAssociations(page, status);
+      const result = await getAssociations(page, status, search);
       setAssociations(result.items);
       setTotalItems(result.totalItems);
     } catch (cause) {
@@ -25,7 +25,7 @@ export function useAssociations(page: number, status: AssociationStatus | '') {
     } finally {
       setLoading(false);
     }
-  }, [page, status]);
+  }, [page, status, search]);
 
   useEffect(() => {
     const request = window.setTimeout(() => void reload(), 0);
@@ -42,6 +42,8 @@ export function useAssociations(page: number, status: AssociationStatus | '') {
     try {
       const updated = await updateAssociationStatus(association.id, nextStatus);
       setAssociations((current) => current.map((item) => item.id === updated.id ? updated : item));
+      await reload();
+      return updated;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Impossible de modifier cette association.';
       setError(message);
@@ -49,7 +51,7 @@ export function useAssociations(page: number, status: AssociationStatus | '') {
     } finally {
       setUpdatingId(null);
     }
-  }, []);
+  }, [reload]);
 
   return { associations, totalItems, loading, error, updatingId, updateStatus, reload };
 }

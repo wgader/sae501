@@ -36,15 +36,22 @@ const moduleItems: NavItemData[] = [
 
 ];
 
+const moduleItemsAdmin: NavItemData[] = [
+  { root: "admin", name: "Accueil", icon: <IconAccueil className="h-6 w-6 shrink-0" /> },
+  { root: "admin/modules", name: "Gestion des modules", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
+  { root: "admin/agents", name: "Gestion des agents", icon: <IconSubvention className="h-6 w-6 shrink-0" /> },
+];
+
 interface LateralNavBarProps {
   className?: string;
 }
 
 export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
   const currentPage = usePathname();
-
+  const isAdmin =
+  currentPage === "/admin" || currentPage.startsWith("/admin/");
     // currentPage === "/profil" || currentPage.startsWith("/profil/");
-  const navItems =  moduleItems;
+  const navItems =isAdmin? (moduleItemsAdmin):(moduleItems);
 
   return (
     <nav

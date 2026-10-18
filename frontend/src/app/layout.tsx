@@ -5,6 +5,7 @@ import { Lato } from 'next/font/google';
 import './globals.css';
 import LateralNavBar from '@/components/layout/LateralNavBar';
 import { usePathname } from 'next/navigation';
+import Header from '@/components/layout/Header';
 
 const lato = Lato({
   subsets: ['latin'],

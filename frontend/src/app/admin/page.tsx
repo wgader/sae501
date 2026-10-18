@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
       if (data.token) {
         localStorage.setItem('admin_token', data.token);
       }
-      router.push('/admin/dashboard'); 
+      router.push('/admin/gestionnaire-inscription');
       
     } catch (err: unknown) {
       if (err instanceof Error) {

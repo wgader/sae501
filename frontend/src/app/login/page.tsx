@@ -94,7 +94,7 @@ export default function LoginPage() {
                 variant={showPassword ? 'selected' : 'unselected'}
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                className="absolute right-[18px] top-1/2 flex -translate-y-1/2 items-center justify-center text-[#111111]/70 hover:text-[#111111]"
+                className="relative start-[90%] translate-y-[150%] flex  text-[#111111]/70 hover:text-[#111111]"
               >
                 <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />

@@ -25,7 +25,7 @@ export default function Home() {
             aria-label="Compte"
             className="flex w-fit items-center gap-3 text-[11px] uppercase tracking-[0.5px] sm:gap-6 sm:text-sm"
           >
-            <Link
+            {/* <Link
               href="/profile"
               className="text-[var(--ink)] underline underline-offset-4 hover:text-[var(--Mosaic-Tile)]"
             >
@@ -37,7 +37,7 @@ export default function Home() {
               className="text-[var(--Mosaic-Tile)] underline underline-offset-4 hover:text-[var(--moss)]"
             >
               Déconnexion
-            </button>
+            </button> */}
           </nav>
         ) : (
           <nav
