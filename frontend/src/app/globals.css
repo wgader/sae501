@@ -9,6 +9,8 @@
 }
 
 :root {
+    --font-lato: 'Lato', Roboto, Helvetica, Arial, sans-serif;
+
     /* Base palette from the Figma design */
     --ink: #1E2420;
     --muted: #6D746E;
@@ -22,6 +24,8 @@
     --Lime-Cream: #D8EC95;
     --Indigo-Bloom: #6C3EB5;
     --Misty-Rose: #FFE3E7;
+    --Mint-Cream: #CFEDE5;
+    --Pale-Sage: #E3EFEA;
     --Flush-Mahogany: #CD2429;
 
     /* Neutral Colors */
@@ -36,6 +40,7 @@
 
 body {
     margin: 0;
+    font-family: var(--font-lato), sans-serif;
     background: var(--paper);
     color: var(--ink);
 }

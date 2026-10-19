@@ -49,4 +49,17 @@ class AssociationRepository extends ServiceEntityRepository
 
         return (int) $queryBuilder->getQuery()->getSingleScalarResult();
     }
+
+    /**
+     * @return array{pending: int, validated: int, refused: int, total: int}
+     */
+    public function getCountsForAdministration(): array
+    {
+        return [
+            'pending' => $this->countForAdministration('PENDING_VALIDATION'),
+            'validated' => $this->countForAdministration('VALIDATED'),
+            'refused' => $this->countForAdministration('REFUSED'),
+            'total' => $this->countForAdministration(null),
+        ];
+    }
 }

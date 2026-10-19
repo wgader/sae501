@@ -6,6 +6,7 @@ use App\Repository\UserRepository;
 use App\Service\AssociationStatusNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -34,6 +35,7 @@ final class AccountActivationController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly MailerInterface $mailer,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly LoggerInterface $logger,
         #[Autowire(env: 'MAILER_FROM')] private readonly string $mailerFrom,
         #[Autowire(env: 'FRONTEND_URL')] private readonly string $frontendUrl,
     ) {
@@ -49,6 +51,7 @@ final class AccountActivationController extends AbstractController
      *   200 → compte activé, JWT retourné (auto-login)
      *   400 → payload invalide
      *   401 → token invalide ou expiré
+     *   409 → compte déjà activé
      *   422 → mot de passe trop faible
      */
     #[Route('/activate', name: 'api_activate_account', methods: ['POST'])]
@@ -63,7 +66,7 @@ final class AccountActivationController extends AbstractController
             return $this->json(['message' => 'Corps de la requête invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $token = $data['token'] ?? null;
+        $token    = $data['token']    ?? null;
         $password = $data['password'] ?? null;
 
         if (!is_string($token) || !is_string($password) || $token === '' || $password === '') {
@@ -73,8 +76,20 @@ final class AccountActivationController extends AbstractController
         // ── Recherche du user par token ───────────────────────────────────────
         $user = $this->userRepository->findOneBy(['activationToken' => $token]);
 
+        // ── Compte déjà activé : cas distinct pour un message clair ───────────
+        if ($user !== null && $user->isVerified()) {
+            return $this->json(
+                ['message' => 'Ce compte est déjà activé. Connectez-vous directement.'],
+                Response::HTTP_CONFLICT
+            );
+        }
+
         // Token inconnu ou expiré → même message (anti-énumération)
-        if ($user === null || $user->getActivationTokenExpiresAt() < new \DateTimeImmutable()) {
+        if (
+            $user === null
+            || $user->getActivationTokenExpiresAt() === null
+            || $user->getActivationTokenExpiresAt() < new \DateTimeImmutable()
+        ) {
             return $this->json(
                 ['message' => 'Ce lien d\'activation est invalide ou a expiré.'],
                 Response::HTTP_UNAUTHORIZED
@@ -82,7 +97,6 @@ final class AccountActivationController extends AbstractController
         }
 
         // ── Validation du mot de passe ────────────────────────────────────────
-        // Minimum 8 caractères, au moins une majuscule, une minuscule, un chiffre
         $violations = $validator->validate($password, [
             new Assert\NotBlank(),
             new Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.'),
@@ -111,32 +125,42 @@ final class AccountActivationController extends AbstractController
         // ── Activation du compte ──────────────────────────────────────────────
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
         $user->setIsVerified(true);
-        // Invalide le token — ne peut plus être réutilisé
         $user->setActivationToken(null);
         $user->setActivationTokenExpiresAt(null);
 
         $this->entityManager->flush();
 
-        $this->mailer->send(
-            (new TemplatedEmail())
-                ->from(new Address($this->mailerFrom, 'Mairie de Feytiat'))
-                ->to((string) $user->getEmail())
-                ->subject('Votre compte est activé — Mairie de Feytiat')
-                ->htmlTemplate('emails/account_activated.html.twig')
-                ->context([
-                    'prenom' => $user->getPrenom(),
-                    'nom' => $user->getNom(),
-                    'nomAssociation' => $user->getAssociation()?->getNom() ?? '',
-                    'loginUrl' => $this->frontendUrl . '/connexion',
-                ])
-        );
+        // ── Email de confirmation ─────────────────────────────────────────────
+        // Wrappé dans un try/catch : un problème d'envoi ne doit PAS faire planter
+        // la réponse — le flush() est déjà passé, le compte est activé en base.
+        try {
+            $this->mailer->send(
+                (new TemplatedEmail())
+                    ->from(new Address($this->mailerFrom, 'Mairie de Feytiat'))
+                    ->to((string) $user->getEmail())
+                    ->subject('Votre compte est activé — Mairie de Feytiat')
+                    ->htmlTemplate('emails/account_activated.html.twig')
+                    ->context([
+                        'prenom'         => $user->getPrenom(),
+                        'nom'            => $user->getNom(),
+                        'nomAssociation' => $user->getAssociation()?->getNom() ?? '',
+                        'loginUrl'       => $this->frontendUrl . '/connexion',
+                    ])
+            );
+        } catch (\Throwable $e) {
+            // L'email n'est pas bloquant : on logue l'erreur mais on retourne le JWT quand même
+            $this->logger->error('account_activation: email de confirmation non envoyé', [
+                'user'      => $user->getEmail(),
+                'exception' => $e->getMessage(),
+            ]);
+        }
 
         // ── Auto-login : génération du JWT ────────────────────────────────────
         $jwt = $jwtManager->create($user);
 
         return $this->json([
             'message' => 'Votre compte a été activé avec succès.',
-            'token' => $jwt,
+            'token'   => $jwt,
         ]);
     }
 
@@ -187,7 +211,7 @@ final class AccountActivationController extends AbstractController
         $this->entityManager->flush();
 
         $association = $user->getAssociation();
-        $modules = AssociationStatusNotifier::buildModulesList($association);
+        $modules     = AssociationStatusNotifier::buildModulesList($association);
 
         $this->mailer->send(
             (new TemplatedEmail())
@@ -196,11 +220,11 @@ final class AccountActivationController extends AbstractController
                 ->subject('Activez votre compte — Mairie de Feytiat')
                 ->htmlTemplate('emails/association_validated.html.twig')
                 ->context([
-                    'prenom' => $user->getPrenom(),
-                    'nom' => $user->getNom(),
+                    'prenom'         => $user->getPrenom(),
+                    'nom'            => $user->getNom(),
                     'nomAssociation' => $association->getNom(),
-                    'modules' => $modules,
-                    'activationUrl' => $this->frontendUrl . '/activer-compte?token=' . $token . '&ref=' . base64_encode((string) $user->getEmail()),
+                    'modules'        => $modules,
+                    'activationUrl'  => $this->frontendUrl . '/activer-compte?token=' . $token . '&ref=' . base64_encode((string) $user->getEmail()),
                 ])
         );
 

@@ -40,6 +40,7 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         $totalItems = $this->associationRepository->countForAdministration($status);
+        $counts = $this->associationRepository->getCountsForAdministration();
         $items = array_map(
             static fn (Association $association): array => self::serializeAssociation($association),
             $this->associationRepository->findForAdministration($status, $page, $itemsPerPage),
@@ -50,7 +51,14 @@ final class AssociationAdministrationController extends AbstractController
             'page' => $page,
             'itemsPerPage' => $itemsPerPage,
             'totalItems' => $totalItems,
+            'counts' => $counts,
         ]);
+    }
+
+    #[Route('/{id}', name: 'admin_association_show', methods: ['GET'])]
+    public function show(Association $association): JsonResponse
+    {
+        return $this->json(self::serializeAssociation($association));
     }
 
     #[Route('/{id}/status', name: 'admin_association_status', methods: ['PATCH'])]
@@ -66,23 +74,27 @@ final class AssociationAdministrationController extends AbstractController
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $permissions = $payload['permissions'] ?? [];
-        if (!is_array($permissions)) {
-            return $this->json(['message' => 'Les permissions doivent être un tableau.'], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        $permissions = $payload['permissions'] ?? null;
+        if ($permissions !== null) {
+            if (!is_array($permissions)) {
+                return $this->json(['message' => 'Les permissions doivent être un tableau.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
 
-        $invalidModules = array_diff($permissions, self::MODULES);
-        if (!empty($invalidModules)) {
-            return $this->json(['message' => 'Un ou plusieurs modules sont invalides.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            $invalidModules = array_diff($permissions, self::MODULES);
+            if (!empty($invalidModules)) {
+                return $this->json(['message' => 'Un ou plusieurs modules sont invalides.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
         }
 
         $previousStatus = $association->getStatut();
 
         $this->entityManager->wrapInTransaction(function () use ($association, $status, $permissions): void {
             $association->setStatut($status);
-            $association->setModuleSubventionActif(in_array('subventions', $permissions, true));
-            $association->setModuleMaterielActif(in_array('materiel', $permissions, true));
-            $association->setModuleSalleActif(in_array('salles', $permissions, true));
+            if ($permissions !== null) {
+                $association->setModuleSubventionActif(in_array('subventions', $permissions, true));
+                $association->setModuleMaterielActif(in_array('materiel', $permissions, true));
+                $association->setModuleSalleActif(in_array('salles', $permissions, true));
+            }
             $this->entityManager->flush();
         });
 
@@ -109,12 +121,20 @@ final class AssociationAdministrationController extends AbstractController
             $permissions[] = 'salles';
         }
 
+        $primaryUser = $association->getUsers()->first() ?: null;
+
         return [
             'id' => $association->getId(),
             'nom' => $association->getNom(),
             'statut' => $association->getStatut(),
             'permissions' => $permissions,
             'createdAt' => $association->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            'contact' => $primaryUser ? [
+                'nom' => $primaryUser->getNom(),
+                'prenom' => $primaryUser->getPrenom(),
+                'email' => $primaryUser->getEmail(),
+                'telephone' => $primaryUser->getTelephone(),
+            ] : null,
         ];
     }
 }
