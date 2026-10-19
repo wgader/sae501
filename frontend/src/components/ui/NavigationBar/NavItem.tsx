@@ -4,12 +4,12 @@ import Link from "next/link";
 import { ReactNode } from "react";
 
 const navItemVariants = cva(
-  "flex min-h-16 w-full items-center justify-center gap-4 rounded-[10px] px-0 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Primary md:justify-start md:px-6 md:text-base",
+  "group flex min-h-[44px] w-full items-center justify-center gap-3.5 rounded-[10px] px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--Mosaic-Tile)] md:justify-start md:px-3.5",
   {
     variants: {
       selected: {
-        true: "bg-Primary text-white",
-        false: "text-Primary hover:bg-[#E8F4F2]",
+        true: "bg-[var(--Mosaic-Tile)] text-white shadow-xs font-bold [&_svg]:text-white",
+        false: "text-[var(--ink)] hover:bg-[var(--sage)]/40 hover:text-[var(--Mosaic-Tile)] [&_svg]:text-[var(--Mosaic-Tile)]",
       },
     },
     defaultVariants: {

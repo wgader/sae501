@@ -5,6 +5,7 @@ namespace App\EventSubscriber;
 use App\Entity\User;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * - AuthenticationSuccess : enrichit la réponse JWT avec les infos du user
  * - AuthenticationFailure : personnalise le message d'erreur
+ * - JWTCreated : enrichit le payload du token JWT
  */
 class AuthenticationSubscriber implements EventSubscriberInterface
 {
@@ -23,6 +25,7 @@ class AuthenticationSubscriber implements EventSubscriberInterface
         return [
             Events::AUTHENTICATION_SUCCESS => 'onAuthenticationSuccess',
             Events::AUTHENTICATION_FAILURE => 'onAuthenticationFailure',
+            Events::JWT_CREATED => 'onJWTCreated',
         ];
     }
 
@@ -64,11 +67,30 @@ class AuthenticationSubscriber implements EventSubscriberInterface
                 'email' => $user->getEmail(),
                 'nom' => $user->getNom(),
                 'prenom' => $user->getPrenom(),
+                'nomAssociation' => $user->getAssociation()?->getNom() ?? null,
                 'roles' => $user->getRoles(),
                 'typeCompte' => $user->getTypeCompte(),
                 'isVerified' => $user->isVerified(),
             ],
         ]));
+    }
+
+    /**
+     * Enrichit le payload du JWT avec le nom de l'association et l'identité du user.
+     */
+    public function onJWTCreated(JWTCreatedEvent $event): void
+    {
+        $user = $event->getUser();
+
+        if ($user instanceof User) {
+            $payload = $event->getData();
+            if ($user->getAssociation()) {
+                $payload['nomAssociation'] = $user->getAssociation()->getNom();
+            }
+            $payload['prenom'] = $user->getPrenom();
+            $payload['nom'] = $user->getNom();
+            $event->setData($payload);
+        }
     }
 
     /**

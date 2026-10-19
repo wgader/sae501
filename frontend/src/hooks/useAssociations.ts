@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   type Association,
+  type AssociationCounts,
+  type AssociationModule,
   type AssociationStatus,
   getAssociations,
   updateAssociationStatus,
@@ -9,6 +11,7 @@ import {
 export function useAssociations(page: number, status: AssociationStatus | '', search: string = '') {
   const [associations, setAssociations] = useState<Association[]>([]);
   const [totalItems, setTotalItems] = useState(0);
+  const [counts, setCounts] = useState<AssociationCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -20,6 +23,9 @@ export function useAssociations(page: number, status: AssociationStatus | '', se
       const result = await getAssociations(page, status, search);
       setAssociations(result.items);
       setTotalItems(result.totalItems);
+      if (result.counts) {
+        setCounts(result.counts);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Impossible de charger les associations.');
     } finally {
@@ -36,11 +42,12 @@ export function useAssociations(page: number, status: AssociationStatus | '', se
   const updateStatus = useCallback(async (
     association: Association,
     nextStatus: AssociationStatus,
+    permissions?: AssociationModule[],
   ) => {
     setUpdatingId(association.id);
     setError('');
     try {
-      const updated = await updateAssociationStatus(association.id, nextStatus);
+      const updated = await updateAssociationStatus(association.id, nextStatus, permissions);
       setAssociations((current) => current.map((item) => item.id === updated.id ? updated : item));
       await reload();
       return updated;
@@ -53,5 +60,5 @@ export function useAssociations(page: number, status: AssociationStatus | '', se
     }
   }, [reload]);
 
-  return { associations, totalItems, loading, error, updatingId, updateStatus, reload };
+  return { associations, totalItems, counts, loading, error, updatingId, updateStatus, reload };
 }

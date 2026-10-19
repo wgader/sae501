@@ -1,22 +1,31 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/admin/Button';
-import { Input } from '@/components/admin/Input';
-import { Label } from '@/components/admin/Label';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
 export default function AdminLoginPage() {
-  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    document.title = 'Administration · Connexion | Ville de Feytiat';
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      router.replace('/admin/dashboard');
+    }
+  }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const identifier = formData.get('identifier') as string;
 
     if (!identifier || !password) {
       setSubmitError('Veuillez renseigner votre identifiant et votre mot de passe.');
@@ -24,134 +33,249 @@ export default function AdminLoginPage() {
     }
 
     setSubmitError('');
+    setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}/api/auth/admin/login`, {
+      const response = await fetch(`${API_URL}/api/auth/admin/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: identifier, password }),
       });
 
-      const data = await response.json().catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as {
+        token?: string;
+        message?: string;
+      };
 
       if (!response.ok) {
-        throw new Error(data.message || 'Identifiants incorrects');
+        throw new Error(data.message ?? 'Identifiants incorrects.');
       }
 
-      if (data.token) {
-        localStorage.setItem('admin_token', data.token);
-        localStorage.setItem('token', data.token);
-        window.dispatchEvent(new Event('auth-change'));
+      if (!data.token) {
+        throw new Error('Réponse invalide du serveur.');
       }
-      router.push('/admin/inscription');
-      
+
+      localStorage.setItem('admin_token', data.token);
+      router.push('/admin/dashboard');
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setSubmitError(err.message);
-      } else {
-        setSubmitError('Une erreur est survenue');
-      }
+      setSubmitError(
+        err instanceof Error ? err.message : 'Une erreur est survenue lors de la connexion.',
+      );
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-white px-6 py-20 font-sans text-black sm:px-10">
-      <section className="mx-auto w-full max-w-2xl">
-        
-        <header className="mb-12">
-          <h1 className="text-2xl font-bold uppercase tracking-[0.1em]">
-            Connexion Mairie
-          </h1>
-        </header>
-        
-        {submitError && (
-          <p className="mb-6 border-l-4 border-red-500 bg-red-50 p-4 text-sm font-bold text-red-700" role="alert">
-            {submitError}
-          </p>
-        )}
-        
-        <form className="flex flex-col w-full" noValidate onSubmit={handleSubmit}>
-          
-          <div className="mb-8 w-full">
-            <Label>Identifiant / E-mail</Label>
-            <Input
-              type="text"
-              name="identifier"
-              autoComplete="username"
-              value={identifier}
-              onChange={(e) => {
-                setIdentifier(e.target.value);
-                setSubmitError('');
-              }}
-              placeholder="Exemple: contact@mairie.fr"
-              required
-            />
-          </div>
-          
-          <div className="mb-4 w-full">
-            <Label>Votre mot de passe</Label>
-            <div className="relative w-full">
-              <Input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setSubmitError('');
-                }}
-                className="pr-12"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 transform text-gray-600 hover:text-black focus:outline-none"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {showPassword ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-          
-          <div className="mb-10 flex w-full flex-col items-end space-y-2">
-            <a href="/admin/signup" className="text-xs font-bold tracking-wide underline hover:text-gray-600">
-              Pas encore de compte ?
-            </a>
-            <a href="#" className="text-xs font-bold tracking-wide underline hover:text-gray-600">
-              Mot de passe oublié ?
-            </a>
-          </div>
-          
-          <div className="mb-12 flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={() => setRememberMe(!rememberMe)}
-              className="flex h-7 w-7 items-center justify-center bg-[#d9d9d9] focus:outline-none"
+    <main className="flex min-h-screen w-full flex-col font-sans text-[var(--ink)] lg:flex-row">
+      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-[var(--Mosaic-Tile)] p-8 lg:flex lg:p-12 text-[var(--White)]">
+        <header className="space-y-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] transition-opacity hover:opacity-80"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              aria-hidden="true"
             >
-              {rememberMe && (
-                <svg className="h-5 w-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            <span>Retour au site public</span>
+          </Link>
+
+          <figure className="m-0">
+            <Image
+              src="/assets/logo-feytiat-white.svg"
+              alt="Ville de Feytiat"
+              width={160}
+              height={34}
+              priority
+              className="h-9 w-auto object-contain"
+            />
+          </figure>
+
+          <span className="inline-block rounded-full bg-[var(--Lime-Cream)] px-3.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
+            Portail municipal
+          </span>
+
+          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-[1.1] tracking-[-0.03em] text-[var(--White)]">
+            <span className="block">Espace</span>
+            <span className="block text-[var(--Lime-Cream)]">Administration.</span>
+          </h2>
+
+          <p className="text-[0.9375rem] leading-[1.6] text-white/90">
+            Accès sécurisé réservé aux agents municipaux et administrateurs habilités de la mairie de Feytiat.
+          </p>
+
+          <ul className="space-y-3 pt-2 text-xs font-semibold text-white/95">
+            <li className="flex items-center gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
+              </span>
+              <span>Validation des demandes d&apos;inscription</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </span>
+              <span>Attribution des modules associatifs</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </span>
+              <span>Supervision des démarches de Feytiat</span>
+            </li>
+          </ul>
+        </header>
+
+        <footer className="border-t border-white/15 pt-6 text-[0.75rem] text-white/70">
+          Mairie de Feytiat · Tous droits réservés
+        </footer>
+      </aside>
+
+      <section className="flex flex-1 items-center justify-center bg-[var(--White)] px-6 py-12 sm:px-12 lg:px-16">
+        <article className="w-full max-w-[28rem]">
+          <nav aria-label="Retour au site" className="mb-8 lg:hidden">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--Mosaic-Tile)] transition-opacity hover:opacity-80"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              <span>Retour au site public</span>
+            </Link>
+          </nav>
+
+          <header className="mb-8">
+            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+              Espace administration
+            </p>
+            <h1 className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-[var(--ink)]">
+              Connexion
+            </h1>
+            <p className="mt-2 text-[0.875rem] leading-[1.6] text-[var(--muted)]">
+              Renseignez vos identifiants d&apos;agent municipal pour accéder à votre panneau d&apos;administration.
+            </p>
+          </header>
+
+          <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+            <label className="block">
+              <span className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
+                Adresse électronique
+              </span>
+              <input
+                id="admin-identifier"
+                type="email"
+                name="identifier"
+                autoComplete="username"
+                placeholder="exemple : mail@mairie.fr"
+                required
+                onChange={() => setSubmitError('')}
+                className="h-[3.25rem] w-full rounded-[10px] border border-[var(--line)] bg-[var(--paper)] px-4 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/50 outline-none transition focus:border-[var(--Mosaic-Tile)] focus:bg-[var(--White)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/15"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
+                Mot de passe
+              </span>
+              <span className="relative block">
+                <input
+                  id="admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={password}
+                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setSubmitError('');
+                  }}
+                  className="h-[3.25rem] w-full rounded-[10px] border border-[var(--line)] bg-[var(--paper)] px-4 pr-12 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/50 outline-none transition focus:border-[var(--Mosaic-Tile)] focus:bg-[var(--White)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/15"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] transition hover:text-[var(--ink)] cursor-pointer"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                  >
+                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                    <circle cx="12" cy="12" r="3.5" />
+                    {showPassword && <path d="M3 3L21 21" strokeLinecap="round" />}
+                  </svg>
+                </button>
+              </span>
+            </label>
+
+            {submitError && (
+              <p
+                className="rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]"
+                role="alert"
+              >
+                {submitError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex h-[3.125rem] w-full items-center justify-center gap-2.5 rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+            >
+              {isLoading ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span>Connexion en cours...</span>
+                </>
+              ) : (
+                <span>Se connecter</span>
               )}
             </button>
-            <span className="text-xs font-bold tracking-wide">Rester connecté ?</span>
-          </div>
-          
-          <div>
-            <Button type="submit">
-              SE CONNECTER
-            </Button>
-          </div>
+          </form>
 
-        </form>
+          <footer className="mt-8 border-t border-[var(--line)] pt-6 text-center text-xs text-[var(--muted)]">
+            <p>Accès strictement réservé aux agents de la mairie de Feytiat.</p>
+            <p className="mt-1">
+              Vous êtes une association ?{' '}
+              <Link
+                href="/connexion"
+                className="font-bold text-[var(--Mosaic-Tile)] underline underline-offset-2 hover:opacity-85"
+              >
+                Espace associations
+              </Link>
+            </p>
+          </footer>
+        </article>
       </section>
     </main>
   );
