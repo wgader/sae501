@@ -18,7 +18,10 @@ import StatusTag from './StatusTag';
 // }
 
 interface ItemCardDataProps {
-  status: AssociationStatus;
+  status?: AssociationStatus;
+  moduleSubventionActif?: boolean;
+  moduleSalleActif?: boolean;
+  moduleMaterielActif?: boolean;
   name: string;
 }
 
@@ -31,6 +34,9 @@ interface ItemCardProps {
 export default function ItemCard({
   name,
   status,
+  moduleSubventionActif,
+  moduleSalleActif,
+  moduleMaterielActif,
   onClick,
   className,
   children,
@@ -50,7 +56,12 @@ export default function ItemCard({
         <h2 className="h-[22.5px] w-full overflow-hidden text-ellipsis whitespace-nowrap text-[20px] font-bold uppercase leading-[15px] text-black">
           {name}
         </h2>
-        <StatusTag status={status} />
+        <div className="flex flex-wrap items-center gap-2">
+          {status ? <StatusTag status={status} /> : null}
+          {moduleSubventionActif && <StatusTag status="subvention" className='bg-Misty-Rose' />}
+           {moduleMaterielActif && <StatusTag status="materiel" className='bg-Lime-Cream' />}
+      {moduleSalleActif && <StatusTag status="salle" className='bg-Mosaic-Tile'/>}
+           </div>
       </div>
       {children}
       <Image

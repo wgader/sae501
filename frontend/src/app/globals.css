@@ -6,6 +6,9 @@
     --color-Neutral: var(--White);
     --color-Indigo: var(--Indigo-Bloom);
     --color-Error: var(--Flush-Mahogany);
+    --color-Misty-Rose: var(--Misty-Rose);
+    --color-Lime-Cream: var(--Lime-Cream);
+    --color-Mosaic-Tile: var(--Mosaic-Tile);
 }
 
 :root {

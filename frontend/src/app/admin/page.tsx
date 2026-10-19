@@ -42,8 +42,10 @@ export default function AdminLoginPage() {
 
       if (data.token) {
         localStorage.setItem('admin_token', data.token);
+        localStorage.setItem('token', data.token);
+        window.dispatchEvent(new Event('auth-change'));
       }
-      router.push('/admin/gestionnaire-inscription');
+      router.push('/admin/inscription');
       
     } catch (err: unknown) {
       if (err instanceof Error) {

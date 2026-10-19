@@ -16,6 +16,9 @@ export type Association = {
   numeroSiret?: string;
   statut: AssociationStatus;
   permissions: AssociationModule[];
+  moduleSubventionActif?: boolean;
+  moduleSalleActif?: boolean;
+  moduleMaterielActif?: boolean;
   createdAt: string | null;
   adresseSiegeSocial?: string;
   siteWeb?: string;

@@ -20,12 +20,6 @@ interface NavItemData {
   icon: ReactNode;
 }
 
-// const profileItems: NavItemData[] = [
-//   { root: "", name: "Accueil", icon: <IconAccueil className="h-6 w-6 shrink-0" /> },
-//   { root: "profil", name: "Profil", icon: <IconMateriel className="h-6 w-6 shrink-0" /> },
-//   { root: "historique", name: "Historique", icon: <IconHistorique className="h-6 w-6 shrink-0" /> },
-// ];
-
 const moduleItems: NavItemData[] = [
   { root: "", name: "Accueil", icon: <IconAccueil className="h-6 w-6 shrink-0" /> },
   { root: "subventions", name: "Subventions", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
@@ -38,8 +32,9 @@ const moduleItems: NavItemData[] = [
 
 const moduleItemsAdmin: NavItemData[] = [
   { root: "admin", name: "Accueil", icon: <IconAccueil className="h-6 w-6 shrink-0" /> },
-  { root: "admin/modules", name: "Gestion des modules", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
-  { root: "admin/agents", name: "Gestion des agents", icon: <IconSubvention className="h-6 w-6 shrink-0" /> },
+  { root: "admin/inscription", name: "Inscriptions", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
+  { root: "admin/module", name: "Gestion des modules", icon: <IconSubvention className="h-6 w-6 shrink-0" /> },
+  { root: "admin/agents", name: "Gestion des agents", icon: <IconProfil className="h-6 w-6 shrink-0" /> },
 ];
 
 interface LateralNavBarProps {

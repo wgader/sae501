@@ -10,22 +10,36 @@ const statusTagVariants = cva(
         PENDING_VALIDATION: 'bg-[#9c7a19]',
         VALIDATED: 'bg-[#146e67]',
         REFUSED: 'bg-[#b54b4b]',
+        salle:'bg-[#146e67]',
+        subvention:'bg-[#146e67]',
+        materiel:'bg-[#146e67]',
       },
+    
     },
   },
 );
 
-const STATUS_LABELS: Record<AssociationStatus, string> = {
+export type AssociationModule = 'salle' | 'subvention' | 'materiel';
+export type StatusTagType = AssociationStatus | AssociationModule;
+
+const TAG_LABELS: Record<StatusTagType, string> = {
   PENDING_VALIDATION: 'En attente',
   VALIDATED: 'Accepté',
   REFUSED: 'Refusé',
+  salle: 'Salle',
+  subvention: 'Subvention',
+  materiel: 'Matériel',
 };
 
 interface StatusTagProps extends VariantProps<typeof statusTagVariants> {
-  status: AssociationStatus;
+  status: StatusTagType;
   className?: string;
 }
 
 export default function StatusTag({ status, className }: StatusTagProps) {
-  return <span className={cn(statusTagVariants({ status }), className)}>{STATUS_LABELS[status]}</span>;
+  return (
+    <span className={cn(statusTagVariants({ status }), className)}>
+      {TAG_LABELS[status]}
+    </span>
+  );
 }

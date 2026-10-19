@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className={`${lato.variable} flex min-h-screen bg-white font-sans text-black antialiased`}>
-        {isConnected && shouldShowOnCurrentPage && <LateralNavBar />}
+          {shouldShowOnCurrentPage && <LateralNavBar />}
         <div className="min-w-0 flex-1">{children}</div>
       </body>
     </html>
