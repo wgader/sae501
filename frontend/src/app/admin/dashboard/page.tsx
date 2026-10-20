@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminMetricCard from '@/components/admin/AdminMetricCard';
 import AssociationCard from '@/components/admin/AssociationCard';
@@ -15,8 +14,7 @@ export default function AdminDashboardPage() {
   const totalCount = counts?.total ?? 0;
 
   return (
-    <AdminLayout>
-      <section className="mx-auto max-w-5xl space-y-10">
+    <section className="mx-auto max-w-5xl space-y-10">
         <AdminPageHeader
           title="Tableau de bord"
           description="Supervision générale des structures associatives, instruction des demandes d’adhésion et gestion des services communaux."
@@ -192,6 +190,5 @@ export default function AdminDashboardPage() {
           </ul>
         </section>
       </section>
-    </AdminLayout>
   );
 }

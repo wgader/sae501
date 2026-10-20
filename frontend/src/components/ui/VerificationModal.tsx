@@ -1,27 +1,53 @@
-// components/ui/VerificationModal.tsx
-import { useState } from 'react';
+'use client';
 
-interface VerificationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onVerify: (code: string) => void;
+import { useState, type HTMLAttributes, type FormEvent } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+
+export const verificationModalOverlayVariants = cva(
+  'fixed inset-0 z-50 flex items-center justify-center bg-[#1e2420]/60 p-4 backdrop-blur-sm transition-opacity',
+);
+
+export const verificationModalCardVariants = cva(
+  'w-full max-w-md rounded-xl bg-white p-6 shadow-2xl sm:p-8',
+);
+
+export interface VerificationModalDataProps {
   recipient: string;
   channel?: 'email' | 'sms';
 }
 
-export default function VerificationModal({ isOpen, onClose, onVerify, recipient, channel = 'sms' }: VerificationModalProps) {
+export interface VerificationModalProps
+  extends HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof verificationModalOverlayVariants> {
+  isOpen: boolean;
+  onClose: () => void;
+  onVerify: (code: string) => void;
+  cardClassName?: string;
+}
+
+export default function VerificationModal({
+  isOpen,
+  onClose,
+  onVerify,
+  recipient,
+  channel = 'sms',
+  className,
+  cardClassName,
+  ...props
+}: VerificationModalDataProps & VerificationModalProps) {
   const [code, setCode] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onVerify(code);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e2420]/60 p-4 backdrop-blur-sm transition-opacity">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl sm:p-8">
+    <div className={cn(verificationModalOverlayVariants(), className)} {...props}>
+      <div className={cn(verificationModalCardVariants(), cardClassName)}>
         <h3 className="mb-2 text-xl font-black uppercase tracking-tight text-[#1e2420]">
           Vérification par {channel === 'sms' ? 'SMS' : 'email'}
         </h3>
@@ -37,7 +63,7 @@ export default function VerificationModal({ isOpen, onClose, onVerify, recipient
               required
               placeholder="000000"
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))} // N'accepte que les chiffres
+              onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
               className="w-full rounded-md border border-[#d9ded9] bg-[#f7f8f4] px-4 py-3 text-center text-2xl font-bold tracking-[0.25em] outline-none transition-colors focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]"
               maxLength={6}
               autoFocus
@@ -64,4 +90,4 @@ export default function VerificationModal({ isOpen, onClose, onVerify, recipient
       </div>
     </div>
   );
-}
+}

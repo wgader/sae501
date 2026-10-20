@@ -1,14 +1,25 @@
-import { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import Link from 'next/link';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-interface AdminMetricCardProps {
+export const adminMetricCardVariants = cva(
+  'flex h-full flex-col justify-between rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-6 transition-shadow hover:shadow-md',
+);
+
+export interface AdminMetricCardDataProps {
   title: string;
   value: number | string;
   description: string;
   icon: ReactNode;
-  iconBgClass?: string;
   actionHref: string;
   actionLabel: string;
+}
+
+export interface AdminMetricCardProps
+  extends HTMLAttributes<HTMLElement>,
+    VariantProps<typeof adminMetricCardVariants> {
+  iconBgClass?: string;
   loading?: boolean;
 }
 
@@ -21,11 +32,13 @@ export default function AdminMetricCard({
   actionHref,
   actionLabel,
   loading = false,
-}: AdminMetricCardProps) {
+  className,
+  ...props
+}: AdminMetricCardDataProps & AdminMetricCardProps) {
   return (
-    <article className="flex h-full flex-col justify-between rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-6 transition-shadow hover:shadow-md">
+    <article className={cn(adminMetricCardVariants(), className)} {...props}>
       <header>
-        <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconBgClass}`}>
+        <span className={cn('flex h-11 w-11 items-center justify-center rounded-xl', iconBgClass)}>
           {icon}
         </span>
         <p className="mt-4 text-3xl font-black text-[var(--ink)]">
@@ -60,3 +73,4 @@ export default function AdminMetricCard({
     </article>
   );
 }
+

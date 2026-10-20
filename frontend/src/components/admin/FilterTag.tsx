@@ -2,8 +2,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-const filterTagVariants = cva(
-  'inline-flex min-h-14 w-40 items-center justify-center whitespace-nowrap rounded-[10px] px-[35px] py-[10px] text-[13px] font-extrabold uppercase leading-[19.5px] tracking-[1.4px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#146e67]',
+export const filterTagVariants = cva(
+  'inline-flex min-h-14 min-w-[10rem] cursor-pointer items-center justify-center whitespace-nowrap rounded-[0.63rem] px-5 sm:px-[2.19rem] py-[0.63rem] text-[0.81rem] font-extrabold uppercase leading-[1.22rem] tracking-[0.09rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#146e67]',
   {
     variants: {
       selected: {
@@ -17,10 +17,13 @@ const filterTagVariants = cva(
   },
 );
 
+export interface FilterTagDataProps {
+  label: string;
+}
+
 export interface FilterTagProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-pressed'>,
     VariantProps<typeof filterTagVariants> {
-  label: string;
   isSelected?: boolean;
 }
 
@@ -29,7 +32,7 @@ export default function FilterTag({
   isSelected = false,
   className,
   ...props
-}: FilterTagProps) {
+}: FilterTagDataProps & FilterTagProps) {
   return (
     <button
       type="button"
@@ -41,3 +44,4 @@ export default function FilterTag({
     </button>
   );
 }
+

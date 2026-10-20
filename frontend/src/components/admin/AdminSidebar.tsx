@@ -104,7 +104,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                 href={item.href}
                 onClick={onNavigate}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex h-12 items-center gap-3.5 rounded-[12px] px-4 text-[0.875rem] transition-colors ${
+                className={`flex h-12 items-center gap-3.5 rounded-[0.75rem] px-4 text-sm transition-colors ${
                   isActive
                     ? 'bg-[var(--White)] font-bold text-[var(--Mosaic-Tile)] shadow-sm'
                     : 'font-medium text-white/80 hover:bg-white/10 hover:text-[var(--White)]'
@@ -122,7 +122,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex h-12 w-full items-center gap-3 rounded-[12px] bg-[var(--White)] px-4 text-[0.875rem] font-bold text-[var(--Mosaic-Tile)] shadow-sm transition-opacity hover:opacity-95"
+          className="flex h-12 w-full items-center gap-3 rounded-[0.75rem] bg-[var(--White)] px-4 text-sm font-bold text-[var(--Mosaic-Tile)] shadow-sm transition-opacity hover:opacity-95"
         >
           <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />

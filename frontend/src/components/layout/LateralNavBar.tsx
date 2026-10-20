@@ -113,9 +113,7 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
-          />
-
-          <aside className="relative flex h-full w-[280px] max-w-[85vw] flex-col justify-between border-r border-[var(--line)] bg-[var(--White)] p-4 shadow-2xl">
+          />          <aside className="relative flex h-full w-[17.5rem] max-w-[85vw] flex-col justify-between border-r border-[var(--line)] bg-[var(--White)] p-4 shadow-2xl">
             <div>
               <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 pt-2">
                 <Link
@@ -139,7 +137,7 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
                   aria-label="Fermer le menu"
                   className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--paper)]"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -168,9 +166,9 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
             </div>
 
             <div className="border-t border-[var(--line)] pt-4">
-              <div className="flex items-center justify-between rounded-[12px] border border-[var(--line)] bg-[var(--White)] p-2.5">
+              <div className="flex items-center justify-between rounded-[0.75rem] border border-[var(--line)] bg-[var(--White)] p-2.5">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.6875rem] font-black text-[var(--ink)]">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.69rem] font-black text-[var(--ink)]">
                     {initials}
                   </span>
                   <span className="truncate text-xs font-semibold text-[var(--ink)]">
@@ -207,7 +205,7 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
 
       <nav
         aria-label="Navigation principale"
-        className={`hidden md:sticky md:top-0 md:flex md:h-screen md:w-[240px] lg:md:w-[260px] shrink-0 flex-col justify-between border-r border-[var(--line)] bg-[var(--White)] ${className}`}
+        className={`hidden md:sticky md:top-0 md:flex md:h-screen md:w-[15rem] lg:w-[16.25rem] shrink-0 flex-col justify-between border-r border-[var(--line)] bg-[var(--White)] ${className}`}
       >
         <div>
           <Link
@@ -221,7 +219,7 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
               width={364}
               height={75}
               priority
-              className="h-auto w-full max-w-[170px]"
+              className="h-auto w-full max-w-[10.63rem]"
             />
           </Link>
 
@@ -247,9 +245,9 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
         </div>
 
         <div className="border-t border-[var(--line)] p-3 md:p-4">
-          <div className="group relative flex items-center justify-between rounded-[14px] border border-[var(--line)] bg-[var(--White)] p-2 shadow-xs transition-colors hover:border-[var(--muted)]/40">
+          <div className="group relative flex items-center justify-between rounded-[0.88rem] border border-[var(--line)] bg-[var(--White)] p-2 shadow-xs transition-colors hover:border-[var(--muted)]/40">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.6875rem] font-black text-[var(--ink)]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.69rem] font-black text-[var(--ink)]">
                 {initials}
               </span>
               <span className="truncate text-xs font-semibold text-[var(--ink)]">

@@ -1,26 +1,27 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AssociationCard from '@/components/admin/AssociationCard';
+import FilterTag from '@/components/admin/FilterTag';
 import Pagination from '@/components/ui/Pagination';
 import { useAssociations } from '@/hooks/useAssociations';
+import { useAdminSearch } from '@/app/admin/layout';
 
 type TabStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED';
 
-const TABS: { label: string; value: TabStatus; countKey: 'pending' | 'validated' | 'refused' }[] = [
-  { label: 'EN ATTENTE', value: 'PENDING_VALIDATION', countKey: 'pending' },
-  { label: 'ACCEPTÉ', value: 'VALIDATED', countKey: 'validated' },
-  { label: 'REFUSÉ', value: 'REFUSED', countKey: 'refused' },
+const TABS: { label: string; value: TabStatus }[] = [
+  { label: 'EN ATTENTE', value: 'PENDING_VALIDATION' },
+  { label: 'ACCEPTÉ', value: 'VALIDATED' },
+  { label: 'REFUSÉ', value: 'REFUSED' },
 ];
 
 export default function AdminInscriptionsPage() {
   const [activeTab, setActiveTab] = useState<TabStatus>('PENDING_VALIDATION');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm } = useAdminSearch();
   const [page, setPage] = useState(1);
 
-  const { associations, totalItems, counts, loading, error } = useAssociations(page, activeTab);
+  const { associations, totalItems, loading, error } = useAssociations(page, activeTab);
 
   const filteredAssociations = useMemo(() => {
     if (!searchTerm.trim()) return associations;
@@ -42,40 +43,17 @@ export default function AdminInscriptionsPage() {
   const totalPages = Math.max(1, Math.ceil(totalItems / 10));
 
   return (
-    <AdminLayout searchTerm={searchTerm} onSearchChange={setSearchTerm}>
-      <section className="mx-auto max-w-5xl">
+    <section className="mx-auto max-w-5xl">
         <AdminPageHeader title="Demandes d’inscription" className="mb-6">
           <nav aria-label="Filtres de statut" className="mt-5 flex flex-wrap items-center gap-3">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.value;
-              const countValue = counts ? counts[tab.countKey] : null;
-
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => handleTabChange(tab.value)}
-                  className={`inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                      : 'border border-[var(--Mosaic-Tile)] bg-transparent text-[var(--Mosaic-Tile)] hover:bg-[var(--Mosaic-Tile)]/5'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {countValue !== null && (
-                    <span
-                      className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-bold ${
-                        isActive
-                          ? 'bg-[var(--Lime-Cream)] text-[var(--ink)]'
-                          : 'bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]'
-                      }`}
-                    >
-                      {countValue}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {TABS.map((tab) => (
+              <FilterTag
+                key={tab.value}
+                label={tab.label}
+                isSelected={activeTab === tab.value}
+                onClick={() => handleTabChange(tab.value)}
+              />
+            ))}
           </nav>
         </AdminPageHeader>
 
@@ -85,7 +63,7 @@ export default function AdminInscriptionsPage() {
           </p>
         )}
 
-        {loading ? (
+        {loading && filteredAssociations.length === 0 ? (
           <section className="py-16 text-center text-[var(--muted)]">
             <svg className="mx-auto h-8 w-8 animate-spin text-[var(--Mosaic-Tile)]" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -103,7 +81,7 @@ export default function AdminInscriptionsPage() {
             </p>
           </section>
         ) : (
-          <ul className="space-y-4 p-0 list-none">
+          <ul className={`space-y-4 p-0 list-none transition-opacity duration-150 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
             {filteredAssociations.map((association) => (
               <li key={association.id}>
                 <AssociationCard association={association} />
@@ -112,15 +90,16 @@ export default function AdminInscriptionsPage() {
           </ul>
         )}
 
-        {/* ── Composant UI Pagination réutilisable ───────────── */}
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={10}
-          onPageChange={setPage}
-        />
+        {totalItems > 0 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={10}
+            onPageChange={setPage}
+            itemLabel="demande"
+          />
+        )}
       </section>
-    </AdminLayout>
   );
 }

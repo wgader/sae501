@@ -1,10 +1,23 @@
 'use client';
 
-type TermsModalProps = {
-  onClose: () => void;
-};
+import type { HTMLAttributes } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-const termsSections = [
+export const termsModalOverlayVariants = cva(
+  'fixed inset-0 z-10 flex items-center justify-center bg-[#1e2420]/50 px-5 py-8',
+);
+
+export const termsModalContentVariants = cva(
+  'max-h-full w-full max-w-2xl overflow-y-auto bg-[#f7f8f4] p-7 text-[#1e2420] shadow-2xl sm:p-10',
+);
+
+export interface TermsSection {
+  title: string;
+  text: string;
+}
+
+export const defaultTermsSections: TermsSection[] = [
   {
     title: '1. Objet',
     text: "Les présentes conditions définissent les règles d'accès et d'utilisation du service. La création d'un compte signifie que vous acceptez ces conditions dans leur intégralité.",
@@ -27,15 +40,39 @@ const termsSections = [
   },
 ];
 
-export default function TermsModal({ onClose }: TermsModalProps) {
+export interface TermsModalDataProps {
+  sections?: TermsSection[];
+  lastUpdated?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface TermsModalProps
+  extends HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof termsModalOverlayVariants> {
+  onClose: () => void;
+  contentClassName?: string;
+}
+
+export default function TermsModal({
+  onClose,
+  sections = defaultTermsSections,
+  lastUpdated = '15 septembre 2026',
+  title = "Conditions générales d'utilisation",
+  subtitle = 'Informations légales',
+  className,
+  contentClassName,
+  ...props
+}: TermsModalDataProps & TermsModalProps) {
   return (
     <div
-      className="fixed inset-0 z-10 flex items-center justify-center bg-[#1e2420]/50 px-5 py-8"
+      className={cn(termsModalOverlayVariants(), className)}
       role="presentation"
       onClick={onClose}
+      {...props}
     >
       <section
-        className="max-h-full w-full max-w-2xl overflow-y-auto bg-[#f7f8f4] p-7 text-[#1e2420] shadow-2xl sm:p-10"
+        className={cn(termsModalContentVariants(), contentClassName)}
         role="dialog"
         aria-modal="true"
         aria-labelledby="terms-title"
@@ -43,11 +80,11 @@ export default function TermsModal({ onClose }: TermsModalProps) {
       >
         <div className="mb-7 flex items-start justify-between gap-6 border-b border-[#d9ded9] pb-5">
           <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#496a56]">
-              Informations légales
+            <p className="mb-2 text-[0.63rem] font-bold uppercase tracking-[0.2em] text-[#496a56]">
+              {subtitle}
             </p>
             <h2 id="terms-title" className="text-2xl font-black uppercase tracking-[-0.04em] sm:text-3xl">
-              Conditions générales d&apos;utilisation
+              {title}
             </h2>
           </div>
           <button
@@ -61,8 +98,8 @@ export default function TermsModal({ onClose }: TermsModalProps) {
         </div>
 
         <div className="space-y-6 text-sm leading-6 text-[#4f5851]">
-          <p>Dernière mise à jour : 15 septembre 2026</p>
-          {termsSections.map((section) => (
+          <p>Dernière mise à jour : {lastUpdated}</p>
+          {sections.map((section) => (
             <div key={section.title}>
               <h3 className="mb-1 font-bold text-[#1e2420]">{section.title}</h3>
               <p>{section.text}</p>
@@ -81,3 +118,4 @@ export default function TermsModal({ onClose }: TermsModalProps) {
     </div>
   );
 }
+

@@ -1,64 +1,90 @@
 import Link from 'next/link';
+import { cva, type VariantProps } from 'class-variance-authority';
+import type { ComponentPropsWithoutRef } from 'react';
 import { type Association } from '@/lib/api';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusTag from './StatusTag';
+import { cn } from '@/lib/utils';
 
-interface AssociationCardProps {
+export const associationCardVariants = cva(
+  'group flex items-center justify-between gap-4 rounded-[1.13rem] border border-[var(--line)] bg-[var(--White)] shadow-xs transition-all duration-200 hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-md',
+  {
+    variants: {
+      compact: {
+        true: 'p-4',
+        false: 'p-5 sm:p-6',
+      },
+    },
+    defaultVariants: {
+      compact: false,
+    },
+  },
+);
+
+export interface AssociationCardDataProps {
   association: Association;
+  showModules?: boolean;
+}
+
+export interface AssociationCardProps
+  extends Omit<ComponentPropsWithoutRef<typeof Link>, 'href'>,
+    VariantProps<typeof associationCardVariants> {
   compact?: boolean;
   className?: string;
+  href?: string;
+  onClick?: () => void;
 }
 
 export default function AssociationCard({
   association,
+  showModules = false,
   compact = false,
-  className = '',
-}: AssociationCardProps) {
-  const formattedDate = association.createdAt
-    ? new Intl.DateTimeFormat('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(new Date(association.createdAt))
-    : null;
+  className,
+  href,
+  onClick,
+  ...props
+}: AssociationCardDataProps & AssociationCardProps) {
+  const isSubventionActive = Boolean(
+    association.moduleSubventionActif || association.permissions?.includes('subventions'),
+  );
+  const isSalleActive = Boolean(
+    association.moduleSalleActif || association.permissions?.includes('salles'),
+  );
+  const isMaterielActive = Boolean(
+    association.moduleMaterielActif || association.permissions?.includes('materiel'),
+  );
+  const hasAnyModule = isSubventionActive || isSalleActive || isMaterielActive;
 
-  return (
-    <Link
-      href={`/admin/inscriptions/${association.id}`}
-      className={`group flex items-center justify-between gap-4 rounded-[18px] border border-[var(--line)] bg-[var(--White)] shadow-xs transition-all duration-200 hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-md ${
-        compact ? 'p-4' : 'p-5 sm:p-6'
-      } ${className}`}
-    >
+  const content = (
+    <>
       <span className="min-w-0 flex-1">
-        <span className="block text-[0.9375rem] sm:text-[1rem] font-bold uppercase tracking-tight text-[var(--ink)] group-hover:text-[var(--Mosaic-Tile)] transition-colors">
+        <span className="block text-[0.94rem] sm:text-[1rem] font-bold uppercase tracking-tight text-[var(--ink)] group-hover:text-[var(--Mosaic-Tile)] transition-colors">
           {association.nom}
         </span>
 
         <span className="mt-2 flex flex-wrap items-center gap-2.5 sm:gap-3">
-          <StatusBadge status={association.statut} />
-
-          {formattedDate && (
-            <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-              <svg
-                className="h-3.5 w-3.5 text-[var(--muted)]/70"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span>Déposée le {formattedDate}</span>
-            </span>
-          )}
-
-          {association.contact && (
-            <span className="hidden text-xs text-[var(--muted)] sm:inline">
-              · {association.contact.prenom} {association.contact.nom} ({association.contact.email})
-            </span>
+          {showModules ? (
+            <>
+              {isSubventionActive && <StatusTag status="subventions" />}
+              {isSalleActive && <StatusTag status="salles" />}
+              {isMaterielActive && <StatusTag status="materiel" />}
+              {!hasAnyModule && (
+                <span className="text-xs text-[var(--muted)]">Aucun module actif</span>
+              )}
+              {association.contact && (
+                <span className="hidden text-xs text-[var(--muted)] sm:inline">
+                  · {association.contact.prenom} {association.contact.nom} ({association.contact.email})
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <StatusTag status={association.statut} />
+              {association.contact && (
+                <span className="hidden text-xs text-[var(--muted)] sm:inline">
+                  · {association.contact.prenom} {association.contact.nom} ({association.contact.email})
+                </span>
+              )}
+            </>
           )}
         </span>
       </span>
@@ -75,6 +101,34 @@ export default function AssociationCard({
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
         </svg>
       </span>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`Consulter le dossier de ${association.nom}`}
+        className={cn(
+          associationCardVariants({ compact }),
+          'w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--Mosaic-Tile)]',
+          className,
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={href || `/admin/inscriptions/${association.id}`}
+      className={cn(associationCardVariants({ compact }), className)}
+      {...props}
+    >
+      {content}
     </Link>
   );
 }
+

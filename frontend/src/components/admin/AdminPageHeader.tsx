@@ -1,11 +1,19 @@
-import { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-interface AdminPageHeaderProps {
-  eyebrow?: string;
+export const adminPageHeaderVariants = cva('');
+
+export interface AdminPageHeaderDataProps {
   title: string;
+  eyebrow?: string;
   description?: string;
+}
+
+export interface AdminPageHeaderProps
+  extends HTMLAttributes<HTMLElement>,
+    VariantProps<typeof adminPageHeaderVariants> {
   children?: ReactNode;
-  className?: string;
 }
 
 export default function AdminPageHeader({
@@ -13,12 +21,13 @@ export default function AdminPageHeader({
   title,
   description,
   children,
-  className = '',
-}: AdminPageHeaderProps) {
+  className,
+  ...props
+}: AdminPageHeaderDataProps & AdminPageHeaderProps) {
   return (
-    <header className={className}>
+    <header className={cn(adminPageHeaderVariants(), className)} {...props}>
       {eyebrow && (
-        <span className="inline-block text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+        <span className="inline-block text-[0.69rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
           {eyebrow}
         </span>
       )}
@@ -34,3 +43,4 @@ export default function AdminPageHeader({
     </header>
   );
 }
+

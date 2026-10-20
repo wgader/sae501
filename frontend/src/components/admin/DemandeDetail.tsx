@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { type Association, type AssociationModule, type AssociationStatus } from '@/lib/api';
-import { StatusBadge } from './StatusBadge';
 import StatusTag from './StatusTag';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export interface DemandeDetailProps {
   association: Association;
   onBack: () => void;
-  onUpdateStatus: (association: Association, status: AssociationStatus) => Promise<void>;
+  onUpdateStatus: (association: Association, status: AssociationStatus, permissions?: AssociationModule[]) => Promise<void>;
   isUpdating?: boolean;
 }
 
@@ -20,32 +20,65 @@ export function DemandeDetail({
 }: DemandeDetailProps) {
   const [internalNote, setInternalNote] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ status: AssociationStatus; label: string } | null>(null);
 
   const contact = association.contact;
 
-  const depositDate = association.createdAt
-    ? new Date(association.createdAt).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-    : 'Date non renseignée';
+  function handleStatusChange(nextStatus: AssociationStatus, label: string) {
+    setFeedback(null);
+    setPendingAction({ status: nextStatus, label });
+  }
 
-  async function handleStatusChange(nextStatus: AssociationStatus, label: string) {
-    if (!window.confirm(`Confirmer l'action « ${label} » pour l'association « ${association.nom} » ?`)) {
-      return;
-    }
+  async function handleConfirmStatusChange() {
+    if (!pendingAction) return;
+    const { status, label } = pendingAction;
     setFeedback(null);
     try {
-      await onUpdateStatus(association, nextStatus);
+      await onUpdateStatus(association, status);
       setFeedback({
         type: 'success',
         message: `Le statut de l'association a été mis à jour avec succès (${label}).`,
       });
+      setPendingAction(null);
     } catch {
       setFeedback({
         type: 'error',
         message: 'Erreur lors de la mise à jour du statut dans la base de données.',
+      });
+    }
+  }
+
+  async function handleToggleModule(moduleId: AssociationModule) {
+    const isSubventionActive = Boolean(
+      association.moduleSubventionActif || association.permissions?.includes('subventions'),
+    );
+    const isSalleActive = Boolean(
+      association.moduleSalleActif || association.permissions?.includes('salles'),
+    );
+    const isMaterielActive = Boolean(
+      association.moduleMaterielActif || association.permissions?.includes('materiel'),
+    );
+
+    const currentPermissions: AssociationModule[] = [];
+    if (isSubventionActive) currentPermissions.push('subventions');
+    if (isSalleActive) currentPermissions.push('salles');
+    if (isMaterielActive) currentPermissions.push('materiel');
+
+    const nextPermissions = currentPermissions.includes(moduleId)
+      ? currentPermissions.filter((p) => p !== moduleId)
+      : [...currentPermissions, moduleId];
+
+    setFeedback(null);
+    try {
+      await onUpdateStatus(association, association.statut, nextPermissions);
+      setFeedback({
+        type: 'success',
+        message: 'Habilitation au module mise à jour avec succès.',
+      });
+    } catch {
+      setFeedback({
+        type: 'error',
+        message: 'Erreur lors de la modification des modules.',
       });
     }
   }
@@ -69,7 +102,7 @@ export function DemandeDetail({
       {/* Main Title Header */}
       <div>
         <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Demande d'inscription
+          Demande d&apos;inscription
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-slate-900">
@@ -103,7 +136,7 @@ export function DemandeDetail({
             <div className="mt-4 border-t border-slate-100 pt-4 space-y-4">
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Nom de l'association
+                  Nom de l&apos;association
                 </span>
                 <span className="mt-0.5 block text-sm font-semibold text-slate-900 uppercase">
                   {association.nom}
@@ -233,12 +266,12 @@ export function DemandeDetail({
         {/* Right Column: Modules habilités & Décision */}
         <div className="space-y-6 lg:col-span-5">
           {/* MODULES ACCORDÉS */}
-          {/* <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Modules &amp; Habilitations
             </h2>
             <p className="mt-1 text-[11px] text-slate-400">
-              Accès aux fonctionnalités de la plateforme municipale
+              Accès aux fonctionnalités de la plateforme municipale (cliquez pour activer/désactiver)
             </p>
             <div className="mt-4 space-y-2.5">
               {[
@@ -246,7 +279,12 @@ export function DemandeDetail({
                 { id: 'salles' as const, label: 'Réservation de salles', icon: '🏛️' },
                 { id: 'materiel' as const, label: 'Emprunts de matériel', icon: '📦' },
               ].map((mod) => {
-                const isEnabled = association.permissions?.includes(mod.id as AssociationModule) ?? false;
+                const isEnabled = mod.id === 'subventions'
+                  ? Boolean(association.moduleSubventionActif || association.permissions?.includes('subventions'))
+                  : mod.id === 'salles'
+                  ? Boolean(association.moduleSalleActif || association.permissions?.includes('salles'))
+                  : Boolean(association.moduleMaterielActif || association.permissions?.includes('materiel'));
+
                 return (
                   <div
                     key={mod.id}
@@ -256,19 +294,23 @@ export function DemandeDetail({
                       <span>{mod.icon}</span>
                       <span>{mod.label}</span>
                     </div>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isEnabled
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-200 text-slate-600'
-                        }`}
+                    <button
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => handleToggleModule(mod.id)}
+                      className={`cursor-pointer rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isEnabled
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-slate-200 text-slate-600 border border-slate-300'
+                      }`}
                     >
-                      {isEnabled ? 'Actif' : 'Inactif'}
-                    </span>
+                      {isEnabled ? '✓ Actif' : '✕ Inactif'}
+                    </button>
                   </div>
                 );
               })}
             </div>
-          </div> */}
+          </div>
 
           {/* DÉCISION */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs">
@@ -276,7 +318,7 @@ export function DemandeDetail({
               Décision
             </h2>
             <p className="mt-1 text-[11px] text-slate-400">
-              Une notification sera envoyé à l'association
+              Une notification sera envoyée à l&apos;association
             </p>
 
             <div className="mt-4">
@@ -369,7 +411,21 @@ export function DemandeDetail({
           </div>
         </div>
       </div>
-    </div >
+
+      {pendingAction && (
+        <ConfirmationModal
+          isOpen={Boolean(pendingAction)}
+          currentStatus={association.statut}
+          targetStatus={pendingAction.status}
+          associationName={association.nom}
+          isLoading={isUpdating}
+          onConfirm={handleConfirmStatusChange}
+          onClose={() => {
+            if (!isUpdating) setPendingAction(null);
+          }}
+        />
+      )}
+    </div>
   );
 }
 

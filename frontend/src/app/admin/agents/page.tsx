@@ -1,6 +1,5 @@
 'use client';
 
-import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
 const AGENTS = [
@@ -26,8 +25,7 @@ const AGENTS = [
 
 export default function AdminAgentsPage() {
   return (
-    <AdminLayout>
-      <section className="mx-auto max-w-5xl space-y-8">
+    <section className="mx-auto max-w-5xl space-y-8">
         <AdminPageHeader
           title="Agents municipaux"
           description="Personnel habilité à valider les dossiers et administrer les accès associatifs."
@@ -64,6 +62,5 @@ export default function AdminAgentsPage() {
           </ul>
         </section>
       </section>
-    </AdminLayout>
   );
 }

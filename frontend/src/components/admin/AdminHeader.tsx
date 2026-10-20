@@ -49,14 +49,14 @@ export default function AdminHeader({
             value={searchTerm}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Rechercher une association"
-            className="h-10 w-full rounded-full border-0 bg-[var(--White)]/95 pl-10 pr-4 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/75 shadow-xs transition focus:bg-[var(--White)] focus:outline-none focus:ring-2 focus:ring-[var(--Lime-Cream)]"
+            className="h-10 w-full rounded-full border-0 bg-[var(--White)]/95 pl-10 pr-4 text-sm text-[var(--ink)] placeholder-[var(--muted)]/75 shadow-xs transition focus:bg-[var(--White)] focus:outline-none focus:ring-2 focus:ring-[var(--Lime-Cream)]"
           />
         </form>
       </div>
 
       <div className="flex items-center pl-4">
         <div className="flex items-center gap-2.5 rounded-full bg-[var(--White)] px-3 py-1.5 shadow-xs">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.6875rem] font-black text-[var(--ink)]">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.69rem] font-black text-[var(--ink)]">
             AF
           </span>
           <span className="hidden text-xs font-bold text-[var(--ink)] sm:inline">

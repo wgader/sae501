@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import AdminLayout from '@/components/admin/AdminLayout';
 import { type Association, type AssociationStatus, getAssociation, updateAssociationStatus } from '@/lib/api';
 
 import StatusBadge from '@/components/ui/StatusBadge';
 import Button from '@/components/ui/Button';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function AssociationDetailPage() {
   const params = useParams();
@@ -19,6 +19,7 @@ export default function AssociationDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<AssociationStatus | null>(null);
 
   const loadData = useCallback(async () => {
     if (!id || Number.isNaN(id)) {
@@ -78,8 +79,7 @@ export default function AssociationDetailPage() {
     : 'Date non renseignée';
 
   return (
-    <AdminLayout>
-      <section className="mx-auto max-w-4xl">
+    <section className="mx-auto max-w-4xl">
         {/* ── Navigation retour ────────────────────────────── */}
         <nav aria-label="Retour à la liste" className="mb-6">
           <Link
@@ -247,7 +247,7 @@ export default function AssociationDetailPage() {
                     <Button
                       variant="danger"
                       disabled={updating}
-                      onClick={() => handleUpdateStatus('REFUSED')}
+                      onClick={() => setPendingStatus('REFUSED')}
                       leftIcon={
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -260,7 +260,7 @@ export default function AssociationDetailPage() {
                     <Button
                       variant="primary"
                       isLoading={updating}
-                      onClick={() => handleUpdateStatus('VALIDATED')}
+                      onClick={() => setPendingStatus('VALIDATED')}
                       leftIcon={
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -273,29 +273,87 @@ export default function AssociationDetailPage() {
                 )}
 
                 {association.statut === 'VALIDATED' && (
-                  <Button
-                    variant="danger"
-                    isLoading={updating}
-                    onClick={() => handleUpdateStatus('REFUSED')}
-                  >
-                    Suspendre / Refuser
-                  </Button>
+                  <>
+                    <Button
+                      variant="secondary"
+                      disabled={updating}
+                      onClick={() => setPendingStatus('PENDING_VALIDATION')}
+                      leftIcon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                      }
+                    >
+                      Remettre en attente
+                    </Button>
+
+                    <Button
+                      variant="danger"
+                      isLoading={updating}
+                      onClick={() => setPendingStatus('REFUSED')}
+                      leftIcon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      }
+                    >
+                      Refuser la demande
+                    </Button>
+                  </>
                 )}
 
                 {association.statut === 'REFUSED' && (
-                  <Button
-                    variant="primary"
-                    isLoading={updating}
-                    onClick={() => handleUpdateStatus('PENDING_VALIDATION')}
-                  >
-                    Remettre en attente
-                  </Button>
+                  <>
+                    <Button
+                      variant="secondary"
+                      disabled={updating}
+                      onClick={() => setPendingStatus('PENDING_VALIDATION')}
+                      leftIcon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                      }
+                    >
+                      Remettre en attente
+                    </Button>
+
+                    <Button
+                      variant="primary"
+                      isLoading={updating}
+                      onClick={() => setPendingStatus('VALIDATED')}
+                      leftIcon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      }
+                    >
+                      Accepter l’inscription
+                    </Button>
+                  </>
                 )}
               </span>
             </footer>
           </article>
         )}
+
+        {/* ── Modal de confirmation de décision ────────────────────── */}
+        {pendingStatus && association && (
+          <ConfirmationModal
+            isOpen={Boolean(pendingStatus)}
+            currentStatus={association.statut}
+            targetStatus={pendingStatus}
+            associationName={association.nom}
+            isLoading={updating}
+            onConfirm={async () => {
+              const target = pendingStatus;
+              await handleUpdateStatus(target);
+              setPendingStatus(null);
+            }}
+            onClose={() => {
+              if (!updating) setPendingStatus(null);
+            }}
+          />
+        )}
       </section>
-    </AdminLayout>
   );
 }

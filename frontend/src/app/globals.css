@@ -9,6 +9,9 @@
     --color-Misty-Rose: var(--Misty-Rose);
     --color-Lime-Cream: var(--Lime-Cream);
     --color-Mosaic-Tile: var(--Mosaic-Tile);
+    --color-Indigo-Bloom: var(--Indigo-Bloom);
+    --color-Flush-Mahogany: var(--Flush-Mahogany);
+    --color-ink: var(--ink);
 }
 
 :root {
@@ -30,7 +33,6 @@
     --Mint-Cream: #CFEDE5;
     --Pale-Sage: #E3EFEA;
     --Flush-Mahogany: #CD2429;
-
     /* Neutral Colors */
     --White: #FFFFFF;
     --Black: #000000;

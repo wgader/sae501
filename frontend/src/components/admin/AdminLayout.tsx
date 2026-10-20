@@ -1,83 +1,26 @@
 'use client';
 
-import { ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
-import AdminSidebar from './AdminSidebar';
-import AdminHeader from './AdminHeader';
+import { ReactNode } from 'react';
 
 interface AdminLayoutProps {
   children: ReactNode;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
+  pagination?: ReactNode;
 }
 
-const emptySubscribe = () => () => {};
-
+/**
+ * Le layout est désormais géré nativement par Next.js dans `src/app/admin/layout.tsx`.
+ * Ce composant agit comme un wrapper transparent pour assurer la compatibilité ascendante.
+ */
 export default function AdminLayout({
   children,
-  searchTerm,
-  onSearchChange,
+  pagination,
 }: AdminLayoutProps) {
-  const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const token = useSyncExternalStore(
-    emptySubscribe,
-    () => localStorage.getItem('admin_token'),
-    () => undefined
-  );
-
-  useEffect(() => {
-    if (token === null) {
-      router.replace('/admin');
-    }
-  }, [token, router]);
-
-  if (token === undefined) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--Mosaic-Tile)] text-[var(--White)]">
-        <p className="text-sm font-semibold tracking-wider uppercase">Chargement de l&apos;administration...</p>
-      </main>
-    );
-  }
-
-  if (!token) {
-    return null;
-  }
-
   return (
-    <div className="flex min-h-screen w-full bg-[var(--Mosaic-Tile)] font-sans text-[var(--ink)] antialiased">
-      <aside className="hidden w-[250px] shrink-0 lg:block">
-        <div className="sticky top-0 h-screen">
-          <AdminSidebar />
-        </div>
-      </aside>
-
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
-          <aside className="relative flex h-full w-[270px] max-w-[85vw] flex-col shadow-2xl">
-            <AdminSidebar onNavigate={() => setMobileMenuOpen(false)} />
-          </aside>
-        </div>
-      )}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AdminHeader
-          searchTerm={searchTerm}
-          onSearchChange={onSearchChange}
-          isMobileMenuOpen={mobileMenuOpen}
-          onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
-        />
-
-        <main className="flex-1 rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-10 lg:p-12 shadow-sm">
-          {children}
-        </main>
-      </div>
-    </div>
+    <>
+      {children}
+      {pagination}
+    </>
   );
 }

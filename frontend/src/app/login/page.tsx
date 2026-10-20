@@ -2,7 +2,7 @@
 
 import { type FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import FormField from '../../components/ui/FormField';
+import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import ButtonView from '@/components/ui/ButtonView';
 import BackButton from '@/components/ui/BackButton';
