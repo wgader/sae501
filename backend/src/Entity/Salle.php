@@ -22,6 +22,9 @@ class Salle
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $imagePath = null;
+
     #[Assert\NotBlank(message: "L'adresse est obligatoire.")]
     #[Assert\Length(max: 255)]
     #[ORM\Column(length: 255)]
@@ -75,6 +78,18 @@ class Salle
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getImagePath(): ?string
+    {
+        return $this->imagePath;
+    }
+
+    public function setImagePath(?string $imagePath): static
+    {
+        $this->imagePath = $imagePath;
 
         return $this;
     }
