@@ -66,9 +66,7 @@ final class SalleAdministrationController extends AbstractController
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
-        if (!$image instanceof UploadedFile) {
-            $errors['image'] = 'Une image est obligatoire.';
-        } elseif (!$this->validateImage($image, $errors)) {
+        if ($image !== null && (!$image instanceof UploadedFile || !$this->validateImage($image, $errors))) {
         }
 
         if ($errors !== []) {
@@ -91,13 +89,15 @@ final class SalleAdministrationController extends AbstractController
         $salle->setIsActive(true);
         $salle->setDeletedAt(null);
 
-        $imagePath = $this->storeImage($image);
+        $imagePath = $image instanceof UploadedFile ? $this->storeImage($image) : null;
         $salle->setImagePath($imagePath);
         $this->entityManager->persist($salle);
         try {
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
-            $this->deleteStoredImage($imagePath);
+            if ($imagePath !== null) {
+                $this->deleteStoredImage($imagePath);
+            }
             throw $exception;
         }
 
@@ -255,7 +255,7 @@ final class SalleAdministrationController extends AbstractController
             return null;
         }
 
-        $pattern = "/^[\\p{L}][\\p{L} .'-]*,\\s*\\d{5}\\s+[\\p{L}][\\p{L} .'-]*$/u";
+        $pattern = "/^(?:[\\p{L}\\d][\\p{L}\\d .'-]*,\\s*\\d{5}\\s+[\\p{L}][\\p{L} .'-]*|[\\p{L}\\d][\\p{L}\\d .'-]*,\\s*[\\p{L}][\\p{L} .'-]*\\s+\\d{5})$/u";
 
         return preg_match($pattern, $address) === 1 ? $address : null;
     }

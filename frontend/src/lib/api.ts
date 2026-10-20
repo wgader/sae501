@@ -106,7 +106,7 @@ export type CreateSalleInput = {
   capaciteMax: number;
   accesPmr: boolean;
   equipementsInclus: string[];
-  image: File;
+  image?: File;
 };
 
 export function createSalle(input: CreateSalleInput): Promise<Salle> {
@@ -117,7 +117,7 @@ export function createSalle(input: CreateSalleInput): Promise<Salle> {
   body.append('capaciteMax', String(input.capaciteMax));
   body.append('accesPmr', String(input.accesPmr));
   body.append('equipementsInclus', JSON.stringify(input.equipementsInclus));
-  body.append('image', input.image);
+  if (input.image) body.append('image', input.image);
 
   return request<Salle>('/api/admin/salles', {
     method: 'POST',

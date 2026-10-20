@@ -13,13 +13,36 @@ const EQUIPMENT_OPTIONS = [
 ];
 
 function isFrenchAddress(value: string): boolean {
-  return /^[\p{L}][\p{L} .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*$/u.test(value.trim().replace(/\s+/g, ' '));
+  const address = value.trim().replace(/\s+/g, ' ');
+  return /^(?:[\p{L}\d][\p{L}\d .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*|[\p{L}\d][\p{L}\d .'-]*,\s*[\p{L}][\p{L} .'-]*\s+\d{5})$/u.test(address);
+}
+
+function ActionIcon({ name }: { name: 'edit' | 'archive' | 'status' }) {
+  const paths = {
+    edit: <><path d="m13.5 5.5 1 1M4 16l.5-3.5L12.8 4.2a1.7 1.7 0 0 1 2.4 2.4L6.9 15z" /><path d="M4 16h3" /></>,
+    archive: <><path d="M4 7h12v9H4zM3 4h14v3H3zM7 10h6" /></>,
+    status: <><path d="M4 10a6 6 0 1 0 2-4.5" /><path d="M4 4v4h4" /></>,
+  };
+
+  return <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
+}
+
+function AccessibilityIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="15" cy="4.5" r="2" />
+      <path d="M9 8h6l1.5 5.5H13l-1 3.5a4 4 0 1 1-3.5-2" />
+      <path d="M9 8 7 13l-3 2M13 13l4 2 2 4M7.5 20a5.5 5.5 0 1 0 0-11" />
+    </svg>
+  );
 }
 
 export default function SallesList() {
   const [salles, setSalles] = useState<Salle[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Salle | null>(null);
+  const [editingImage, setEditingImage] = useState<File | null>(null);
+  const [brokenImageIds, setBrokenImageIds] = useState<number[]>([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -65,6 +88,7 @@ export default function SallesList() {
   function startEditing(salle: Salle) {
     setEditingId(salle.id);
     setForm({ ...salle, equipementsInclus: [...salle.equipementsInclus] });
+    setEditingImage(null);
     setMessage('');
     setError('');
   }
@@ -78,6 +102,10 @@ export default function SallesList() {
       setError('Saisissez une adresse avec une voie, un code postal à 5 chiffres et une ville.');
       return;
     }
+    if (editingImage && (!['image/jpeg', 'image/png', 'image/webp'].includes(editingImage.type) || editingImage.size > 5 * 1024 * 1024)) {
+      setError('La nouvelle image doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo.');
+      return;
+    }
 
     try {
       const updated = await updateSalle(form.id, {
@@ -87,10 +115,13 @@ export default function SallesList() {
         capaciteMax: form.capaciteMax,
         accesPmr: form.accesPmr,
         equipementsInclus: form.equipementsInclus,
+        image: editingImage ?? undefined,
       });
       setSalles((current) => current.map((salle) => salle.id === updated.id ? updated : salle));
+      setBrokenImageIds((current) => current.filter((id) => id !== updated.id));
       setEditingId(null);
       setForm(null);
+      setEditingImage(null);
       setMessage('La salle a été modifiée.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Impossible de modifier la salle.');
@@ -173,6 +204,16 @@ export default function SallesList() {
           <div key={salle.id} className="overflow-hidden rounded-xl border border-[#D9E8E4] bg-white transition hover:border-[#8EBCB3] hover:shadow-sm">
             {editingId === salle.id && form ? (
               <div className="grid gap-4 bg-[#F7FBF8] p-5 md:grid-cols-2">
+                <label className="text-sm font-bold text-[#4D625B] md:col-span-2">
+                  Nouvelle image
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setEditingImage(event.target.files?.[0] ?? null)}
+                    className="mt-2 w-full rounded-lg border border-dashed border-[#8EBCB3] bg-white px-3 py-2.5 text-sm font-normal"
+                  />
+                  <span className="mt-1 block text-xs font-normal text-slate-500">Facultatif · JPEG, PNG ou WebP, 5 Mo maximum.</span>
+                </label>
                 <input value={form.nom} onChange={(event) => setForm({ ...form, nom: event.target.value })} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67]" aria-label="Nom de la salle" />
                 <textarea value={form.adresse} onChange={(event) => setForm({ ...form, adresse: event.target.value })} rows={2} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67]" aria-label="Adresse de la salle" />
                 <textarea value={form.description ?? ''} onChange={(event) => setForm({ ...form, description: event.target.value })} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67] md:col-span-2" aria-label="Description de la salle" />
@@ -203,43 +244,61 @@ export default function SallesList() {
                   </fieldset>
                   <div className="flex gap-2 md:col-span-2">
                     <button type="button" onClick={() => void save()} className="rounded-lg bg-[#146E67] px-4 py-2 text-sm font-bold text-white">Enregistrer</button>
-                    <button type="button" onClick={() => { setEditingId(null); setForm(null); }} className="rounded-lg border border-[#B9D8D1] px-4 py-2 text-sm font-bold text-[#4D625B]">Annuler</button>
+                    <button type="button" onClick={() => { setEditingId(null); setForm(null); setEditingImage(null); }} className="rounded-lg border border-[#B9D8D1] px-4 py-2 text-sm font-bold text-[#4D625B]">Annuler</button>
                   </div>
                 </div>
               ) : (
                 <div className="flex h-full flex-col justify-between">
-                  <div className="flex gap-4 p-4">
-                    {salle.imageUrl && (
+                  <div>
+                    {salle.imageUrl && !brokenImageIds.includes(salle.id) ? (
                       <Image
                         src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}${salle.imageUrl}`}
                         alt={`Photo de ${salle.nom}`}
-                        width={128}
-                        height={96}
+                        width={640}
+                        height={320}
                         unoptimized
-                        className="h-24 w-32 shrink-0 rounded-lg object-cover"
+                        className="h-52 w-full object-cover"
+                        onError={() => setBrokenImageIds((current) => current.includes(salle.id) ? current : [...current, salle.id])}
                       />
+                    ) : (
+                      <div className="flex h-52 w-full items-center justify-center bg-[#E8F4F2] text-[#78AAA1]" role="img" aria-label={`Aucune image pour ${salle.nom}`}>
+                        <span className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#78AAA1]" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 20V9l8-5 8 5v11M8 20v-6h8v6M3 20h18" />
+                          </svg>
+                        </span>
+                      </div>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 p-5">
                       <h3 className="font-black text-[#1E2420]">{salle.nom}</h3>
                       <p className="mt-1 text-sm text-[#6D746E]">{salle.adresse}</p>
                       <p className="mt-2 text-xs text-[#6D746E]">{salle.capaciteMax} places · {salle.equipementsInclus.join(', ') || 'Aucun équipement'}</p>
-                      <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${salle.deletedAt ? 'bg-[#FFE3E7] text-[#CD2429]' : salle.isActive ? 'bg-[#D8EC95] text-[#146E67]' : 'bg-[#FFF1D6] text-[#986A1B]'}`}>
-                        {salle.deletedAt ? 'Archivée' : salle.isActive ? 'Active' : 'Indisponible'}
-                      </span>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {salle.accesPmr && (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F4F2] px-2.5 py-1 text-[11px] font-bold text-[#146E67]" title="Accès PMR">
+                            <AccessibilityIcon />
+                            PMR
+                          </span>
+                        )}
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${salle.deletedAt ? 'bg-[#FFE3E7] text-[#CD2429]' : salle.isActive ? 'bg-[#D8EC95] text-[#146E67]' : 'bg-[#FFF1D6] text-[#986A1B]'}`}>
+                          {salle.deletedAt ? 'Archivée' : salle.isActive ? 'Active' : 'Indisponible'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 border-t border-[#E8EFEB] bg-[#FCFDFC] p-4">
                     {!salle.deletedAt && (
                       <>
-                        <button type="button" onClick={() => startEditing(salle)} className="rounded-lg border border-[#B9D8D1] px-3 py-2 text-xs font-bold text-[#146E67] hover:bg-[#E8F4F2]">Modifier</button>
+                        <button type="button" onClick={() => startEditing(salle)} className="inline-flex items-center gap-2 rounded-lg border border-[#B9D8D1] px-3 py-2 text-xs font-bold text-[#146E67] transition hover:bg-[#E8F4F2]"><ActionIcon name="edit" />Modifier</button>
                         <button
                           type="button"
                           onClick={() => void toggleStatus(salle)}
-                          className={`rounded-lg px-3 py-2 text-xs font-bold ${salle.isActive ? 'border border-amber-300 text-amber-700 hover:bg-amber-50' : 'bg-[#146E67] text-white hover:bg-[#0F5A54]'}`}
+                          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition ${salle.isActive ? 'border border-amber-300 text-amber-700 hover:bg-amber-50' : 'bg-[#146E67] text-white hover:bg-[#0F5A54]'}`}
                         >
+                          <ActionIcon name="status" />
                           {salle.isActive ? 'Indisponible' : 'Disponible'}
                         </button>
-                        <button type="button" onClick={() => void archive(salle)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">Archiver</button>
+                        <button type="button" onClick={() => void archive(salle)} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-50"><ActionIcon name="archive" />Archiver</button>
                       </>
                     )}
                   </div>

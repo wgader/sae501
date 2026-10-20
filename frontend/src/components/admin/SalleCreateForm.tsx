@@ -12,10 +12,16 @@ const EQUIPMENT_OPTIONS = [
 ];
 
 function isFrenchAddress(value: string): boolean {
-  return /^[\p{L}][\p{L} .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*$/u.test(value.trim().replace(/\s+/g, ' '));
+  const address = value.trim().replace(/\s+/g, ' ');
+  return /^(?:[\p{L}\d][\p{L}\d .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*|[\p{L}\d][\p{L}\d .'-]*,\s*[\p{L}][\p{L} .'-]*\s+\d{5})$/u.test(address);
 }
 
-export default function SalleCreateForm() {
+type SalleCreateFormProps = {
+  onCreated?: () => void;
+};
+
+export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [nom, setNom] = useState('');
   const [adresse, setAdresse] = useState('');
   const [description, setDescription] = useState('');
@@ -41,15 +47,15 @@ export default function SalleCreateForm() {
     setSuccess('');
 
     const capacity = Number(capaciteMax);
-    if (!nom.trim() || !adresse.trim() || !Number.isInteger(capacity) || capacity <= 0 || !image) {
-      setError('Renseignez les champs obligatoires et sélectionnez une image.');
+    if (!nom.trim() || !adresse.trim() || !Number.isInteger(capacity) || capacity <= 0) {
+      setError('Renseignez les champs obligatoires.');
       return;
     }
     if (!isFrenchAddress(adresse)) {
       setError('Saisissez une adresse avec une voie, un code postal à 5 chiffres et une ville.');
       return;
     }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(image.type) || image.size > 5 * 1024 * 1024) {
+    if (image && (!['image/jpeg', 'image/png', 'image/webp'].includes(image.type) || image.size > 5 * 1024 * 1024)) {
       setError('L’image doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo.');
       return;
     }
@@ -63,8 +69,9 @@ export default function SalleCreateForm() {
         capaciteMax: capacity,
         accesPmr,
         equipementsInclus,
-        image,
+        image: image ?? undefined,
       });
+      onCreated?.();
       setNom('');
       setAdresse('');
       setDescription('');
@@ -84,13 +91,25 @@ export default function SalleCreateForm() {
 
   return (
     <AdminPanel className="mb-8 overflow-hidden">
-      <div className="border-b border-[#D9E8E4] bg-[#F7FBF8] px-6 py-5">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#146E67]">Nouveau lieu</p>
-        <h2 className="mt-1 text-xl font-black tracking-[-0.03em] text-[#1E2420]">Ajouter une salle</h2>
-        <p className="mt-1 text-sm text-[#6D746E]">La salle sera active immédiatement après sa création.</p>
-      </div>
-
-      <div className="p-6">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        aria-controls="salle-create-form"
+        className="flex w-full items-center justify-between gap-4 bg-[#F7FBF8] px-6 py-5 text-left transition hover:bg-[#F0F8F4]"
+      >
+        <span>
+          <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-[#146E67]">Nouveau lieu</span>
+          <span className="mt-1 block text-xl font-black tracking-[-0.03em] text-[#1E2420]">Ajouter une salle</span>
+          <span className="mt-1 block text-sm font-normal text-[#6D746E]">La salle sera active immédiatement après sa création.</span>
+        </span>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#B9D8D1] text-[#146E67] transition ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5">
+            <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+      <div id="salle-create-form" hidden={!isOpen} className="p-6">
       {error && <p className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
       {success && <p className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{success}</p>}
 
@@ -101,7 +120,7 @@ export default function SalleCreateForm() {
         </label>
         <label className="text-sm font-bold text-[#4D625B]">
           Adresse *
-          <textarea value={adresse} onChange={(event) => setAdresse(event.target.value)} rows={2} className="mt-2 w-full rounded-lg border border-[#C9D9D4] bg-white px-3 py-2.5 text-sm font-normal outline-none transition focus:border-[#146E67] focus:ring-2 focus:ring-[#146E67]/10" placeholder="Rue des Besses, 87220 Feytiat" />
+          <textarea value={adresse} onChange={(event) => setAdresse(event.target.value)} rows={2} className="mt-2 w-full rounded-lg border border-[#C9D9D4] bg-white px-3 py-2.5 text-sm font-normal outline-none transition focus:border-[#146E67] focus:ring-2 focus:ring-[#146E67]/10" placeholder="185 rue Louis Destouches, Limoges 87000" />
         </label>
         <label className="text-sm font-bold text-[#4D625B] md:col-span-2">
           Description
@@ -112,16 +131,15 @@ export default function SalleCreateForm() {
           <input type="number" min="1" step="1" value={capaciteMax} onChange={(event) => setCapaciteMax(event.target.value)} className="mt-2 w-full rounded-lg border border-[#C9D9D4] bg-white px-3 py-2.5 text-sm font-normal outline-none transition focus:border-[#146E67] focus:ring-2 focus:ring-[#146E67]/10" />
         </label>
         <label className="text-sm font-bold text-[#4D625B]">
-          Image de la salle *
+          Image de la salle
           <input
             id="salle-image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            required
             onChange={(event) => setImage(event.target.files?.[0] ?? null)}
             className="mt-2 w-full rounded-lg border border-dashed border-[#8EBCB3] bg-[#F7FBF8] px-3 py-2.5 text-sm font-normal"
           />
-          <span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG ou WebP, 5 Mo maximum.</span>
+          <span className="mt-1 block text-xs font-normal text-slate-500">Facultative · JPEG, PNG ou WebP, 5 Mo maximum. Un visuel par défaut sera utilisé si elle est absente.</span>
         </label>
         <label className="flex items-center gap-3 self-end pb-2 text-sm font-bold text-[#4D625B]">
           <input type="checkbox" checked={accesPmr} onChange={(event) => setAccesPmr(event.target.checked)} className="h-4 w-4 accent-[#146E67]" />
@@ -148,7 +166,7 @@ export default function SalleCreateForm() {
             {isSubmitting ? 'Création en cours…' : 'Créer la salle'}
           </button>
         </div>
-      </form>
+        </form>
       </div>
     </AdminPanel>
   );

@@ -1,8 +1,13 @@
+'use client';
+
+import { useState } from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import SalleCreateForm from '@/components/admin/SalleCreateForm';
 import SallesList from '@/components/admin/SallesList';
 
 export default function AdminSallesPage() {
+  const [sallesListKey, setSallesListKey] = useState(0);
+
   return (
     <main className="flex min-h-screen bg-[#F5F8F5] text-[#1E2420]">
       <AdminSidebar />
@@ -21,8 +26,8 @@ export default function AdminSallesPage() {
             <div className="mb-8">
               <p className="text-sm text-[#6D746E]">Ajoutez, modifiez et rendez disponibles les espaces de la ville.</p>
             </div>
-            <SalleCreateForm />
-            <SallesList />
+            <SalleCreateForm onCreated={() => setSallesListKey((key) => key + 1)} />
+            <SallesList key={sallesListKey} />
           </div>
         </div>
       </section>
