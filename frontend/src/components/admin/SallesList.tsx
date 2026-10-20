@@ -10,6 +10,10 @@ const EQUIPMENT_OPTIONS = [
   { value: 'SCENE', label: 'Scène' },
 ];
 
+function isFrenchAddress(value: string): boolean {
+  return /^[\p{L}][\p{L} .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*$/u.test(value.trim().replace(/\s+/g, ' '));
+}
+
 export default function SallesList() {
   const [salles, setSalles] = useState<Salle[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -26,7 +30,11 @@ export default function SallesList() {
   }
 
   useEffect(() => {
-    void loadSalles();
+    const timeoutId = window.setTimeout(() => {
+      void loadSalles();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   function startEditing(salle: Salle) {
@@ -39,6 +47,10 @@ export default function SallesList() {
   async function save() {
     if (!form || !form.nom.trim() || !form.adresse.trim() || form.capaciteMax <= 0) {
       setError('Le nom, l’adresse et une capacité supérieure à zéro sont obligatoires.');
+      return;
+    }
+    if (!isFrenchAddress(form.adresse)) {
+      setError('Saisissez une adresse avec une voie, un code postal à 5 chiffres et une ville.');
       return;
     }
 
@@ -102,7 +114,7 @@ export default function SallesList() {
               {editingId === salle.id && form ? (
                 <div className="grid gap-4 md:grid-cols-2">
                   <input value={form.nom} onChange={(event) => setForm({ ...form, nom: event.target.value })} className="rounded-lg border border-slate-300 px-3 py-2" aria-label="Nom de la salle" />
-                  <input value={form.adresse} onChange={(event) => setForm({ ...form, adresse: event.target.value })} className="rounded-lg border border-slate-300 px-3 py-2" aria-label="Adresse de la salle" />
+                  <textarea value={form.adresse} onChange={(event) => setForm({ ...form, adresse: event.target.value })} rows={2} className="rounded-lg border border-slate-300 px-3 py-2" aria-label="Adresse de la salle" />
                   <textarea value={form.description ?? ''} onChange={(event) => setForm({ ...form, description: event.target.value })} className="rounded-lg border border-slate-300 px-3 py-2 md:col-span-2" aria-label="Description de la salle" />
                   <input type="number" min="1" value={form.capaciteMax} onChange={(event) => setForm({ ...form, capaciteMax: Number(event.target.value) })} className="rounded-lg border border-slate-300 px-3 py-2" aria-label="Capacité maximale" />
                   <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -137,6 +149,13 @@ export default function SallesList() {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
+                    {salle.imageUrl && (
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}${salle.imageUrl}`}
+                        alt={`Photo de ${salle.nom}`}
+                        className="mb-3 h-24 w-40 rounded-lg object-cover"
+                      />
+                    )}
                     <h3 className="font-semibold text-slate-900">{salle.nom}</h3>
                     <p className="text-sm text-slate-600">{salle.adresse} · {salle.capaciteMax} places</p>
                     <p className="text-xs text-slate-500">{salle.equipementsInclus.join(', ') || 'Aucun équipement indiqué'}</p>

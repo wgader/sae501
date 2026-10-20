@@ -8,6 +8,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -17,6 +19,8 @@ final class SalleAdministrationController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        #[Autowire('%kernel.project_dir%')]
+        private readonly string $projectDir,
     ) {
     }
 
@@ -34,14 +38,8 @@ final class SalleAdministrationController extends AbstractController
     #[Route('', name: 'admin_salle_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $payload = json_decode($request->getContent(), true);
-
-        if (!is_array($payload)) {
-            return $this->json(
-                ['message' => 'Le corps de la requête est invalide.'],
-                Response::HTTP_BAD_REQUEST,
-            );
-        }
+        $payload = $this->requestPayload($request);
+        $image = $request->files->get('image');
 
         $errors = [];
 
@@ -49,23 +47,28 @@ final class SalleAdministrationController extends AbstractController
             $errors['nom'] = 'Le nom de la salle est obligatoire.';
         }
 
-        if (!is_string($payload['adresse'] ?? null) || trim($payload['adresse']) === '') {
-            $errors['adresse'] = "L'adresse est obligatoire.";
+        $address = $this->normalizeAddress($payload['adresse'] ?? null);
+        if ($address === null) {
+            $errors['adresse'] = "L'adresse doit contenir une voie, un code postal à 5 chiffres et une ville.";
         }
 
-        if (
-            !is_int($payload['capaciteMax'] ?? null)
-            || $payload['capaciteMax'] <= 0
-        ) {
+        $capacity = filter_var($payload['capaciteMax'] ?? null, FILTER_VALIDATE_INT);
+        if ($capacity === false || $capacity <= 0) {
             $errors['capaciteMax'] = 'La capacité maximale doit être un entier strictement supérieur à zéro.';
         }
 
-        if (isset($payload['accesPmr']) && !is_bool($payload['accesPmr'])) {
+        if (!$this->parseBoolean($payload['accesPmr'] ?? false, $accesPmr)) {
             $errors['accesPmr'] = 'Le champ accesPmr doit être un booléen.';
         }
 
-        if (isset($payload['equipementsInclus']) && !is_array($payload['equipementsInclus'])) {
+        $equipments = $this->parseEquipments($payload['equipementsInclus'] ?? []);
+        if ($equipments === null) {
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
+        }
+
+        if (!$image instanceof UploadedFile) {
+            $errors['image'] = 'Une image est obligatoire.';
+        } elseif (!$this->validateImage($image, $errors)) {
         }
 
         if ($errors !== []) {
@@ -78,33 +81,35 @@ final class SalleAdministrationController extends AbstractController
         $now = new \DateTimeImmutable();
         $salle = new Salle();
         $salle->setNom(trim($payload['nom']));
-        $salle->setAdresse(trim($payload['adresse']));
+        $salle->setAdresse($address);
         $salle->setDescription($this->optionalString($payload['description'] ?? null));
-        $salle->setCapaciteMax($payload['capaciteMax']);
-        $salle->setAccesPmr($payload['accesPmr'] ?? false);
-        $salle->setEquipementsInclus($payload['equipementsInclus'] ?? []);
+        $salle->setCapaciteMax($capacity);
+        $salle->setAccesPmr($accesPmr);
+        $salle->setEquipementsInclus($equipments);
         $salle->setCreatedAt($now);
         $salle->setUpdatedAt($now);
         $salle->setIsActive(true);
         $salle->setDeletedAt(null);
 
+        $imagePath = $this->storeImage($image);
+        $salle->setImagePath($imagePath);
         $this->entityManager->persist($salle);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->flush();
+        } catch (\Throwable $exception) {
+            $this->deleteStoredImage($imagePath);
+            throw $exception;
+        }
 
         return $this->json(self::serializeSalle($salle), Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'admin_salle_update', methods: ['PATCH'])]
+    #[Route('/{id}', name: 'admin_salle_update_multipart', methods: ['POST'])]
     public function update(Salle $salle, Request $request): JsonResponse
     {
-        $payload = json_decode($request->getContent(), true);
-
-        if (!is_array($payload)) {
-            return $this->json(
-                ['message' => 'Le corps de la requête est invalide.'],
-                Response::HTTP_BAD_REQUEST,
-            );
-        }
+        $payload = $this->requestPayload($request);
+        $image = $request->files->get('image');
 
         $errors = [];
 
@@ -114,15 +119,16 @@ final class SalleAdministrationController extends AbstractController
             $errors['nom'] = 'Le nom de la salle est obligatoire.';
         }
 
-        if (array_key_exists('adresse', $payload)
-            && (!is_string($payload['adresse']) || trim($payload['adresse']) === '')
-        ) {
-            $errors['adresse'] = "L'adresse est obligatoire.";
+        $address = null;
+        if (array_key_exists('adresse', $payload)) {
+            $address = $this->normalizeAddress($payload['adresse']);
+            if ($address === null) {
+                $errors['adresse'] = "L'adresse doit contenir une voie, un code postal à 5 chiffres et une ville.";
+            }
         }
 
-        if (array_key_exists('capaciteMax', $payload)
-            && (!is_int($payload['capaciteMax']) || $payload['capaciteMax'] <= 0)
-        ) {
+        $capacity = filter_var($payload['capaciteMax'] ?? null, FILTER_VALIDATE_INT);
+        if (array_key_exists('capaciteMax', $payload) && ($capacity === false || $capacity <= 0)) {
             $errors['capaciteMax'] = 'La capacité maximale doit être un entier strictement supérieur à zéro.';
         }
 
@@ -133,14 +139,19 @@ final class SalleAdministrationController extends AbstractController
             $errors['description'] = 'La description doit être une chaîne de caractères ou null.';
         }
 
-        if (array_key_exists('accesPmr', $payload) && !is_bool($payload['accesPmr'])) {
-            $errors['accesPmr'] = 'Le champ accesPmr doit être un booléen.';
+        $accesPmr = null;
+        if (array_key_exists('accesPmr', $payload) && !$this->parseBoolean($payload['accesPmr'], $accesPmr)) {
+                $errors['accesPmr'] = 'Le champ accesPmr doit être un booléen.';
         }
 
-        if (array_key_exists('equipementsInclus', $payload)
-            && !is_array($payload['equipementsInclus'])
-        ) {
+        $equipments = array_key_exists('equipementsInclus', $payload)
+            ? $this->parseEquipments($payload['equipementsInclus'])
+            : null;
+        if (array_key_exists('equipementsInclus', $payload) && $equipments === null) {
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
+        }
+
+        if ($image !== null && (!$image instanceof UploadedFile || !$this->validateImage($image, $errors))) {
         }
 
         if ($errors !== []) {
@@ -154,23 +165,39 @@ final class SalleAdministrationController extends AbstractController
             $salle->setNom(trim($payload['nom']));
         }
         if (array_key_exists('adresse', $payload)) {
-            $salle->setAdresse(trim($payload['adresse']));
+            $salle->setAdresse($address);
         }
         if (array_key_exists('description', $payload)) {
             $salle->setDescription($payload['description']);
         }
         if (array_key_exists('capaciteMax', $payload)) {
-            $salle->setCapaciteMax($payload['capaciteMax']);
+            $salle->setCapaciteMax($capacity);
         }
         if (array_key_exists('accesPmr', $payload)) {
-            $salle->setAccesPmr($payload['accesPmr']);
+            $salle->setAccesPmr($accesPmr);
         }
         if (array_key_exists('equipementsInclus', $payload)) {
-            $salle->setEquipementsInclus($payload['equipementsInclus']);
+            $salle->setEquipementsInclus($equipments);
         }
 
+        $oldImagePath = $salle->getImagePath();
+        $newImagePath = null;
+        if ($image instanceof UploadedFile) {
+            $newImagePath = $this->storeImage($image);
+            $salle->setImagePath($newImagePath);
+        }
         $salle->setUpdatedAt(new \DateTimeImmutable());
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->flush();
+        } catch (\Throwable $exception) {
+            if ($newImagePath !== null) {
+                $this->deleteStoredImage($newImagePath);
+            }
+            throw $exception;
+        }
+        if ($newImagePath !== null && $oldImagePath !== null) {
+            $this->deleteStoredImage($oldImagePath);
+        }
 
         return $this->json(self::serializeSalle($salle));
     }
@@ -217,6 +244,146 @@ final class SalleAdministrationController extends AbstractController
         return is_string($value) ? $value : null;
     }
 
+    private function normalizeAddress(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $address = preg_replace('/\s+/u', ' ', trim($value));
+        if ($address === null || mb_strlen($address) > 255) {
+            return null;
+        }
+
+        $pattern = "/^[\\p{L}][\\p{L} .'-]*,\\s*\\d{5}\\s+[\\p{L}][\\p{L} .'-]*$/u";
+
+        return preg_match($pattern, $address) === 1 ? $address : null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function requestPayload(Request $request): array
+    {
+        if ($request->request->count() > 0) {
+            $payload = $request->request->all();
+            if (isset($payload['equipementsInclus']) && is_string($payload['equipementsInclus'])) {
+                $payload['equipementsInclus'] = json_decode($payload['equipementsInclus'], true);
+            }
+
+            return $payload;
+        }
+
+        $payload = json_decode($request->getContent(), true);
+
+        return is_array($payload) ? $payload : [];
+    }
+
+    private function parseBoolean(mixed $value, ?bool &$result): bool
+    {
+        if (is_bool($value)) {
+            $result = $value;
+
+            return true;
+        }
+        if (is_string($value) && in_array(strtolower($value), ['true', 'false'], true)) {
+            $result = strtolower($value) === 'true';
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function parseEquipments(mixed $value): ?array
+    {
+        if (!is_array($value) || array_filter($value, static fn (mixed $item): bool => !is_string($item)) !== []) {
+            return null;
+        }
+
+        return array_values($value);
+    }
+
+    /**
+     * @param array<string, string> $errors
+     */
+    private function validateImage(UploadedFile $image, array &$errors): bool
+    {
+        if (!$image->isValid()) {
+            $errors['image'] = 'Le transfert de l’image a échoué.';
+
+            return false;
+        }
+        if ($image->getSize() === false || $image->getSize() > 5 * 1024 * 1024) {
+            $errors['image'] = 'L’image ne doit pas dépasser 5 Mo.';
+
+            return false;
+        }
+
+        $mimeType = $image->getMimeType();
+        $allowedMimeTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+        if (!isset($allowedMimeTypes[$mimeType])) {
+            $errors['image'] = 'Le fichier doit être une image JPEG, PNG ou WebP.';
+
+            return false;
+        }
+        $dimensions = @getimagesize($image->getPathname());
+        if (
+            $dimensions === false
+            || $dimensions[0] < 1
+            || $dimensions[1] < 1
+            || $dimensions[0] > 8000
+            || $dimensions[1] > 8000
+        ) {
+            $errors['image'] = 'Le contenu du fichier image est invalide.';
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function storeImage(UploadedFile $image): string
+    {
+        $directory = $this->projectDir . '/public/uploads/salles';
+        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new \RuntimeException('Le répertoire de stockage des images est indisponible.');
+        }
+
+        $mimeType = $image->getMimeType();
+        $extension = match ($mimeType) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => throw new \RuntimeException('Type d’image non autorisé.'),
+        };
+        $filename = bin2hex(random_bytes(24)) . '.' . $extension;
+        $image->move($directory, $filename);
+
+        return '/uploads/salles/' . $filename;
+    }
+
+    private function deleteStoredImage(string $imagePath): void
+    {
+        $prefix = '/uploads/salles/';
+        if (!str_starts_with($imagePath, $prefix)) {
+            return;
+        }
+
+        $filename = basename($imagePath);
+        $fullPath = $this->projectDir . '/public' . $prefix . $filename;
+        if (is_file($fullPath) && !unlink($fullPath)) {
+            throw new \RuntimeException('Impossible de supprimer l’ancienne image de salle.');
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -226,6 +393,7 @@ final class SalleAdministrationController extends AbstractController
             'id' => $salle->getId(),
             'nom' => $salle->getNom(),
             'description' => $salle->getDescription(),
+            'imageUrl' => $salle->getImagePath(),
             'adresse' => $salle->getAdresse(),
             'capaciteMax' => $salle->getCapaciteMax(),
             'accesPmr' => $salle->isAccesPmr(),

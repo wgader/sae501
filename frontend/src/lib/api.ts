@@ -23,6 +23,7 @@ export type Salle = {
   id: number;
   nom: string;
   description: string | null;
+  imageUrl: string | null;
   adresse: string;
   capaciteMax: number;
   accesPmr: boolean;
@@ -105,13 +106,22 @@ export type CreateSalleInput = {
   capaciteMax: number;
   accesPmr: boolean;
   equipementsInclus: string[];
+  image: File;
 };
 
 export function createSalle(input: CreateSalleInput): Promise<Salle> {
+  const body = new FormData();
+  body.append('nom', input.nom);
+  body.append('adresse', input.adresse);
+  body.append('description', input.description || '');
+  body.append('capaciteMax', String(input.capaciteMax));
+  body.append('accesPmr', String(input.accesPmr));
+  body.append('equipementsInclus', JSON.stringify(input.equipementsInclus));
+  body.append('image', input.image);
+
   return request<Salle>('/api/admin/salles', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body,
   });
 }
 
@@ -120,6 +130,20 @@ export function getSalles(): Promise<Salle[]> {
 }
 
 export function updateSalle(id: number, input: Partial<CreateSalleInput>): Promise<Salle> {
+  if (input.image) {
+    const body = new FormData();
+    Object.entries(input).forEach(([key, value]) => {
+      if (key === 'image' && value instanceof File) body.append(key, value);
+      else if (Array.isArray(value)) body.append(key, JSON.stringify(value));
+      else if (value !== undefined) body.append(key, String(value));
+    });
+
+    return request<Salle>(`/api/admin/salles/${id}`, {
+      method: 'POST',
+      body,
+    });
+  }
+
   return request<Salle>(`/api/admin/salles/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

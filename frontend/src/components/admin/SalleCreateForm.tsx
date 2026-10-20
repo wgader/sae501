@@ -10,6 +10,10 @@ const EQUIPMENT_OPTIONS = [
   { value: 'SCENE', label: 'Scène' },
 ];
 
+function isFrenchAddress(value: string): boolean {
+  return /^[\p{L}][\p{L} .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*$/u.test(value.trim().replace(/\s+/g, ' '));
+}
+
 export default function SalleCreateForm() {
   const [nom, setNom] = useState('');
   const [adresse, setAdresse] = useState('');
@@ -17,6 +21,7 @@ export default function SalleCreateForm() {
   const [capaciteMax, setCapaciteMax] = useState('');
   const [accesPmr, setAccesPmr] = useState(false);
   const [equipementsInclus, setEquipementsInclus] = useState<string[]>([]);
+  const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,8 +40,16 @@ export default function SalleCreateForm() {
     setSuccess('');
 
     const capacity = Number(capaciteMax);
-    if (!nom.trim() || !adresse.trim() || !Number.isInteger(capacity) || capacity <= 0) {
-      setError('Renseignez le nom, l’adresse et une capacité entière supérieure à zéro.');
+    if (!nom.trim() || !adresse.trim() || !Number.isInteger(capacity) || capacity <= 0 || !image) {
+      setError('Renseignez les champs obligatoires et sélectionnez une image.');
+      return;
+    }
+    if (!isFrenchAddress(adresse)) {
+      setError('Saisissez une adresse avec une voie, un code postal à 5 chiffres et une ville.');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(image.type) || image.size > 5 * 1024 * 1024) {
+      setError('L’image doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo.');
       return;
     }
 
@@ -49,6 +62,7 @@ export default function SalleCreateForm() {
         capaciteMax: capacity,
         accesPmr,
         equipementsInclus,
+        image,
       });
       setNom('');
       setAdresse('');
@@ -56,6 +70,9 @@ export default function SalleCreateForm() {
       setCapaciteMax('');
       setAccesPmr(false);
       setEquipementsInclus([]);
+      setImage(null);
+      const imageInput = document.getElementById('salle-image') as HTMLInputElement | null;
+      if (imageInput) imageInput.value = '';
       setSuccess('La salle a été créée avec succès.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Impossible de créer la salle.');
@@ -81,7 +98,7 @@ export default function SalleCreateForm() {
         </label>
         <label className="text-sm font-medium text-slate-700">
           Adresse *
-          <input value={adresse} onChange={(event) => setAdresse(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <textarea value={adresse} onChange={(event) => setAdresse(event.target.value)} rows={2} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Rue des Besses, 87220 Feytiat" />
         </label>
         <label className="text-sm font-medium text-slate-700 md:col-span-2">
           Description
@@ -90,6 +107,18 @@ export default function SalleCreateForm() {
         <label className="text-sm font-medium text-slate-700">
           Capacité maximale *
           <input type="number" min="1" step="1" value={capaciteMax} onChange={(event) => setCapaciteMax(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2" />
+        </label>
+        <label className="text-sm font-medium text-slate-700">
+          Image de la salle *
+          <input
+            id="salle-image"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            required
+            onChange={(event) => setImage(event.target.files?.[0] ?? null)}
+            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+          <span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG ou WebP, 5 Mo maximum.</span>
         </label>
         <label className="flex items-center gap-3 self-end pb-2 text-sm font-medium text-slate-700">
           <input type="checkbox" checked={accesPmr} onChange={(event) => setAccesPmr(event.target.checked)} className="h-4 w-4" />
