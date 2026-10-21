@@ -1,10 +1,10 @@
-import { cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
-const navItemVariants = cva(
-  "group flex min-h-[44px] w-full items-center justify-center gap-3.5 rounded-[10px] px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--Mosaic-Tile)] md:justify-start md:px-3.5",
+export const navItemVariants = cva(
+  "group flex min-h-[2.75rem] w-full items-center justify-center gap-3.5 rounded-[0.63rem] px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--Mosaic-Tile)] md:justify-start md:px-3.5",
   {
     variants: {
       selected: {
@@ -18,10 +18,14 @@ const navItemVariants = cva(
   },
 );
 
-interface NavItemProps {
+export interface NavItemDataProps {
   root: string;
   name: string;
   icon: ReactNode;
+}
+
+export interface NavItemProps
+  extends VariantProps<typeof navItemVariants> {
   isSelected?: boolean;
   className?: string;
 }
@@ -32,7 +36,7 @@ export default function NavItem({
   isSelected = false,
   root,
   name,
-}: NavItemProps) {
+}: NavItemDataProps & NavItemProps) {
   const href = root ? `/${root}` : "/";
 
   return (
@@ -47,3 +51,4 @@ export default function NavItem({
     </Link>
   );
 }
+

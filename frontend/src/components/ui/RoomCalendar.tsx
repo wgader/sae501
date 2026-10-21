@@ -1,6 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+
+export const roomCalendarVariants = cva('w-full');
 
 export const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const weekDaysShort = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -20,46 +24,56 @@ const getRoomBg = (colorClass: string) => {
   return map[colorClass] || 'bg-transparent';
 };
 
-interface Room {
+export const getMockReservations = (date: Date, filter: string, rooms: Room[]) => {
+  const seed = date.getDate() + date.getMonth();
+  const numRes = seed % 4;
+  
+  let dayRooms = [];
+  for (let i = 0; i < numRes; i++) {
+    dayRooms.push(rooms[(seed + i) % rooms.length]);
+  }
+  
+  if (filter !== 'Toutes les salles') {
+    dayRooms = dayRooms.filter(r => r.name === filter);
+  }
+  
+  const uniqueRooms = [];
+  const map = new Map();
+  for (const item of dayRooms) {
+    if(!map.has(item.name)){
+        map.set(item.name, true);
+        uniqueRooms.push(item);
+    }
+  }
+  
+  return uniqueRooms;
+};
+
+export interface Room {
   name: string;
   capacity: string;
   color: string;
 }
 
-export const getMockReservations = (date: Date, filter: string, rooms: Room[]) => {
-  const seed = date.getDate() + date.getMonth();
-  const numRes = seed % 4;
-
-  let dayRooms: Room[] = [];
-  for (let i = 0; i < numRes; i++) {
-    const room = rooms[(seed + i) % rooms.length];
-    if (room) dayRooms.push(room);
-  }
-
-  if (filter !== 'Toutes les salles') {
-    dayRooms = dayRooms.filter((room) => room.name === filter);
-  }
-
-  const uniqueRooms: Room[] = [];
-  const map = new Map<string, boolean>();
-  for (const item of dayRooms) {
-    if (!map.has(item.name)) {
-      map.set(item.name, true);
-      uniqueRooms.push(item);
-    }
-  }
-
-  return uniqueRooms;
-};
-
-interface RoomCalendarProps {
+export interface RoomCalendarDataProps {
   rooms: Room[];
   selectedDate: Date | null;
-  onDateSelect: (date: Date) => void;
-  onNextStep: () => void;
 }
 
-export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNextStep }: RoomCalendarProps) {
+export interface RoomCalendarProps
+  extends VariantProps<typeof roomCalendarVariants> {
+  onDateSelect: (date: Date) => void;
+  onNextStep: () => void;
+  className?: string;
+}
+
+export default function RoomCalendar({
+  rooms,
+  selectedDate,
+  onDateSelect,
+  onNextStep,
+  className,
+}: RoomCalendarDataProps & RoomCalendarProps) {
   const [viewDate, setViewDate] = useState(new Date()); 
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
   const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
@@ -136,21 +150,21 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5ce transparent; }
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { height: 0.38rem; width: 0.38rem; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5ce; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5ce; border-radius: 0.25rem; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9eaaa3; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
 
-      <div className="mt-8 mb-6">
+      <div className={cn('mt-8 mb-6', className)}>
         <div className="flex items-center justify-center gap-4 mb-8 text-xl sm:text-2xl font-black uppercase tracking-widest text-[#1e2420]">
           <div className="flex gap-3 sm:gap-4">
             <button type="button" onClick={() => handleYearChange(-1)} className="text-[#6d746e] hover:text-[#1e2420] transition-colors">«</button>
             <button type="button" onClick={handlePrev} className="text-[#1e2420] hover:opacity-70 transition-opacity">←</button>
           </div>
-          <span className="min-w-[240px] sm:min-w-[300px] text-center">{formatHeader()}</span>
+          <span className="min-w-[15rem] sm:min-w-[18.75rem] text-center">{formatHeader()}</span>
           <div className="flex gap-3 sm:gap-4">
             <button type="button" onClick={handleNext} className="text-[#1e2420] hover:opacity-70 transition-opacity">→</button>
             <button type="button" onClick={() => handleYearChange(1)} className="text-[#6d746e] hover:text-[#1e2420] transition-colors">»</button>
@@ -163,7 +177,7 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
               key={filter}
               type="button"
               onClick={() => { setRoomFilter(filter); setIsDayMenuOpen(false); }}
-              className={`shrink-0 px-4 py-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] border rounded-[4px] transition-all ${
+              className={`shrink-0 px-4 py-3 text-[0.63rem] sm:text-[0.69rem] font-bold uppercase tracking-[0.15em] border rounded-[0.25rem] transition-all ${
                 roomFilter === filter
                   ? 'bg-[#0b644d] text-white border-[#0b644d] shadow-md'
                   : 'bg-white text-[#1e2420] border-[#d9ded9] hover:border-[#0b644d] hover:bg-[#f2f7f5]'
@@ -178,7 +192,7 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
           <select
             value={roomFilter}
             onChange={(e) => { setRoomFilter(e.target.value); setIsDayMenuOpen(false); }}
-            className="w-full appearance-none bg-white border border-[#1e2420] text-[#1e2420] text-[11px] font-bold uppercase tracking-[0.15em] rounded-[4px] px-4 py-3 outline-none focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]"
+            className="w-full appearance-none bg-white border border-[#1e2420] text-[#1e2420] text-[0.69rem] font-bold uppercase tracking-[0.15em] rounded-[0.25rem] px-4 py-3 outline-none focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]"
           >
             {roomFilters.map(filter => (
               <option key={filter} value={filter}>{filter}</option>
@@ -221,13 +235,13 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
         {calendarView !== 'day' && (
           <div className="grid grid-cols-1 sm:grid-cols-7 border-b border-[#d9ded9] bg-[#f7f8f4]">
             {calendarView === 'month' && weekDaysShort.map(day => (
-              <div key={day} className="py-2.5 text-center text-[11px] font-bold text-[#6d746e] uppercase tracking-widest border-r last:border-r-0 border-[#d9ded9] hidden sm:block">
+              <div key={day} className="py-2.5 text-center text-[0.69rem] font-bold text-[#6d746e] uppercase tracking-widest border-r last:border-r-0 border-[#d9ded9] hidden sm:block">
                 {day}
               </div>
             ))}
             {calendarView === 'week' && displayDays.map((d, i) => d && (
               <div key={i} className="py-3 text-center border-r last:border-r-0 border-[#d9ded9] hidden sm:block">
-                <span className="block text-[10px] font-bold text-[#6d746e] uppercase tracking-widest">{weekDaysShort[d.getDay()]}</span>
+                <span className="block text-[0.63rem] font-bold text-[#6d746e] uppercase tracking-widest">{weekDaysShort[d.getDay()]}</span>
                 <span className="block text-lg font-black text-[#1e2420] mt-0.5">{d.getDate()}</span>
               </div>
             ))}
@@ -253,7 +267,7 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
                 }}
                 className={`
                   group flex flex-col border-b sm:border-r border-[#d9ded9] transition-colors relative
-                  ${calendarView === 'week' ? 'min-h-[160px]' : calendarView === 'month' ? 'min-h-[110px]' : 'min-h-[300px]'}
+                  ${calendarView === 'week' ? 'min-h-[10rem]' : calendarView === 'month' ? 'min-h-[6.88rem]' : 'min-h-[18.75rem]'}
                   ${isPast ? 'bg-[#f7f8f4] opacity-60 cursor-not-allowed' : isSelected ? 'bg-[#f2f7f5] ring-inset ring-2 ring-[#0b644d] cursor-pointer' : 'hover:bg-[#f7f8f4] bg-white cursor-pointer'}
                 `}
               >
@@ -292,13 +306,13 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
                     dayReservations.map((room, idx) => (
                       <div key={idx} className={`flex items-center gap-2 ${calendarView === 'day' ? 'p-4 bg-white border border-[#d9ded9] rounded-md shadow-sm' : ''}`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ${getRoomBg(room.color)}`} />
-                        <span className={`font-bold text-[#1e2420] leading-tight uppercase ${calendarView === 'day' ? 'text-sm' : 'text-[9px] sm:text-[10px] truncate'}`}>
+                        <span className={`font-bold text-[#1e2420] leading-tight uppercase ${calendarView === 'day' ? 'text-sm' : 'text-[0.56rem] sm:text-[0.63rem] truncate'}`}>
                           {calendarView === 'month' ? room.name.split(' ').slice(1).join(' ') : room.name}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <div className={`flex items-center justify-center h-full italic text-[#a1a6a2] font-medium ${calendarView === 'day' ? 'text-base' : 'text-[10px]'}`}>
+                    <div className={`flex items-center justify-center h-full italic text-[#a1a6a2] font-medium ${calendarView === 'day' ? 'text-base' : 'text-[0.63rem]'}`}>
                       Aucune réservation
                     </div>
                   )}
@@ -316,7 +330,7 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
           <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-[#0b644d] p-5 flex justify-between items-center text-white">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-0.5">Réservation pour le</p>
+                <p className="text-[0.63rem] font-bold uppercase tracking-widest opacity-80 mb-0.5">Réservation pour le</p>
                 <h3 className="text-xl font-black">{selectedDateFull}</h3>
               </div>
               <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors" type="button" onClick={() => setIsDayMenuOpen(false)}>

@@ -6,6 +6,7 @@ export type AssociationModule = 'subventions' | 'materiel' | 'salles';
 export type AssociationContact = {
   nom: string;
   prenom: string;
+  nomComplet?: string;
   email: string;
   telephone: string | null;
 };
@@ -16,6 +17,9 @@ export type Association = {
   numeroRna?: string;
   statut: AssociationStatus;
   permissions: AssociationModule[];
+  moduleSubventionActif?: boolean;
+  moduleSalleActif?: boolean;
+  moduleMaterielActif?: boolean;
   createdAt: string | null;
   contact?: AssociationContact | null;
 };
@@ -119,9 +123,13 @@ export async function registerAssociation(payload: {
 export function getAssociations(
   page: number,
   status: AssociationStatus | '',
+  search?: string,
+  includeCounts?: boolean,
 ): Promise<AssociationPage> {
   const params = new URLSearchParams({ page: String(page), itemsPerPage: '10' });
   if (status) params.set('status', status);
+  if (search) params.set('q', search);
+  if (includeCounts !== undefined) params.set('includeCounts', String(includeCounts));
   return request<AssociationPage>(`/api/admin/associations?${params.toString()}`);
 }
 

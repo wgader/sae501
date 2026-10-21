@@ -1,8 +1,37 @@
 import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+export const buttonVariants = cva(
+  'inline-flex items-center justify-center gap-2 rounded-[0.63rem] font-bold uppercase transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
+  {
+    variants: {
+      variant: {
+        primary:
+          'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs hover:opacity-90 active:opacity-100',
+        secondary:
+          'border border-[var(--line)] bg-[var(--White)] text-[var(--ink)] shadow-xs hover:bg-[var(--paper)] active:bg-[var(--line)]',
+        danger:
+          'border border-[var(--Flush-Mahogany)] bg-[var(--White)] text-[var(--Flush-Mahogany)] shadow-xs hover:bg-[var(--Flush-Mahogany)] hover:text-[var(--White)] active:opacity-95',
+        ghost:
+          'bg-transparent text-[var(--ink)] hover:bg-[var(--paper)] active:bg-[var(--line)]',
+      },
+      size: {
+        sm: 'h-9 px-4 text-[0.69rem] tracking-[0.12em]',
+        md: 'h-[3rem] px-6 text-xs tracking-[0.14em]',
+        lg: 'h-[3.25rem] px-8 text-xs tracking-[0.16em]',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+    },
+  },
+);
+
+export interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -12,41 +41,24 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
       children,
-      variant = 'primary',
-      size = 'md',
+      variant,
+      size,
       isLoading = false,
       leftIcon,
       rightIcon,
-      className = '',
+      className,
       disabled,
       type = 'button',
       ...props
     },
     ref,
   ) => {
-    const sizeClasses = {
-      sm: 'h-9 px-4 text-[0.6875rem] tracking-[0.12em]',
-      md: 'h-[3rem] px-6 text-xs tracking-[0.14em]',
-      lg: 'h-[3.25rem] px-8 text-xs tracking-[0.16em]',
-    }[size];
-
-    const variantClasses = {
-      primary:
-        'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs hover:opacity-90 active:opacity-100',
-      secondary:
-        'border border-[var(--line)] bg-[var(--White)] text-[var(--ink)] shadow-xs hover:bg-[var(--paper)] active:bg-[var(--line)]',
-      danger:
-        'border border-[var(--Flush-Mahogany)] bg-[var(--White)] text-[var(--Flush-Mahogany)] shadow-xs hover:bg-[var(--Flush-Mahogany)] hover:text-[var(--White)] active:opacity-95',
-      ghost:
-        'bg-transparent text-[var(--ink)] hover:bg-[var(--paper)] active:bg-[var(--line)]',
-    }[variant];
-
     return (
       <button
         ref={ref}
         type={type}
         disabled={disabled || isLoading}
-        className={`inline-flex items-center justify-center gap-2 rounded-[10px] font-bold uppercase transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${sizeClasses} ${variantClasses} ${className}`}
+        className={cn(buttonVariants({ variant, size }), className)}
         {...props}
       >
         {isLoading ? (

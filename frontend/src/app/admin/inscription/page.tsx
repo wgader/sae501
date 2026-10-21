@@ -13,7 +13,12 @@ export default function AdminInscriptionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
 
-  const { associations, totalItems, counts, loading, error } = useAssociations(page, activeTab);
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    setPage(1);
+  };
+
+  const { associations, totalItems, counts, loading, error } = useAssociations(page, activeTab, searchTerm);
 
   const filteredAssociations = useMemo(() => {
     if (!searchTerm.trim()) return associations;
@@ -35,7 +40,7 @@ export default function AdminInscriptionsPage() {
   const totalPages = Math.max(1, Math.ceil(totalItems / 10));
 
   return (
-    <AdminLayout searchTerm={searchTerm} onSearchChange={setSearchTerm}>
+    <AdminLayout searchTerm={searchTerm} onSearchChange={handleSearchChange}>
       <section className="mx-auto max-w-5xl">
         <AdminPageHeader title="Demandes d’inscription" className="mb-6">
           <InscriptionStatusTabs

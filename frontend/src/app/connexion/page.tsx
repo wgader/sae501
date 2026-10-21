@@ -128,9 +128,9 @@ export default function LoginPage() {
                 variant={showPassword ? 'selected' : 'unselected'}
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                className="absolute right-[18px] top-1/2 flex -translate-y-1/2 items-center justify-center text-[var(--ink)]/70 hover:text-[var(--ink)]"
+                className="absolute right-[14px] top-1/2 flex -translate-y-1/2 items-center justify-center"
               >
-                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
                   <circle cx="12" cy="12" r="3.5" />
                   {showPassword ? <path d="M3 3L21 21" strokeLinecap="round" /> : null}

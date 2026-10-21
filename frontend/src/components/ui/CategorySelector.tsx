@@ -1,39 +1,75 @@
-// components/ui/CategorySelector.tsx
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import arrowIcon from '../../assets/Arrow 2.svg';
+import { useState, type HTMLAttributes } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-export default function CategorySelector() {
-  const [selected, setSelected] = useState('Sportive');
-  const categories = ['Sportive', 'Culturelle', 'Solidarité', 'Environnement', 'Autre'];
+export const categorySelectorVariants = cva(
+  'flex w-full flex-col sm:flex-row overflow-hidden rounded-md border border-[#d9ded9] bg-white',
+);
+
+export const categorySelectorButtonVariants = cva(
+  'flex-1 border-b sm:border-b-0 sm:border-r border-[#d9ded9] py-3 text-xs font-medium last:border-b-0 sm:last:border-r-0 transition-colors',
+  {
+    variants: {
+      selected: {
+        true: 'bg-[#0b644d] text-white',
+        false: 'text-[#1e2420] hover:bg-[#f7f8f4]',
+      },
+    },
+    defaultVariants: {
+      selected: false,
+    },
+  },
+);
+
+const DEFAULT_CATEGORIES = ['Sportive', 'Culturelle', 'Solidarité', 'Environnement', 'Autre'];
+
+export interface CategorySelectorDataProps {
+  categories?: string[];
+  defaultValue?: string;
+  value?: string;
+  name?: string;
+}
+
+export interface CategorySelectorProps
+  extends HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof categorySelectorVariants> {
+  onSelectCategory?: (category: string) => void;
+}
+
+export default function CategorySelector({
+  categories = DEFAULT_CATEGORIES,
+  defaultValue = 'Sportive',
+  value,
+  name = 'category',
+  onSelectCategory,
+  className,
+  ...props
+}: CategorySelectorDataProps & CategorySelectorProps) {
+  const [internalSelected, setInternalSelected] = useState(defaultValue);
+  const selected = value !== undefined ? value : internalSelected;
+
+  const handleSelect = (cat: string) => {
+    if (value === undefined) {
+      setInternalSelected(cat);
+    }
+    onSelectCategory?.(cat);
+  };
 
   return (
-    <div className="flex w-full flex-col sm:flex-row overflow-hidden  border border-[#d9ded9] bg-white">
-      <div className="relative w-full">
-        <select
-          name="category"
-          value={selected}
-          onChange={(event) => setSelected(event.target.value)}
-          className="relative flex h-[64px] w-full appearance-none items-center justify-between border-2 border-transparent bg-[#d9d9d9] px-4 py-3 pr-12 transition-all duration-200"
+    <div className={cn(categorySelectorVariants(), className)} {...props}>
+      {categories.map((cat) => (
+        <button
+          key={cat}
+          type="button"
+          onClick={() => handleSelect(cat)}
+          className={cn(categorySelectorButtonVariants({ selected: selected === cat }))}
         >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-        <Image
-          src={arrowIcon}
-          alt=""
-          aria-hidden="true"
-          width={15}
-          height={27}
-          unoptimized
-          className="pointer-events-none absolute top-1/2 right-4 h-[27px] w-[15px] -translate-y-1/2"
-        />
-      </div>
+          {cat}
+        </button>
+      ))}
+      <input type="hidden" name={name} value={selected} required />
     </div>
   );
-}
+}

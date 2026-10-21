@@ -1,48 +1,59 @@
-import { type AssociationStatus } from '@/lib/api';
+import type { HTMLAttributes } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+import type { AssociationStatus } from '@/lib/api';
 
-interface StatusBadgeProps {
+export const statusBadgeVariants = cva(
+  'inline-block rounded-full font-bold transition-colors',
+  {
+    variants: {
+      status: {
+        PENDING_VALIDATION: 'bg-[var(--Lime-Cream)] text-[var(--ink)]',
+        VALIDATED: 'bg-emerald-100 text-emerald-800',
+        REFUSED: 'bg-rose-100 text-rose-800',
+      },
+      size: {
+        sm: 'px-3 py-0.5 text-xs',
+        md: 'px-3.5 py-1 text-xs',
+      },
+    },
+    defaultVariants: {
+      status: 'PENDING_VALIDATION',
+      size: 'sm',
+    },
+  },
+);
+
+export const STATUS_BADGE_DEFAULT_LABELS: Record<AssociationStatus, string> = {
+  PENDING_VALIDATION: 'En attente',
+  VALIDATED: 'Accepté',
+  REFUSED: 'Refusé',
+};
+
+export interface StatusBadgeDataProps {
   status: AssociationStatus;
   label?: string;
-  size?: 'sm' | 'md';
-  className?: string;
 }
+
+export interface StatusBadgeProps
+  extends HTMLAttributes<HTMLSpanElement>,
+    VariantProps<typeof statusBadgeVariants> {}
 
 export default function StatusBadge({
   status,
   label,
-  size = 'sm',
-  className = '',
-}: StatusBadgeProps) {
-  const sizeClasses =
-    size === 'md'
-      ? 'px-3.5 py-1 text-xs'
-      : 'px-3 py-0.5 text-xs';
-
-  if (status === 'PENDING_VALIDATION') {
-    return (
-      <span
-        className={`inline-block rounded-full bg-[var(--Lime-Cream)] font-bold text-[var(--ink)] ${sizeClasses} ${className}`}
-      >
-        {label || 'En attente'}
-      </span>
-    );
-  }
-
-  if (status === 'VALIDATED') {
-    return (
-      <span
-        className={`inline-block rounded-full bg-emerald-100 font-bold text-emerald-800 ${sizeClasses} ${className}`}
-      >
-        {label || 'Accepté'}
-      </span>
-    );
-  }
-
+  size,
+  className,
+  children,
+  ...props
+}: StatusBadgeDataProps & StatusBadgeProps) {
   return (
     <span
-      className={`inline-block rounded-full bg-rose-100 font-bold text-rose-800 ${sizeClasses} ${className}`}
+      className={cn(statusBadgeVariants({ status, size }), className)}
+      {...props}
     >
-      {label || 'Refusé'}
+      {label || (status ? STATUS_BADGE_DEFAULT_LABELS[status] : null) || children}
     </span>
   );
 }
+

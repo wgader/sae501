@@ -4,12 +4,19 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { type Association, type AssociationStatus, getAssociation, updateAssociationStatus } from '@/lib/api';
+import {
+  type Association,
+  type AssociationModule,
+  type AssociationStatus,
+  getAssociation,
+  updateAssociationStatus,
+} from '@/lib/api';
 
 import InscriptionHeader from '@/components/admin/inscription/InscriptionHeader';
 import InscriptionStructureCard from '@/components/admin/inscription/InscriptionStructureCard';
 import InscriptionContactCard from '@/components/admin/inscription/InscriptionContactCard';
 import InscriptionActionBar from '@/components/admin/inscription/InscriptionActionBar';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 export default function AssociationDetailPage() {
   const params = useParams();
@@ -21,6 +28,7 @@ export default function AssociationDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<AssociationStatus | null>(null);
 
   const loadData = useCallback(async () => {
     if (!id || Number.isNaN(id)) {
@@ -53,11 +61,15 @@ export default function AssociationDetailPage() {
     setFeedbackMessage('');
 
     try {
-      const updated = await updateAssociationStatus(association.id, nextStatus);
+      // Attribution automatique de tous les modules à la validation
+      const defaultModules: AssociationModule[] = ['subventions', 'salles', 'materiel'];
+      const permissions = nextStatus === 'VALIDATED' ? defaultModules : undefined;
+
+      const updated = await updateAssociationStatus(association.id, nextStatus, permissions);
       setAssociation(updated);
       setFeedbackMessage(
         nextStatus === 'VALIDATED'
-          ? 'L’inscription a bien été acceptée. Un e-mail d’activation a été transmis à l’association.'
+          ? 'L’inscription a bien été acceptée et l’ensemble des modules lui ont été attribués. Un e-mail d’activation a été transmis à l’association.'
           : nextStatus === 'REFUSED'
           ? 'La demande d’inscription a été refusée.'
           : 'Le dossier a été remis en attente d’instruction.',
@@ -66,6 +78,7 @@ export default function AssociationDetailPage() {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue lors de la mise à jour.');
     } finally {
       setUpdating(false);
+      setPendingStatus(null);
     }
   };
 
@@ -99,7 +112,7 @@ export default function AssociationDetailPage() {
         {loading && (
           <article className="py-20 text-center text-[var(--muted)]">
             <svg className="mx-auto h-8 w-8 animate-spin text-[var(--Mosaic-Tile)]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <p className="mt-3 text-xs font-bold uppercase tracking-wider">Chargement de la demande...</p>
@@ -146,9 +159,26 @@ export default function AssociationDetailPage() {
             <InscriptionActionBar
               status={association.statut}
               updating={updating}
-              onUpdateStatus={handleUpdateStatus}
+              onUpdateStatus={(target) => setPendingStatus(target)}
             />
           </article>
+        )}
+
+        {/* Modal de confirmation */}
+        {pendingStatus && association && (
+          <ConfirmationModal
+            isOpen={Boolean(pendingStatus)}
+            currentStatus={association.statut}
+            targetStatus={pendingStatus}
+            associationName={association.nom}
+            isLoading={updating}
+            onConfirm={async () => {
+              await handleUpdateStatus(pendingStatus);
+            }}
+            onClose={() => {
+              if (!updating) setPendingStatus(null);
+            }}
+          />
         )}
       </section>
     </AdminLayout>

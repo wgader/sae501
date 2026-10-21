@@ -2,10 +2,20 @@
 
 import { useRouter } from 'next/navigation';
 import type { ComponentPropsWithoutRef } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-interface BackButtonProps extends Omit<ComponentPropsWithoutRef<'button'>, 'onClick'> {
+export const backButtonVariants = cva(
+  'group inline-flex items-center gap-1.5 self-start text-xs font-bold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
+);
+
+export interface BackButtonDataProps {
   label?: string;
+}
+
+export interface BackButtonProps
+  extends Omit<ComponentPropsWithoutRef<'button'>, 'onClick'>,
+    VariantProps<typeof backButtonVariants> {
   onClick?: () => void;
 }
 
@@ -15,7 +25,7 @@ export default function BackButton({
   className,
   type = 'button',
   ...props
-}: BackButtonProps) {
+}: BackButtonDataProps & BackButtonProps) {
   const router = useRouter();
 
   const handleClick = () => {
@@ -32,10 +42,7 @@ export default function BackButton({
       {...props}
       type={type}
       onClick={handleClick}
-      className={cn(
-        'group inline-flex items-center gap-1.5 self-start text-xs font-bold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
-        className,
-      )}
+      className={cn(backButtonVariants(), className)}
     >
       <svg
         viewBox="0 0 24 24"
