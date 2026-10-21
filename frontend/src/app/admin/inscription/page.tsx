@@ -3,17 +3,10 @@
 import { useMemo, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
-import AssociationCard from '@/components/admin/AssociationCard';
+import AssociationCard from '@/components/admin/association/AssociationCard';
+import InscriptionStatusTabs, { type TabStatus } from '@/components/admin/inscription/InscriptionStatusTabs';
 import Pagination from '@/components/ui/Pagination';
 import { useAssociations } from '@/hooks/useAssociations';
-
-type TabStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED';
-
-const TABS: { label: string; value: TabStatus; countKey: 'pending' | 'validated' | 'refused' }[] = [
-  { label: 'EN ATTENTE', value: 'PENDING_VALIDATION', countKey: 'pending' },
-  { label: 'ACCEPTÉ', value: 'VALIDATED', countKey: 'validated' },
-  { label: 'REFUSÉ', value: 'REFUSED', countKey: 'refused' },
-];
 
 export default function AdminInscriptionsPage() {
   const [activeTab, setActiveTab] = useState<TabStatus>('PENDING_VALIDATION');
@@ -45,38 +38,11 @@ export default function AdminInscriptionsPage() {
     <AdminLayout searchTerm={searchTerm} onSearchChange={setSearchTerm}>
       <section className="mx-auto max-w-5xl">
         <AdminPageHeader title="Demandes d’inscription" className="mb-6">
-          <nav aria-label="Filtres de statut" className="mt-5 flex flex-wrap items-center gap-3">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.value;
-              const countValue = counts ? counts[tab.countKey] : null;
-
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => handleTabChange(tab.value)}
-                  className={`inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                      : 'border border-[var(--Mosaic-Tile)] bg-transparent text-[var(--Mosaic-Tile)] hover:bg-[var(--Mosaic-Tile)]/5'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {countValue !== null && (
-                    <span
-                      className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-bold ${
-                        isActive
-                          ? 'bg-[var(--Lime-Cream)] text-[var(--ink)]'
-                          : 'bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]'
-                      }`}
-                    >
-                      {countValue}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          <InscriptionStatusTabs
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            counts={counts}
+          />
         </AdminPageHeader>
 
         {error && (
@@ -112,7 +78,6 @@ export default function AdminInscriptionsPage() {
           </ul>
         )}
 
-        {/* ── Composant UI Pagination réutilisable ───────────── */}
         <Pagination
           page={page}
           totalPages={totalPages}

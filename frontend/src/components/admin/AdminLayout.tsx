@@ -33,6 +33,18 @@ export default function AdminLayout({
     }
   }, [token, router]);
 
+  useEffect(() => {
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
+
   if (token === undefined) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--Mosaic-Tile)] text-[var(--White)]">
@@ -46,11 +58,9 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-[var(--Mosaic-Tile)] font-sans text-[var(--ink)] antialiased">
-      <aside className="hidden w-[250px] shrink-0 lg:block">
-        <div className="sticky top-0 h-screen">
-          <AdminSidebar />
-        </div>
+    <div className="fixed inset-0 z-0 flex h-full w-full overflow-hidden bg-[var(--Mosaic-Tile)] font-sans text-[var(--ink)] antialiased">
+      <aside className="hidden h-full w-[250px] shrink-0 lg:block overflow-hidden">
+        <AdminSidebar />
       </aside>
 
       {mobileMenuOpen && (
@@ -66,15 +76,17 @@ export default function AdminLayout({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AdminHeader
-          searchTerm={searchTerm}
-          onSearchChange={onSearchChange}
-          isMobileMenuOpen={mobileMenuOpen}
-          onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
-        />
+      <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
+        <div className="shrink-0">
+          <AdminHeader
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
+            isMobileMenuOpen={mobileMenuOpen}
+            onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
+          />
+        </div>
 
-        <main className="flex-1 rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-10 lg:p-12 shadow-sm">
+        <main className="flex-1 overflow-y-auto rounded-tl-[28px] sm:rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-10 lg:p-12 shadow-sm">
           {children}
         </main>
       </div>

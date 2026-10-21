@@ -4,7 +4,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminMetricCard from '@/components/admin/AdminMetricCard';
-import AssociationCard from '@/components/admin/AssociationCard';
+import AssociationCard from '@/components/admin/association/AssociationCard';
 import { useAssociations } from '@/hooks/useAssociations';
 
 export default function AdminDashboardPage() {
@@ -40,7 +40,7 @@ export default function AdminDashboardPage() {
                   </svg>
                 }
                 iconBgClass="bg-[var(--Lime-Cream)] text-[var(--ink)]"
-                actionHref="/admin/inscriptions"
+                actionHref="/admin/inscription"
                 actionLabel="Traiter les demandes"
                 loading={loading}
               />
@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
                   </svg>
                 }
                 iconBgClass="bg-emerald-100 text-emerald-800"
-                actionHref="/admin/inscriptions"
+                actionHref="/admin/inscription"
                 actionLabel="Consulter la liste"
                 loading={loading}
               />
@@ -74,7 +74,7 @@ export default function AdminDashboardPage() {
                   </svg>
                 }
                 iconBgClass="bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]"
-                actionHref="/admin/inscriptions"
+                actionHref="/admin/inscription"
                 actionLabel="Voir tout l'annuaire"
                 loading={loading}
               />
@@ -90,7 +90,7 @@ export default function AdminDashboardPage() {
             </h2>
 
             <Link
-              href="/admin/inscriptions"
+              href="/admin/inscription"
               className="group inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--Mosaic-Tile)] hover:underline"
             >
               <span>Accéder à toutes les inscriptions</span>
@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 p-0 list-none">
             <li>
               <Link
-                href="/admin/modules"
+                href="/admin/module"
                 className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-sm"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--Mosaic-Tile)] text-[var(--White)]">
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
 
             <li>
               <Link
-                href="/admin/agents"
+                href="/admin/agent"
                 className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-sm"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--Lime-Cream)] text-[var(--ink)]">

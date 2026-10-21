@@ -14,7 +14,7 @@ export default function AdminHeader({
   isMobileMenuOpen = false,
 }: AdminHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between bg-[var(--Mosaic-Tile)] px-6 lg:px-10">
+    <header className="flex h-20 w-full items-center justify-between bg-[var(--Mosaic-Tile)] px-6 lg:px-10">
       <div className="flex flex-1 items-center gap-4">
         <button
           type="button"
