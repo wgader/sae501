@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
@@ -24,6 +25,7 @@ const MODULES = [
     tag: 'LOGISTIQUE',
     description: 'Catalogue des équipements, tables, chaises et matériel sonorisation mis à disposition.',
     status: 'Actif',
+    href: '/admin/materiel',
   },
   {
     id: 'evenements',
@@ -71,7 +73,16 @@ export default function AdminModulesPage() {
 
                   <footer className="mt-6 border-t border-[var(--line)] pt-4 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                     <span>Activé par défaut</span>
-                    <span className="text-[var(--Mosaic-Tile)] font-semibold">Configuré</span>
+                    {module.href ? (
+                      <Link
+                        href={module.href}
+                        className="text-[var(--Mosaic-Tile)] hover:underline font-bold"
+                      >
+                        Gérer le parc →
+                      </Link>
+                    ) : (
+                      <span className="text-[var(--Mosaic-Tile)] font-semibold">Configuré</span>
+                    )}
                   </footer>
                 </article>
               </li>

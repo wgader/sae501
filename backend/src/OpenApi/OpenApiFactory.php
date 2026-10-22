@@ -133,6 +133,130 @@ final class OpenApiFactory implements OpenApiFactoryInterface
             )
         ));
 
+        $paths->addPath('/api/admin/equipment', new Model\PathItem(
+            get: new Model\Operation(
+                operationId: 'adminListEquipment',
+                tags: ['Gestion Matériel'],
+                summary: 'Liste des équipements municipaux (admin)',
+                security: [['bearerAuth' => []]],
+                parameters: [
+                    new Model\Parameter('category', 'query', 'Filtrer par catégorie', schema: ['type' => 'string']),
+                    new Model\Parameter('archived', 'query', 'Filtrer par état archivé (true/false)', schema: ['type' => 'boolean']),
+                ],
+                responses: [
+                    '200' => new Model\Response('Liste des matériels'),
+                    '401' => new Model\Response('Non authentifié'),
+                    '403' => new Model\Response('Accès restreint à ROLE_ADMIN ou ROLE_GESTION_MATERIEL'),
+                ]
+            ),
+            post: new Model\Operation(
+                operationId: 'adminCreateEquipment',
+                tags: ['Gestion Matériel'],
+                summary: 'Ajouter un nouvel équipement au catalogue',
+                security: [['bearerAuth' => []]],
+                requestBody: new Model\RequestBody(content: new \ArrayObject([
+                    'application/json' => new Model\MediaType(schema: new \ArrayObject([
+                        'type' => 'object',
+                        'required' => ['designation', 'categorie', 'stockTotal'],
+                        'properties' => [
+                            'designation' => ['type' => 'string', 'example' => 'Barnum 3x3m pliable'],
+                            'categorie' => ['type' => 'string', 'example' => 'barnums'],
+                            'referenceInterne' => ['type' => 'string', 'example' => 'MAT-BARN-001'],
+                            'description' => ['type' => 'string'],
+                            'consignesUtilisation' => ['type' => 'string'],
+                            'stockTotal' => ['type' => 'integer', 'example' => 10],
+                        ],
+                    ])),
+                ])),
+                responses: [
+                    '201' => new Model\Response('Équipement créé avec statut Disponible'),
+                    '400' => new Model\Response('Erreur de validation (stock <= 0 ou champ manquant)'),
+                    '403' => new Model\Response('Accès refusé'),
+                ]
+            )
+        ));
+
+        $paths->addPath('/api/admin/equipment/{id}', new Model\PathItem(
+            put: new Model\Operation(
+                operationId: 'adminUpdateEquipment',
+                tags: ['Gestion Matériel'],
+                summary: 'Modifier un équipement ou ajuster son stock total',
+                security: [['bearerAuth' => []]],
+                parameters: [
+                    new Model\Parameter('id', 'path', "ID de l'équipement", required: true, schema: ['type' => 'integer']),
+                ],
+                requestBody: new Model\RequestBody(content: new \ArrayObject([
+                    'application/json' => new Model\MediaType(schema: new \ArrayObject([
+                        'type' => 'object',
+                        'properties' => [
+                            'designation' => ['type' => 'string'],
+                            'categorie' => ['type' => 'string'],
+                            'referenceInterne' => ['type' => 'string'],
+                            'description' => ['type' => 'string'],
+                            'consignesUtilisation' => ['type' => 'string'],
+                            'stockTotal' => ['type' => 'integer', 'example' => 8],
+                            'force' => ['type' => 'boolean', 'default' => false, 'description' => 'Forcer la mise à jour même en cas de conflit avec des réservations'],
+                        ],
+                    ])),
+                ])),
+                responses: [
+                    '200' => new Model\Response('Équipement mis à jour'),
+                    '400' => new Model\Response('Stock invalide (négatif ou non entier)'),
+                    '409' => new Model\Response('Conflit de surbooking détecté sur réservations validées'),
+                ]
+            ),
+            delete: new Model\Operation(
+                operationId: 'adminDeleteEquipment',
+                tags: ['Gestion Matériel'],
+                summary: 'Archiver un équipement (Soft Delete)',
+                security: [['bearerAuth' => []]],
+                parameters: [
+                    new Model\Parameter('id', 'path', "ID de l'équipement", required: true, schema: ['type' => 'integer']),
+                ],
+                responses: [
+                    '200' => new Model\Response('Équipement archivé'),
+                    '404' => new Model\Response('Équipement non trouvé'),
+                ]
+            )
+        ));
+
+        $paths->addPath('/api/admin/equipment/{id}/check-stock', new Model\PathItem(
+            post: new Model\Operation(
+                operationId: 'adminCheckStockReduction',
+                tags: ['Gestion Matériel'],
+                summary: 'Pré-vérification de cohérence de réduction de stock (détection de surbooking)',
+                security: [['bearerAuth' => []]],
+                parameters: [
+                    new Model\Parameter('id', 'path', "ID de l'équipement", required: true, schema: ['type' => 'integer']),
+                ],
+                requestBody: new Model\RequestBody(content: new \ArrayObject([
+                    'application/json' => new Model\MediaType(schema: new \ArrayObject([
+                        'type' => 'object',
+                        'required' => ['stockTotal'],
+                        'properties' => [
+                            'stockTotal' => ['type' => 'integer', 'example' => 4],
+                        ],
+                    ])),
+                ])),
+                responses: [
+                    '200' => new Model\Response('Résultat de l’analyse de conflit avec liste des réservations compromises'),
+                    '400' => new Model\Response('Stock invalide'),
+                ]
+            )
+        ));
+
+        $paths->addPath('/api/equipment', new Model\PathItem(
+            get: new Model\Operation(
+                operationId: 'publicListEquipment',
+                tags: ['Catalogue Matériel'],
+                summary: 'Catalogue public des équipements disponibles au prêt usager',
+                security: [['bearerAuth' => []]],
+                responses: [
+                    '200' => new Model\Response('Liste des équipements disponibles'),
+                ]
+            )
+        ));
+
         return $openApi;
     }
 }
