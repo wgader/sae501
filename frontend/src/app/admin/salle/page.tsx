@@ -11,15 +11,15 @@ export default function AdminSallesPage() {
 
   return (
     <AdminLayout>
-      <section className="mx-auto max-w-6xl">
+      <section className="space-y-8">
         <AdminPageHeader
-          title="Gestion des salles"
-          description="Ajoutez, modifiez et rendez disponibles les espaces de la ville."
-          className="mb-8"
+          title="GESTION DES SALLES"
+          description="Ajoutez, modifiez et rendez disponibles les espaces municipaux de la ville."
         />
         <SalleCreateForm onCreated={() => setSallesListKey((key) => key + 1)} />
         <SallesList key={sallesListKey} />
       </section>
     </AdminLayout>
+
   );
 }

@@ -17,6 +17,70 @@ function isFrenchAddress(value: string): boolean {
   return /^(?:[\p{L}\d][\p{L}\d .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*|[\p{L}\d][\p{L}\d .'-]*,\s*[\p{L}][\p{L} .'-]*\s+\d{5})$/u.test(address);
 }
 
+const EQUIPMENT_META: Record<string, { label: string; icon: (props: { className?: string }) => React.JSX.Element }> = {
+  VIDEOPROJECTEUR: {
+    label: 'Vidéoprojecteur',
+    icon: ({ className = 'h-3.5 w-3.5' }) => (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <rect x="2" y="7" width="14" height="10" rx="2" />
+        <path d="M16 10l5-3v10l-5-3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  CUISINE: {
+    label: 'Cuisine',
+    icon: ({ className = 'h-3.5 w-3.5' }) => (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+        <line x1="6" y1="1" x2="6" y2="4" strokeLinecap="round" />
+        <line x1="10" y1="1" x2="10" y2="4" strokeLinecap="round" />
+        <line x1="14" y1="1" x2="14" y2="4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  VESTIAIRES: {
+    label: 'Vestiaires',
+    icon: ({ className = 'h-3.5 w-3.5' }) => (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="8.5" cy="7" r="4" />
+        <line x1="19" y1="11" x2="19" y2="17" strokeLinecap="round" />
+        <line x1="22" y1="14" x2="16" y2="14" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  SCENE: {
+    label: 'Scène',
+    icon: ({ className = 'h-3.5 w-3.5' }) => (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+};
+
+function getEquipmentInfo(raw: string) {
+  const normalized = raw
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (EQUIPMENT_META[normalized]) {
+    return EQUIPMENT_META[normalized];
+  }
+
+  return {
+    label: raw,
+    icon: ({ className = 'h-3.5 w-3.5' }: { className?: string }) => (
+      <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+  };
+}
+
 function ActionIcon({ name }: { name: 'edit' | 'archive' | 'status' }) {
   const paths = {
     edit: <><path d="m13.5 5.5 1 1M4 16l.5-3.5L12.8 4.2a1.7 1.7 0 0 1 2.4 2.4L6.9 15z" /><path d="M4 16h3" /></>,
@@ -158,13 +222,13 @@ export default function SallesList() {
 
   return (
     <AdminPanel className="mb-8 overflow-hidden">
-    <div className="border-b border-[#D9E8E4] px-6 py-5">
+    <div className="border-b border-[var(--line)] px-6 py-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#146E67]">Catalogue</p>
-          <h2 className="mt-1 text-xl font-black tracking-[-0.03em] text-[#1E2420]">Salles disponibles</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--Mosaic-Tile)]">Catalogue</p>
+          <h2 className="mt-1 text-xl font-black tracking-[-0.03em] text-[var(--ink)]">Salles disponibles</h2>
         </div>
-        <span className="rounded-full bg-[#E8F4F2] px-3 py-1.5 text-xs font-bold text-[#146E67]">{filteredSalles.length} résultat{filteredSalles.length > 1 ? 's' : ''}</span>
+        <span className="rounded-full bg-[var(--Pale-Sage)] px-3 py-1.5 text-xs font-bold text-[var(--Mosaic-Tile)]">{filteredSalles.length} résultat{filteredSalles.length > 1 ? 's' : ''}</span>
       </div>
       <div className="mt-5 flex flex-col gap-3 md:flex-row">
         <label className="relative flex-1">
@@ -173,60 +237,68 @@ export default function SallesList() {
             value={search}
             onChange={(event) => { setSearch(event.target.value); setPage(1); }}
             placeholder="Rechercher par nom ou adresse..."
-            className="w-full rounded-lg border border-[#C9D9D4] bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-[#9AA9A3] focus:border-[#146E67] focus:ring-2 focus:ring-[#146E67]/10"
+            className="w-full rounded-lg border border-[var(--line)] bg-[var(--White)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--Mosaic-Tile)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/20"
           />
         </label>
-        <label>
-          <span className="sr-only">Filtrer par statut</span>
+        <div className="relative w-full md:w-52">
+          <label htmlFor="salle-status-filter" className="sr-only">
+            Filtrer par statut
+          </label>
           <select
+            id="salle-status-filter"
             value={statusFilter}
             onChange={(event) => { setStatusFilter(event.target.value as typeof statusFilter); setPage(1); }}
-            className="w-full rounded-lg border border-[#C9D9D4] bg-white px-4 py-2.5 text-sm font-semibold text-[#4D625B] outline-none focus:border-[#146E67] md:w-44"
+            className="w-full appearance-none rounded-lg border border-[var(--line)] bg-[var(--White)] pl-3.5 pr-10 py-2.5 text-sm font-semibold text-[var(--ink)] outline-none transition focus:border-[var(--Mosaic-Tile)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/20 cursor-pointer"
           >
             <option value="ALL">Tous les statuts</option>
             <option value="ACTIVE">Actives</option>
             <option value="INACTIVE">Indisponibles</option>
             <option value="ARCHIVED">Archivées</option>
           </select>
-        </label>
+          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--muted)]" aria-hidden="true">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </div>
       </div>
     </div>
     <div className="p-6">
-    {error && <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
-    {message && <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700" role="status">{message}</p>}
+    {error && <p className="mb-4 rounded-lg border border-[var(--Flush-Mahogany)]/30 bg-rose-50/70 p-3 text-sm font-semibold text-[var(--Flush-Mahogany)]" role="alert">{error}</p>}
+    {message && <p className="mb-4 rounded-lg border border-[var(--Mosaic-Tile)]/30 bg-[var(--Pale-Sage)]/40 p-3 text-sm font-semibold text-[var(--Mosaic-Tile)]" role="status">{message}</p>}
     {salles.length === 0 ? (
-      <p className="rounded-lg border border-dashed border-[#B9D8D1] bg-[#F7FBF8] px-5 py-12 text-center text-sm text-[#6D746E]">Aucune salle enregistrée.</p>
+      <p className="rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper)] px-5 py-12 text-center text-sm text-[var(--muted)]">Aucune salle enregistrée.</p>
     ) : visibleSalles.length === 0 ? (
-      <p className="rounded-lg border border-dashed border-[#B9D8D1] bg-[#F7FBF8] px-5 py-12 text-center text-sm text-[#6D746E]">Aucune salle ne correspond à ces filtres.</p>
+      <p className="rounded-lg border border-dashed border-[var(--line)] bg-[var(--paper)] px-5 py-12 text-center text-sm text-[var(--muted)]">Aucune salle ne correspond à ces filtres.</p>
     ) : (
       <div className="grid gap-4 xl:grid-cols-2">
         {visibleSalles.map((salle) => (
-          <div key={salle.id} className="overflow-hidden rounded-xl border border-[#D9E8E4] bg-white transition hover:border-[#8EBCB3] hover:shadow-sm">
+          <div key={salle.id} className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--White)] transition hover:border-[var(--Mosaic-Tile)] hover:shadow-xs">
             {editingId === salle.id && form ? (
-              <div className="grid gap-4 bg-[#F7FBF8] p-5 md:grid-cols-2">
-                <label className="text-sm font-bold text-[#4D625B] md:col-span-2">
+              <div className="grid gap-4 bg-[var(--paper)] p-5 md:grid-cols-2">
+                <label className="text-sm font-bold text-[var(--ink)] md:col-span-2">
                   Nouvelle image
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={(event) => setEditingImage(event.target.files?.[0] ?? null)}
-                    className="mt-2 w-full rounded-lg border border-dashed border-[#8EBCB3] bg-white px-3 py-2.5 text-sm font-normal"
+                    className="mt-2 w-full rounded-lg border border-dashed border-[var(--line)] bg-[var(--White)] px-3 py-2.5 text-sm font-normal text-[var(--ink)]"
                   />
-                  <span className="mt-1 block text-xs font-normal text-slate-500">Facultatif · JPEG, PNG ou WebP, 5 Mo maximum.</span>
+                  <span className="mt-1 block text-xs font-normal text-[var(--muted)]">Facultatif · JPEG, PNG ou WebP, 5 Mo maximum.</span>
                 </label>
-                <input value={form.nom} onChange={(event) => setForm({ ...form, nom: event.target.value })} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67]" aria-label="Nom de la salle" />
-                <textarea value={form.adresse} onChange={(event) => setForm({ ...form, adresse: event.target.value })} rows={2} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67]" aria-label="Adresse de la salle" />
-                <textarea value={form.description ?? ''} onChange={(event) => setForm({ ...form, description: event.target.value })} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67] md:col-span-2" aria-label="Description de la salle" />
-                <input type="number" min="1" value={form.capaciteMax} onChange={(event) => setForm({ ...form, capaciteMax: Number(event.target.value) })} className="rounded-lg border border-[#C9D9D4] px-3 py-2 text-sm outline-none focus:border-[#146E67]" aria-label="Capacité maximale" />
-                <label className="flex items-center gap-2 text-sm font-bold text-[#4D625B]">
-                  <input type="checkbox" checked={form.accesPmr} onChange={(event) => setForm({ ...form, accesPmr: event.target.checked })} className="accent-[#146E67]" />
+                <input value={form.nom} onChange={(event) => setForm({ ...form, nom: event.target.value })} className="rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--Mosaic-Tile)]" aria-label="Nom de la salle" />
+                <textarea value={form.adresse} onChange={(event) => setForm({ ...form, adresse: event.target.value })} rows={2} className="rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--Mosaic-Tile)]" aria-label="Adresse de la salle" />
+                <textarea value={form.description ?? ''} onChange={(event) => setForm({ ...form, description: event.target.value })} className="rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--Mosaic-Tile)] md:col-span-2" aria-label="Description de la salle" />
+                <input type="number" min="1" value={form.capaciteMax} onChange={(event) => setForm({ ...form, capaciteMax: Number(event.target.value) })} className="rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--Mosaic-Tile)]" aria-label="Capacité maximale" />
+                <label className="flex items-center gap-2 text-sm font-bold text-[var(--ink)]">
+                  <input type="checkbox" checked={form.accesPmr} onChange={(event) => setForm({ ...form, accesPmr: event.target.checked })} className="accent-[var(--Mosaic-Tile)]" />
                     Accès PMR
                   </label>
                   <fieldset className="md:col-span-2">
-                    <legend className="text-sm font-bold text-[#4D625B]">Équipements inclus</legend>
+                    <legend className="text-sm font-bold text-[var(--ink)]">Équipements inclus</legend>
                     <div className="mt-2 flex flex-wrap gap-4">
                       {EQUIPMENT_OPTIONS.map((equipment) => (
-                        <label key={equipment.value} className="flex items-center gap-2 text-sm text-[#6D746E]">
+                        <label key={equipment.value} className="flex items-center gap-2 text-sm text-[var(--muted)]">
                           <input
                             type="checkbox"
                             checked={form.equipementsInclus.includes(equipment.value)}
@@ -243,8 +315,8 @@ export default function SallesList() {
                     </div>
                   </fieldset>
                   <div className="flex gap-2 md:col-span-2">
-                    <button type="button" onClick={() => void save()} className="rounded-lg bg-[#146E67] px-4 py-2 text-sm font-bold text-white">Enregistrer</button>
-                    <button type="button" onClick={() => { setEditingId(null); setForm(null); setEditingImage(null); }} className="rounded-lg border border-[#B9D8D1] px-4 py-2 text-sm font-bold text-[#4D625B]">Annuler</button>
+                    <button type="button" onClick={() => void save()} className="rounded-lg bg-[var(--Mosaic-Tile)] px-4 py-2 text-sm font-bold text-[var(--White)] transition hover:bg-[var(--moss)] cursor-pointer">Enregistrer</button>
+                    <button type="button" onClick={() => { setEditingId(null); setForm(null); setEditingImage(null); }} className="rounded-lg border border-[var(--line)] px-4 py-2 text-sm font-bold text-[var(--ink)] transition hover:bg-[var(--paper)] cursor-pointer">Annuler</button>
                   </div>
                 </div>
               ) : (
@@ -261,8 +333,8 @@ export default function SallesList() {
                         onError={() => setBrokenImageIds((current) => current.includes(salle.id) ? current : [...current, salle.id])}
                       />
                     ) : (
-                      <div className="flex h-52 w-full items-center justify-center bg-[#E8F4F2] text-[#78AAA1]" role="img" aria-label={`Aucune image pour ${salle.nom}`}>
-                        <span className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#78AAA1]" aria-hidden="true">
+                      <div className="flex h-52 w-full items-center justify-center bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]" role="img" aria-label={`Aucune image pour ${salle.nom}`}>
+                        <span className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[var(--Mosaic-Tile)]" aria-hidden="true">
                           <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M4 20V9l8-5 8 5v11M8 20v-6h8v6M3 20h18" />
                           </svg>
@@ -270,35 +342,78 @@ export default function SallesList() {
                       </div>
                     )}
                     <div className="min-w-0 p-5">
-                      <h3 className="font-black text-[#1E2420]">{salle.nom}</h3>
-                      <p className="mt-1 text-sm text-[#6D746E]">{salle.adresse}</p>
-                      <p className="mt-2 text-xs text-[#6D746E]">{salle.capaciteMax} places · {salle.equipementsInclus.join(', ') || 'Aucun équipement'}</p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        {salle.accesPmr && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F4F2] px-2.5 py-1 text-[11px] font-bold text-[#146E67]" title="Accès PMR">
-                            <AccessibilityIcon />
-                            PMR
-                          </span>
-                        )}
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${salle.deletedAt ? 'bg-[#FFE3E7] text-[#CD2429]' : salle.isActive ? 'bg-[#D8EC95] text-[#146E67]' : 'bg-[#FFF1D6] text-[#986A1B]'}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-black text-base text-[var(--ink)]">{salle.nom}</h3>
+                          <p className="mt-0.5 text-sm text-[var(--muted)]">{salle.adresse}</p>
+                        </div>
+                        <span
+                          className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                            salle.deletedAt
+                              ? 'bg-[var(--Misty-Rose)] text-[var(--Flush-Mahogany)]'
+                              : salle.isActive
+                                ? 'bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]'
+                                : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
                           {salle.deletedAt ? 'Archivée' : salle.isActive ? 'Active' : 'Indisponible'}
                         </span>
                       </div>
+
+                      <p className="mt-2 text-xs font-semibold text-[var(--muted)]">
+                        Capacité d&apos;accueil : <span className="font-bold text-[var(--ink)]">{salle.capaciteMax} personnes</span>
+                      </p>
+
+                      {/* Tags équipements & accessibilité */}
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        {salle.accesPmr && (
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--Mosaic-Tile)]/30 bg-[var(--Pale-Sage)] px-2.5 py-1 text-[11px] font-bold text-[var(--Mosaic-Tile)]"
+                            title="Accès PMR disponible"
+                          >
+                            <AccessibilityIcon />
+                            <span>PMR</span>
+                          </span>
+                        )}
+
+                        {salle.equipementsInclus && salle.equipementsInclus.length > 0 ? (
+                          salle.equipementsInclus.map((eq) => {
+                            const info = getEquipmentInfo(eq);
+                            const Icon = info.icon;
+                            return (
+                              <span
+                                key={eq}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ink)]"
+                                title={info.label}
+                              >
+                                <Icon className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+                                <span>{info.label}</span>
+                              </span>
+                            );
+                          })
+                        ) : (
+                          !salle.accesPmr && (
+                            <span className="text-xs italic text-[var(--muted)]">
+                              Aucun équipement spécifique
+                            </span>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 border-t border-[#E8EFEB] bg-[#FCFDFC] p-4">
+                  <div className="flex flex-wrap gap-2 border-t border-[var(--line)] bg-[var(--paper)]/50 p-4">
                     {!salle.deletedAt && (
                       <>
-                        <button type="button" onClick={() => startEditing(salle)} className="inline-flex items-center gap-2 rounded-lg border border-[#B9D8D1] px-3 py-2 text-xs font-bold text-[#146E67] transition hover:bg-[#E8F4F2]"><ActionIcon name="edit" />Modifier</button>
+                        <button type="button" onClick={() => startEditing(salle)} className="inline-flex items-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-bold text-[var(--Mosaic-Tile)] transition hover:bg-[var(--Pale-Sage)]/40 cursor-pointer"><ActionIcon name="edit" />Modifier</button>
                         <button
                           type="button"
                           onClick={() => void toggleStatus(salle)}
-                          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition ${salle.isActive ? 'border border-amber-300 text-amber-700 hover:bg-amber-50' : 'bg-[#146E67] text-white hover:bg-[#0F5A54]'}`}
+                          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition cursor-pointer ${salle.isActive ? 'border border-amber-300 text-amber-700 hover:bg-amber-50' : 'bg-[var(--Mosaic-Tile)] text-[var(--White)] hover:bg-[var(--moss)]'}`}
                         >
                           <ActionIcon name="status" />
                           {salle.isActive ? 'Indisponible' : 'Disponible'}
                         </button>
-                        <button type="button" onClick={() => void archive(salle)} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-50"><ActionIcon name="archive" />Archiver</button>
+                        <button type="button" onClick={() => void archive(salle)} className="inline-flex items-center gap-2 rounded-lg border border-[var(--Flush-Mahogany)]/30 px-3 py-2 text-xs font-bold text-[var(--Flush-Mahogany)] transition hover:bg-rose-50 cursor-pointer"><ActionIcon name="archive" />Archiver</button>
                       </>
                     )}
                   </div>
@@ -309,11 +424,11 @@ export default function SallesList() {
         </div>
       )}
       {filteredSalles.length > 0 && (
-        <div className="mt-6 flex items-center justify-between border-t border-[#E8EFEB] pt-4 text-xs font-semibold text-[#6D746E]">
+        <div className="mt-6 flex items-center justify-between border-t border-[var(--line)] pt-4 text-xs font-semibold text-[var(--muted)]">
           <span>Page {page} sur {totalPages}</span>
           <div className="flex gap-2">
-            <button type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)} className="rounded-md border border-[#B9D8D1] px-3 py-2 hover:bg-[#E8F4F2] disabled:opacity-40">Précédente</button>
-            <button type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} className="rounded-md border border-[#B9D8D1] px-3 py-2 hover:bg-[#E8F4F2] disabled:opacity-40">Suivante</button>
+            <button type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)} className="rounded-md border border-[var(--line)] px-3 py-2 hover:bg-[var(--paper)] disabled:opacity-40 cursor-pointer">Précédente</button>
+            <button type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} className="rounded-md border border-[var(--line)] px-3 py-2 hover:bg-[var(--paper)] disabled:opacity-40 cursor-pointer">Suivante</button>
           </div>
         </div>
       )}

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { IconChevronRight } from '@/components/ui/icons';
+
 
 export default function ConfirmationPage() {
   return (
@@ -17,7 +19,8 @@ export default function ConfirmationPage() {
           href="/connexion"
           className="mt-10 inline-flex items-center gap-2 text-[14px] font-bold uppercase tracking-[0.18em] text-[var(--Mosaic-Tile)]"
         >
-          Retour à la connexion →
+          <span>Retour à la connexion</span>
+          <IconChevronRight className="h-4 w-4" />
         </Link>
       </div>
     </div>

@@ -50,6 +50,32 @@ body {
     color: var(--ink);
 }
 
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    height: 0.38rem;
+    width: 0.38rem;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 0.25rem;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 .home-page {
     min-height: 100vh;
     background: #f6f7f1;
