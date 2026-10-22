@@ -5,6 +5,8 @@ namespace App\Service;
 use App\Entity\Materiel;
 use App\Entity\ReservationMateriel;
 use App\Entity\ReservationMaterielLigne;
+use App\Entity\StockAdjustment;
+use App\Entity\User;
 use App\Exception\StockConflictException;
 use App\Repository\ReservationMaterielRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -84,7 +86,13 @@ final class EquipmentStockService
      * @throws StockConflictException Si le stock passe sous le seuil d'une réservation validée sans confirmation explicite.
      * @throws \InvalidArgumentException Si le stock est négatif.
      */
-    public function adjustStock(Materiel $materiel, int $newStock, bool $force = false): void
+    public function adjustStock(
+        Materiel $materiel,
+        int $newStock,
+        string $reason,
+        User $agent,
+        bool $force = false,
+    ): void
     {
         if ($newStock < 0) {
             throw new \InvalidArgumentException('Le stock doit être un entier positif ou nul.');
@@ -103,7 +111,19 @@ final class EquipmentStockService
             );
         }
 
+        $previousStock = $materiel->getStockTotal();
+        if ($previousStock === null) {
+            throw new \LogicException('Le stock actuel du matériel est invalide.');
+        }
+
         $materiel->setStockTotal($newStock);
+        $this->entityManager->persist(new StockAdjustment(
+            $materiel,
+            $agent,
+            $previousStock,
+            $newStock,
+            $reason,
+        ));
         $this->entityManager->flush();
     }
 
@@ -117,4 +137,3 @@ final class EquipmentStockService
         $this->entityManager->flush();
     }
 }
-

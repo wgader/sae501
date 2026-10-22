@@ -3,8 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Materiel;
+use App\Entity\StockAdjustment;
+use App\Entity\User;
 use App\Exception\StockConflictException;
 use App\Repository\MaterielRepository;
+use App\Repository\StockAdjustmentRepository;
 use App\Service\EquipmentStockService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,6 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/admin/equipment')]
 #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_MATERIEL')"))]
@@ -23,6 +27,7 @@ final class EquipmentAdministrationController extends AbstractController
 {
     public function __construct(
         private readonly MaterielRepository $materielRepository,
+        private readonly StockAdjustmentRepository $stockAdjustmentRepository,
         private readonly EquipmentStockService $stockService,
         private readonly EntityManagerInterface $entityManager,
         #[Autowire('%kernel.project_dir%')]
@@ -120,7 +125,7 @@ final class EquipmentAdministrationController extends AbstractController
     }
 
     #[Route('/{id}', name: 'admin_equipment_update', methods: ['PUT', 'PATCH'], requirements: ['id' => '\d+'])]
-    public function update(Materiel $materiel, Request $request): JsonResponse
+    public function update(Materiel $materiel, Request $request, #[CurrentUser] User $agent): JsonResponse
     {
         $payload = $this->requestPayload($request);
         $image = $request->files->get('photo') ?? $request->files->get('image');
@@ -164,6 +169,7 @@ final class EquipmentAdministrationController extends AbstractController
         }
 
         $stockToUpdate = null;
+        $reason = null;
         if (array_key_exists('stockTotal', $payload) || array_key_exists('quantiteTotale', $payload)) {
             $rawStock = $payload['stockTotal'] ?? $payload['quantiteTotale'];
             if ($rawStock === null || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
@@ -175,6 +181,13 @@ final class EquipmentAdministrationController extends AbstractController
                 } else {
                     $stockToUpdate = $stock;
                 }
+            }
+
+            $rawReason = $payload['reason'] ?? null;
+            if (!is_string($rawReason) || !in_array($rawReason, StockAdjustment::REASONS, true)) {
+                $errors['reason'] = 'Le motif de l’ajustement est obligatoire et invalide.';
+            } else {
+                $reason = $rawReason;
             }
         }
 
@@ -193,7 +206,7 @@ final class EquipmentAdministrationController extends AbstractController
 
         if ($stockToUpdate !== null) {
             try {
-                $this->stockService->adjustStock($materiel, $stockToUpdate, $force);
+                $this->stockService->adjustStock($materiel, $stockToUpdate, $reason, $agent, $force);
             } catch (StockConflictException $conflictException) {
                 return $this->json([
                     'message' => $conflictException->getMessage(),
@@ -202,11 +215,34 @@ final class EquipmentAdministrationController extends AbstractController
                     'conflictingReservations' => $conflictException->getConflicts(),
                 ], Response::HTTP_CONFLICT);
             }
+
         } else {
             $this->entityManager->flush();
         }
 
         return $this->json(self::serializeEquipment($materiel));
+    }
+
+    #[Route('/{id}/stock-adjustments', name: 'admin_equipment_stock_adjustments', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function stockAdjustments(Materiel $materiel): JsonResponse
+    {
+        $adjustments = $this->stockAdjustmentRepository->findForEquipment($materiel->getId() ?? 0);
+
+        return $this->json(array_map(
+            static fn (StockAdjustment $adjustment): array => [
+                'id' => $adjustment->getId(),
+                'previousStock' => $adjustment->getPreviousStock(),
+                'newStock' => $adjustment->getNewStock(),
+                'reason' => $adjustment->getReason(),
+                'createdAt' => $adjustment->getCreatedAt()->format(\DateTimeInterface::ATOM),
+                'agent' => [
+                    'id' => $adjustment->getAgent()?->getId(),
+                    'nom' => $adjustment->getAgent()?->getNom(),
+                    'prenom' => $adjustment->getAgent()?->getPrenom(),
+                ],
+            ],
+            $adjustments,
+        ));
     }
 
     #[Route('/{id}/check-stock', name: 'admin_equipment_check_stock', methods: ['POST', 'GET'], requirements: ['id' => '\d+'])]
@@ -345,4 +381,3 @@ final class EquipmentAdministrationController extends AbstractController
         ];
     }
 }
-

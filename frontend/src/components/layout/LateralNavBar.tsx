@@ -24,8 +24,8 @@ interface NavItemData {
 
 const moduleItems: NavItemData[] = [
   { root: "", name: "Accueil", icon: <IconAccueil className="h-6 w-6 shrink-0" /> },
-  { root: "subventions", name: "Subventions", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
-  { root: "salles", name: "Salles", icon: <IconSubvention className="h-6 w-6 shrink-0" /> },
+  { root: "subventions", name: "Subventions", icon: <IconSubvention className="h-6 w-6 shrink-0" /> },
+  { root: "salles", name: "Salles", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
   { root: "materiel", name: "Matériel", icon: <IconMateriel className="h-6 w-6 shrink-0" /> },
   { root: "evenements", name: "Événements", icon: <IconEvenement className="h-6 w-6 shrink-0" /> },
   { root: "historique", name: "Historique", icon: <IconHistorique className="h-6 w-6 shrink-0" /> },

@@ -356,7 +356,7 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
       )}
 
       {selectedDate && (
-        <div className="room-selection-line mt-6 flex justify-between border-l-4 border-[#d97706] bg-white p-4 text-sm text-[#6d746e]">
+        <div className="mt-6 flex justify-between border-l-4 border-[#d97706] bg-white p-4 text-sm text-[#6d746e]">
           <span>Date choisie</span>
           <strong className="text-[#0b644d]">{selectedDateFull}</strong>
         </div>

@@ -65,6 +65,27 @@ export type StockCheckResult = {
   }>;
 };
 
+export type StockAdjustment = {
+  id: number;
+  previousStock: number;
+  newStock: number;
+  reason: string;
+  createdAt: string;
+  agent: {
+    id: number | null;
+    nom: string | null;
+    prenom: string | null;
+  };
+};
+
+export type AccountProfile = {
+  id: number | null;
+  email: string | null;
+  telephone: string | null;
+  nom: string | null;
+  prenom: string | null;
+};
+
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly data?: unknown) {
     super(message);
@@ -112,6 +133,48 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     );
   }
   return data as T;
+}
+
+async function accountRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new ApiError('Vous devez être connecté pour accéder à votre profil.', 401);
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new ApiError(
+      typeof data?.message === 'string' ? data.message : 'Impossible de mettre à jour le profil.',
+      response.status,
+      data,
+    );
+  }
+
+  return data as T;
+}
+
+export function getAccountProfile(): Promise<AccountProfile> {
+  return accountRequest<AccountProfile>('/api/account/profile');
+}
+
+export function updateAccountProfile(payload: {
+  email?: string;
+  telephone?: string | null;
+}): Promise<AccountProfile> {
+  return accountRequest<AccountProfile>('/api/account/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function registerAssociation(payload: {
@@ -199,6 +262,10 @@ export function checkEquipmentStock(id: number, stockTotal: number): Promise<Sto
     method: 'POST',
     body: JSON.stringify({ stockTotal }),
   });
+}
+
+export function getEquipmentStockAdjustments(id: number): Promise<StockAdjustment[]> {
+  return request<StockAdjustment[]>(`/api/admin/equipment/${id}/stock-adjustments`);
 }
 
 export function deleteAdminEquipment(id: number): Promise<{ message: string; equipment: Equipment }> {

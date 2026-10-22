@@ -195,6 +195,7 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                             'description' => ['type' => 'string'],
                             'consignesUtilisation' => ['type' => 'string'],
                             'stockTotal' => ['type' => 'integer', 'example' => 8],
+                            'reason' => ['type' => 'string', 'enum' => ['Entrée de stock', 'Casse', 'Perte', 'Maintenance', 'Autre']],
                             'force' => ['type' => 'boolean', 'default' => false, 'description' => 'Forcer la mise à jour même en cas de conflit avec des réservations'],
                         ],
                     ])),
@@ -215,6 +216,22 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                 ],
                 responses: [
                     '200' => new Model\Response('Équipement archivé'),
+                    '404' => new Model\Response('Équipement non trouvé'),
+                ]
+            )
+        ));
+
+        $paths->addPath('/api/admin/equipment/{id}/stock-adjustments', new Model\PathItem(
+            get: new Model\Operation(
+                operationId: 'adminListEquipmentStockAdjustments',
+                tags: ['Gestion Matériel'],
+                summary: 'Consulter l’historique des ajustements de stock',
+                security: [['bearerAuth' => []]],
+                parameters: [
+                    new Model\Parameter('id', 'path', "ID de l'équipement", required: true, schema: ['type' => 'integer']),
+                ],
+                responses: [
+                    '200' => new Model\Response('Historique des ajustements de stock'),
                     '404' => new Model\Response('Équipement non trouvé'),
                 ]
             )

@@ -4,16 +4,12 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
-import AdminMetricCard from '@/components/admin/AdminMetricCard';
+import EquipmentFormModal from '@/components/admin/EquipmentFormModal';
+import EquipmentStockModal from '@/components/admin/EquipmentStockModal';
 import {
   Equipment,
-  StockCheckResult,
   getAdminEquipment,
-  createAdminEquipment,
-  updateAdminEquipment,
-  checkEquipmentStock,
   deleteAdminEquipment,
-  ApiError,
 } from '@/lib/api';
 
 const CATEGORIES = [
@@ -38,28 +34,9 @@ export default function AdminMaterielPage() {
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Equipment | null>(null);
   const [adjustingItem, setAdjustingItem] = useState<Equipment | null>(null);
   const [archivingItem, setArchivingItem] = useState<Equipment | null>(null);
-
-  // Form create state
-  const [formDesignation, setFormDesignation] = useState('');
-  const [formCategory, setFormCategory] = useState('mobilier');
-  const [formReference, setFormReference] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formConsignes, setFormConsignes] = useState('');
-  const [formStock, setFormStock] = useState<number | ''>(10);
-  const [formPhoto, setFormPhoto] = useState<File | null>(null);
-  const [formSubmitting, setFormSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  // Stock adjustment state
-  const [adjustReason, setAdjustReason] = useState('Entrée de stock');
-  const [adjustNewStock, setAdjustNewStock] = useState<number | ''>('');
-  const [adjustChecking, setAdjustChecking] = useState(false);
-  const [adjustConflict, setAdjustConflict] = useState<StockCheckResult | null>(null);
-  const [adjustForceConfirm, setAdjustForceConfirm] = useState(false);
-  const [adjustSubmitting, setAdjustSubmitting] = useState(false);
-  const [adjustError, setAdjustError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -78,13 +55,6 @@ export default function AdminMaterielPage() {
     const timer = window.setTimeout(() => void loadData(), 0);
     return () => window.clearTimeout(timer);
   }, [loadData]);
-
-  // Métriques
-  const totalEquipments = equipmentList.length;
-  const availableEquipments = equipmentList.filter((e) => !e.isArchived).length;
-  const totalPhysicalStock = equipmentList
-    .filter((e) => !e.isArchived)
-    .reduce((sum, e) => sum + e.stockTotal, 0);
 
   // Filtrage
   const filteredList = useMemo(() => {
@@ -109,133 +79,40 @@ export default function AdminMaterielPage() {
 
   // ── Scénario 1 & 5 : Création ──────────────────────────────────────────────
   const handleOpenCreate = () => {
-    setFormDesignation('');
-    setFormCategory('mobilier');
-    setFormReference('');
-    setFormDescription('');
-    setFormConsignes('');
-    setFormStock(10);
-    setFormPhoto(null);
-    setFormErrors({});
+    setEditingItem(null);
     setIsCreateOpen(true);
   };
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormErrors({});
+  const handleOpenEdit = (item: Equipment) => {
+    setEditingItem(item);
+    setIsCreateOpen(true);
+  };
 
-    const errors: Record<string, string> = {};
-    if (!formDesignation.trim()) errors.designation = 'La désignation est obligatoire.';
-    if (!formCategory) errors.categorie = 'La catégorie est obligatoire.';
-    if (formStock === '' || Number(formStock) <= 0 || !Number.isInteger(Number(formStock))) {
-      errors.stockTotal = 'Le stock initial doit être un entier strictement supérieur à zéro.';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-
-    setFormSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append('designation', formDesignation.trim());
-      formData.append('categorie', formCategory);
-      if (formReference.trim()) formData.append('referenceInterne', formReference.trim());
-      if (formDescription.trim()) formData.append('description', formDescription.trim());
-      if (formConsignes.trim()) formData.append('consignesUtilisation', formConsignes.trim());
-      formData.append('stockTotal', String(formStock));
-      if (formPhoto) formData.append('photo', formPhoto);
-
-      const created = await createAdminEquipment(formData);
-      setEquipmentList((prev) => [created, ...prev]);
-      setIsCreateOpen(false);
-      showToast('success', `L'équipement « ${created.designation} » a été ajouté avec le statut Disponible.`);
-    } catch (err) {
-      if (err instanceof ApiError && err.data && typeof err.data === 'object' && 'errors' in err.data) {
-        setFormErrors((err.data as { errors: Record<string, string> }).errors);
-      } else {
-        showToast('error', err instanceof Error ? err.message : 'Erreur lors de la création.');
-      }
-    } finally {
-      setFormSubmitting(false);
-    }
+  const handleFormSaved = (saved: Equipment, wasEditing: boolean) => {
+    setEquipmentList((prev) =>
+      wasEditing
+        ? prev.map((item) => (item.id === saved.id ? saved : item))
+        : [saved, ...prev],
+    );
+    setIsCreateOpen(false);
+    setEditingItem(null);
+    showToast(
+      'success',
+      wasEditing
+        ? `L'équipement « ${saved.designation} » a été modifié.`
+        : `L'équipement « ${saved.designation} » a été ajouté avec le statut Disponible.`,
+    );
   };
 
   // ── Scénarios 2 & 3 : Ajustement de stock ──────────────────────────────────
   const handleOpenAdjust = (item: Equipment) => {
     setAdjustingItem(item);
-    setAdjustReason('Entrée de stock');
-    setAdjustNewStock(item.stockTotal);
-    setAdjustConflict(null);
-    setAdjustForceConfirm(false);
-    setAdjustError(null);
   };
 
-  // Vérification de surbooking en temps réel quand le stock change
-  const handleStockInputChange = async (val: string) => {
-    const num = val === '' ? '' : Number(val);
-    setAdjustNewStock(num);
-    setAdjustConflict(null);
-    setAdjustForceConfirm(false);
-    setAdjustError(null);
-
-    if (num === '' || !Number.isInteger(num) || num < 0) {
-      return;
-    }
-
-    if (adjustingItem && num < adjustingItem.stockTotal) {
-      setAdjustChecking(true);
-      try {
-        const check = await checkEquipmentStock(adjustingItem.id, num);
-        if (check.hasConflict) {
-          setAdjustConflict(check);
-        }
-      } catch (err) {
-        console.error('Erreur lors de la vérification de stock:', err);
-      } finally {
-        setAdjustChecking(false);
-      }
-    }
-  };
-
-  const handleAdjustSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adjustingItem) return;
-
-    if (adjustNewStock === '' || !Number.isInteger(Number(adjustNewStock)) || Number(adjustNewStock) < 0) {
-      setAdjustError('Le stock doit être un entier positif ou nul.');
-      return;
-    }
-
-    if (adjustConflict?.hasConflict && !adjustForceConfirm) {
-      setAdjustError('Veuillez confirmer explicitement la réduction de stock malgré le conflit de réservations.');
-      return;
-    }
-
-    setAdjustSubmitting(true);
-    setAdjustError(null);
-
-    try {
-      const updated = await updateAdminEquipment(adjustingItem.id, {
-        stockTotal: Number(adjustNewStock),
-        force: adjustForceConfirm,
-      });
-
-      setEquipmentList((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-      setAdjustingItem(null);
-      showToast('success', `Stock mis à jour pour « ${updated.designation} » : ${updated.stockTotal} unités en stock.`);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        const conflictData = err.data as StockCheckResult;
-        setAdjustConflict(conflictData);
-        setAdjustError(err.message);
-      } else {
-        setAdjustError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour du stock.');
-      }
-    } finally {
-      setAdjustSubmitting(false);
-    }
+  const handleStockSaved = (updated: Equipment) => {
+    setEquipmentList((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    setAdjustingItem(null);
+    showToast('success', `Stock mis à jour pour « ${updated.designation} » : ${updated.stockTotal} unités en stock.`);
   };
 
   // ── Scénario 4 : Archivage logique (Soft Delete) ───────────────────────────
@@ -286,57 +163,6 @@ export default function AdminMaterielPage() {
             {feedback.message}
           </div>
         )}
-
-        {/* KPI Metrics */}
-        <section aria-labelledby="kpi-heading">
-          <h2 id="kpi-heading" className="sr-only">Indicateurs clés du parc</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <AdminMetricCard
-              title="Équipements répertoriés"
-              value={totalEquipments}
-              description="Nombre total de références matérielles créées."
-              iconBgClass="bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]"
-              actionHref="#equipment-list-heading"
-              actionLabel="Voir la liste"
-              icon={
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                  <line x1="12" y1="22.08" x2="12" y2="12" />
-                </svg>
-              }
-              loading={loading}
-            />
-            <AdminMetricCard
-              title="Disponibles au prêt usager"
-              value={availableEquipments}
-              description="Matériels actifs visibles par les associations."
-              iconBgClass="bg-emerald-100 text-emerald-800"
-              actionHref="#equipment-list-heading"
-              actionLabel="Consulter"
-              icon={
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-              loading={loading}
-            />
-            <AdminMetricCard
-              title="Stock physique communal"
-              value={totalPhysicalStock}
-              description="Unités matérielles cumulées en inventaire."
-              iconBgClass="bg-[var(--Lime-Cream)] text-[var(--ink)]"
-              actionHref="#equipment-list-heading"
-              actionLabel="Gérer les stocks"
-              icon={
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                </svg>
-              }
-              loading={loading}
-            />
-          </div>
-        </section>
 
         {/* Filtres & Recherche */}
         <section aria-labelledby="filters-heading" className="rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm">
@@ -490,25 +316,33 @@ export default function AdminMaterielPage() {
 
                   {/* Stock & Actions */}
                   <footer className="mt-5 border-t border-[var(--line)] pt-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-                          Stock communal
-                        </span>
-                        <p className="text-xl font-black text-[var(--ink)]">
-                          {item.stockTotal}{' '}
-                          <span className="text-xs font-normal text-[var(--muted)]">unités</span>
-                        </p>
-                      </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                        Stock communal
+                      </span>
+                      <p className="text-xl font-black text-[var(--ink)]">
+                        {item.stockTotal}{' '}
+                        <span className="text-xs font-normal text-[var(--muted)]">unités</span>
+                      </p>
+                    </div>
 
-                      <div className="flex gap-2">
+                    <div className="mt-4 grid grid-cols-3 gap-2">
                         <button
                           type="button"
                           onClick={() => handleOpenAdjust(item)}
                           title="Ajuster le stock"
-                          className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-1.5 text-xs font-bold text-[var(--ink)] transition hover:bg-white hover:border-[var(--Mosaic-Tile)]"
+                          className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2 py-1.5 text-xs font-bold text-[var(--ink)] transition hover:border-[var(--Mosaic-Tile)] hover:bg-white"
                         >
                           Ajuster
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(item)}
+                          title="Modifier l'équipement"
+                          className="rounded-lg border border-[var(--line)] bg-white px-2 py-1.5 text-xs font-bold text-[var(--Mosaic-Tile)] transition hover:border-[var(--Mosaic-Tile)] hover:bg-[var(--Pale-Sage)]"
+                        >
+                          Modifier
                         </button>
 
                         {!item.isArchived && (
@@ -516,12 +350,11 @@ export default function AdminMaterielPage() {
                             type="button"
                             onClick={() => setArchivingItem(item)}
                             title="Archiver l'équipement"
-                            className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-bold text-[var(--Flush-Mahogany)] transition hover:bg-red-100"
+                            className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-bold text-[var(--Flush-Mahogany)] transition hover:bg-red-100"
                           >
                             Archiver
                           </button>
                         )}
-                      </div>
                     </div>
                   </footer>
                 </article>
@@ -530,272 +363,28 @@ export default function AdminMaterielPage() {
           )}
         </section>
 
-        {/* ── Modal Création d'équipement (Scénarios 1 & 5) ────────────────── */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-[var(--line)] pb-4">
-                <h3 className="text-lg font-bold text-[var(--ink)]">
-                  Ajouter un nouvel équipement
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--paper)]"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateSubmit} className="mt-5 space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Désignation <span className="text-[var(--Flush-Mahogany)]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formDesignation}
-                    onChange={(e) => setFormDesignation(e.target.value)}
-                    placeholder="Ex: Barnum pliant 3x3m renforcé"
-                    className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                  />
-                  {formErrors.designation && (
-                    <p className="mt-1 text-xs text-[var(--Flush-Mahogany)]">{formErrors.designation}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                      Catégorie <span className="text-[var(--Flush-Mahogany)]">*</span>
-                    </label>
-                    <select
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                    >
-                      <option value="mobilier">Mobilier</option>
-                      <option value="sonorisation">Sonorisation</option>
-                      <option value="barnums">Barnums</option>
-                      <option value="eclairage">Éclairage</option>
-                      <option value="autre">Autre</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                      Référence interne
-                    </label>
-                    <input
-                      type="text"
-                      value={formReference}
-                      onChange={(e) => setFormReference(e.target.value)}
-                      placeholder="Ex: MAT-BARN-001"
-                      className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Stock initial communal <span className="text-[var(--Flush-Mahogany)]">* (&gt; 0)</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    value={formStock}
-                    onChange={(e) => setFormStock(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                  />
-                  {formErrors.stockTotal && (
-                    <p className="mt-1 text-xs text-[var(--Flush-Mahogany)]">{formErrors.stockTotal}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formDescription}
-                    onChange={(e) => setFormDescription(e.target.value)}
-                    placeholder="Caractéristiques techniques, dimensions, coloris..."
-                    className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Consignes d&apos;utilisation et de transport
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formConsignes}
-                    onChange={(e) => setFormConsignes(e.target.value)}
-                    placeholder="Précautions d'arrimage, lestage impératif, manipulation..."
-                    className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Photo indicative (JPEG, PNG, WebP)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={(e) => setFormPhoto(e.target.files?.[0] ?? null)}
-                    className="mt-1.5 w-full text-xs text-[var(--muted)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--Pale-Sage)] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[var(--Mosaic-Tile)] hover:file:bg-[var(--sage)]"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateOpen(false)}
-                    className="rounded-xl border border-[var(--line)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)] hover:bg-[var(--paper)]"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={formSubmitting}
-                    className="rounded-xl bg-[var(--Mosaic-Tile)] px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[var(--moss)] disabled:opacity-50"
-                  >
-                    {formSubmitting ? 'Enregistrement...' : 'Enregistrer au catalogue'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <EquipmentFormModal
+            key={editingItem?.id ?? 'new-equipment'}
+            isOpen
+            editingItem={editingItem}
+            onClose={() => {
+              setIsCreateOpen(false);
+              setEditingItem(null);
+            }}
+            onSaved={handleFormSaved}
+            onError={(message) => showToast('error', message)}
+          />
         )}
 
-        {/* ── Modal Ajustement de Stock (Scénarios 2 & 3) ─────────────────── */}
         {adjustingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-[var(--line)] pb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-[var(--ink)]">
-                    Ajuster le stock
-                  </h3>
-                  <p className="text-xs text-[var(--muted)]">{adjustingItem.designation}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAdjustingItem(null)}
-                  className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--paper)]"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleAdjustSubmit} className="mt-5 space-y-4">
-                <div className="rounded-xl bg-[var(--paper)] p-3 text-xs flex justify-between items-center">
-                  <span className="font-semibold text-[var(--muted)]">Stock actuel de référence :</span>
-                  <span className="text-base font-black text-[var(--ink)]">{adjustingItem.stockTotal} unités</span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Motif de l&apos;ajustement
-                  </label>
-                  <select
-                    value={adjustReason}
-                    onChange={(e) => setAdjustReason(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                  >
-                    <option value="Entrée de stock">Entrée de stock (nouvel achat communal)</option>
-                    <option value="Casse">Casse constatée</option>
-                    <option value="Perte">Perte / Vol</option>
-                    <option value="Maintenance">Maintenance / Réparation temporaire</option>
-                    <option value="Autre">Autre ajustement d&apos;inventaire</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Nouveau stock total <span className="text-[var(--Flush-Mahogany)]">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    required
-                    value={adjustNewStock}
-                    onChange={(e) => handleStockInputChange(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
-                  />
-                  {adjustChecking && (
-                    <p className="mt-1 text-xs text-[var(--muted)]">Vérification de cohérence avec les réservations...</p>
-                  )}
-                </div>
-
-                {/* ── Scénario 3 : Conflit de surbooking détecté ────────────── */}
-                {adjustConflict?.hasConflict && (
-                  <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-xs text-[var(--Flush-Mahogany)] space-y-2">
-                    <div className="flex items-center gap-2 font-black text-sm">
-                      <svg className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                      </svg>
-                      Avertissement de surbooking
-                    </div>
-                    <p className="leading-relaxed">
-                      Le stock demandé ({adjustNewStock}) est inférieur aux réservations fermes validées
-                      (jusqu&apos;à {adjustConflict.maxBooked} unités réservées).
-                    </p>
-                    <div className="rounded-lg bg-white/70 p-2 text-[11px] space-y-1">
-                      <p className="font-bold text-[var(--ink)]">Réservations compromises :</p>
-                      <ul className="list-disc pl-4 space-y-0.5">
-                        {adjustConflict.conflictingReservations.map((r) => (
-                          <li key={r.id}>
-                            <strong>{r.association}</strong> : {r.motif} ({r.quantite} unités demandées du{' '}
-                            {new Date(r.dateRetrait).toLocaleDateString('fr-FR')} au{' '}
-                            {new Date(r.dateRestitution).toLocaleDateString('fr-FR')})
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <label className="flex items-start gap-2 pt-2 cursor-pointer font-bold text-[var(--ink)]">
-                      <input
-                        type="checkbox"
-                        checked={adjustForceConfirm}
-                        onChange={(e) => setAdjustForceConfirm(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-red-300 text-[var(--Flush-Mahogany)] focus:ring-red-400"
-                      />
-                      <span>Je confirme explicitement cet ajustement malgré le risque de surbooking.</span>
-                    </label>
-                  </div>
-                )}
-
-                {adjustError && (
-                  <p className="text-xs font-semibold text-[var(--Flush-Mahogany)]">{adjustError}</p>
-                )}
-
-                <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setAdjustingItem(null)}
-                    className="rounded-xl border border-[var(--line)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)] hover:bg-[var(--paper)]"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={adjustSubmitting}
-                    className="rounded-xl bg-[var(--Mosaic-Tile)] px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[var(--moss)] disabled:opacity-50"
-                  >
-                    {adjustSubmitting ? 'Mise à jour...' : 'Valider le nouveau stock'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <EquipmentStockModal
+            key={adjustingItem.id}
+            equipment={adjustingItem}
+            onClose={() => setAdjustingItem(null)}
+            onSaved={handleStockSaved}
+            onError={(message) => showToast('error', message)}
+          />
         )}
 
         {/* ── Modal Confirmation Archivage (Scénario 4) ────────────────────── */}
