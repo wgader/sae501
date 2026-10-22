@@ -41,7 +41,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   };
 
   return (
-    <aside className="flex h-full w-full flex-col justify-between overflow-y-auto bg-[var(--Mosaic-Tile)] p-5 text-[var(--White)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <aside className="flex h-full w-full flex-col justify-between overflow-y-auto bg-primary p-5 text-white scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div>
         <Link
           href="/admin/dashboard"
@@ -70,10 +70,10 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                 href={href}
                 onClick={onNavigate}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex h-12 items-center gap-3.5 rounded-[12px] px-4 text-[0.875rem] transition-colors ${
+                className={`flex h-12 items-center gap-3.5 rounded-control px-4 text-body-sm transition-colors ${
                   isActive
-                    ? 'bg-[var(--White)] font-bold text-[var(--Mosaic-Tile)] shadow-sm'
-                    : 'font-medium text-white/80 hover:bg-white/10 hover:text-[var(--White)]'
+                    ? 'bg-white font-bold text-primary shadow-sm'
+                    : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -88,7 +88,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex h-12 w-full items-center gap-3 rounded-[12px] bg-[var(--White)] px-4 text-[0.875rem] font-bold text-[var(--Mosaic-Tile)] shadow-sm transition-opacity hover:opacity-95"
+          className="flex h-12 w-full items-center gap-3 rounded-control bg-white px-4 text-body-sm font-bold text-primary shadow-sm transition-colors hover:bg-accent"
         >
           <svg
             className="h-5 w-5 shrink-0"

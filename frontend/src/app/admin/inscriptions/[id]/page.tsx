@@ -84,7 +84,7 @@ export default function AssociationDetailPage() {
         <nav aria-label="Retour à la liste" className="mb-6">
           <Link
             href="/admin/inscriptions"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--Mosaic-Tile)] transition-opacity hover:opacity-80"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-primary transition-opacity hover:opacity-80"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -95,8 +95,8 @@ export default function AssociationDetailPage() {
 
         {/* ── État de chargement ───────────────────────────── */}
         {loading && (
-          <article className="py-20 text-center text-[var(--muted)]">
-            <svg className="mx-auto h-8 w-8 animate-spin text-[var(--Mosaic-Tile)]" viewBox="0 0 24 24" fill="none">
+          <article className="py-20 text-center text-muted">
+            <svg className="mx-auto h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -106,14 +106,14 @@ export default function AssociationDetailPage() {
 
         {/* ── Erreur ───────────────────────────────────────── */}
         {error && (
-          <p className="mb-6 rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]" role="alert">
+          <p className="mb-6 rounded-lg border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-danger" role="alert">
             {error}
           </p>
         )}
 
         {/* ── Message de succès ────────────────────────────── */}
         {feedbackMessage && (
-          <p className="mb-6 rounded-[10px] border-l-4 border-emerald-600 bg-emerald-50/80 p-4 text-xs font-semibold leading-5 text-emerald-800" role="status">
+          <p className="mb-6 rounded-lg border-l-4 border-emerald-600 bg-emerald-50/80 p-4 text-xs font-semibold leading-5 text-emerald-800" role="status">
             {feedbackMessage}
           </p>
         )}
@@ -122,21 +122,21 @@ export default function AssociationDetailPage() {
         {!loading && association && (
           <article className="space-y-6">
             {/* En-tête de la fiche */}
-            <header className="rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-6 sm:p-8">
+            <header className="rounded-2xl border border-line bg-paper p-6 sm:p-8">
               <span className="flex flex-wrap items-center justify-between gap-3">
-                <span className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+                <span className="text-label font-bold uppercase tracking-kicker text-primary">
                   Dossier d’inscription #{association.id}
                 </span>
 
                 <StatusBadge status={association.statut} size="md" />
               </span>
 
-              <h1 className="mt-3 text-2xl sm:text-3xl font-black uppercase tracking-tight text-[var(--ink)]">
+              <h1 className="mt-3 text-2xl sm:text-3xl font-black uppercase tracking-tight text-ink">
                 {association.nom}
               </h1>
 
-              <p className="mt-2 text-xs text-[var(--muted)]">
-                Demande déposée le <strong className="text-[var(--ink)] font-semibold">{formattedDate}</strong>
+              <p className="mt-2 text-xs text-muted">
+                Demande déposée le <strong className="text-ink font-semibold">{formattedDate}</strong>
               </p>
             </header>
 
@@ -145,45 +145,45 @@ export default function AssociationDetailPage() {
               <h2 id="heading-association-info" className="sr-only">Informations détaillées de la demande</h2>
 
               {/* Bloc 1 : Coordonnées de l'association */}
-              <article className="rounded-[20px] border border-[var(--line)] bg-[var(--White)] p-6 sm:p-7 shadow-xs">
-                <header className="flex items-center gap-3 border-b border-[var(--line)] pb-4">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--Mosaic-Tile)]/10 text-[var(--Mosaic-Tile)]">
+              <article className="rounded-2xl border border-line bg-white p-6 sm:p-7 shadow-xs">
+                <header className="flex items-center gap-3 border-b border-line pb-4">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </span>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-ink">
                     Structure associative
                   </h3>
                 </header>
 
                 <ul className="mt-5 space-y-4 text-xs">
                   <li>
-                    <span className="block text-[0.6875rem] font-medium text-[var(--muted)]">Nom officiel</span>
-                    <span className="mt-1 block text-sm font-bold text-[var(--ink)]">{association.nom}</span>
+                    <span className="block text-label font-medium text-muted">Nom officiel</span>
+                    <span className="mt-1 block text-sm font-bold text-ink">{association.nom}</span>
                   </li>
                   <li>
-                    <span className="block text-[0.6875rem] font-medium text-[var(--muted)]">Numéro RNA</span>
-                    <span className="mt-1 block text-sm font-semibold text-[var(--ink)]">
+                    <span className="block text-label font-medium text-muted">Numéro RNA</span>
+                    <span className="mt-1 block text-sm font-semibold text-ink">
                       {association.numeroRna || 'Non communiqué'}
                     </span>
                   </li>
                   <li>
-                    <span className="block text-[0.6875rem] font-medium text-[var(--muted)]">Date & heure de soumission</span>
-                    <span className="mt-1 block text-sm font-semibold text-[var(--ink)]">{formattedDate}</span>
+                    <span className="block text-label font-medium text-muted">Date & heure de soumission</span>
+                    <span className="mt-1 block text-sm font-semibold text-ink">{formattedDate}</span>
                   </li>
                 </ul>
               </article>
 
               {/* Bloc 2 : Président et contact */}
-              <article className="rounded-[20px] border border-[var(--line)] bg-[var(--White)] p-6 sm:p-7 shadow-xs">
-                <header className="flex items-center gap-3 border-b border-[var(--line)] pb-4">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--Lime-Cream)] text-[var(--ink)]">
+              <article className="rounded-2xl border border-line bg-white p-6 sm:p-7 shadow-xs">
+                <header className="flex items-center gap-3 border-b border-line pb-4">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-ink">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </span>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-ink">
                     Président & Correspondant
                   </h3>
                 </header>
@@ -191,16 +191,16 @@ export default function AssociationDetailPage() {
                 {association.contact ? (
                   <ul className="mt-5 space-y-4 text-xs">
                     <li>
-                      <span className="block text-[0.6875rem] font-medium text-[var(--muted)]">Nom et Prénom</span>
-                      <span className="mt-1 block text-sm font-bold text-[var(--ink)]">
+                      <span className="block text-label font-medium text-muted">Nom et Prénom</span>
+                      <span className="mt-1 block text-sm font-bold text-ink">
                         {association.contact.prenom} {association.contact.nom}
                       </span>
                     </li>
                     <li>
-                      <span className="block text-[0.6875rem] font-medium text-[var(--muted)]">Adresse électronique</span>
+                      <span className="block text-label font-medium text-muted">Adresse électronique</span>
                       <a
                         href={`mailto:${association.contact.email}`}
-                        className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--Mosaic-Tile)] underline underline-offset-2 hover:opacity-85"
+                        className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-primary underline underline-offset-2 hover:opacity-85"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -209,11 +209,11 @@ export default function AssociationDetailPage() {
                       </a>
                     </li>
                     <li>
-                      <span className="block text-[0.6875rem] font-medium text-[var(--muted)]">Numéro de téléphone</span>
+                      <span className="block text-label font-medium text-muted">Numéro de téléphone</span>
                       {association.contact.telephone ? (
                         <a
                           href={`tel:${association.contact.telephone}`}
-                          className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--ink)] hover:text-[var(--Mosaic-Tile)]"
+                          className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-primary"
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -221,19 +221,19 @@ export default function AssociationDetailPage() {
                           <span>{association.contact.telephone}</span>
                         </a>
                       ) : (
-                        <span className="mt-1 block text-sm text-[var(--muted)]">Non renseigné</span>
+                        <span className="mt-1 block text-sm text-muted">Non renseigné</span>
                       )}
                     </li>
                   </ul>
                 ) : (
-                  <p className="mt-5 text-xs text-[var(--muted)]">Aucun contact principal associé à cette demande.</p>
+                  <p className="mt-5 text-xs text-muted">Aucun contact principal associé à cette demande.</p>
                 )}
               </article>
             </section>
 
             {/* ── Actions de validation / refus ────────────────── */}
-            <footer className="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-6 sm:p-8">
-              <span className="text-xs text-[var(--muted)]">
+            <footer className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-paper p-6 sm:p-8">
+              <span className="text-xs text-muted">
                 {association.statut === 'PENDING_VALIDATION'
                   ? 'Une décision d’acceptation déclenche l’envoi du lien d’activation à l’association.'
                   : association.statut === 'VALIDATED'

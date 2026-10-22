@@ -33,7 +33,7 @@ export default function BackButton({
       type={type}
       onClick={handleClick}
       className={cn(
-        'group inline-flex items-center gap-1.5 self-start text-xs font-bold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
+        'group inline-flex items-center gap-1.5 self-start text-xs font-bold uppercase tracking-label text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white',
         className,
       )}
     >

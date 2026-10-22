@@ -9,11 +9,11 @@ export default function ButtonView({
   ...props
 }: ButtonViewProps) {
   const baseStyles =
-    'inline-flex items-center justify-center rounded-[10px] transition-colors';
+    'inline-flex items-center justify-center rounded-control transition-colors';
 
   const variants = {
-    selected: 'h-[31px] w-[31px]  bg-white text-black hover:bg-gray-50',
-    unselected: 'h-[31px] w-[31px]  bg-transparent text-black hover:bg-gray-100',
+    selected: 'size-icon-button bg-white text-black hover:bg-gray-50',
+    unselected: 'size-icon-button bg-transparent text-black hover:bg-gray-100',
     
   };
 

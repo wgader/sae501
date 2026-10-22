@@ -53,34 +53,34 @@ export default function MaterielPage() {
 
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
-      <div className="mx-auto max-w-[82rem] space-y-8">
-        <header className="border-b border-[#E7ECEB] pb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto max-w-328 space-y-8">
+        <header className="border-b border-line pb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-[var(--Mosaic-Tile)]">
+            <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
               Espace associations · Prêt communal
             </p>
-            <h1 className="mt-2 text-[clamp(2rem,3.5vw,2.75rem)] font-black tracking-[-0.03em] text-[var(--ink)]">
+            <h1 className="mt-2 text-[clamp(2rem,3.5vw,2.75rem)] font-black tracking-display text-ink">
               Catalogue de matériel municipal
             </h1>
-            <p className="mt-2 max-w-2xl text-[0.9375rem] leading-[1.6] text-[var(--muted)]">
+            <p className="mt-2 max-w-2xl text-body leading-copy text-muted">
               Consultez les équipements municipaux disponibles au prêt pour vos manifestations et événements associatifs.
             </p>
           </div>
 
           <Link
             href="/dashboard"
-            className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[var(--line)] px-5 text-xs font-bold uppercase tracking-[0.14em] text-[var(--ink)] hover:bg-[var(--paper)]"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-5 text-xs font-bold uppercase tracking-label text-ink hover:bg-paper"
           >
             ← Retour au tableau de bord
           </Link>
         </header>
 
         {/* Filtres de recherche */}
-        <section aria-labelledby="catalog-filters" className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] p-5">
+        <section aria-labelledby="catalog-filters" className="rounded-2xl border border-line bg-paper p-5">
           <h2 id="catalog-filters" className="sr-only">Filtrer les équipements</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="catalog-search" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              <label htmlFor="catalog-search" className="block text-xs font-bold uppercase tracking-wider text-muted">
                 Rechercher un matériel
               </label>
               <input
@@ -89,19 +89,19 @@ export default function MaterielPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Ex: Barnum, table, micro..."
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-white px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-ink focus:border-primary focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="catalog-cat" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              <label htmlFor="catalog-cat" className="block text-xs font-bold uppercase tracking-wider text-muted">
                 Catégorie
               </label>
               <select
                 id="catalog-cat"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-white px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-ink focus:border-primary focus:outline-none"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>
@@ -118,17 +118,17 @@ export default function MaterielPage() {
           <h2 id="catalog-items-heading" className="sr-only">Équipements disponibles</h2>
 
           {loading ? (
-            <div className="rounded-2xl border border-[var(--line)] bg-[#F7FAF8] p-12 text-center text-sm font-semibold text-[var(--muted)]">
+            <div className="rounded-2xl border border-line bg-paper p-12 text-center text-sm font-semibold text-muted">
               Chargement des équipements disponibles...
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-[var(--Flush-Mahogany)]">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-danger">
               {error}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-[var(--line)] bg-[#F7FAF8] p-12 text-center">
-              <p className="text-base font-bold text-[var(--ink)]">Aucun équipement disponible</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
+            <div className="rounded-2xl border border-line bg-paper p-12 text-center">
+              <p className="text-base font-bold text-ink">Aucun équipement disponible</p>
+              <p className="mt-1 text-xs text-muted">
                 Modifiez vos filtres ou contactez le service logistique municipal pour toute demande spécifique.
               </p>
             </div>
@@ -137,11 +137,11 @@ export default function MaterielPage() {
               {filtered.map((item) => (
                 <article
                   key={item.id}
-                  className="flex flex-col justify-between rounded-2xl border border-[var(--line)] bg-[#F7FAF8] p-6 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-md"
+                  className="flex flex-col justify-between rounded-2xl border border-line bg-paper p-6 transition hover:border-primary/40 hover:shadow-md"
                 >
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="rounded-full bg-[var(--Pale-Sage)] px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--Mosaic-Tile)]">
+                      <span className="rounded-full bg-sage px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-primary">
                         {item.categorie}
                       </span>
                       <span className="text-xs font-bold text-emerald-700 bg-emerald-100 rounded-full px-2.5 py-0.5">
@@ -149,7 +149,7 @@ export default function MaterielPage() {
                       </span>
                     </div>
 
-                    <div className="mt-4 flex h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-white border border-[var(--line)]">
+                    <div className="mt-4 flex h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-white border border-line">
                       {item.imagePath ? (
                         <Image
                           src={item.imagePath}
@@ -159,39 +159,39 @@ export default function MaterielPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center text-[var(--muted)]">
+                        <div className="flex flex-col items-center justify-center text-muted">
                           <svg className="h-10 w-10 opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <rect x="3" y="3" width="18" height="18" rx="2" />
                             <circle cx="8.5" cy="8.5" r="1.5" />
                             <polyline points="21 15 16 10 5 21" />
                           </svg>
-                          <span className="mt-1 text-[11px]">Photo illustrative</span>
+                          <span className="mt-1 text-meta">Photo illustrative</span>
                         </div>
                       )}
                     </div>
 
-                    <h3 className="mt-4 text-lg font-bold text-[var(--ink)]">
+                    <h3 className="mt-4 text-lg font-bold text-ink">
                       {item.designation}
                     </h3>
                     {item.description && (
-                      <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
+                      <p className="mt-2 text-xs leading-relaxed text-muted">
                         {item.description}
                       </p>
                     )}
 
                     {item.consignesUtilisation && (
-                      <div className="mt-4 rounded-xl bg-white p-3 text-xs border border-[var(--line)]">
-                        <span className="font-bold text-[var(--ink)] block">Consignes :</span>
-                        <p className="text-[var(--muted)] mt-0.5">{item.consignesUtilisation}</p>
+                      <div className="mt-4 rounded-xl bg-white p-3 text-xs border border-line">
+                        <span className="font-bold text-ink block">Consignes :</span>
+                        <p className="text-muted mt-0.5">{item.consignesUtilisation}</p>
                       </div>
                     )}
                   </div>
 
-                  <footer className="mt-6 border-t border-[#E7ECEB] pt-4 flex items-center justify-between text-xs">
-                    <span className="font-bold text-[var(--muted)] uppercase tracking-wider">
+                  <footer className="mt-6 border-t border-line pt-4 flex items-center justify-between text-xs">
+                    <span className="font-bold text-muted uppercase tracking-wider">
                       Quantité communale
                     </span>
-                    <span className="font-black text-sm text-[var(--Mosaic-Tile)]">
+                    <span className="font-black text-sm text-primary">
                       {item.stockTotal} unités
                     </span>
                   </footer>

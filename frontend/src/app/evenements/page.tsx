@@ -2,16 +2,16 @@ import Link from 'next/link';
 
 export default function EvenementsPage() {
   return (
-    <main className="min-h-screen bg-[var(--White)] px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
-      <div className="mx-auto max-w-[82rem]">
-        <header className="border-b border-[var(--line)] pb-6">
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-[var(--Mosaic-Tile)]">
+    <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
+      <div className="mx-auto max-w-328">
+        <header className="border-b border-line pb-6">
+          <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
             Espace associations · Événements
           </p>
-          <h1 className="mt-2 text-[clamp(1.875rem,3.2vw,2.5rem)] font-black tracking-[-0.03em] text-[var(--ink)]">
+          <h1 className="mt-2 text-[clamp(1.875rem,3.2vw,2.5rem)] font-black tracking-display text-ink">
             Déclaration d&apos;événements associatifs
           </h1>
-          <p className="mt-2 max-w-2xl text-[0.9375rem] leading-[1.6] text-[var(--muted)]">
+          <p className="mt-2 max-w-2xl text-body leading-copy text-muted">
             Informez les services municipaux de la tenue de vos manifestations, tournois et rassemblements publics.
           </p>
         </header>
@@ -21,8 +21,8 @@ export default function EvenementsPage() {
             Statut des déclarations
           </h2>
 
-          <div className="rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-8 sm:p-12 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--Mint-Cream)] text-[var(--ink)]">
+          <div className="rounded-2xl border border-line bg-paper p-8 sm:p-12 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-soft text-ink">
               <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
@@ -31,17 +31,17 @@ export default function EvenementsPage() {
               </svg>
             </div>
 
-            <h3 className="mt-6 text-xl font-bold text-[var(--ink)]">
+            <h3 className="mt-6 text-xl font-bold text-ink">
               Vos manifestations et rassemblements
             </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted">
               Déclarez un nouvel événement associatif ou suivez l&apos;instruction des déclarations en cours.
             </p>
 
             <div className="mt-8 flex justify-center gap-4">
               <Link
                 href="/"
-                className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] transition-opacity hover:opacity-90"
+                className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-6 text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover"
               >
                 Retour au tableau de bord
               </Link>

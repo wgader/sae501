@@ -18,15 +18,15 @@ export default function AdminPageHeader({
   return (
     <header className={className}>
       {eyebrow && (
-        <span className="inline-block text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+        <span className="inline-block text-label font-bold uppercase tracking-kicker text-primary">
           {eyebrow}
         </span>
       )}
-      <h1 className="mt-2 text-2xl sm:text-3xl font-black uppercase tracking-wider text-[var(--ink)]">
+      <h1 className="mt-2 text-2xl font-black uppercase tracking-wider text-ink sm:text-3xl">
         {title}
       </h1>
       {description && (
-        <p className="mt-2 text-sm text-[var(--muted)]">
+        <p className="mt-2 text-sm text-muted">
           {description}
         </p>
       )}

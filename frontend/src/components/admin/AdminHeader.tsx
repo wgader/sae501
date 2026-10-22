@@ -14,7 +14,7 @@ export default function AdminHeader({
   isMobileMenuOpen = false,
 }: AdminHeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between bg-[var(--Mosaic-Tile)] px-6 lg:px-10">
+    <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between bg-primary px-6 lg:px-10">
       <div className="flex flex-1 items-center gap-4">
         <button
           type="button"
@@ -37,7 +37,7 @@ export default function AdminHeader({
           <label htmlFor="admin-search-input" className="sr-only">
             Rechercher une association
           </label>
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -49,17 +49,17 @@ export default function AdminHeader({
             value={searchTerm}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Rechercher une association"
-            className="h-10 w-full rounded-full border-0 bg-[var(--White)]/95 pl-10 pr-4 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/75 shadow-xs transition focus:bg-[var(--White)] focus:outline-none focus:ring-2 focus:ring-[var(--Lime-Cream)]"
+            className="h-10 w-full rounded-full border-0 bg-white/95 pl-10 pr-4 text-body-sm text-ink placeholder:text-muted/75 shadow-xs transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </form>
       </div>
 
       <div className="flex items-center pl-4">
-        <div className="flex items-center gap-2.5 rounded-full bg-[var(--White)] px-3 py-1.5 shadow-xs">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.6875rem] font-black text-[var(--ink)]">
+        <div className="flex items-center gap-2.5 rounded-full bg-white px-3 py-1.5 shadow-xs">
+          <span className="flex size-7 items-center justify-center rounded-full bg-accent text-label font-black text-ink">
             AF
           </span>
-          <span className="hidden text-xs font-bold text-[var(--ink)] sm:inline">
+          <span className="hidden text-xs font-bold text-ink sm:inline">
             Alain Faure
           </span>
         </div>

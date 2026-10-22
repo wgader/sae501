@@ -141,7 +141,7 @@ export default function AdminMaterielPage() {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--Mosaic-Tile)] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[var(--moss)] focus:outline-none focus:ring-2 focus:ring-[var(--Mosaic-Tile)] focus:ring-offset-2"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -157,7 +157,7 @@ export default function AdminMaterielPage() {
             className={`rounded-xl border p-4 text-sm font-semibold transition ${
               feedback.type === 'success'
                 ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : 'border-red-200 bg-red-50 text-[var(--Flush-Mahogany)]'
+                : 'border-red-200 bg-red-50 text-danger'
             }`}
           >
             {feedback.message}
@@ -165,11 +165,11 @@ export default function AdminMaterielPage() {
         )}
 
         {/* Filtres & Recherche */}
-        <section aria-labelledby="filters-heading" className="rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm">
+        <section aria-labelledby="filters-heading" className="rounded-2xl border border-line bg-white p-5 shadow-sm">
           <h2 id="filters-heading" className="sr-only">Filtres de recherche</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label htmlFor="search-input" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              <label htmlFor="search-input" className="block text-xs font-bold uppercase tracking-wider text-muted">
                 Rechercher
               </label>
               <input
@@ -178,19 +178,19 @@ export default function AdminMaterielPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Désignation, référence interne..."
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] placeholder-[var(--muted)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-line bg-paper px-3.5 py-2 text-sm text-ink placeholder-muted focus:border-primary focus:bg-white focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="category-select" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              <label htmlFor="category-select" className="block text-xs font-bold uppercase tracking-wider text-muted">
                 Catégorie
               </label>
               <select
                 id="category-select"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>
@@ -201,14 +201,14 @@ export default function AdminMaterielPage() {
             </div>
 
             <div>
-              <label htmlFor="status-select" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              <label htmlFor="status-select" className="block text-xs font-bold uppercase tracking-wider text-muted">
                 Statut catalogue
               </label>
               <select
                 id="status-select"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | 'available' | 'archived')}
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               >
                 <option value="all">Tous les équipements</option>
                 <option value="available">Disponibles uniquement</option>
@@ -223,17 +223,17 @@ export default function AdminMaterielPage() {
           <h2 id="equipment-list-heading" className="sr-only">Inventaire du matériel</h2>
 
           {loading ? (
-            <div className="flex h-40 items-center justify-center rounded-2xl border border-[var(--line)] bg-white">
-              <p className="text-sm font-semibold text-[var(--muted)]">Chargement de l&apos;inventaire matériel...</p>
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-line bg-white">
+              <p className="text-sm font-semibold text-muted">Chargement de l&apos;inventaire matériel...</p>
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-[var(--Flush-Mahogany)]">
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-danger">
               {error}
             </div>
           ) : filteredList.length === 0 ? (
-            <div className="rounded-2xl border border-[var(--line)] bg-white p-12 text-center">
-              <p className="text-base font-bold text-[var(--ink)]">Aucun équipement trouvé</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
+            <div className="rounded-2xl border border-line bg-white p-12 text-center">
+              <p className="text-base font-bold text-ink">Aucun équipement trouvé</p>
+              <p className="mt-1 text-xs text-muted">
                 Modifiez vos filtres ou enregistrez un nouveau matériel dans le catalogue.
               </p>
             </div>
@@ -245,18 +245,18 @@ export default function AdminMaterielPage() {
                   className={`flex flex-col justify-between rounded-2xl border bg-white p-5 transition hover:shadow-md ${
                     item.isArchived
                       ? 'border-gray-200 opacity-75'
-                      : 'border-[var(--line)] hover:border-[var(--Mosaic-Tile)]/40'
+                      : 'border-line hover:border-primary/40'
                   }`}
                 >
                   <div>
                     {/* Header carte */}
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <span className="inline-block rounded-full bg-[var(--Pale-Sage)] px-2.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--Mosaic-Tile)]">
+                        <span className="inline-block rounded-full bg-sage px-2.5 py-0.5 text-label font-bold uppercase tracking-wider text-primary">
                           {item.categorie}
                         </span>
                         {item.referenceInterne && (
-                          <span className="ml-2 text-xs font-mono font-medium text-[var(--muted)]">
+                          <span className="ml-2 text-xs font-mono font-medium text-muted">
                             {item.referenceInterne}
                           </span>
                         )}
@@ -274,7 +274,7 @@ export default function AdminMaterielPage() {
                     </div>
 
                     {/* Image / Thumbnail */}
-                    <div className="mt-4 flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--paper)]">
+                    <div className="mt-4 flex h-36 w-full items-center justify-center overflow-hidden rounded-xl bg-paper">
                       {item.imagePath ? (
                         <Image
                           src={item.imagePath}
@@ -284,45 +284,45 @@ export default function AdminMaterielPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center text-[var(--muted)]">
+                        <div className="flex flex-col items-center justify-center text-muted">
                           <svg className="h-10 w-10 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <rect x="3" y="3" width="18" height="18" rx="2" />
                             <circle cx="8.5" cy="8.5" r="1.5" />
                             <polyline points="21 15 16 10 5 21" />
                           </svg>
-                          <span className="mt-1 text-[11px]">Photo non renseignée</span>
+                          <span className="mt-1 text-meta">Photo non renseignée</span>
                         </div>
                       )}
                     </div>
 
                     {/* Titre & Description */}
-                    <h3 className="mt-4 text-base font-bold text-[var(--ink)]">
+                    <h3 className="mt-4 text-base font-bold text-ink">
                       {item.designation}
                     </h3>
                     {item.description && (
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--muted)]">
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">
                         {item.description}
                       </p>
                     )}
 
                     {/* Consignes transport / utilisation */}
                     {item.consignesUtilisation && (
-                      <div className="mt-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] p-2.5 text-[11px] leading-tight text-[var(--muted)]">
-                        <strong className="block font-semibold text-[var(--ink)]">Consignes :</strong>
+                      <div className="mt-3 rounded-lg border border-line bg-paper p-2.5 text-meta leading-tight text-muted">
+                        <strong className="block font-semibold text-ink">Consignes :</strong>
                         <span className="line-clamp-2">{item.consignesUtilisation}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Stock & Actions */}
-                  <footer className="mt-5 border-t border-[var(--line)] pt-4">
+                  <footer className="mt-5 border-t border-line pt-4">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                      <span className="text-caption font-bold uppercase tracking-wider text-muted">
                         Stock communal
                       </span>
-                      <p className="text-xl font-black text-[var(--ink)]">
+                      <p className="text-xl font-black text-ink">
                         {item.stockTotal}{' '}
-                        <span className="text-xs font-normal text-[var(--muted)]">unités</span>
+                        <span className="text-xs font-normal text-muted">unités</span>
                       </p>
                     </div>
 
@@ -331,7 +331,7 @@ export default function AdminMaterielPage() {
                           type="button"
                           onClick={() => handleOpenAdjust(item)}
                           title="Ajuster le stock"
-                          className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2 py-1.5 text-xs font-bold text-[var(--ink)] transition hover:border-[var(--Mosaic-Tile)] hover:bg-white"
+                          className="rounded-lg border border-line bg-paper px-2 py-1.5 text-xs font-bold text-ink transition hover:border-primary hover:bg-white"
                         >
                           Ajuster
                         </button>
@@ -340,7 +340,7 @@ export default function AdminMaterielPage() {
                           type="button"
                           onClick={() => handleOpenEdit(item)}
                           title="Modifier l'équipement"
-                          className="rounded-lg border border-[var(--line)] bg-white px-2 py-1.5 text-xs font-bold text-[var(--Mosaic-Tile)] transition hover:border-[var(--Mosaic-Tile)] hover:bg-[var(--Pale-Sage)]"
+                          className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs font-bold text-primary transition hover:border-primary hover:bg-sage"
                         >
                           Modifier
                         </button>
@@ -350,7 +350,7 @@ export default function AdminMaterielPage() {
                             type="button"
                             onClick={() => setArchivingItem(item)}
                             title="Archiver l'équipement"
-                            className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-bold text-[var(--Flush-Mahogany)] transition hover:bg-red-100"
+                            className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-bold text-danger transition hover:bg-red-100"
                           >
                             Archiver
                           </button>
@@ -391,13 +391,13 @@ export default function AdminMaterielPage() {
         {archivingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-[var(--ink)]">
+              <h3 className="text-lg font-bold text-ink">
                 Archiver l&apos;équipement ?
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
+              <p className="mt-2 text-xs leading-relaxed text-muted">
                 Vous êtes sur le point d&apos;archiver <strong>« {archivingItem.designation} »</strong>.
               </p>
-              <div className="mt-3 rounded-xl bg-[var(--paper)] p-3 text-xs leading-relaxed text-[var(--muted)]">
+              <div className="mt-3 rounded-xl bg-paper p-3 text-xs leading-relaxed text-muted">
                 L&apos;équipement ne sera plus sélectionnable dans le catalogue de prêt usager, mais sera{' '}
                 <strong>conservé dans les anciens bons de réservation et dossiers passés</strong> pour garantir la traçabilité complète.
               </div>
@@ -406,14 +406,14 @@ export default function AdminMaterielPage() {
                 <button
                   type="button"
                   onClick={() => setArchivingItem(null)}
-                  className="rounded-xl border border-[var(--line)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)] hover:bg-[var(--paper)]"
+                  className="rounded-xl border border-line px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted hover:bg-paper"
                 >
                   Annuler
                 </button>
                 <button
                   type="button"
                   onClick={handleArchiveConfirm}
-                  className="rounded-xl bg-[var(--Flush-Mahogany)] px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-red-700"
+                  className="rounded-xl bg-danger px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-red-700"
                 >
                   Confirmer l&apos;archivage
                 </button>

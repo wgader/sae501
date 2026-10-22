@@ -9,9 +9,9 @@ interface HomeCardProps {
 }
 
 const variantStyles = {
-  pink: 'bg-[var(--Misty-Rose)] text-[var(--ink)]',
-  green: 'bg-[var(--Lime-Cream)] text-[var(--ink)]',
-  purple: 'bg-[var(--Indigo-Bloom)] text-[var(--White)]',
+  pink: 'bg-rose-100 text-ink',
+  green: 'bg-accent text-ink',
+  purple: 'bg-indigo text-white',
 };
 
 export default function HomeCard({
@@ -28,45 +28,45 @@ export default function HomeCard({
   return (
     <article
       className={[
-        'flex min-h-[320px] w-full flex-col rounded-[24px] border border-black/10 px-[28px] pb-[28px] pt-[26px]',
+        'flex min-h-80 w-full flex-col rounded-card border border-black/10 px-7 pb-7 pt-6.5',
         variantStyles[variant],
         className,
       ].join(' ')}
     >
       <div className="flex items-start justify-between">
-        <p className="text-[12px] font-bold uppercase tracking-[1.7px]">
+        <p className="text-meta font-bold uppercase tracking-widest">
           {tag}
         </p>
-        <p className="text-[12px] font-bold uppercase tracking-[1.7px]">
+        <p className="text-meta font-bold uppercase tracking-widest">
           {String(number).padStart(2, '0')}
         </p>
       </div>
 
-      <div className="mt-[18px] flex flex-1 flex-col justify-end">
-        <h3 className="max-w-[320px] text-[clamp(2.1rem,2.5vw,3.4rem)] font-black leading-[0.96] tracking-[-0.8px]">
+      <div className="mt-4.5 flex flex-1 flex-col justify-end">
+        <h3 className="max-w-80 text-[clamp(2.1rem,2.5vw,3.4rem)] font-black leading-none tracking-tight">
           {name}
         </h3>
 
-        <p className="mt-[14px] max-w-[340px] text-[15px] leading-[1.48] opacity-90">
+        <p className="mt-3.5 max-w-85 text-body leading-relaxed opacity-90">
           {desc}
         </p>
       </div>
 
-      <div className="mt-[18px] flex items-center justify-between border-t border-current/80 pt-[18px]">
-        <p className="text-[12px] font-bold uppercase tracking-[1.7px]">
+      <div className="mt-4.5 flex items-center justify-between border-t border-current/80 pt-4.5">
+        <p className="text-meta font-bold uppercase tracking-widest">
           Démarrer
         </p>
 
         <span
           className={[
-            'grid h-[38px] w-[38px] place-items-center rounded-full',
+            'grid size-9.5 place-items-center rounded-full',
             isPurple ? 'bg-white text-black' : 'bg-black text-white',
           ].join(' ')}
         >
           <svg
             viewBox="0 0 24 24"
             aria-hidden="true"
-            className="h-[18px] w-[18px]"
+            className="size-4.5"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.2"

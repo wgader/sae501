@@ -57,17 +57,17 @@ export default function AdminInscriptionsPage() {
                   onClick={() => handleTabChange(tab.value)}
                   className={`inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                      : 'border border-[var(--Mosaic-Tile)] bg-transparent text-[var(--Mosaic-Tile)] hover:bg-[var(--Mosaic-Tile)]/5'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'border border-primary bg-transparent text-primary hover:bg-primary/5'
                   }`}
                 >
                   <span>{tab.label}</span>
                   {countValue !== null && (
                     <span
-                      className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-bold ${
+                      className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-label font-bold ${
                         isActive
-                          ? 'bg-[var(--Lime-Cream)] text-[var(--ink)]'
-                          : 'bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]'
+                          ? 'bg-accent text-ink'
+                          : 'bg-primary/15 text-primary'
                       }`}
                     >
                       {countValue}
@@ -80,23 +80,23 @@ export default function AdminInscriptionsPage() {
         </AdminPageHeader>
 
         {error && (
-          <p className="mb-6 rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]" role="alert">
+          <p className="mb-6 rounded-lg border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-danger" role="alert">
             {error}
           </p>
         )}
 
         {loading ? (
-          <section className="py-16 text-center text-[var(--muted)]">
-            <svg className="mx-auto h-8 w-8 animate-spin text-[var(--Mosaic-Tile)]" viewBox="0 0 24 24" fill="none">
+          <section className="py-16 text-center text-muted">
+            <svg className="mx-auto size-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <p className="mt-3 text-xs font-bold uppercase tracking-wider">Chargement des demandes...</p>
           </section>
         ) : filteredAssociations.length === 0 ? (
-          <section className="rounded-[20px] border border-[var(--line)] bg-[var(--paper)] py-16 text-center">
-            <p className="text-base font-bold text-[var(--ink)]">Aucune demande trouvée</p>
-            <p className="mt-1 text-xs text-[var(--muted)]">
+          <section className="rounded-2xl border border-line bg-paper py-16 text-center">
+            <p className="text-base font-bold text-ink">Aucune demande trouvée</p>
+            <p className="mt-1 text-xs text-muted">
               {searchTerm
                 ? `Aucun résultat pour la recherche « ${searchTerm} ».`
                 : 'Il n’y a aucune demande dans cette catégorie pour le moment.'}

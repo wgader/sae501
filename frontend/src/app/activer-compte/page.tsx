@@ -24,7 +24,7 @@ type StrengthLevel = {
 function getStrength(password: string): StrengthLevel | null {
   if (!password) return null;
   const met = CRITERIA.filter((c) => c.test(password)).length;
-  if (met <= 2) return { label: 'Faible', colorClass: 'bg-[var(--Flush-Mahogany)] text-[var(--Flush-Mahogany)]', segments: 1 };
+  if (met <= 2) return { label: 'Faible', colorClass: 'bg-danger text-danger', segments: 1 };
   if (met === 3) return { label: 'Moyen', colorClass: 'bg-amber-500 text-amber-600', segments: 2 };
   if (met === 4) return { label: 'Fort', colorClass: 'bg-emerald-500 text-emerald-600', segments: 3 };
   return { label: 'Très fort', colorClass: 'bg-emerald-600 text-emerald-700', segments: 4 };
@@ -118,13 +118,13 @@ function ActivationContent() {
   }
 
   return (
-    <main className="flex min-h-screen w-full flex-col font-sans text-[var(--ink)] lg:flex-row">
+    <main className="flex min-h-screen w-full flex-col font-sans text-ink lg:flex-row">
       {/* ── Volet latéral gauche ───────────────────────────── */}
-      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-[var(--Mosaic-Tile)] p-8 lg:flex lg:p-12 text-[var(--White)]">
+      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-primary p-8 text-white lg:flex lg:p-12">
         <header className="space-y-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] transition-opacity hover:opacity-80"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-white transition-opacity hover:opacity-80"
           >
             <svg
               className="h-4 w-4"
@@ -150,34 +150,34 @@ function ActivationContent() {
             />
           </figure>
 
-          <span className="inline-block rounded-full bg-[var(--Lime-Cream)] px-3.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
+          <span className="inline-block rounded-full bg-accent px-3.5 py-1 text-label font-bold uppercase tracking-label text-ink">
             Espace associations
           </span>
 
-          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-[1.1] tracking-[-0.03em] text-[var(--White)]">
+          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-tight tracking-display text-white">
             <span className="block">Activez votre</span>
-            <span className="block text-[var(--Lime-Cream)]">compte.</span>
+            <span className="block text-accent">compte.</span>
           </h2>
 
-          <p className="text-[0.9375rem] leading-[1.6] text-white/90">
+          <p className="text-body leading-copy text-white/90">
             La demande d&apos;inscription de votre association a été validée par la mairie. Définissez votre mot de passe pour accéder à vos démarches.
           </p>
 
           <ul className="space-y-3 pt-2 text-xs font-semibold text-white/95">
             <li className="flex items-center gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.625rem] font-black text-[var(--Mosaic-Tile)]">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent text-caption font-black text-primary">
                 ✓
               </span>
               <span>Tableau de bord de votre association</span>
             </li>
             <li className="flex items-center gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.625rem] font-black text-[var(--Mosaic-Tile)]">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent text-caption font-black text-primary">
                 ✓
               </span>
               <span>Réservations de salles & prêt de matériel</span>
             </li>
             <li className="flex items-center gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[0.625rem] font-black text-[var(--Mosaic-Tile)]">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent text-caption font-black text-primary">
                 ✓
               </span>
               <span>Dépôt des dossiers de subventions annuelles</span>
@@ -185,18 +185,18 @@ function ActivationContent() {
           </ul>
         </header>
 
-        <footer className="border-t border-white/15 pt-6 text-[0.75rem] text-white/70">
+        <footer className="border-t border-white/15 pt-6 text-meta text-white/70">
           Mairie de Feytiat · Service Vie associative
         </footer>
       </aside>
 
       {/* ── Contenu principal ──────────────────────────────── */}
-      <section className="flex flex-1 items-center justify-center bg-[var(--White)] px-6 py-12 sm:px-12 lg:px-16">
-        <article className="w-full max-w-[30rem]">
+      <section className="flex flex-1 items-center justify-center bg-white px-6 py-12 sm:px-12 lg:px-16">
+        <article className="w-full max-w-lg">
           <nav aria-label="Retour" className="mb-8 lg:hidden">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--Mosaic-Tile)] transition-opacity hover:opacity-80"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-primary transition-opacity hover:opacity-80"
             >
               <svg
                 className="h-4 w-4"
@@ -216,34 +216,34 @@ function ActivationContent() {
           {!isParamsValid && (
             <section aria-labelledby="invalid-link-title">
               <header className="mb-6">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Flush-Mahogany)]">
+                <p className="text-label font-bold uppercase tracking-kicker text-danger">
                   Lien introuvable
                 </p>
                 <h1
                   id="invalid-link-title"
-                  className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-[var(--ink)]"
+                  className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink"
                 >
                   Lien d&apos;activation invalide
                 </h1>
-                <p className="mt-2 text-[0.875rem] leading-[1.6] text-[var(--muted)]">
+                <p className="mt-2 text-body-sm leading-copy text-muted">
                   Ce lien d&apos;activation est invalide, incomplet ou a expiré. Veuillez vérifier le lien reçu dans l&apos;e-mail de confirmation transmis par la mairie de Feytiat.
                 </p>
               </header>
 
-              <p className="rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]">
+              <p className="rounded-lg border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-danger">
                 Si vous pensez qu&apos;il s&apos;agit d&apos;une erreur, rapprochez-vous du service Vie associative pour obtenir un nouveau lien d&apos;activation.
               </p>
 
               <footer className="mt-8 flex flex-col gap-3">
                 <Link
                   href="/connexion"
-                  className="flex h-[3.125rem] w-full items-center justify-center rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] shadow-xs transition-opacity hover:opacity-90"
+                  className="flex h-control w-full items-center justify-center rounded-lg bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover"
                 >
                   Aller à la page de connexion
                 </Link>
                 <Link
                   href="/"
-                  className="flex h-[3.125rem] w-full items-center justify-center rounded-[10px] border border-[var(--line)] bg-[var(--White)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--ink)] hover:bg-[var(--paper)] transition"
+                  className="flex h-control w-full items-center justify-center rounded-lg border border-line bg-white px-6 text-xs font-bold uppercase tracking-label text-ink hover:bg-paper transition"
                 >
                   Retour à l&apos;accueil
                 </Link>
@@ -254,23 +254,23 @@ function ActivationContent() {
           {/* ── Cas 2 : Compte activé avec succès ─────────── */}
           {isParamsValid && activated && (
             <section aria-labelledby="success-title" className="text-center">
-              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent text-primary">
                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </span>
 
               <header className="mt-6 mb-8">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+                <p className="text-label font-bold uppercase tracking-kicker text-primary">
                   Félicitations
                 </p>
                 <h1
                   id="success-title"
-                  className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-[var(--ink)]"
+                  className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink"
                 >
                   Compte activé avec succès !
                 </h1>
-                <p className="mt-2 text-[0.875rem] leading-[1.6] text-[var(--muted)]">
+                <p className="mt-2 text-body-sm leading-copy text-muted">
                   Votre mot de passe a bien été enregistré. Vous allez être automatiquement redirigé vers votre espace association.
                 </p>
               </header>
@@ -278,7 +278,7 @@ function ActivationContent() {
               <footer className="pt-2">
                 <Link
                   href="/"
-                  className="flex h-[3.125rem] w-full items-center justify-center rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] shadow-xs transition-opacity hover:opacity-90"
+                  className="flex h-control w-full items-center justify-center rounded-lg bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover"
                 >
                   Accéder directement à mon espace
                 </Link>
@@ -290,21 +290,21 @@ function ActivationContent() {
           {isParamsValid && !activated && (
             <section aria-labelledby="form-heading">
               <header className="mb-8">
-                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+                <p className="text-label font-bold uppercase tracking-kicker text-primary">
                   Activation de compte
                 </p>
                 <h1
                   id="form-heading"
-                  className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-[var(--ink)]"
+                  className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink"
                 >
                   Définissez votre mot de passe
                 </h1>
-                <p className="mt-2 text-[0.875rem] leading-[1.6] text-[var(--muted)]">
+                <p className="mt-2 text-body-sm leading-copy text-muted">
                   Choisissez un mot de passe sécurisé pour finaliser l&apos;accès à votre espace association.
                 </p>
 
-                <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--paper)] px-3.5 py-1.5 text-xs text-[var(--ink)]">
-                  <span className="font-semibold text-[var(--muted)]">Compte :</span>
+                <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-3.5 py-1.5 text-xs text-ink">
+                  <span className="font-semibold text-muted">Compte :</span>
                   <span className="font-bold">{email}</span>
                 </p>
               </header>
@@ -312,7 +312,7 @@ function ActivationContent() {
               <form className="space-y-6" noValidate onSubmit={handleSubmit}>
                 {/* ── Champ Mot de passe ── */}
                 <label className="block">
-                  <span className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
+                  <span className="mb-2 block text-meta font-bold uppercase tracking-label text-ink">
                     Nouveau mot de passe
                   </span>
                   <span className="relative block">
@@ -327,13 +327,13 @@ function ActivationContent() {
                         setPassword(e.target.value);
                         setError('');
                       }}
-                      className="h-[3.25rem] w-full rounded-[10px] border border-[var(--line)] bg-[var(--paper)] px-4 pr-12 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/50 outline-none transition focus:border-[var(--Mosaic-Tile)] focus:bg-[var(--White)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/15"
+                      className="h-13 w-full rounded-lg border border-line bg-paper px-4 pr-12 text-body-sm text-ink placeholder-muted/50 outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] transition hover:text-[var(--ink)] cursor-pointer"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted transition hover:text-ink cursor-pointer"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -359,33 +359,33 @@ function ActivationContent() {
                         <span
                           key={seg}
                           className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                            seg <= strength.segments ? strength.colorClass.split(' ')[0] : 'bg-[var(--line)]'
+                            seg <= strength.segments ? strength.colorClass.split(' ')[0] : 'bg-line'
                           }`}
                         />
                       ))}
                     </span>
-                    <span className={`text-[0.6875rem] font-bold uppercase tracking-[0.1em] ${strength.colorClass.split(' ')[1]}`}>
+                    <span className={`text-label font-bold uppercase tracking-widest ${strength.colorClass.split(' ')[1]}`}>
                       {strength.label}
                     </span>
                   </p>
                 )}
 
                 {/* ── Liste des critères ── */}
-                <ul className="grid grid-cols-1 gap-2 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] p-4 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-2 rounded-xl border border-line bg-paper p-4 sm:grid-cols-2">
                   {CRITERIA.map((criterion, i) => {
                     const isMet = metCriteria[i];
                     return (
                       <li key={criterion.id} className="flex items-center gap-2 text-xs">
                         <span
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[0.625rem] font-bold transition ${
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-caption font-bold transition ${
                             isMet
                               ? 'bg-emerald-600 text-white'
-                              : 'border border-[var(--line)] bg-[var(--White)] text-transparent'
+                              : 'border border-line bg-white text-transparent'
                           }`}
                         >
                           ✓
                         </span>
-                        <span className={isMet ? 'font-semibold text-emerald-800' : 'text-[var(--muted)]'}>
+                        <span className={isMet ? 'font-semibold text-emerald-800' : 'text-muted'}>
                           {criterion.label}
                         </span>
                       </li>
@@ -395,7 +395,7 @@ function ActivationContent() {
 
                 {/* ── Champ Confirmation ── */}
                 <label className="block">
-                  <span className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
+                  <span className="mb-2 block text-meta font-bold uppercase tracking-label text-ink">
                     Confirmez le mot de passe
                   </span>
                   <span className="relative block">
@@ -410,19 +410,19 @@ function ActivationContent() {
                         setConfirmPassword(e.target.value);
                         setError('');
                       }}
-                      className={`h-[3.25rem] w-full rounded-[10px] border bg-[var(--paper)] px-4 pr-12 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/50 outline-none transition focus:bg-[var(--White)] focus:ring-2 ${
+                      className={`h-13 w-full rounded-lg border bg-paper px-4 pr-12 text-body-sm text-ink placeholder-muted/50 outline-none transition focus:bg-white focus:ring-2 ${
                         confirmPassword
                           ? confirmMatch
                             ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500/15'
-                            : 'border-[var(--Flush-Mahogany)] focus:border-[var(--Flush-Mahogany)] focus:ring-[var(--Flush-Mahogany)]/15'
-                          : 'border-[var(--line)] focus:border-[var(--Mosaic-Tile)] focus:ring-[var(--Mosaic-Tile)]/15'
+                            : 'border-danger focus:border-danger focus:ring-danger/15'
+                          : 'border-line focus:border-primary focus:ring-primary/15'
                       }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
                       aria-label={showConfirm ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] transition hover:text-[var(--ink)] cursor-pointer"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted transition hover:text-ink cursor-pointer"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -441,14 +441,14 @@ function ActivationContent() {
                 </label>
 
                 {confirmPassword && !confirmMatch && (
-                  <p className="text-xs font-semibold text-[var(--Flush-Mahogany)]" role="alert">
+                  <p className="text-xs font-semibold text-danger" role="alert">
                     Les mots de passe ne correspondent pas.
                   </p>
                 )}
 
                 {error && (
                   <p
-                    className="rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]"
+                    className="rounded-lg border-l-4 border-danger bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-danger"
                     role="alert"
                   >
                     {error}
@@ -458,7 +458,7 @@ function ActivationContent() {
                 <button
                   type="submit"
                   disabled={isLoading || !allMet || !confirmMatch}
-                  className="flex h-[3.125rem] w-full items-center justify-center gap-2.5 rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  className="flex h-control w-full items-center justify-center gap-2.5 rounded-lg bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
                   {isLoading ? (
                     <>
@@ -474,11 +474,11 @@ function ActivationContent() {
                 </button>
               </form>
 
-              <footer className="mt-8 border-t border-[var(--line)] pt-6 text-center text-xs text-[var(--muted)]">
+              <footer className="mt-8 border-t border-line pt-6 text-center text-xs text-muted">
                 <p>Plateforme municipale de la Ville de Feytiat.</p>
                 <p className="mt-1">
                   Besoin d&apos;aide ? Contactez le{' '}
-                  <span className="font-semibold text-[var(--ink)]">service Vie associative</span>.
+                  <span className="font-semibold text-ink">service Vie associative</span>.
                 </p>
               </footer>
             </section>
@@ -493,7 +493,7 @@ export default function ActivationPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-[var(--paper)] text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+        <main className="flex min-h-screen items-center justify-center bg-paper text-xs font-bold uppercase tracking-wider text-muted">
           Chargement de l&apos;activation...
         </main>
       }

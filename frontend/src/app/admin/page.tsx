@@ -67,12 +67,12 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen w-full flex-col font-sans text-[var(--ink)] lg:flex-row">
-      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-[var(--Mosaic-Tile)] p-8 lg:flex lg:p-12 text-[var(--White)]">
+    <main className="flex min-h-screen w-full flex-col font-sans text-ink lg:flex-row">
+      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-primary p-8 lg:flex lg:p-12 text-white">
         <header className="space-y-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] transition-opacity hover:opacity-80"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-white transition-opacity hover:opacity-80"
           >
             <svg
               className="h-4 w-4"
@@ -98,22 +98,22 @@ export default function AdminLoginPage() {
             />
           </figure>
 
-          <span className="inline-block rounded-full bg-[var(--Lime-Cream)] px-3.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
+          <span className="inline-block rounded-full bg-accent px-3.5 py-1 text-label font-bold uppercase tracking-kicker text-ink">
             Portail municipal
           </span>
 
-          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-[1.1] tracking-[-0.03em] text-[var(--White)]">
+          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-[1.1] tracking-display text-white">
             <span className="block">Espace</span>
-            <span className="block text-[var(--Lime-Cream)]">Administration.</span>
+            <span className="block text-accent">Administration.</span>
           </h2>
 
-          <p className="text-[0.9375rem] leading-[1.6] text-white/90">
+          <p className="text-body leading-copy text-white/90">
             Accès sécurisé réservé aux agents municipaux et administrateurs habilités de la mairie de Feytiat.
           </p>
 
           <ul className="space-y-3 pt-2 text-xs font-semibold text-white/95">
             <li className="flex items-center gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
@@ -121,7 +121,7 @@ export default function AdminLoginPage() {
               <span>Validation des demandes d&apos;inscription</span>
             </li>
             <li className="flex items-center gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
@@ -129,7 +129,7 @@ export default function AdminLoginPage() {
               <span>Attribution des modules associatifs</span>
             </li>
             <li className="flex items-center gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--Lime-Cream)] text-[var(--Mosaic-Tile)]">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
@@ -139,17 +139,17 @@ export default function AdminLoginPage() {
           </ul>
         </header>
 
-        <footer className="border-t border-white/15 pt-6 text-[0.75rem] text-white/70">
+        <footer className="border-t border-white/15 pt-6 text-meta text-white/70">
           Mairie de Feytiat · Tous droits réservés
         </footer>
       </aside>
 
-      <section className="flex flex-1 items-center justify-center bg-[var(--White)] px-6 py-12 sm:px-12 lg:px-16">
-        <article className="w-full max-w-[28rem]">
+      <section className="flex flex-1 items-center justify-center bg-white px-6 py-12 sm:px-12 lg:px-16">
+        <article className="w-full max-w-md">
           <nav aria-label="Retour au site" className="mb-8 lg:hidden">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--Mosaic-Tile)] transition-opacity hover:opacity-80"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-primary transition-opacity hover:opacity-80"
             >
               <svg
                 className="h-4 w-4"
@@ -166,20 +166,20 @@ export default function AdminLoginPage() {
           </nav>
 
           <header className="mb-8">
-            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+            <p className="text-label font-bold uppercase tracking-kicker text-primary">
               Espace administration
             </p>
-            <h1 className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-[var(--ink)]">
+            <h1 className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink">
               Connexion
             </h1>
-            <p className="mt-2 text-[0.875rem] leading-[1.6] text-[var(--muted)]">
+            <p className="mt-2 text-body-sm leading-copy text-muted">
               Renseignez vos identifiants d&apos;agent municipal pour accéder à votre panneau d&apos;administration.
             </p>
           </header>
 
           <form className="space-y-5" noValidate onSubmit={handleSubmit}>
             <label className="block">
-              <span className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
+              <span className="mb-2 block text-meta font-bold uppercase tracking-label text-ink">
                 Adresse électronique
               </span>
               <input
@@ -190,12 +190,12 @@ export default function AdminLoginPage() {
                 placeholder="exemple : mail@mairie.fr"
                 required
                 onChange={() => setSubmitError('')}
-                className="h-[3.25rem] w-full rounded-[10px] border border-[var(--line)] bg-[var(--paper)] px-4 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/50 outline-none transition focus:border-[var(--Mosaic-Tile)] focus:bg-[var(--White)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/15"
+                className="h-13 w-full rounded-lg border border-line bg-paper px-4 text-body-sm text-ink placeholder-muted/50 outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15"
               />
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--ink)]">
+              <span className="mb-2 block text-meta font-bold uppercase tracking-label text-ink">
                 Mot de passe
               </span>
               <span className="relative block">
@@ -211,13 +211,13 @@ export default function AdminLoginPage() {
                     setPassword(e.target.value);
                     setSubmitError('');
                   }}
-                  className="h-[3.25rem] w-full rounded-[10px] border border-[var(--line)] bg-[var(--paper)] px-4 pr-12 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/50 outline-none transition focus:border-[var(--Mosaic-Tile)] focus:bg-[var(--White)] focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/15"
+                  className="h-13 w-full rounded-lg border border-line bg-paper px-4 pr-12 text-body-sm text-ink placeholder-muted/50 outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] transition hover:text-[var(--ink)] cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted transition hover:text-ink cursor-pointer"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -237,7 +237,7 @@ export default function AdminLoginPage() {
 
             {submitError && (
               <p
-                className="rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]"
+                className="rounded-lg border-l-4 border-danger bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-danger"
                 role="alert"
               >
                 {submitError}
@@ -247,7 +247,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex h-[3.125rem] w-full items-center justify-center gap-2.5 rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+              className="flex h-control w-full items-center justify-center gap-2.5 rounded-lg bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {isLoading ? (
                 <>
@@ -263,13 +263,13 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <footer className="mt-8 border-t border-[var(--line)] pt-6 text-center text-xs text-[var(--muted)]">
+          <footer className="mt-8 border-t border-line pt-6 text-center text-xs text-muted">
             <p>Accès strictement réservé aux agents de la mairie de Feytiat.</p>
             <p className="mt-1">
               Vous êtes une association ?{' '}
               <Link
                 href="/connexion"
-                className="font-bold text-[var(--Mosaic-Tile)] underline underline-offset-2 hover:opacity-85"
+                className="font-bold text-primary underline underline-offset-2 hover:opacity-85"
               >
                 Espace associations
               </Link>

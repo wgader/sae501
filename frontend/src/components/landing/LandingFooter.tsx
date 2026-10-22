@@ -5,8 +5,8 @@ import Image from 'next/image';
 
 export default function LandingFooter() {
   return (
-    <footer className="w-full bg-[var(--Mosaic-Tile)] text-[var(--White)]">
-      <div className="mx-auto max-w-[85rem] px-4 pt-14 pb-10 sm:px-8 lg:px-12">
+    <footer className="w-full bg-primary text-white">
+      <div className="mx-auto max-w-340 px-4 pt-14 pb-10 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-5">
             <Link
@@ -23,7 +23,7 @@ export default function LandingFooter() {
               />
             </Link>
 
-            <p className="mt-4 max-w-[20rem] text-[0.875rem] leading-[1.65] text-white/70">
+            <p className="mt-4 max-w-[20rem] text-body-sm leading-[1.65] text-white/70">
               L&apos;espace numérique qui accompagne les associations de Feytiat
               dans leurs démarches municipales.
             </p>
@@ -31,14 +31,14 @@ export default function LandingFooter() {
 
           <nav aria-label="Liens du pied de page" className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
             <div>
-              <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-white/60">
+              <p className="text-label font-bold uppercase tracking-kicker text-white/60">
                 Démarches
               </p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 <li>
                   <a
                     href="#demarches"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Les démarches
                   </a>
@@ -46,7 +46,7 @@ export default function LandingFooter() {
                 <li>
                   <a
                     href="#comment-ca-marche"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Comment ça marche
                   </a>
@@ -54,7 +54,7 @@ export default function LandingFooter() {
                 <li>
                   <a
                     href="#faq"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     FAQ
                   </a>
@@ -63,14 +63,14 @@ export default function LandingFooter() {
             </div>
 
             <div>
-              <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-white/60">
+              <p className="text-label font-bold uppercase tracking-kicker text-white/60">
                 Mon Espace
               </p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 <li>
                   <Link
                     href="/inscription"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Créer un compte
                   </Link>
@@ -78,7 +78,7 @@ export default function LandingFooter() {
                 <li>
                   <Link
                     href="/connexion"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Se connecter
                   </Link>
@@ -86,7 +86,7 @@ export default function LandingFooter() {
                 <li>
                   <Link
                     href="/deconnexion"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Déconnexion
                   </Link>
@@ -95,14 +95,14 @@ export default function LandingFooter() {
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <p className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-white/60">
+              <p className="text-label font-bold uppercase tracking-kicker text-white/60">
                 Contact
               </p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 <li>
                   <a
                     href="mailto:contact@ville-feytiat.fr"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Nous contacter
                   </a>
@@ -112,7 +112,7 @@ export default function LandingFooter() {
                     href="https://www.ville-feytiat.fr"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Informations pratiques
                   </a>
@@ -122,7 +122,7 @@ export default function LandingFooter() {
                     href="https://www.ville-feytiat.fr"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[0.875rem] text-white/80 transition-colors hover:text-white"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Site de la ville
                   </a>
@@ -132,7 +132,7 @@ export default function LandingFooter() {
           </nav>
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-[0.75rem] text-white/50 sm:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-meta text-white/50 sm:flex-row">
           <p>© Feytiat - Espace associations</p>
 
           <div className="flex flex-wrap items-center gap-6">

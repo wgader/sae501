@@ -15,7 +15,7 @@ interface LandingPageProps {
 
 export default function LandingPage({ isConnected = false, onLogout }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-white font-sans text-[var(--ink)] antialiased selection:bg-[var(--Lime-Cream)] selection:text-[var(--ink)]">
+    <div className="min-h-screen bg-white font-sans text-ink antialiased selection:bg-accent selection:text-ink">
       {/* 1. Navbar */}
       <LandingHeader isConnected={isConnected} onLogout={onLogout} />
 

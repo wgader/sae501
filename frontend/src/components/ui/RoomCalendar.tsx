@@ -12,10 +12,10 @@ export const isSameDay = (d1: Date, d2: Date) => {
 
 const getRoomBg = (colorClass: string) => {
   const map: Record<string, string> = {
-    'room-blue': 'bg-[#b6d0d3]',
-    'room-green': 'bg-[#b9d0bc]',
-    'room-orange': 'bg-[#f0c28c]',
-    'room-sage': 'bg-[#dfe9df]',
+    'room-blue': 'bg-sky-200',
+    'room-green': 'bg-green-200',
+    'room-orange': 'bg-orange-200',
+    'room-sage': 'bg-sage',
   };
   return map[colorClass] || 'bg-transparent';
 };
@@ -135,25 +135,25 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #cbd5ce transparent; }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5ce; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9eaaa3; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--muted); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
 
       <div className="mt-8 mb-6">
-        <div className="flex items-center justify-center gap-4 mb-8 text-xl sm:text-2xl font-black uppercase tracking-widest text-[#1e2420]">
+        <div className="flex items-center justify-center gap-4 mb-8 text-xl sm:text-2xl font-black uppercase tracking-widest text-ink">
           <div className="flex gap-3 sm:gap-4">
-            <button type="button" onClick={() => handleYearChange(-1)} className="text-[#6d746e] hover:text-[#1e2420] transition-colors">«</button>
-            <button type="button" onClick={handlePrev} className="text-[#1e2420] hover:opacity-70 transition-opacity">←</button>
+            <button type="button" onClick={() => handleYearChange(-1)} className="text-muted hover:text-ink transition-colors">«</button>
+            <button type="button" onClick={handlePrev} className="text-ink hover:opacity-70 transition-opacity">←</button>
           </div>
-          <span className="min-w-[240px] sm:min-w-[300px] text-center">{formatHeader()}</span>
+          <span className="min-w-60 sm:min-w-75 text-center">{formatHeader()}</span>
           <div className="flex gap-3 sm:gap-4">
-            <button type="button" onClick={handleNext} className="text-[#1e2420] hover:opacity-70 transition-opacity">→</button>
-            <button type="button" onClick={() => handleYearChange(1)} className="text-[#6d746e] hover:text-[#1e2420] transition-colors">»</button>
+            <button type="button" onClick={handleNext} className="text-ink hover:opacity-70 transition-opacity">→</button>
+            <button type="button" onClick={() => handleYearChange(1)} className="text-muted hover:text-ink transition-colors">»</button>
           </div>
         </div>
 
@@ -163,10 +163,10 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
               key={filter}
               type="button"
               onClick={() => { setRoomFilter(filter); setIsDayMenuOpen(false); }}
-              className={`shrink-0 px-4 py-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] border rounded-[4px] transition-all ${
+              className={`shrink-0 px-4 py-3 text-caption sm:text-meta font-bold uppercase tracking-label border rounded transition-all ${
                 roomFilter === filter
-                  ? 'bg-[#0b644d] text-white border-[#0b644d] shadow-md'
-                  : 'bg-white text-[#1e2420] border-[#d9ded9] hover:border-[#0b644d] hover:bg-[#f2f7f5]'
+                  ? 'bg-primary text-white border-primary shadow-md'
+                  : 'bg-white text-ink border-line hover:border-primary hover:bg-primary-soft'
               }`}
             >
               {filter}
@@ -178,37 +178,37 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
           <select
             value={roomFilter}
             onChange={(e) => { setRoomFilter(e.target.value); setIsDayMenuOpen(false); }}
-            className="w-full appearance-none bg-white border border-[#1e2420] text-[#1e2420] text-[11px] font-bold uppercase tracking-[0.15em] rounded-[4px] px-4 py-3 outline-none focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d]"
+            className="w-full appearance-none bg-white border border-ink text-ink text-meta font-bold uppercase tracking-label rounded px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           >
             {roomFilters.map(filter => (
               <option key={filter} value={filter}>{filter}</option>
             ))}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#1e2420]">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-ink">
+            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>
 
-        <div className="flex gap-6 sm:gap-8 border-b border-[#d9ded9] mb-6">
+        <div className="flex gap-6 sm:gap-8 border-b border-line mb-6">
           <button
             type="button"
-            className={`pb-3 text-sm transition-colors ${calendarView === 'month' ? 'text-[#1e2420] border-b-2 border-[#1e2420] font-bold' : 'text-[#6d746e] font-normal hover:text-[#1e2420]'}`}
+            className={`pb-3 text-sm transition-colors ${calendarView === 'month' ? 'text-ink border-b-2 border-ink font-bold' : 'text-muted font-normal hover:text-ink'}`}
             onClick={() => setCalendarView('month')}
           >
             Par Mois
           </button>
           <button
             type="button"
-            className={`pb-3 text-sm transition-colors ${calendarView === 'week' ? 'text-[#1e2420] border-b-2 border-[#1e2420] font-bold' : 'text-[#6d746e] font-normal hover:text-[#1e2420]'}`}
+            className={`pb-3 text-sm transition-colors ${calendarView === 'week' ? 'text-ink border-b-2 border-ink font-bold' : 'text-muted font-normal hover:text-ink'}`}
             onClick={() => setCalendarView('week')}
           >
             Par Semaine
           </button>
           <button
             type="button"
-            className={`pb-3 text-sm transition-colors ${calendarView === 'day' ? 'text-[#1e2420] border-b-2 border-[#1e2420] font-bold' : 'text-[#6d746e] font-normal hover:text-[#1e2420]'}`}
+            className={`pb-3 text-sm transition-colors ${calendarView === 'day' ? 'text-ink border-b-2 border-ink font-bold' : 'text-muted font-normal hover:text-ink'}`}
             onClick={() => setCalendarView('day')}
           >
             Par Jour
@@ -216,19 +216,19 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-[#d9ded9] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-line overflow-hidden">
         
         {calendarView !== 'day' && (
-          <div className="grid grid-cols-1 sm:grid-cols-7 border-b border-[#d9ded9] bg-[#f7f8f4]">
+          <div className="grid grid-cols-1 sm:grid-cols-7 border-b border-line bg-paper">
             {calendarView === 'month' && weekDaysShort.map(day => (
-              <div key={day} className="py-2.5 text-center text-[11px] font-bold text-[#6d746e] uppercase tracking-widest border-r last:border-r-0 border-[#d9ded9] hidden sm:block">
+              <div key={day} className="py-2.5 text-center text-meta font-bold text-muted uppercase tracking-widest border-r last:border-r-0 border-line hidden sm:block">
                 {day}
               </div>
             ))}
             {calendarView === 'week' && displayDays.map((d, i) => d && (
-              <div key={i} className="py-3 text-center border-r last:border-r-0 border-[#d9ded9] hidden sm:block">
-                <span className="block text-[10px] font-bold text-[#6d746e] uppercase tracking-widest">{weekDaysShort[d.getDay()]}</span>
-                <span className="block text-lg font-black text-[#1e2420] mt-0.5">{d.getDate()}</span>
+              <div key={i} className="py-3 text-center border-r last:border-r-0 border-line hidden sm:block">
+                <span className="block text-caption font-bold text-muted uppercase tracking-widest">{weekDaysShort[d.getDay()]}</span>
+                <span className="block text-lg font-black text-ink mt-0.5">{d.getDate()}</span>
               </div>
             ))}
           </div>
@@ -236,7 +236,7 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
 
         <div className={`grid ${calendarView === 'day' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-7'}`}>
           {displayDays.map((dateObj, index) => {
-            if (!dateObj) return <div key={index} className="hidden sm:block bg-gray-50/50 border-r border-b border-[#d9ded9]" />;
+            if (!dateObj) return <div key={index} className="hidden sm:block bg-gray-50/50 border-r border-b border-line" />;
             
             const isSelected = selectedDate && isSameDay(dateObj, selectedDate);
             const isToday = isSameDay(dateObj, today);
@@ -252,20 +252,20 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
                   setIsDayMenuOpen(true);
                 }}
                 className={`
-                  group flex flex-col border-b sm:border-r border-[#d9ded9] transition-colors relative
-                  ${calendarView === 'week' ? 'min-h-[160px]' : calendarView === 'month' ? 'min-h-[110px]' : 'min-h-[300px]'}
-                  ${isPast ? 'bg-[#f7f8f4] opacity-60 cursor-not-allowed' : isSelected ? 'bg-[#f2f7f5] ring-inset ring-2 ring-[#0b644d] cursor-pointer' : 'hover:bg-[#f7f8f4] bg-white cursor-pointer'}
+                  group flex flex-col border-b sm:border-r border-line transition-colors relative
+                  ${calendarView === 'week' ? 'min-h-40' : calendarView === 'month' ? 'min-h-28' : 'min-h-75'}
+                  ${isPast ? 'bg-paper opacity-60 cursor-not-allowed' : isSelected ? 'bg-primary-soft ring-inset ring-2 ring-primary cursor-pointer' : 'hover:bg-paper bg-white cursor-pointer'}
                 `}
               >
                 <div className={`
                   flex items-center justify-between p-3 sm:p-2.5 
-                  ${calendarView === 'day' ? 'border-b border-[#d9ded9] bg-[#f7f8f4] p-4' : ''}
-                  ${calendarView === 'week' ? 'sm:hidden border-b border-[#d9ded9] bg-[#f7f8f4]' : ''}
-                  ${calendarView === 'month' ? 'border-b sm:border-none border-[#d9ded9] bg-[#f7f8f4] sm:bg-transparent' : ''}
+                  ${calendarView === 'day' ? 'border-b border-line bg-paper p-4' : ''}
+                  ${calendarView === 'week' ? 'sm:hidden border-b border-line bg-paper' : ''}
+                  ${calendarView === 'month' ? 'border-b sm:border-none border-line bg-paper sm:bg-transparent' : ''}
                 `}>
                   <div className="flex items-center gap-3 sm:gap-0">
                     {calendarView !== 'day' && (
-                      <span className="sm:hidden text-xs font-bold text-[#6d746e] uppercase tracking-widest w-10">
+                      <span className="sm:hidden text-xs font-bold text-muted uppercase tracking-widest w-10">
                         {weekDaysShort[dateObj.getDay()]}
                       </span>
                     )}
@@ -273,15 +273,15 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
                     <div className={`
                       flex items-center justify-center font-bold 
                       ${calendarView === 'day' ? 'text-xl' : 'text-sm w-7 h-7 rounded-full'}
-                      ${isToday && !isSelected ? 'bg-[#1e2420] text-white' : ''}
-                      ${isSelected && calendarView !== 'day' ? 'bg-[#0b644d] text-white' : 'text-[#1e2420]'}
+                      ${isToday && !isSelected ? 'bg-ink text-white' : ''}
+                      ${isSelected && calendarView !== 'day' ? 'bg-primary text-white' : 'text-ink'}
                     `}>
                       {calendarView === 'day' ? `${weekDaysLong[dateObj.getDay()]} ${dateObj.getDate()} ${monthNames[dateObj.getMonth()]}` : dateObj.getDate()}
                     </div>
                   </div>
                   
                   {calendarView === 'day' && (
-                    <span className="text-xs font-bold text-[#6d746e] uppercase tracking-widest bg-white px-3 py-1.5 rounded-md border border-[#d9ded9]">
+                    <span className="text-xs font-bold text-muted uppercase tracking-widest bg-white px-3 py-1.5 rounded-control border border-line">
                       {dayReservations.length} RÉServation(s)
                     </span>
                   )}
@@ -290,21 +290,21 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
                 <div className={`flex flex-col flex-1 p-2 gap-1.5 custom-scrollbar ${calendarView !== 'day' ? 'overflow-y-auto' : 'p-4 gap-3'}`}>
                   {dayReservations.length > 0 ? (
                     dayReservations.map((room, idx) => (
-                      <div key={idx} className={`flex items-center gap-2 ${calendarView === 'day' ? 'p-4 bg-white border border-[#d9ded9] rounded-md shadow-sm' : ''}`}>
+                      <div key={idx} className={`flex items-center gap-2 ${calendarView === 'day' ? 'p-4 bg-white border border-line rounded-control shadow-sm' : ''}`}>
                         <span className={`w-2 h-2 rounded-full shrink-0 ${getRoomBg(room.color)}`} />
-                        <span className={`font-bold text-[#1e2420] leading-tight uppercase ${calendarView === 'day' ? 'text-sm' : 'text-[9px] sm:text-[10px] truncate'}`}>
+                        <span className={`font-bold text-ink leading-tight uppercase ${calendarView === 'day' ? 'text-sm' : 'text-caption truncate'}`}>
                           {calendarView === 'month' ? room.name.split(' ').slice(1).join(' ') : room.name}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <div className={`flex items-center justify-center h-full italic text-[#a1a6a2] font-medium ${calendarView === 'day' ? 'text-base' : 'text-[10px]'}`}>
+                    <div className={`flex items-center justify-center h-full italic text-muted font-medium ${calendarView === 'day' ? 'text-base' : 'text-caption'}`}>
                       Aucune réservation
                     </div>
                   )}
                 </div>
 
-                {!isPast && <div className="absolute inset-x-0 bottom-0 h-1 bg-[#0b644d] opacity-0 group-hover:opacity-100 transition-opacity" />}
+                {!isPast && <div className="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />}
               </div>
             );
           })}
@@ -312,39 +312,39 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
       </div>
 
       {isDayMenuOpen && selectedDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e2420]/40 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-[#0b644d] p-5 flex justify-between items-center text-white">
+            <div className="bg-primary p-5 flex justify-between items-center text-white">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-0.5">Réservation pour le</p>
+                <p className="text-caption font-bold uppercase tracking-widest opacity-80 mb-0.5">Réservation pour le</p>
                 <h3 className="text-xl font-black">{selectedDateFull}</h3>
               </div>
               <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors" type="button" onClick={() => setIsDayMenuOpen(false)}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             
             <div className="p-6 flex flex-col gap-4 text-center">
               {roomFilter === 'Toutes les salles' ? (
                 <>
-                  <div className="w-12 h-12 bg-[#f2f7f5] rounded-full flex items-center justify-center mx-auto mb-1 text-[#0b644d]">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                  <div className="w-12 h-12 bg-primary-soft rounded-full flex items-center justify-center mx-auto mb-1 text-primary">
+                    <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                   </div>
-                  <strong className="text-xl font-black text-[#1e2420]">{rooms.length} salles au catalogue</strong>
-                  <p className="text-xs text-[#6d746e]">Pour la journée complète.</p>
+                  <strong className="text-xl font-black text-ink">{rooms.length} salles au catalogue</strong>
+                  <p className="text-xs text-muted">Pour la journée complète.</p>
                 </>
               ) : (
                 <>
-                   <div className="w-12 h-12 bg-[#f2f7f5] rounded-full flex items-center justify-center mx-auto mb-1 text-[#0b644d]">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                   <div className="w-12 h-12 bg-primary-soft rounded-full flex items-center justify-center mx-auto mb-1 text-primary">
+                    <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </div>
-                  <strong className="text-xl font-black text-[#1e2420] uppercase">{visibleRooms[0]?.name ?? rooms[0].name}</strong>
-                  <p className="text-xs text-[#6d746e]">Voir la disponibilité de cette salle pour la journée.</p>
+                  <strong className="text-xl font-black text-ink uppercase">{visibleRooms[0]?.name ?? rooms[0].name}</strong>
+                  <p className="text-xs text-muted">Voir la disponibilité de cette salle pour la journée.</p>
                 </>
               )}
               
               <button 
-                className="mt-2 w-full bg-[#1e2420] text-white text-xs font-bold uppercase tracking-widest py-3.5 rounded-md hover:bg-[#0b644d] transition-colors" 
+                className="mt-2 w-full bg-ink text-white text-xs font-bold uppercase tracking-widest py-3.5 rounded-control hover:bg-primary transition-colors"
                 type="button" 
                 onClick={() => { setIsDayMenuOpen(false); onNextStep(); }}
               >
@@ -356,9 +356,9 @@ export default function RoomCalendar({ rooms, selectedDate, onDateSelect, onNext
       )}
 
       {selectedDate && (
-        <div className="mt-6 flex justify-between border-l-4 border-[#d97706] bg-white p-4 text-sm text-[#6d746e]">
+        <div className="mt-6 flex justify-between border-l-4 border-amber-600 bg-white p-4 text-sm text-muted">
           <span>Date choisie</span>
-          <strong className="text-[#0b644d]">{selectedDateFull}</strong>
+          <strong className="text-primary">{selectedDateFull}</strong>
         </div>
       )}
     </>

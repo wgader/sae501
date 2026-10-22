@@ -91,17 +91,17 @@ export default function EquipmentFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="equipment-form-title"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-panel bg-white p-6 shadow-panel"
       >
-        <div className="flex items-center justify-between border-b border-[var(--line)] pb-4">
-          <h2 id="equipment-form-title" className="text-lg font-bold text-[var(--ink)]">
+        <div className="flex items-center justify-between border-b border-line pb-4">
+          <h2 id="equipment-form-title" className="text-lg font-bold text-ink">
             {editingItem ? 'Modifier l’équipement' : 'Ajouter un nouvel équipement'}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fermer le formulaire"
-            className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--paper)]"
+            className="rounded-control p-1 text-muted hover:bg-paper"
           >
             ✕
           </button>
@@ -109,8 +109,8 @@ export default function EquipmentFormModal({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label htmlFor="equipment-designation" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-              Désignation <span className="text-[var(--Flush-Mahogany)]">*</span>
+            <label htmlFor="equipment-designation" className="block text-xs font-bold uppercase tracking-wider text-muted">
+              Désignation <span className="text-danger">*</span>
             </label>
             <input
               id="equipment-designation"
@@ -119,21 +119,21 @@ export default function EquipmentFormModal({
               value={designation}
               onChange={(event) => setDesignation(event.target.value)}
               placeholder="Ex: Barnum pliant 3x3m renforcé"
-              className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+              className="mt-1.5 w-full rounded-control border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
             />
-            {errors.designation && <p className="mt-1 text-xs text-[var(--Flush-Mahogany)]">{errors.designation}</p>}
+            {errors.designation && <p className="mt-1 text-xs text-danger">{errors.designation}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="equipment-category" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                Catégorie <span className="text-[var(--Flush-Mahogany)]">*</span>
+              <label htmlFor="equipment-category" className="block text-xs font-bold uppercase tracking-wider text-muted">
+                Catégorie <span className="text-danger">*</span>
               </label>
               <select
                 id="equipment-category"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+                className="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               >
                 <option value="mobilier">Mobilier</option>
                 <option value="sonorisation">Sonorisation</option>
@@ -144,7 +144,7 @@ export default function EquipmentFormModal({
             </div>
 
             <div>
-              <label htmlFor="equipment-reference" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              <label htmlFor="equipment-reference" className="block text-xs font-bold uppercase tracking-wider text-muted">
                 Référence interne
               </label>
               <input
@@ -153,15 +153,15 @@ export default function EquipmentFormModal({
                 value={reference}
                 onChange={(event) => setReference(event.target.value)}
                 placeholder="Ex: MAT-BARN-001"
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+                className="mt-1.5 w-full rounded-control border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               />
             </div>
           </div>
 
           {!editingItem && (
             <div>
-              <label htmlFor="equipment-stock" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                Stock initial communal <span className="text-[var(--Flush-Mahogany)]">* (&gt; 0)</span>
+              <label htmlFor="equipment-stock" className="block text-xs font-bold uppercase tracking-wider text-muted">
+                Stock initial communal <span className="text-danger">* (&gt; 0)</span>
               </label>
               <input
                 id="equipment-stock"
@@ -171,14 +171,14 @@ export default function EquipmentFormModal({
                 required
                 value={stock}
                 onChange={(event) => setStock(event.target.value === '' ? '' : Number(event.target.value))}
-                className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+                className="mt-1.5 w-full rounded-control border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               />
-              {errors.stockTotal && <p className="mt-1 text-xs text-[var(--Flush-Mahogany)]">{errors.stockTotal}</p>}
+              {errors.stockTotal && <p className="mt-1 text-xs text-danger">{errors.stockTotal}</p>}
             </div>
           )}
 
           <div>
-            <label htmlFor="equipment-description" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+            <label htmlFor="equipment-description" className="block text-xs font-bold uppercase tracking-wider text-muted">
               Description
             </label>
             <textarea
@@ -187,12 +187,12 @@ export default function EquipmentFormModal({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Caractéristiques techniques, dimensions, coloris..."
-              className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+              className="mt-1.5 w-full rounded-xl border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
             />
           </div>
 
           <div>
-            <label htmlFor="equipment-instructions" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+            <label htmlFor="equipment-instructions" className="block text-xs font-bold uppercase tracking-wider text-muted">
               Consignes d&apos;utilisation et de transport
             </label>
             <textarea
@@ -201,12 +201,12 @@ export default function EquipmentFormModal({
               value={instructions}
               onChange={(event) => setInstructions(event.target.value)}
               placeholder="Précautions d'arrimage, lestage impératif, manipulation..."
-              className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+              className="mt-1.5 w-full rounded-xl border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
             />
           </div>
 
           <div>
-            <label htmlFor="equipment-photo" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+            <label htmlFor="equipment-photo" className="block text-xs font-bold uppercase tracking-wider text-muted">
               Photo indicative (JPEG, PNG, WebP)
             </label>
             <input
@@ -214,22 +214,22 @@ export default function EquipmentFormModal({
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
-              className="mt-1.5 w-full text-xs text-[var(--muted)] file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--Pale-Sage)] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[var(--Mosaic-Tile)] hover:file:bg-[var(--sage)]"
+              className="mt-1.5 w-full text-xs text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-sage file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-primary hover:file:bg-sage"
             />
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
+          <div className="flex justify-end gap-3 border-t border-line pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-[var(--line)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)] hover:bg-[var(--paper)]"
+              className="rounded-xl border border-line px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted hover:bg-paper"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-xl bg-[var(--Mosaic-Tile)] px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[var(--moss)] disabled:opacity-50"
+              className="rounded-xl bg-primary px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
             >
               {submitting
                 ? 'Enregistrement...'

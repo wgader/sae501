@@ -21,7 +21,7 @@ export default function StatusBadge({
   if (status === 'PENDING_VALIDATION') {
     return (
       <span
-        className={`inline-block rounded-full bg-[var(--Lime-Cream)] font-bold text-[var(--ink)] ${sizeClasses} ${className}`}
+        className={`inline-block rounded-full bg-accent font-bold text-ink ${sizeClasses} ${className}`}
       >
         {label || 'En attente'}
       </span>

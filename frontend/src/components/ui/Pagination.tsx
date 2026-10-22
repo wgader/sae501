@@ -43,10 +43,10 @@ export default function Pagination({
   return (
     <nav
       aria-label="Pagination des résultats"
-      className={`flex flex-col gap-4 border-t border-[var(--line)] pt-6 sm:flex-row sm:items-center sm:justify-between text-xs ${className}`}
+      className={`flex flex-col gap-4 border-t border-line pt-6 text-xs sm:flex-row sm:items-center sm:justify-between ${className}`}
     >
-      <span className="font-semibold text-[var(--muted)]">
-        Affichage de <strong className="text-[var(--ink)]">{startItem}</strong> à <strong className="text-[var(--ink)]">{endItem}</strong> sur <strong className="text-[var(--ink)]">{totalItems}</strong> demande{totalItems > 1 ? 's' : ''}
+      <span className="font-semibold text-muted">
+        Affichage de <strong className="text-ink">{startItem}</strong> à <strong className="text-ink">{endItem}</strong> sur <strong className="text-ink">{totalItems}</strong> demande{totalItems > 1 ? 's' : ''}
       </span>
 
       <ul className="flex flex-wrap items-center gap-1.5 p-0 list-none">
@@ -55,7 +55,7 @@ export default function Pagination({
             type="button"
             disabled={page <= 1}
             onClick={() => onPageChange(Math.max(1, page - 1))}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 font-bold uppercase tracking-wider text-[var(--ink)] transition hover:bg-[var(--paper)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 font-bold uppercase tracking-wider text-ink transition hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -67,7 +67,7 @@ export default function Pagination({
         {pageNumbers.map((p, idx) => {
           if (typeof p === 'string') {
             return (
-              <li key={`ellipsis-${idx}`} className="flex h-9 w-6 items-center justify-center text-[var(--muted)]" aria-hidden="true">
+              <li key={`ellipsis-${idx}`} className="flex h-9 w-6 items-center justify-center text-muted" aria-hidden="true">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <circle cx="5" cy="12" r="2" />
                   <circle cx="12" cy="12" r="2" />
@@ -87,8 +87,8 @@ export default function Pagination({
                 aria-current={isCurrent ? 'page' : undefined}
                 className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer ${
                   isCurrent
-                    ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                    : 'border border-[var(--line)] bg-[var(--White)] text-[var(--ink)] hover:bg-[var(--paper)]'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'border border-line bg-white text-ink hover:bg-paper'
                 }`}
               >
                 {p}
@@ -102,7 +102,7 @@ export default function Pagination({
             type="button"
             disabled={page >= totalPages}
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 font-bold uppercase tracking-wider text-[var(--ink)] transition hover:bg-[var(--paper)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 font-bold uppercase tracking-wider text-ink transition hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
           >
             <span>Suivant</span>
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">

@@ -136,53 +136,53 @@ export default function EquipmentStockModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="equipment-stock-title"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-panel bg-white p-6 shadow-panel"
       >
-        <div className="flex items-center justify-between border-b border-[var(--line)] pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-4">
           <div>
-            <h2 id="equipment-stock-title" className="text-lg font-bold text-[var(--ink)]">
+            <h2 id="equipment-stock-title" className="text-lg font-bold text-ink">
               Ajuster le stock
             </h2>
-            <p className="text-xs text-[var(--muted)]">{equipment.designation}</p>
+            <p className="text-xs text-muted">{equipment.designation}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fermer l’ajustement de stock"
-            className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--paper)]"
+            className="rounded-control p-1 text-muted hover:bg-paper"
           >
             ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          <div className="flex items-center justify-between rounded-xl bg-[var(--paper)] p-3 text-xs">
-            <span className="font-semibold text-[var(--muted)]">Stock actuel de référence :</span>
-            <span className="text-base font-black text-[var(--ink)]">{equipment.stockTotal} unités</span>
+          <div className="flex items-center justify-between rounded-control bg-paper p-3 text-xs">
+            <span className="font-semibold text-muted">Stock actuel de référence :</span>
+            <span className="text-base font-black text-ink">{equipment.stockTotal} unités</span>
           </div>
 
           <div>
             <button
               type="button"
               onClick={() => void handleHistoryToggle()}
-              className="text-xs font-bold text-[var(--Mosaic-Tile)] underline-offset-2 hover:underline"
+              className="text-xs font-bold text-primary underline-offset-2 hover:underline"
             >
               {historyVisible ? 'Masquer l’historique' : 'Afficher l’historique des ajustements'}
             </button>
             {historyVisible && (
-              <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+              <div className="mt-3 rounded-control border border-line bg-paper p-3">
                 {historyLoading ? (
-                  <p className="text-xs text-[var(--muted)]" role="status">Chargement de l’historique...</p>
+                  <p className="text-xs text-muted" role="status">Chargement de l’historique...</p>
                 ) : history.length === 0 ? (
-                  <p className="text-xs text-[var(--muted)]">Aucun ajustement enregistré.</p>
+                  <p className="text-xs text-muted">Aucun ajustement enregistré.</p>
                 ) : (
                   <ol className="space-y-2">
                     {history.map((adjustment) => (
-                      <li key={adjustment.id} className="border-b border-[var(--line)] pb-2 text-xs last:border-0 last:pb-0">
-                        <p className="font-bold text-[var(--ink)]">
+                      <li key={adjustment.id} className="border-b border-line pb-2 text-xs last:border-0 last:pb-0">
+                        <p className="font-bold text-ink">
                           {adjustment.previousStock} → {adjustment.newStock} unités · {adjustment.reason}
                         </p>
-                        <p className="text-[var(--muted)]">
+                        <p className="text-muted">
                           {new Date(adjustment.createdAt).toLocaleString('fr-FR')} ·{' '}
                           {adjustment.agent.prenom} {adjustment.agent.nom}
                         </p>
@@ -195,14 +195,14 @@ export default function EquipmentStockModal({
           </div>
 
           <div>
-            <label htmlFor="stock-adjustment-reason" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+            <label htmlFor="stock-adjustment-reason" className="block text-xs font-bold uppercase tracking-wider text-muted">
               Motif de l&apos;ajustement
             </label>
             <select
               id="stock-adjustment-reason"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none"
+              className="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
             >
               <option value="Entrée de stock">Entrée de stock (nouvel achat communal)</option>
               <option value="Casse">Casse constatée</option>
@@ -213,8 +213,8 @@ export default function EquipmentStockModal({
           </div>
 
           <div>
-            <label htmlFor="new-equipment-stock" className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-              Nouveau stock total <span className="text-[var(--Flush-Mahogany)]">*</span>
+            <label htmlFor="new-equipment-stock" className="block text-xs font-bold uppercase tracking-wider text-muted">
+              Nouveau stock total <span className="text-danger">*</span>
             </label>
             <input
               id="new-equipment-stock"
@@ -226,17 +226,17 @@ export default function EquipmentStockModal({
               disabled={checking || submitting}
               aria-describedby={checking ? 'stock-check-status' : undefined}
               onChange={(event) => void handleStockInputChange(event.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1.5 w-full rounded-xl border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             />
             {checking && (
-              <p id="stock-check-status" className="mt-1 text-xs text-[var(--muted)]" role="status">
+              <p id="stock-check-status" className="mt-1 text-xs text-muted" role="status">
                 Vérification de cohérence avec les réservations...
               </p>
             )}
           </div>
 
           {conflict?.hasConflict && (
-            <div className="space-y-2 rounded-xl border border-red-300 bg-red-50 p-4 text-xs text-[var(--Flush-Mahogany)]">
+            <div className="space-y-2 rounded-xl border border-red-300 bg-red-50 p-4 text-xs text-danger">
               <div className="flex items-center gap-2 text-sm font-black">
                 <span aria-hidden="true">⚠</span>
                 Avertissement de surbooking
@@ -245,8 +245,8 @@ export default function EquipmentStockModal({
                 Le stock demandé ({newStock}) est inférieur aux réservations fermes validées
                 (jusqu&apos;à {conflict.maxBooked} unités réservées).
               </p>
-              <div className="space-y-1 rounded-lg bg-white/70 p-2 text-[11px]">
-                <p className="font-bold text-[var(--ink)]">Réservations compromises :</p>
+              <div className="space-y-1 rounded-lg bg-white/70 p-2 text-meta">
+                <p className="font-bold text-ink">Réservations compromises :</p>
                 <ul className="list-disc space-y-0.5 pl-4">
                   {conflict.conflictingReservations.map((reservation) => (
                     <li key={reservation.id}>
@@ -259,12 +259,12 @@ export default function EquipmentStockModal({
                 </ul>
               </div>
 
-              <label className="flex cursor-pointer items-start gap-2 pt-2 font-bold text-[var(--ink)]">
+              <label className="flex cursor-pointer items-start gap-2 pt-2 font-bold text-ink">
                 <input
                   type="checkbox"
                   checked={forceConfirm}
                   onChange={(event) => setForceConfirm(event.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-red-300 text-[var(--Flush-Mahogany)] focus:ring-red-400"
+                  className="mt-0.5 h-4 w-4 rounded border-red-300 text-danger focus:ring-red-400"
                 />
                 <span>Je confirme explicitement cet ajustement malgré le risque de surbooking.</span>
               </label>
@@ -272,23 +272,23 @@ export default function EquipmentStockModal({
           )}
 
           {error && (
-            <p className="text-xs font-semibold text-[var(--Flush-Mahogany)]" role="alert">
+            <p className="text-xs font-semibold text-danger" role="alert">
               {error}
             </p>
           )}
 
-          <div className="flex justify-end gap-3 border-t border-[var(--line)] pt-4">
+          <div className="flex justify-end gap-3 border-t border-line pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-[var(--line)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)] hover:bg-[var(--paper)]"
+              className="rounded-xl border border-line px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted hover:bg-paper"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting || checking}
-              className="rounded-xl bg-[var(--Mosaic-Tile)] px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-[var(--moss)] disabled:opacity-50"
+              className="rounded-xl bg-primary px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-primary-hover disabled:opacity-50"
             >
               {submitting ? 'Mise à jour...' : 'Valider le nouveau stock'}
             </button>

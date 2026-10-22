@@ -18,10 +18,10 @@ export default function PasswordRequirements({ password }: { password: string })
       {passwordRules.map((rule) => {
         const isValid = rule.test(password);
         const colorClass = isValid
-          ? 'text-[#0b644d] marker:text-[#0b644d]'
+          ? 'text-primary marker:text-primary'
           : hasStarted
-          ? 'text-[#b54b4b] marker:text-[#b54b4b]'
-          : 'text-[#6d746e] marker:text-[#d9ded9]';
+          ? 'text-danger marker:text-danger'
+          : 'text-muted marker:text-line';
 
         return (
           <li key={rule.label} className={`${colorClass} transition-colors`}>

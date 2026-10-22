@@ -35,7 +35,7 @@ export default function AdminLayout({
 
   if (token === undefined) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--Mosaic-Tile)] text-[var(--White)]">
+      <main className="flex min-h-screen items-center justify-center bg-primary text-white">
         <p className="text-sm font-semibold tracking-wider uppercase">Chargement de l&apos;administration...</p>
       </main>
     );
@@ -46,8 +46,8 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-[var(--Mosaic-Tile)] font-sans text-[var(--ink)] antialiased">
-      <aside className="hidden w-[250px] shrink-0 lg:block">
+    <div className="flex min-h-screen w-full bg-primary font-sans text-ink antialiased">
+      <aside className="hidden w-sidebar shrink-0 lg:block">
         <div className="sticky top-0 h-screen">
           <AdminSidebar />
         </div>
@@ -60,7 +60,7 @@ export default function AdminLayout({
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative flex h-full w-[270px] max-w-[85vw] flex-col shadow-2xl">
+          <aside className="relative flex h-full w-68 max-w-[85vw] flex-col shadow-2xl">
             <AdminSidebar onNavigate={() => setMobileMenuOpen(false)} />
           </aside>
         </div>
@@ -74,7 +74,7 @@ export default function AdminLayout({
           onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         />
 
-        <main className="flex-1 rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-10 lg:p-12 shadow-sm">
+        <main className="flex-1 rounded-tl-4xl bg-white p-6 shadow-sm sm:p-10 lg:p-12">
           {children}
         </main>
       </div>

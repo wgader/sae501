@@ -10,10 +10,10 @@ export default function Stepper({ currentStep = 1 }: { currentStep?: number }) {
   return (
     <div className="w-full py-6 sm:py-10">
       <div className="mb-8 sm:mb-10 px-4 text-center">
-        <h1 className="mb-3 text-2xl font-black uppercase tracking-tight text-[#1e2420] sm:text-3xl">
+        <h1 className="mb-3 text-2xl font-black uppercase tracking-tight text-ink sm:text-3xl">
           Inscrire mon association
         </h1>
-        <p className="text-xs text-[#6d746e] sm:text-sm">
+        <p className="text-xs text-muted sm:text-sm">
           Tous les champs suivis d’un astérisque (*) sont obligatoires.
         </p>
       </div>
@@ -29,8 +29,8 @@ export default function Stepper({ currentStep = 1 }: { currentStep?: number }) {
                 <div
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 sm:text-sm ${
                     isActive || isCompleted
-                      ? 'bg-[#0b644d] text-white'
-                      : 'border-2 border-[#d9ded9] bg-white text-[#d9ded9]'
+                      ? 'bg-primary text-white'
+                      : 'border-2 border-line bg-white text-line'
                   }`}
                 >
                   {isCompleted ? (
@@ -42,8 +42,8 @@ export default function Stepper({ currentStep = 1 }: { currentStep?: number }) {
                   )}
                 </div>
                 <span
-                  className={`hidden text-center text-[10px] font-bold uppercase tracking-wider md:block sm:text-xs ${
-                    isActive || isCompleted ? 'text-[#0b644d]' : 'text-[#6d746e]'
+                  className={`hidden text-center text-caption font-bold uppercase tracking-wider md:block sm:text-xs ${
+                    isActive || isCompleted ? 'text-primary' : 'text-muted'
                   }`}
                 >
                   {step.label}
@@ -52,7 +52,7 @@ export default function Stepper({ currentStep = 1 }: { currentStep?: number }) {
               {index < steps.length - 1 && (
                 <div
                   className={`mx-1 h-0.5 flex-1 sm:mx-2 md:-mt-6 ${
-                    isCompleted ? 'bg-[#0b644d]' : 'bg-[#d9ded9]'
+                    isCompleted ? 'bg-primary' : 'bg-line'
                   }`}
                 />
               )}
@@ -61,7 +61,7 @@ export default function Stepper({ currentStep = 1 }: { currentStep?: number }) {
         })}
       </div>
       
-      <div className="mt-6 text-center text-xs font-medium text-[#6d746e] sm:mt-8 md:hidden">
+      <div className="mt-6 text-center text-xs font-medium text-muted sm:mt-8 md:hidden">
         Etape {currentStep} sur 4 - {steps[currentStep - 1].label}
       </div>
     

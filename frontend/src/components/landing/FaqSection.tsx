@@ -56,23 +56,23 @@ export default function FaqSection() {
       aria-labelledby="faq-heading"
       className="scroll-mt-24 py-16 sm:py-20 lg:py-24"
     >
-      <div className="mx-auto max-w-[85rem] px-4 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-340 px-4 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
           {/* Left Column: Heading */}
           <header className="lg:col-span-5">
-            <p className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-[var(--moss)]">
+            <p className="text-meta font-bold uppercase tracking-eyebrow text-moss">
               — Questions fréquentes
             </p>
 
             <h2
               id="faq-heading"
-              className="mt-3 text-[clamp(2rem,3.75vw,2.75rem)] font-black leading-tight tracking-[-0.03em] text-[var(--ink)]"
+              className="mt-3 text-[clamp(2rem,3.75vw,2.75rem)] font-black leading-tight tracking-display text-ink"
             >
               Avant de créer<br />
               votre espace.
             </h2>
 
-            <p className="mt-4 max-w-[22rem] text-[0.9375rem] leading-[1.6] text-[var(--muted)]">
+            <p className="mt-4 max-w-88 text-body leading-copy text-muted">
               Les réponses essentielles pour comprendre le fonctionnement de
               l&apos;espace associations.
             </p>
@@ -80,11 +80,11 @@ export default function FaqSection() {
 
           {/* Right Column: Accordion */}
           <div className="lg:col-span-7">
-            <dl className="flex flex-col border-t border-[var(--line)]">
+            <dl className="flex flex-col border-t border-line">
               {faqs.map((item) => {
                 const isOpen = openId === item.id;
                 return (
-                  <div key={item.id} className="border-b border-[var(--line)]">
+                  <div key={item.id} className="border-b border-line">
                     <dt>
                       <button
                         type="button"
@@ -94,16 +94,16 @@ export default function FaqSection() {
                         className="group flex w-full items-center justify-between gap-4 py-5 text-left transition-colors sm:py-6"
                       >
                         <div className="flex items-center gap-4 sm:gap-6">
-                          <span className="text-[0.75rem] font-bold text-[var(--muted)]">
+                          <span className="text-meta font-bold text-muted">
                             {item.number}
                           </span>
-                          <span className="text-[1.0625rem] font-bold leading-snug text-[var(--ink)] transition-colors group-hover:text-[var(--Mosaic-Tile)] sm:text-[1.125rem]">
+                          <span className="text-body-lg font-bold leading-snug text-ink transition-colors group-hover:text-primary sm:text-lg">
                             {item.question}
                           </span>
                         </div>
 
                         {/* Plus / Minus indicator matching photo */}
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--muted)] transition-colors group-hover:text-[var(--ink)]">
+                        <span className="flex size-6 shrink-0 items-center justify-center text-muted transition-colors group-hover:text-ink">
                           {isOpen ? (
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                               <line x1="5" y1="12" x2="19" y2="12" />
@@ -124,7 +124,7 @@ export default function FaqSection() {
                         id={`faq-answer-${item.id}`}
                         className="pb-6 pl-8 pr-4 sm:pl-11"
                       >
-                        <p className="text-[0.9375rem] leading-[1.65] text-[var(--muted)]">
+                        <p className="text-body leading-[1.65] text-muted">
                           {item.answer}
                         </p>
                       </dd>
