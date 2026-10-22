@@ -1,5 +1,7 @@
 'use client';
 
+import AdminSearchBar from '@/components/admin/search/AdminSearchBar';
+
 interface AdminHeaderProps {
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
@@ -33,25 +35,10 @@ export default function AdminHeader({
           )}
         </button>
 
-        <form role="search" onSubmit={(e) => e.preventDefault()} className="relative w-full max-w-sm sm:max-w-md">
-          <label htmlFor="admin-search-input" className="sr-only">
-            Rechercher une association
-          </label>
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </span>
-          <input
-            id="admin-search-input"
-            type="search"
-            value={searchTerm}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder="Rechercher une association"
-            className="h-10 w-full rounded-full border-0 bg-[var(--White)]/95 pl-10 pr-4 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/75 shadow-xs transition focus:bg-[var(--White)] focus:outline-none focus:ring-2 focus:ring-[var(--Lime-Cream)]"
-          />
-        </form>
+        <AdminSearchBar
+          searchTerm={searchTerm}
+          onSearchChange={onSearchChange}
+        />
       </div>
 
       <div className="flex items-center pl-4">

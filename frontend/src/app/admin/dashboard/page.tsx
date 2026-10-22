@@ -1,22 +1,40 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminMetricCard from '@/components/admin/AdminMetricCard';
 import AssociationCard from '@/components/admin/association/AssociationCard';
 import { useAssociations } from '@/hooks/useAssociations';
+import { getSalles } from '@/lib/api';
+import { IconAssociation, IconSalle } from '@/components/ui/icons';
 
 export default function AdminDashboardPage() {
   const { associations: pendingItems, counts, loading } = useAssociations(1, 'PENDING_VALIDATION');
+  const [sallesCount, setSallesCount] = useState<number | null>(null);
+  const [sallesLoading, setSallesLoading] = useState(true);
+
+  useEffect(() => {
+    getSalles()
+      .then((salles) => {
+        const activeSalles = salles.filter((s) => s.deletedAt === null);
+        setSallesCount(activeSalles.length);
+      })
+      .catch(() => {
+        setSallesCount(0);
+      })
+      .finally(() => {
+        setSallesLoading(false);
+      });
+  }, []);
 
   const pendingCount = counts?.pending ?? 0;
-  const validatedCount = counts?.validated ?? 0;
   const totalCount = counts?.total ?? 0;
 
   return (
     <AdminLayout>
-      <section className="mx-auto max-w-5xl space-y-10">
+      <section className="space-y-10">
         <AdminPageHeader
           title="Tableau de bord"
           description="Supervision générale des structures associatives, instruction des demandes d’adhésion et gestion des services communaux."
@@ -29,6 +47,7 @@ export default function AdminDashboardPage() {
           </h2>
 
           <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 p-0 list-none">
+            {/* 1. Demandes en attente */}
             <li>
               <AdminMetricCard
                 title="Demandes en attente"
@@ -46,37 +65,31 @@ export default function AdminDashboardPage() {
               />
             </li>
 
+            {/* 2. Total des associations (inversé avec le nombre de salles) */}
             <li>
               <AdminMetricCard
-                title="Associations validées"
-                value={validatedCount}
-                description="Comptes habilités à réserver les salles et solliciter des aides."
-                icon={
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
-                iconBgClass="bg-emerald-100 text-emerald-800"
-                actionHref="/admin/inscription"
-                actionLabel="Consulter la liste"
+                title="Total des associations"
+                value={totalCount}
+                description="Nombre total d'associations répertoriées auprès de la commune."
+                icon={<IconAssociation className="h-5 w-5" />}
+                iconBgClass="bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]"
+                actionHref="/admin/association"
+                actionLabel="Consulter l'annuaire"
                 loading={loading}
               />
             </li>
 
+            {/* 3. Nombre de salles (remplace la carte associations validées) */}
             <li>
               <AdminMetricCard
-                title="Total des structures"
-                value={totalCount}
-                description="Nombre total d'associations déclarées auprès de la commune."
-                icon={
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-                  </svg>
-                }
+                title="Salles municipales"
+                value={sallesCount ?? 0}
+                description="Espaces et équipements communaux disponibles à la réservation."
+                icon={<IconSalle className="h-5 w-5" />}
                 iconBgClass="bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]"
-                actionHref="/admin/inscription"
-                actionLabel="Voir tout l'annuaire"
-                loading={loading}
+                actionHref="/admin/salle"
+                actionLabel="Gérer les salles"
+                loading={sallesLoading}
               />
             </li>
           </ul>
@@ -139,7 +152,7 @@ export default function AdminDashboardPage() {
             <li>
               <Link
                 href="/admin/module"
-                className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-sm"
+                className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-xs"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--Mosaic-Tile)] text-[var(--White)]">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -166,7 +179,7 @@ export default function AdminDashboardPage() {
             <li>
               <Link
                 href="/admin/agent"
-                className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-sm"
+                className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-xs"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--Lime-Cream)] text-[var(--ink)]">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">

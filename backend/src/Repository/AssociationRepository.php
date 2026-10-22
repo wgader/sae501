@@ -19,7 +19,7 @@ class AssociationRepository extends ServiceEntityRepository
     /**
      * @return list<Association>
      */
-    public function findForAdministration(?string $status, int $page, int $itemsPerPage): array
+    public function findForAdministration(?string $status, int $page, int $itemsPerPage, ?string $search = null): array
     {
         $queryBuilder = $this->createQueryBuilder('association')
             ->orderBy('association.createdAt', 'DESC')
@@ -33,18 +33,32 @@ class AssociationRepository extends ServiceEntityRepository
                 ->setParameter('status', $status);
         }
 
+        if ($search !== null && trim($search) !== '') {
+            $queryBuilder
+                ->leftJoin('association.users', 'user')
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+        }
+
         return $queryBuilder->getQuery()->getResult();
     }
 
-    public function countForAdministration(?string $status): int
+    public function countForAdministration(?string $status, ?string $search = null): int
     {
         $queryBuilder = $this->createQueryBuilder('association')
-            ->select('COUNT(association.id)');
+            ->select('COUNT(DISTINCT association.id)');
 
         if ($status !== null) {
             $queryBuilder
                 ->andWhere('association.statut = :status')
                 ->setParameter('status', $status);
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $queryBuilder
+                ->leftJoin('association.users', 'user')
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
         }
 
         return (int) $queryBuilder->getQuery()->getSingleScalarResult();

@@ -1,6 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
-export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED';
+export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED' | 'SUSPENDED';
 export type AssociationModule = 'subventions' | 'materiel' | 'salles';
 
 export type AssociationContact = {
@@ -22,6 +22,21 @@ export type Association = {
   moduleMaterielActif?: boolean;
   createdAt: string | null;
   contact?: AssociationContact | null;
+  nombreMembres?: number | null;
+  categorie?: string | null;
+  imageUrl?: string | null;
+  documents?: AssociationDocument[];
+};
+
+export type AssociationDocument = {
+  id: number;
+  typeDocument: string;
+  fichierUrl: string;
+  isVerified: boolean;
+  size: number;
+  originalName: string;
+  mimeType: string;
+  createdAt: string | null;
 };
 
 export type AssociationCounts = {
@@ -125,8 +140,9 @@ export function getAssociations(
   status: AssociationStatus | '',
   search?: string,
   includeCounts?: boolean,
+  itemsPerPage: number = 10,
 ): Promise<AssociationPage> {
-  const params = new URLSearchParams({ page: String(page), itemsPerPage: '10' });
+  const params = new URLSearchParams({ page: String(page), itemsPerPage: String(itemsPerPage) });
   if (status) params.set('status', status);
   if (search) params.set('q', search);
   if (includeCounts !== undefined) params.set('includeCounts', String(includeCounts));
@@ -150,6 +166,62 @@ export function updateAssociationStatus(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  });
+}
+
+export function updateAssociationModules(
+  id: number,
+  permissions: AssociationModule[],
+): Promise<Association> {
+  return request<Association>(`/api/admin/associations/${id}/modules`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ permissions }),
+  });
+}
+
+
+export function deleteAssociation(id: number): Promise<void> {
+  return request<void>(`/api/admin/associations/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function uploadAssociationDocument(
+  associationId: number,
+  file: File,
+  typeDocument?: string,
+  isVerified?: boolean,
+): Promise<AssociationDocument> {
+  const body = new FormData();
+  body.append('file', file);
+  if (typeDocument) body.append('typeDocument', typeDocument);
+  if (isVerified !== undefined) body.append('isVerified', String(isVerified));
+
+  return request<AssociationDocument>(`/api/admin/associations/${associationId}/documents`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export function updateAssociationDocument(
+  associationId: number,
+  docId: number,
+  data: { typeDocument?: string; isVerified?: boolean },
+): Promise<AssociationDocument> {
+  return request<AssociationDocument>(`/api/admin/associations/${associationId}/documents/${docId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteAssociationDocument(
+  associationId: number,
+  docId: number,
+): Promise<void> {
+  return request<void>(`/api/admin/associations/${associationId}/documents/${docId}`, {
+    method: 'DELETE',
   });
 }
 

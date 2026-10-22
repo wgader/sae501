@@ -5,6 +5,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import StatusTag, { type AssociationModule } from '@/components/admin/StatusTag';
 import type { AssociationStatus } from '@/lib/api';
+import { IconChevronRight } from '@/components/ui/icons';
+
 
 export const confirmationModalOverlayVariants = cva(
   'fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink)]/50 p-4 backdrop-blur-[2px] transition-opacity',
@@ -94,13 +96,14 @@ export default function ConfirmationModal({
 
   // Calcul du titre et des styles selon mode statut, mode unitaire ou mode par lot
   const hasBatchChanges = Boolean(changes && changes.length > 0);
+  const hasModuleAction = Boolean(moduleId || moduleName);
   const allDeactivations = hasBatchChanges
     ? changes!.every((c) => !c.nextState)
     : !willEnable;
 
   const isDangerAction =
     confirmVariant === 'danger' ||
-    (confirmVariant === undefined && (targetStatus === 'REFUSED' || allDeactivations));
+    (confirmVariant === undefined && (targetStatus === 'REFUSED' || (hasModuleAction && !willEnable)));
 
   const defaultTitle = targetStatus
     ? targetStatus === 'VALIDATED'
@@ -114,9 +117,11 @@ export default function ConfirmationModal({
       : changes!.every((c) => c.nextState)
       ? 'Confirmer l’activation des modules'
       : 'Confirmer la modification des modules'
-    : willEnable
-    ? 'Confirmer l’activation du module'
-    : 'Confirmer la désactivation du module';
+    : hasModuleAction
+    ? willEnable
+      ? 'Confirmer l’activation du module'
+      : 'Confirmer la désactivation du module'
+    : 'Confirmation';
 
   const finalTitle = title || defaultTitle;
 
@@ -130,11 +135,14 @@ export default function ConfirmationModal({
     ? allDeactivations
       ? 'Confirmer la désactivation'
       : 'Confirmer les modifications'
-    : willEnable
-    ? 'Confirmer l’activation'
-    : 'Confirmer la désactivation';
+    : hasModuleAction
+    ? willEnable
+      ? 'Confirmer l’activation'
+      : 'Confirmer la désactivation'
+    : 'Confirmer';
 
   const finalConfirmLabel = confirmLabel || defaultConfirmLabel;
+
 
   return (
     <div
@@ -198,7 +206,7 @@ export default function ConfirmationModal({
                     {currentStatus && currentStatus !== targetStatus && (
                       <>
                         <StatusTag status={currentStatus} />
-                        <span className="text-[var(--muted)]">→</span>
+                        <IconChevronRight className="h-3 w-3 text-[var(--muted)]" />
                       </>
                     )}
                     <StatusTag status={targetStatus} />
@@ -233,7 +241,7 @@ export default function ConfirmationModal({
                       >
                         {item.previousState ? 'Actif' : 'Inactif'}
                       </span>
-                      <span className="text-[var(--muted)]">→</span>
+                      <IconChevronRight className="h-3 w-3 text-[var(--muted)]" />
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.69rem] font-bold uppercase tracking-wider ${
                           item.nextState
@@ -248,7 +256,8 @@ export default function ConfirmationModal({
                 ))}
               </div>
             </div>
-          ) : (
+
+          ) : hasModuleAction ? (
             <div className="space-y-3">
               {associationName && (
                 <p className="font-bold uppercase text-[var(--ink)]">{associationName}</p>
@@ -274,7 +283,8 @@ export default function ConfirmationModal({
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
+
 
           {children}
         </div>

@@ -86,7 +86,7 @@ export default function AdminLayout({
           />
         </div>
 
-        <main className="flex-1 overflow-y-auto rounded-tl-[28px] sm:rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-10 lg:p-12 shadow-sm">
+        <main className="flex-1 overflow-y-auto rounded-tl-[28px] sm:rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-8 lg:p-8 xl:p-10 shadow-sm">
           {children}
         </main>
       </div>
