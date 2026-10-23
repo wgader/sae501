@@ -1,37 +1,37 @@
-import type { HTMLAttributes } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import type { HTMLAttributes } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-export const stepperVariants = cva('w-full py-6 sm:py-10');
+export const stepperVariants = cva("w-full py-6 sm:py-10");
 
 export const stepperCircleVariants = cva(
-  'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 sm:text-sm transition-colors',
+  "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 sm:text-sm transition-colors",
   {
     variants: {
       status: {
-        active: 'bg-[#0b644d] text-white',
-        completed: 'bg-[#0b644d] text-white',
-        upcoming: 'border-2 border-[#d9ded9] bg-white text-[#d9ded9]',
+        active: "bg-[#0b644d] text-white",
+        completed: "bg-[#0b644d] text-white",
+        upcoming: "border-2 border-[#d9ded9] bg-white text-[#d9ded9]",
       },
     },
     defaultVariants: {
-      status: 'upcoming',
+      status: "upcoming",
     },
   },
 );
 
 export const stepperLabelVariants = cva(
-  'hidden text-center text-[0.63rem] font-bold uppercase tracking-wider md:block sm:text-xs transition-colors',
+  "hidden text-center text-[0.63rem] font-bold uppercase tracking-wider md:block sm:text-xs transition-colors",
   {
     variants: {
       status: {
-        active: 'text-[#0b644d]',
-        completed: 'text-[#0b644d]',
-        upcoming: 'text-[#6d746e]',
+        active: "text-[#0b644d]",
+        completed: "text-[#0b644d]",
+        upcoming: "text-[#6d746e]",
       },
     },
     defaultVariants: {
-      status: 'upcoming',
+      status: "upcoming",
     },
   },
 );
@@ -42,10 +42,10 @@ export interface StepItem {
 }
 
 export const defaultSteps: StepItem[] = [
-  { num: 1, label: 'Votre association' },
-  { num: 2, label: 'Contacts & responsables' },
-  { num: 3, label: 'Documents justificatifs' },
-  { num: 4, label: 'Confirmation' },
+  { num: 1, label: "Votre association" },
+  { num: 2, label: "Contacts & responsables" },
+  { num: 3, label: "Documents justificatifs" },
+  { num: 4, label: "Confirmation" },
 ];
 
 export interface StepperDataProps {
@@ -54,7 +54,8 @@ export interface StepperDataProps {
 }
 
 export interface StepperProps
-  extends HTMLAttributes<HTMLDivElement>,
+  extends
+    HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof stepperVariants> {}
 
 export default function Stepper({
@@ -70,7 +71,8 @@ export default function Stepper({
           Inscrire mon association
         </h1>
         <p className="text-xs text-[#6d746e] sm:text-sm">
-          Complétez votre dossier en 4 étapes — la mairie validera votre inscription sous 48h ouvrées ⚙️
+          Complétez votre dossier en 4 étapes — la mairie validera votre
+          inscription sous 48h ouvrées ⚙️
         </p>
       </div>
 
@@ -78,15 +80,32 @@ export default function Stepper({
         {steps.map((step, index) => {
           const isActive = step.num === currentStep;
           const isCompleted = step.num < currentStep;
-          const status = isActive ? 'active' : isCompleted ? 'completed' : 'upcoming';
+          const status = isActive
+            ? "active"
+            : isCompleted
+              ? "completed"
+              : "upcoming";
 
           return (
-            <div key={step.num} className="flex flex-1 items-center last:flex-none">
+            <div
+              key={step.num}
+              className="flex flex-1 items-center last:flex-none"
+            >
               <div className="relative z-10 flex w-full flex-col items-center gap-2 sm:gap-3">
                 <div className={cn(stepperCircleVariants({ status }))}>
                   {isCompleted ? (
-                    <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    <svg
+                      className="h-4 w-4 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={3}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   ) : (
                     step.num
@@ -99,7 +118,7 @@ export default function Stepper({
               {index < steps.length - 1 && (
                 <div
                   className={`mx-1 h-0.5 flex-1 sm:mx-2 md:-mt-6 ${
-                    isCompleted ? 'bg-[#0b644d]' : 'bg-[#d9ded9]'
+                    isCompleted ? "bg-[#0b644d]" : "bg-[#d9ded9]"
                   }`}
                 />
               )}
@@ -109,8 +128,9 @@ export default function Stepper({
       </div>
 
       <div className="mt-6 text-center text-xs font-medium text-[#6d746e] sm:mt-8 md:hidden">
-        Etape {currentStep} sur {steps.length} - {steps[currentStep - 1]?.label ?? ''}
+        Etape {currentStep} sur {steps.length} -{" "}
+        {steps[currentStep - 1]?.label ?? ""}
       </div>
     </div>
   );
-}
+}

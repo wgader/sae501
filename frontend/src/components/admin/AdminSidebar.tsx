@@ -1,34 +1,32 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   IconAccueil,
   IconHistorique,
   IconInscription,
   IconMateriel,
-  IconModule,
   IconSalle,
   IconSubvention,
   IconAssociation,
   IconAgent,
-} from '@/components/ui/NavigationBar/NavigationIcon';
+} from "@/components/ui/NavigationBar/NavigationIcon";
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
 }
 
 const navItems = [
-  { label: 'Accueil', href: '/admin/dashboard', icon: IconAccueil },
-  { label: 'Inscription', href: '/admin/inscription', icon: IconInscription },
-  { label: 'Association', href: '/admin/association', icon: IconAssociation },
-  { label: 'Salle', href: '/admin/salle', icon: IconSalle },
-  { label: 'Matériel', href: '/admin/materiel', icon: IconMateriel },
-  { label: 'Subvention', href: '/admin/subvention', icon: IconSubvention },
-  { label: 'Module', href: '/admin/module', icon: IconModule },
-  { label: 'Agent', href: '/admin/agent', icon: IconAgent },
-  { label: 'Historique', href: '/admin/historique', icon: IconHistorique },
+  { label: "Accueil", href: "/admin/dashboard", icon: IconAccueil },
+  { label: "Inscription", href: "/admin/inscription", icon: IconInscription },
+  { label: "Association", href: "/admin/association", icon: IconAssociation },
+  { label: "Salle", href: "/admin/salle", icon: IconSalle },
+  { label: "Matériel", href: "/admin/materiel", icon: IconMateriel },
+  { label: "Subvention", href: "/admin/subvention", icon: IconSubvention },
+  { label: "Agent", href: "/admin/agent", icon: IconAgent },
+  { label: "Historique", href: "/admin/historique", icon: IconHistorique },
 ];
 
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
@@ -36,8 +34,8 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    router.replace('/admin');
+    localStorage.removeItem("admin_token");
+    router.replace("/admin");
   };
 
   return (
@@ -59,21 +57,25 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
           />
         </Link>
 
-        <nav aria-label="Menu principal administration" className="flex flex-col gap-2">
+        <nav
+          aria-label="Menu principal administration"
+          className="flex flex-col gap-2"
+        >
           {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href
-              || (href !== '/admin/dashboard' && pathname.startsWith(href));
+            const isActive =
+              pathname === href ||
+              (href !== "/admin/dashboard" && pathname.startsWith(href));
 
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={onNavigate}
-                aria-current={isActive ? 'page' : undefined}
-                className={`flex h-12 items-center gap-3.5 rounded-[12px] px-4 text-[0.875rem] transition-colors ${
+                aria-current={isActive ? "page" : undefined}
+                className={`flex h-12 items-center gap-3.5 rounded-control px-4 text-body-sm transition-colors ${
                   isActive
-                    ? 'bg-[var(--White)] font-bold text-[var(--Mosaic-Tile)] shadow-sm'
-                    : 'font-medium text-white/80 hover:bg-white/10 hover:text-[var(--White)]'
+                    ? "bg-white font-bold text-primary shadow-sm"
+                    : "font-medium text-white/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -88,7 +90,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex h-12 w-full items-center gap-3 rounded-[12px] bg-[var(--White)] px-4 text-[0.875rem] font-bold text-[var(--Mosaic-Tile)] shadow-sm transition-opacity hover:opacity-95"
+          className="flex h-12 w-full items-center gap-3 rounded-control bg-white px-4 text-body-sm font-bold text-primary shadow-sm transition-colors hover:bg-accent"
         >
           <svg
             className="h-5 w-5 shrink-0"

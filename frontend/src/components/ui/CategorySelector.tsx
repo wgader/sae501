@@ -5,16 +5,16 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export const categorySelectorVariants = cva(
-  'flex w-full flex-col sm:flex-row overflow-hidden rounded-md border border-[#d9ded9] bg-white',
+  'flex w-full flex-col sm:flex-row overflow-hidden rounded-md border border-line bg-white',
 );
 
 export const categorySelectorButtonVariants = cva(
-  'flex-1 border-b sm:border-b-0 sm:border-r border-[#d9ded9] py-3 text-xs font-medium last:border-b-0 sm:last:border-r-0 transition-colors',
+  'flex-1 border-b sm:border-b-0 sm:border-r border-line py-3 text-xs font-medium last:border-b-0 sm:last:border-r-0 transition-colors cursor-pointer',
   {
     variants: {
       selected: {
-        true: 'bg-[#0b644d] text-white',
-        false: 'text-[#1e2420] hover:bg-[#f7f8f4]',
+        true: 'bg-primary text-white font-bold',
+        false: 'text-ink hover:bg-paper',
       },
     },
     defaultVariants: {
@@ -72,4 +72,4 @@ export default function CategorySelector({
       <input type="hidden" name={name} value={selected} required />
     </div>
   );
-}
+}

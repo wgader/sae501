@@ -2,6 +2,25 @@
 
 @theme {
     --font-sans: var(--font-lato), sans-serif;
+
+    /* Semantic palette */
+    --color-primary: var(--Mosaic-Tile);
+    --color-primary-hover: var(--hover);
+    --color-primary-soft: var(--Mint-Cream);
+    --color-accent: var(--Lime-Cream);
+    --color-indigo: var(--Indigo-Bloom);
+    --color-danger: var(--Flush-Mahogany);
+    --color-ink: var(--ink);
+    --color-muted: var(--muted);
+    --color-line: var(--line);
+    --color-sage: var(--sage);
+    --color-moss: var(--moss);
+    --color-paper: var(--paper);
+    --color-white: var(--White);
+    --color-black: var(--Black);
+    --color-grey: var(--Grey);
+
+    /* Compatibility aliases for existing classes */
     --color-Primary: var(--Mosaic-Tile);
     --color-Neutral: var(--White);
     --color-Indigo: var(--Indigo-Bloom);
@@ -12,6 +31,47 @@
     --color-Indigo-Bloom: var(--Indigo-Bloom);
     --color-Flush-Mahogany: var(--Flush-Mahogany);
     --color-ink: var(--ink);
+
+    /* Reusable layout dimensions */
+    --spacing-control: 3.5rem;
+    --spacing-control-compact: 2.75rem;
+    --spacing-icon-button: 1.9375rem;
+    --spacing-accent-line: 1.875rem;
+    --spacing-sidebar: 16rem;
+    --spacing-sidebar-wide: 17.5rem;
+
+    /* Reusable shape tokens */
+    --radius-control: 0.625rem;
+    --radius-card: 1.5rem;
+    --radius-panel: 2rem;
+    --radius-panel-soft: 2.25rem;
+    --radius-soft: 0.75rem;
+    --radius-pill: 9999px;
+
+    /* Reusable typography tokens */
+    --text-caption: 0.625rem;
+    --text-meta: 0.75rem;
+    --text-label: 0.6875rem;
+    --text-body-sm: 0.875rem;
+    --text-body: 0.9375rem;
+    --text-body-lg: 1.0625rem;
+    --tracking-label: 0.14em;
+    --tracking-kicker: 0.2em;
+    --tracking-eyebrow: 0.22em;
+    --tracking-section: 0.18em;
+    --tracking-heading: -0.04em;
+    --tracking-subheading: -0.02em;
+    --tracking-title: 0.125rem;
+    --tracking-display: -0.03em;
+    --leading-copy: 1.6;
+
+    /* Reusable decorative dimensions */
+    --border-width-ring: 1.625rem;
+    --scale-card-hover: 1.01;
+
+    /* Reusable elevation tokens */
+    --shadow-card: 0 0.25rem 1rem rgb(30 36 32 / 0.08);
+    --shadow-panel: 0 0.5rem 2rem rgb(30 36 32 / 0.1);
 }
 
 :root {
@@ -24,6 +84,7 @@
     --sage: #DFE9DF;
     --moss: #496A56;
     --paper: #F7F8F4;
+    --hover : #0F5F59;
 
     /* Primary Colors */
     --Mosaic-Tile: #146E67;

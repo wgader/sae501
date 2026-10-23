@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -14,7 +14,10 @@ import {
   IconSalle,
   IconSubvention,
 } from "../ui/NavigationBar/NavigationIcon";
-import { getStoredAssociationName, getAssociationInitials } from "@/lib/authUtils";
+import {
+  getStoredAssociationName,
+  getAssociationInitials,
+} from "@/lib/authUtils";
 
 interface NavItemData {
   root: string;
@@ -23,26 +26,54 @@ interface NavItemData {
 }
 
 const moduleItems: NavItemData[] = [
-  { root: "", name: "Accueil", icon: <IconAccueil className="h-6 w-6 shrink-0" /> },
-  { root: "subventions", name: "Subventions", icon: <IconSubvention className="h-6 w-6 shrink-0" /> },
-  { root: "salles", name: "Salles", icon: <IconSalle className="h-6 w-6 shrink-0" /> },
-  { root: "materiel", name: "Matériel", icon: <IconMateriel className="h-6 w-6 shrink-0" /> },
-  { root: "evenements", name: "Événements", icon: <IconEvenement className="h-6 w-6 shrink-0" /> },
-  { root: "historique", name: "Historique", icon: <IconHistorique className="h-6 w-6 shrink-0" /> },
-  { root: "profil", name: "Profil", icon: <IconProfil className="h-6 w-6 shrink-0" /> },
+  {
+    root: "",
+    name: "Accueil",
+    icon: <IconAccueil className="h-6 w-6 shrink-0" />,
+  },
+  {
+    root: "subventions",
+    name: "Subventions",
+    icon: <IconSubvention className="h-6 w-6 shrink-0" />,
+  },
+  {
+    root: "salles",
+    name: "Salles",
+    icon: <IconSalle className="h-6 w-6 shrink-0" />,
+  },
+  {
+    root: "materiel",
+    name: "Matériel",
+    icon: <IconMateriel className="h-6 w-6 shrink-0" />,
+  },
+  {
+    root: "evenements",
+    name: "Événements",
+    icon: <IconEvenement className="h-6 w-6 shrink-0" />,
+  },
+  {
+    root: "historique",
+    name: "Historique",
+    icon: <IconHistorique className="h-6 w-6 shrink-0" />,
+  },
+  {
+    root: "profil",
+    name: "Profil",
+    icon: <IconProfil className="h-6 w-6 shrink-0" />,
+  },
 ];
 
 function subscribeAuth(callback: () => void) {
-  window.addEventListener('storage', callback);
-  window.addEventListener('auth-change', callback);
+  window.addEventListener("storage", callback);
+  window.addEventListener("auth-change", callback);
   return () => {
-    window.removeEventListener('storage', callback);
-    window.removeEventListener('auth-change', callback);
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("auth-change", callback);
   };
 }
 
 function getServerNameSnapshot(): string {
-  return 'Feytiat Loisirs';
+  return "Feytiat Loisirs";
 }
 
 interface LateralNavBarProps {
@@ -57,17 +88,18 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
   const rawName = useSyncExternalStore(
     subscribeAuth,
     getStoredAssociationName,
-    getServerNameSnapshot
+    getServerNameSnapshot,
   );
 
-  const associationName = rawName.replace(/^Association\s+/i, '').trim() || rawName;
+  const associationName =
+    rawName.replace(/^Association\s+/i, "").trim() || rawName;
   const initials = getAssociationInitials(associationName);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('association_name');
-    window.dispatchEvent(new Event('auth-change'));
-    router.push('/');
+    localStorage.removeItem("token");
+    localStorage.removeItem("association_name");
+    window.dispatchEvent(new Event("auth-change"));
+    router.push("/");
   };
 
   return (
@@ -81,17 +113,41 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--ink)] transition-colors hover:bg-[var(--paper)]"
         >
           {mobileMenuOpen ? (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           ) : (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           )}
         </button>
 
-        <Link href="/" aria-label="Accueil Feytiat" className="flex items-center">
+        <Link
+          href="/"
+          aria-label="Accueil Feytiat"
+          className="flex items-center"
+        >
           <Image
             src="/assets/logo-feytiat.svg"
             alt="Feytiat"
@@ -108,12 +164,17 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 flex md:hidden"
+          role="dialog"
+          aria-modal="true"
+        >
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
-          />          <aside className="relative flex h-full w-[17.5rem] max-w-[85vw] flex-col justify-between border-r border-[var(--line)] bg-[var(--White)] p-4 shadow-2xl">
+          />
+          <aside className="relative flex h-full w-[17.5rem] max-w-[85vw] flex-col justify-between border-r border-[var(--line)] bg-[var(--White)] p-4 shadow-2xl">
             <div>
               <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 pt-2">
                 <Link
@@ -137,22 +198,39 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
                   aria-label="Fermer le menu"
                   className="rounded-lg p-1.5 text-[var(--muted)] hover:bg-[var(--paper)]"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
 
-              <nav aria-label="Menu mobile dashboard" className="mt-4 flex flex-col gap-1.5">
+              <nav
+                aria-label="Menu mobile dashboard"
+                className="mt-4 flex flex-col gap-1.5"
+              >
                 {moduleItems.map((item) => {
                   const href = item.root ? `/${item.root}` : "/";
                   const isSelected =
                     href === "/"
                       ? currentPage === "/"
-                      : currentPage === href || currentPage.startsWith(`${href}/`);
+                      : currentPage === href ||
+                        currentPage.startsWith(`${href}/`);
 
                   return (
-                    <div key={item.root || "home"} onClick={() => setMobileMenuOpen(false)}>
+                    <div
+                      key={item.root || "home"}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       <NavItem
                         root={item.root}
                         name={item.name}
@@ -194,7 +272,11 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
                     strokeWidth={1.8}
                     aria-hidden="true"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
+                    />
                   </svg>
                 </button>
               </div>
@@ -270,7 +352,11 @@ export default function LateralNavBar({ className = "" }: LateralNavBarProps) {
                 strokeWidth={1.8}
                 aria-hidden="true"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
+                />
               </svg>
             </button>
           </div>

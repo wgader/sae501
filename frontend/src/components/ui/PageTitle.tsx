@@ -1,15 +1,15 @@
-import type { HTMLAttributes, ReactNode } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import type { HTMLAttributes, ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-export const pageTitleVariants = cva('flex items-center gap-[0.63rem]');
+export const pageTitleVariants = cva("flex items-center gap-2.5");
 
 export const pageTitleBarVariants = cva(
-  'h-[0.19rem] w-[1.88rem] rounded-full bg-[#146E67]',
+  "h-0.5 w-accent-line rounded-full bg-primary",
 );
 
 export const pageTitleTextVariants = cva(
-  'text-[0.81rem] font-bold uppercase tracking-[0.13rem] text-black',
+  "text-meta font-bold uppercase tracking-title text-black",
 );
 
 export interface PageTitleDataProps {
@@ -17,7 +17,8 @@ export interface PageTitleDataProps {
 }
 
 export interface PageTitleProps
-  extends HTMLAttributes<HTMLDivElement>,
+  extends
+    HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof pageTitleVariants> {
   children?: ReactNode;
 }
@@ -30,7 +31,10 @@ export default function PageTitle({
 }: PageTitleDataProps & PageTitleProps) {
   return (
     <div className={cn(pageTitleVariants(), className)} {...props}>
-      <span className={cn(pageTitleBarVariants())} aria-hidden="true" />
+      <span
+        className={cn(pageTitleBarVariants())}
+        aria-hidden="true"
+      />
       <p className={cn(pageTitleTextVariants())}>
         {title}
       </p>
@@ -38,4 +42,3 @@ export default function PageTitle({
     </div>
   );
 }
-

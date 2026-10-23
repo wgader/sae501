@@ -25,9 +25,9 @@ export const passwordRequirementsVariants = cva(
 export const passwordRuleItemVariants = cva('transition-colors', {
   variants: {
     status: {
-      valid: 'text-[#0b644d] marker:text-[#0b644d]',
-      invalid: 'text-[#b54b4b] marker:text-[#b54b4b]',
-      idle: 'text-[#6d746e] marker:text-[#d9ded9]',
+      valid: 'text-primary marker:text-primary',
+      invalid: 'text-danger marker:text-danger',
+      idle: 'text-muted marker:text-line',
     },
   },
   defaultVariants: {
@@ -69,4 +69,4 @@ export default function PasswordRequirements({
       })}
     </ul>
   );
-}
+}

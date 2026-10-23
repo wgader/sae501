@@ -35,10 +35,10 @@ export const isSameDay = (d1: Date, d2: Date) => {
 
 const getRoomBg = (colorClass: string) => {
   const map: Record<string, string> = {
-    'room-blue': 'bg-[var(--Mint-Cream)]',
-    'room-green': 'bg-[var(--Lime-Cream)]',
+    'room-blue': 'bg-primary-soft',
+    'room-green': 'bg-accent',
     'room-orange': 'bg-amber-200',
-    'room-sage': 'bg-[var(--Pale-Sage)]',
+    'room-sage': 'bg-sage',
   };
   return map[colorClass] || 'bg-transparent';
 };
@@ -93,43 +93,43 @@ export default function RoomCalendar({
   onNextStep,
   className,
 }: RoomCalendarDataProps & RoomCalendarProps) {
-  const [viewDate, setViewDate] = useState(new Date());
+  const today = useMemo(() => new Date(), []);
+  const [viewDate, setViewDate] = useState(() => new Date());
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
-  const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
   const [roomFilter, setRoomFilter] = useState('Toutes les salles');
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
 
   const displayDays = useMemo(() => {
-    const baseDate = new Date(viewDate);
-    const year = baseDate.getFullYear();
-    const month = baseDate.getMonth();
-
-    if (calendarView === 'month') {
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const firstDay = new Date(year, month, 1).getDay();
-      const offset = firstDay === 0 ? 6 : firstDay - 1;
-
-      const days = [];
-      for (let i = 0; i < offset; i++) days.push(null);
-      for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
-      return days;
+    if (calendarView === 'day') {
+      return [new Date(viewDate)];
     }
 
     if (calendarView === 'week') {
-      const day = baseDate.getDay();
-      const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1);
-      const monday = new Date(year, month, diff);
-
       const days = [];
+      const current = new Date(viewDate);
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(current.setDate(diff));
+
       for (let i = 0; i < 7; i++) {
-        days.push(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i));
+        const next = new Date(monday);
+        next.setDate(monday.getDate() + i);
+        days.push(next);
       }
       return days;
     }
 
-    return [baseDate];
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const padding = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+    const days: (Date | null)[] = [];
+    for (let i = 0; i < padding; i++) days.push(null);
+    for (let i = 1; i <= totalDays; i++) days.push(new Date(year, month, i));
+
+    return days;
   }, [viewDate, calendarView]);
 
   const handlePrev = () => {
@@ -169,12 +169,12 @@ export default function RoomCalendar({
 
   return (
     <section className={cn('mt-8 mb-6', className)} aria-label="Calendrier de réservation des salles">
-      <header className="mb-8 flex items-center justify-center gap-4 text-xl font-black uppercase tracking-widest text-[var(--ink)] sm:text-2xl">
+      <header className="mb-8 flex items-center justify-center gap-4 text-xl font-black uppercase tracking-widest text-ink sm:text-2xl">
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => handleYearChange(-1)}
-            className="p-1 text-[var(--muted)] transition-colors hover:text-[var(--ink)] cursor-pointer"
+            className="p-1 text-muted transition-colors hover:text-ink cursor-pointer"
             aria-label="Année précédente"
           >
             <IconDoubleChevronLeft className="h-4 w-4" />
@@ -182,7 +182,7 @@ export default function RoomCalendar({
           <button
             type="button"
             onClick={handlePrev}
-            className="p-1 text-[var(--ink)] transition-opacity hover:opacity-70 cursor-pointer"
+            className="p-1 text-ink transition-opacity hover:opacity-70 cursor-pointer"
             aria-label="Mois précédent"
           >
             <IconChevronLeft className="h-4 w-4" />
@@ -193,7 +193,7 @@ export default function RoomCalendar({
           <button
             type="button"
             onClick={handleNext}
-            className="p-1 text-[var(--ink)] transition-opacity hover:opacity-70 cursor-pointer"
+            className="p-1 text-ink transition-opacity hover:opacity-70 cursor-pointer"
             aria-label="Mois suivant"
           >
             <IconChevronRight className="h-4 w-4" />
@@ -201,7 +201,7 @@ export default function RoomCalendar({
           <button
             type="button"
             onClick={() => handleYearChange(1)}
-            className="p-1 text-[var(--muted)] transition-colors hover:text-[var(--ink)] cursor-pointer"
+            className="p-1 text-muted transition-colors hover:text-ink cursor-pointer"
             aria-label="Année suivante"
           >
             <IconDoubleChevronRight className="h-4 w-4" />
@@ -219,10 +219,10 @@ export default function RoomCalendar({
               setRoomFilter(filter);
               setIsDayMenuOpen(false);
             }}
-            className={`shrink-0 rounded-[4px] border px-4 py-3 text-[0.63rem] font-bold uppercase tracking-[0.15em] transition-all cursor-pointer sm:text-[0.69rem] ${
+            className={`shrink-0 rounded-[4px] border px-4 py-3 text-caption font-bold uppercase tracking-label transition-all cursor-pointer sm:text-meta ${
               roomFilter === filter
-                ? 'border-[var(--Mosaic-Tile)] bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                : 'border-[var(--line)] bg-[var(--White)] text-[var(--ink)] hover:border-[var(--Mosaic-Tile)] hover:bg-[var(--Pale-Sage)]/40'
+                ? 'border-primary bg-primary text-white shadow-xs'
+                : 'border-line bg-white text-ink hover:border-primary hover:bg-primary-soft'
             }`}
           >
             {filter}
@@ -242,7 +242,7 @@ export default function RoomCalendar({
             setRoomFilter(e.target.value);
             setIsDayMenuOpen(false);
           }}
-          className="w-full appearance-none rounded-[4px] border border-[var(--ink)] bg-[var(--White)] px-4 py-3 text-[0.69rem] font-bold uppercase tracking-[0.15em] text-[var(--ink)] outline-none focus:border-[var(--Mosaic-Tile)] focus:ring-1 focus:ring-[var(--Mosaic-Tile)]"
+          className="w-full appearance-none rounded-[4px] border border-ink bg-white px-4 py-3 text-meta font-bold uppercase tracking-label text-ink outline-none focus:border-primary focus:ring-1 focus:ring-primary"
         >
           {roomFilters.map((filter) => (
             <option key={filter} value={filter}>
@@ -250,19 +250,19 @@ export default function RoomCalendar({
             </option>
           ))}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[var(--ink)]" aria-hidden="true">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-ink" aria-hidden="true">
           <IconChevronRight className="h-4 w-4 rotate-90" />
         </div>
       </div>
 
       {/* Onglets vues: Mois, Semaine, Jour */}
-      <div className="mb-6 flex gap-6 border-b border-[var(--line)] sm:gap-8">
+      <div className="mb-6 flex gap-6 border-b border-line sm:gap-8">
         <button
           type="button"
           className={`pb-3 text-sm transition-colors cursor-pointer ${
             calendarView === 'month'
-              ? 'border-b-2 border-[var(--ink)] font-bold text-[var(--ink)]'
-              : 'font-normal text-[var(--muted)] hover:text-[var(--ink)]'
+              ? 'border-b-2 border-ink font-bold text-ink'
+              : 'font-normal text-muted hover:text-ink'
           }`}
           onClick={() => setCalendarView('month')}
         >
@@ -272,8 +272,8 @@ export default function RoomCalendar({
           type="button"
           className={`pb-3 text-sm transition-colors cursor-pointer ${
             calendarView === 'week'
-              ? 'border-b-2 border-[var(--ink)] font-bold text-[var(--ink)]'
-              : 'font-normal text-[var(--muted)] hover:text-[var(--ink)]'
+              ? 'border-b-2 border-ink font-bold text-ink'
+              : 'font-normal text-muted hover:text-ink'
           }`}
           onClick={() => setCalendarView('week')}
         >
@@ -283,8 +283,8 @@ export default function RoomCalendar({
           type="button"
           className={`pb-3 text-sm transition-colors cursor-pointer ${
             calendarView === 'day'
-              ? 'border-b-2 border-[var(--ink)] font-bold text-[var(--ink)]'
-              : 'font-normal text-[var(--muted)] hover:text-[var(--ink)]'
+              ? 'border-b-2 border-ink font-bold text-ink'
+              : 'font-normal text-muted hover:text-ink'
           }`}
           onClick={() => setCalendarView('day')}
         >
@@ -293,14 +293,14 @@ export default function RoomCalendar({
       </div>
 
       {/* Grille du calendrier */}
-      <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--White)] shadow-xs">
+      <div className="overflow-hidden rounded-xl border border-line bg-white shadow-xs">
         {calendarView !== 'day' && (
-          <header className="grid grid-cols-1 border-b border-[var(--line)] bg-[var(--paper)] sm:grid-cols-7">
+          <div className="hidden grid-cols-7 border-b border-line bg-paper sm:grid">
             {calendarView === 'month' &&
               weekDaysShort.map((day) => (
                 <div
                   key={day}
-                  className="hidden border-r border-[var(--line)] py-2.5 text-center text-[0.69rem] font-bold uppercase tracking-widest text-[var(--muted)] last:border-r-0 sm:block"
+                  className="border-r border-line py-2.5 text-center text-meta font-bold uppercase tracking-widest text-muted last:border-r-0"
                 >
                   {day}
                 </div>
@@ -311,16 +311,16 @@ export default function RoomCalendar({
                   d && (
                     <div
                       key={i}
-                      className="hidden border-r border-[var(--line)] py-3 text-center last:border-r-0 sm:block"
+                      className="border-r border-line py-3 text-center last:border-r-0"
                     >
-                      <span className="block text-[0.63rem] font-bold uppercase tracking-widest text-[var(--muted)]">
+                      <span className="block text-caption font-bold uppercase tracking-widest text-muted">
                         {weekDaysShort[d.getDay()]}
                       </span>
-                      <span className="mt-0.5 block text-lg font-black text-[var(--ink)]">{d.getDate()}</span>
+                      <span className="mt-0.5 block text-lg font-black text-ink">{d.getDate()}</span>
                     </div>
                   ),
               )}
-          </header>
+          </div>
         )}
 
         <div className={`grid ${calendarView === 'day' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-7'}`}>
@@ -329,7 +329,7 @@ export default function RoomCalendar({
               return (
                 <div
                   key={index}
-                  className="hidden border-r border-b border-[var(--line)] bg-[var(--paper)]/50 sm:block"
+                  className="hidden border-r border-b border-line bg-paper/50 sm:block"
                 />
               );
             }
@@ -348,28 +348,28 @@ export default function RoomCalendar({
                   setIsDayMenuOpen(true);
                 }}
                 className={`
-                  group relative flex flex-col border-b border-[var(--line)] transition-colors sm:border-r
-                  ${calendarView === 'week' ? 'min-h-[10rem]' : calendarView === 'month' ? 'min-h-[6.88rem]' : 'min-h-[18.75rem]'}
+                  group relative flex flex-col border-b border-line transition-colors sm:border-r
+                  ${calendarView === 'week' ? 'min-h-40' : calendarView === 'month' ? 'min-h-28' : 'min-h-75'}
                   ${
                     isPast
-                      ? 'cursor-not-allowed bg-[var(--paper)] opacity-60'
+                      ? 'cursor-not-allowed bg-paper opacity-60'
                       : isSelected
-                        ? 'cursor-pointer bg-[var(--Pale-Sage)]/40 ring-2 ring-inset ring-[var(--Mosaic-Tile)]'
-                        : 'cursor-pointer bg-[var(--White)] hover:bg-[var(--paper)]'
+                        ? 'cursor-pointer bg-primary-soft ring-2 ring-inset ring-primary'
+                        : 'cursor-pointer bg-white hover:bg-paper'
                   }
                 `}
               >
                 <header
                   className={`
                   flex items-center justify-between p-3 sm:p-2.5 
-                  ${calendarView === 'day' ? 'border-b border-[var(--line)] bg-[var(--paper)] p-4' : ''}
-                  ${calendarView === 'week' ? 'border-b border-[var(--line)] bg-[var(--paper)] sm:hidden' : ''}
-                  ${calendarView === 'month' ? 'border-b border-[var(--line)] bg-[var(--paper)] sm:border-none sm:bg-transparent' : ''}
+                  ${calendarView === 'day' ? 'border-b border-line bg-paper p-4' : ''}
+                  ${calendarView === 'week' ? 'border-b border-line bg-paper sm:hidden' : ''}
+                  ${calendarView === 'month' ? 'border-b border-line bg-paper sm:border-none sm:bg-transparent' : ''}
                 `}
                 >
                   <div className="flex items-center gap-3 sm:gap-0">
                     {calendarView !== 'day' && (
-                      <span className="w-10 text-xs font-bold uppercase tracking-widest text-[var(--muted)] sm:hidden">
+                      <span className="w-10 text-xs font-bold uppercase tracking-widest text-muted sm:hidden">
                         {weekDaysShort[dateObj.getDay()]}
                       </span>
                     )}
@@ -378,8 +378,8 @@ export default function RoomCalendar({
                       className={`
                       flex items-center justify-center font-bold 
                       ${calendarView === 'day' ? 'text-xl' : 'h-7 w-7 rounded-full text-sm'}
-                      ${isToday && !isSelected ? 'bg-[var(--ink)] text-[var(--White)]' : ''}
-                      ${isSelected && calendarView !== 'day' ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)]' : 'text-[var(--ink)]'}
+                      ${isToday && !isSelected ? 'bg-ink text-white' : ''}
+                      ${isSelected && calendarView !== 'day' ? 'bg-primary text-white' : 'text-ink'}
                     `}
                     >
                       {calendarView === 'day'
@@ -389,7 +389,7 @@ export default function RoomCalendar({
                   </div>
 
                   {calendarView === 'day' && (
-                    <span className="rounded-md border border-[var(--line)] bg-[var(--White)] px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
+                    <span className="rounded-control border border-line bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-muted">
                       {dayReservations.length} réservation(s)
                     </span>
                   )}
@@ -406,14 +406,14 @@ export default function RoomCalendar({
                         key={idx}
                         className={`flex items-center gap-2 ${
                           calendarView === 'day'
-                            ? 'rounded-md border border-[var(--line)] bg-[var(--White)] p-4 shadow-xs'
+                            ? 'rounded-control border border-line bg-white p-4 shadow-xs'
                             : ''
                         }`}
                       >
                         <span className={`h-2 w-2 shrink-0 rounded-full ${getRoomBg(room.color)}`} />
                         <span
-                          className={`font-bold uppercase leading-tight text-[var(--ink)] ${
-                            calendarView === 'day' ? 'text-sm' : 'truncate text-[0.56rem] sm:text-[0.63rem]'
+                          className={`font-bold uppercase leading-tight text-ink ${
+                            calendarView === 'day' ? 'text-sm' : 'truncate text-caption'
                           }`}
                         >
                           {calendarView === 'month' ? room.name.split(' ').slice(1).join(' ') : room.name}
@@ -422,8 +422,8 @@ export default function RoomCalendar({
                     ))
                   ) : (
                     <div
-                      className={`flex h-full items-center justify-center font-medium italic text-[var(--muted)] ${
-                        calendarView === 'day' ? 'text-base' : 'text-[0.63rem]'
+                      className={`flex h-full items-center justify-center font-medium italic text-muted ${
+                        calendarView === 'day' ? 'text-base' : 'text-caption'
                       }`}
                     >
                       Aucune réservation
@@ -432,7 +432,7 @@ export default function RoomCalendar({
                 </div>
 
                 {!isPast && (
-                  <div className="absolute inset-x-0 bottom-0 h-1 bg-[var(--Mosaic-Tile)] opacity-0 transition-opacity group-hover:opacity-100" />
+                  <div className="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 transition-opacity group-hover:opacity-100" />
                 )}
               </article>
             );
@@ -445,12 +445,12 @@ export default function RoomCalendar({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink)]/40 p-4 backdrop-blur-xs animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-xs animate-in fade-in"
         >
-          <div className="w-full max-w-sm overflow-hidden rounded-xl bg-[var(--White)] shadow-2xl duration-200 animate-in zoom-in-95">
-            <header className="flex items-center justify-between bg-[var(--Mosaic-Tile)] p-5 text-[var(--White)]">
+          <div className="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl duration-200 animate-in zoom-in-95">
+            <header className="flex items-center justify-between bg-primary p-5 text-white">
               <div>
-                <p className="mb-0.5 text-[0.63rem] font-bold uppercase tracking-widest opacity-80">
+                <p className="mb-0.5 text-caption font-bold uppercase tracking-widest opacity-80">
                   Réservation pour le
                 </p>
                 <h3 className="text-xl font-black">{selectedDateFull}</h3>
@@ -470,7 +470,7 @@ export default function RoomCalendar({
             <div className="flex flex-col gap-4 p-6 text-center">
               {roomFilter === 'Toutes les salles' ? (
                 <>
-                  <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]">
+                  <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -480,12 +480,12 @@ export default function RoomCalendar({
                       />
                     </svg>
                   </div>
-                  <strong className="text-xl font-black text-[var(--ink)]">{rooms.length} salles au catalogue</strong>
-                  <p className="text-xs text-[var(--muted)]">Pour la journée complète.</p>
+                  <strong className="text-xl font-black text-ink">{rooms.length} salles au catalogue</strong>
+                  <p className="text-xs text-muted">Pour la journée complète.</p>
                 </>
               ) : (
                 <>
-                  <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]">
+                  <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
                     <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -495,17 +495,17 @@ export default function RoomCalendar({
                       />
                     </svg>
                   </div>
-                  <strong className="text-xl font-black uppercase text-[var(--ink)]">
+                  <strong className="text-xl font-black uppercase text-ink">
                     {visibleRooms[0]?.name ?? rooms[0].name}
                   </strong>
-                  <p className="text-xs text-[var(--muted)]">
+                  <p className="text-xs text-muted">
                     Voir la disponibilité de cette salle pour la journée.
                   </p>
                 </>
               )}
 
               <button
-                className="mt-2 w-full rounded-md bg-[var(--ink)] py-3.5 text-xs font-bold uppercase tracking-widest text-[var(--White)] transition-colors hover:bg-[var(--Mosaic-Tile)] cursor-pointer"
+                className="mt-2 w-full rounded-control bg-ink py-3.5 text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-primary cursor-pointer"
                 type="button"
                 onClick={() => {
                   setIsDayMenuOpen(false);
@@ -520,9 +520,9 @@ export default function RoomCalendar({
       )}
 
       {selectedDate && (
-        <aside className="room-selection-line mt-6 flex justify-between border-l-4 border-[var(--Mosaic-Tile)] bg-[var(--White)] p-4 text-sm text-[var(--muted)] shadow-xs">
+        <aside className="room-selection-line mt-6 flex justify-between border-l-4 border-primary bg-white p-4 text-sm text-muted shadow-xs">
           <span>Date choisie</span>
-          <strong className="text-[var(--Mosaic-Tile)]">{selectedDateFull}</strong>
+          <strong className="text-primary">{selectedDateFull}</strong>
         </aside>
       )}
     </section>

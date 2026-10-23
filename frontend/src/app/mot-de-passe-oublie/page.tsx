@@ -22,45 +22,45 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-row font-sans text-[var(--ink)]">
-      <aside className="hidden min-h-screen w-[clamp(300px,32vw,440px)] shrink-0 flex-col bg-[var(--Mosaic-Tile)] px-[clamp(24px,3vw,56px)] pt-[32px] text-[var(--White)] lg:flex">
+    <div className="flex min-h-screen w-full flex-row font-sans text-ink">
+      <aside className="hidden min-h-screen w-[clamp(18.75rem,32vw,27.5rem)] shrink-0 flex-col bg-primary px-[clamp(1.5rem,3vw,3.5rem)] pt-8 text-white lg:flex">
         <BackButton />
 
-        <div className="mt-[clamp(40px,6vh,64px)] flex items-center gap-[10px]">
-          <span className="h-[3px] w-[24px] rounded-full bg-[var(--Lime-Cream)]" aria-hidden="true" />
-          <p className="text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-[var(--White)]">
+        <div className="mt-[clamp(2.5rem,6vh,4rem)] flex items-center gap-2.5">
+          <span className="h-0.5 w-6 rounded-full bg-accent" aria-hidden="true" />
+          <p className="text-label font-bold uppercase tracking-section text-white">
             Espace associations
           </p>
         </div>
 
-        <h2 className="mt-6 max-w-[340px] text-[clamp(2.125rem,3.2vw,3rem)] font-black leading-[1.05] tracking-[-0.03em] text-[var(--White)]">
+        <h2 className="mt-6 max-w-85 text-[clamp(2.125rem,3.2vw,3rem)] font-black leading-[1.05] tracking-display text-white">
           <span className="block">Réinitialiser mon</span>
-          <span className="block text-[var(--Lime-Cream)]">mot de passe.</span>
+          <span className="block text-accent">mot de passe.</span>
         </h2>
 
-        <p className="mt-5 max-w-[340px] text-[0.9375rem] leading-[1.6] text-[var(--White)]/90">
+        <p className="mt-5 max-w-85 text-body leading-copy text-white/90">
           Recevez un lien sécurisé par email pour définir un nouveau mot de passe
           pour votre compte association.
         </p>
       </aside>
 
-      <main className="flex min-w-0 flex-1 items-center justify-center bg-[var(--White)] px-6 py-10 sm:px-12 lg:px-16">
-        <section className="w-full max-w-[480px]">
+      <main className="flex min-w-0 flex-1 items-center justify-center bg-white px-6 py-10 sm:px-12 lg:px-16">
+        <section className="w-full max-w-lg">
           <div className="mb-6 lg:hidden">
-            <BackButton className="text-[var(--ink)]" />
+            <BackButton className="text-ink" />
           </div>
 
           <header className="mb-8">
-            <h1 className="text-[clamp(1.75rem,2.8vw,2.5rem)] font-black leading-[1.08] tracking-[-0.03em] text-[var(--ink)]">
+            <h1 className="text-[clamp(1.75rem,2.8vw,2.5rem)] font-black leading-[1.08] tracking-display text-ink">
               Mot de passe oublié
             </h1>
-            <p className="mt-2 text-[0.875rem] leading-[1.5] text-[var(--muted)]">
+            <p className="mt-2 text-body-sm leading-normal text-muted">
               Saisissez l&apos;adresse électronique associée à votre compte association.
             </p>
           </header>
 
           {isSubmitted ? (
-            <div className="rounded-[16px] border border-emerald-200 bg-emerald-50/70 p-6 text-center">
+            <div className="rounded-card border border-emerald-200 bg-emerald-50/70 p-6 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 href="/connexion"
-                className="mt-5 inline-flex h-[2.75rem] items-center justify-center rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] transition-opacity hover:opacity-90"
+                className="mt-5 inline-flex h-control-compact items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover"
               >
                 Retour à la connexion
               </Link>
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex h-[3rem] w-full items-center justify-center rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-[var(--White)] shadow-xs transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-12 w-full items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoading ? 'Envoi en cours...' : 'Envoyer le lien de réinitialisation'}
               </button>
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
               <div className="pt-2 text-center">
                 <Link
                   href="/connexion"
-                  className="text-[0.875rem] font-semibold text-[var(--ink)] underline underline-offset-4 transition-colors hover:text-[var(--Mosaic-Tile)]"
+                  className="text-body-sm font-semibold text-ink underline underline-offset-4 transition-colors hover:text-primary"
                 >
                   Retour à la connexion
                 </Link>

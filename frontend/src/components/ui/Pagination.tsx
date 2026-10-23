@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 export const paginationNavVariants = cva('', {
   variants: {
     fixed: {
-      true: 'fixed bottom-0 right-0 left-0 z-20 border-t border-[var(--line)] bg-[var(--White)]/95 backdrop-blur-md px-6 py-3.5 shadow-[0_-0.25rem_1rem_rgba(0,0,0,0.06)]',
-      false: 'mt-8 flex flex-col gap-4 border-t border-[var(--line)] pt-6 sm:flex-row sm:items-center sm:justify-between text-xs',
+      true: 'fixed bottom-0 right-0 left-0 z-20 border-t border-line bg-white/95 backdrop-blur-md px-6 py-3.5 shadow-[0_-0.25rem_1rem_rgba(0,0,0,0.06)]',
+      false: 'mt-8 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between text-xs',
     },
     withAdminSidebar: {
       true: '',
@@ -19,7 +19,7 @@ export const paginationNavVariants = cva('', {
     {
       fixed: true,
       withAdminSidebar: true,
-      className: 'lg:left-[15.63rem]',
+      className: 'lg:left-sidebar-wide',
     },
   ],
   defaultVariants: {
@@ -33,8 +33,8 @@ export const paginationButtonVariants = cva(
   {
     variants: {
       isCurrent: {
-        true: 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs',
-        false: 'border border-[var(--line)] bg-[var(--White)] text-[var(--ink)] hover:bg-[var(--paper)]',
+        true: 'bg-primary text-white shadow-xs',
+        false: 'border border-line bg-white text-ink hover:bg-paper',
       },
     },
     defaultVariants: {
@@ -44,7 +44,7 @@ export const paginationButtonVariants = cva(
 );
 
 export const paginationNavBtnVariants = cva(
-  'inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 font-bold uppercase tracking-wider text-[var(--ink)] transition hover:bg-[var(--paper)] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer',
+  'inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-white px-3 font-bold uppercase tracking-wider text-ink transition hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer',
 );
 
 export interface PaginationDataProps {
@@ -99,8 +99,8 @@ export default function Pagination({
 
   const content = (
     <>
-      <span className="font-semibold text-[var(--muted)]">
-        Affichage de <strong className="text-[var(--ink)]">{startItem}</strong> à <strong className="text-[var(--ink)]">{endItem}</strong> sur <strong className="text-[var(--ink)]">{totalItems}</strong> {pluralLabel}
+      <span className="font-semibold text-muted">
+        Affichage de <strong className="text-ink">{startItem}</strong> à <strong className="text-ink">{endItem}</strong> sur <strong className="text-ink">{totalItems}</strong> {pluralLabel}
       </span>
 
       <ul className="flex flex-wrap items-center gap-1.5 p-0 list-none">
@@ -121,7 +121,7 @@ export default function Pagination({
         {pageNumbers.map((p, idx) => {
           if (typeof p === 'string') {
             return (
-              <li key={`ellipsis-${idx}`} className="flex h-9 w-6 items-center justify-center text-[var(--muted)]" aria-hidden="true">
+              <li key={`ellipsis-${idx}`} className="flex h-9 w-6 items-center justify-center text-muted" aria-hidden="true">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <circle cx="5" cy="12" r="2" />
                   <circle cx="12" cy="12" r="2" />
@@ -179,4 +179,3 @@ export default function Pagination({
     </nav>
   );
 }
-

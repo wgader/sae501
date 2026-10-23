@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
-import AdminSidebar from './AdminSidebar';
-import AdminHeader from './AdminHeader';
+import { ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import AdminSidebar from "./AdminSidebar";
+import AdminHeader from "./AdminHeader";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -23,21 +23,21 @@ export default function AdminLayout({
 
   const token = useSyncExternalStore(
     emptySubscribe,
-    () => localStorage.getItem('admin_token'),
-    () => undefined
+    () => localStorage.getItem("admin_token"),
+    () => undefined,
   );
 
   useEffect(() => {
     if (token === null) {
-      router.replace('/admin');
+      router.replace("/admin");
     }
   }, [token, router]);
 
   useEffect(() => {
     const prevHtmlOverflow = document.documentElement.style.overflow;
     const prevBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
 
     return () => {
       document.documentElement.style.overflow = prevHtmlOverflow;
@@ -47,8 +47,10 @@ export default function AdminLayout({
 
   if (token === undefined) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--Mosaic-Tile)] text-[var(--White)]">
-        <p className="text-sm font-semibold tracking-wider uppercase">Chargement de l&apos;administration...</p>
+      <main className="flex min-h-screen items-center justify-center bg-primary text-white">
+        <p className="text-sm font-semibold tracking-wider uppercase">
+          Chargement de l&apos;administration...
+        </p>
       </main>
     );
   }
@@ -64,13 +66,17 @@ export default function AdminLayout({
       </aside>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 flex lg:hidden"
+          role="dialog"
+          aria-modal="true"
+        >
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative flex h-full w-[270px] max-w-[85vw] flex-col shadow-2xl">
+          <aside className="relative flex h-full w-68 max-w-[85vw] flex-col shadow-2xl">
             <AdminSidebar onNavigate={() => setMobileMenuOpen(false)} />
           </aside>
         </div>

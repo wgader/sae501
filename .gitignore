@@ -30,5 +30,4 @@ caddy_config/
 *.swp
 *.swo
 Thumbs.db
-AGENTS.md
 CLAUDE.md

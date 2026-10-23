@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
         {/* ── Aperçu des dernières demandes en attente ─────── */}
         <section aria-labelledby="pending-requests-heading">
           <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="pending-requests-heading" className="text-base font-bold uppercase tracking-wider text-[var(--ink)]">
+            <h2 id="pending-requests-heading" className="text-base font-bold uppercase tracking-wider text-ink">
               Dernières demandes à instruire
             </h2>
 
@@ -114,20 +114,20 @@ export default function AdminDashboardPage() {
           </header>
 
           {loading ? (
-            <article className="py-12 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+            <article className="py-12 text-center text-xs font-bold uppercase tracking-wider text-muted">
               Chargement des dossiers...
             </article>
           ) : pendingItems.length === 0 ? (
-            <article className="rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-8 text-center">
+            <article className="rounded-2xl border border-line bg-paper p-8 text-center">
               <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </span>
-              <h3 className="mt-3 text-sm font-bold text-[var(--ink)]">
+              <h3 className="mt-3 text-sm font-bold text-ink">
                 Toutes les demandes sont à jour !
               </h3>
-              <p className="mt-1 text-xs text-[var(--muted)]">
+              <p className="mt-1 text-xs text-muted">
                 Il n&apos;y a aucune demande d&apos;inscription en attente de traitement actuellement.
               </p>
             </article>
@@ -144,33 +144,30 @@ export default function AdminDashboardPage() {
 
         {/* ── Raccourcis des modules municipaux ────────────── */}
         <section aria-labelledby="modules-shortcuts-heading">
-          <h2 id="modules-shortcuts-heading" className="text-base font-bold uppercase tracking-wider text-[var(--ink)] mb-4">
+          <h2 id="modules-shortcuts-heading" className="text-base font-bold uppercase tracking-wider text-ink mb-4">
             Services & modules municipaux
           </h2>
 
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 p-0 list-none">
             <li>
               <Link
-                href="/admin/module"
+                href="/admin/association"
                 className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-xs"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--Mosaic-Tile)] text-[var(--White)]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-[var(--ink)] group-hover:text-[var(--Mosaic-Tile)] transition-colors">
-                    Modules & Démarches
+                  <span className="block text-sm font-bold text-ink group-hover:text-primary transition-colors">
+                    Annuaire & Droits aux modules
                   </span>
-                  <span className="mt-0.5 block text-xs text-[var(--muted)]">
-                    Supervision des subventions, salles municipales et prêt de matériel.
+                  <span className="mt-0.5 block text-xs text-muted">
+                    Consulter les associations et configurer leurs habilitations aux démarches.
                   </span>
                 </span>
-                <svg className="h-4 w-4 shrink-0 text-[var(--muted)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--Mosaic-Tile)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                <svg className="h-4 w-4 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </Link>
@@ -181,7 +178,7 @@ export default function AdminDashboardPage() {
                 href="/admin/agent"
                 className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-xs"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--Lime-Cream)] text-[var(--ink)]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-ink">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
@@ -190,14 +187,14 @@ export default function AdminDashboardPage() {
                   </svg>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-[var(--ink)] group-hover:text-[var(--Mosaic-Tile)] transition-colors">
+                  <span className="block text-sm font-bold text-ink group-hover:text-primary transition-colors">
                     Agents communaux
                   </span>
-                  <span className="mt-0.5 block text-xs text-[var(--muted)]">
+                  <span className="mt-0.5 block text-xs text-muted">
                     Consulter la liste des agents municipaux habilités aux validations.
                   </span>
                 </span>
-                <svg className="h-4 w-4 shrink-0 text-[var(--muted)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--Mosaic-Tile)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                <svg className="h-4 w-4 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </Link>

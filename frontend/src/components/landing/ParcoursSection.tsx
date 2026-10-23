@@ -27,23 +27,23 @@ export default function ParcoursSection() {
       aria-labelledby="parcours-heading"
       className="scroll-mt-24 py-12 sm:py-16"
     >
-      <div className="mx-auto max-w-[85rem] px-4 sm:px-8 lg:px-12">
-        <div className="rounded-[32px] bg-[var(--Mosaic-Tile)] px-6 py-10 sm:rounded-[40px] sm:px-12 sm:py-14 lg:px-16 lg:py-20">
+      <div className="mx-auto max-w-340 px-4 sm:px-8 lg:px-12">
+        <div className="rounded-panel bg-primary px-6 py-10 sm:rounded-4xl sm:px-12 sm:py-14 lg:px-16 lg:py-20">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
             <header className="lg:col-span-6 xl:col-span-5">
-              <p className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-[var(--Lime-Cream)]">
+              <p className="text-meta font-bold uppercase tracking-eyebrow text-accent">
                 Un parcours clair
               </p>
 
               <h2
                 id="parcours-heading"
-                className="mt-3 text-[clamp(2.125rem,4.25vw,3.25rem)] font-black leading-[1.08] tracking-[-0.03em] text-[var(--White)]"
+                className="mt-3 text-[clamp(2.125rem,4.25vw,3.25rem)] font-black leading-[1.08] tracking-display text-white"
               >
                 Simple dès la<br />
                 première demande.
               </h2>
 
-              <p className="mt-5 max-w-[26rem] text-[1rem] leading-[1.6] text-[var(--White)]/80 sm:text-[1.0625rem]">
+              <p className="mt-5 max-w-104 text-base leading-copy text-white/80 sm:text-body-lg">
                 Votre compte devient le point de repère de l&apos;association pour
                 toutes ses démarches avec la mairie de Feytiat.
               </p>
@@ -51,10 +51,10 @@ export default function ParcoursSection() {
               <div className="mt-8 sm:mt-10">
                 <Link
                   href="/inscription"
-                  className="inline-flex h-[3.125rem] items-center gap-3 rounded-[10px] bg-[var(--White)] px-7 text-xs font-bold uppercase tracking-[0.14em] text-[var(--Mosaic-Tile)] shadow-xs transition-colors hover:bg-[var(--paper)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="inline-flex h-control items-center gap-3 rounded-control bg-white px-7 text-xs font-bold uppercase tracking-label text-primary shadow-xs transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   <span>Ouvrir mon espace</span>
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--Mosaic-Tile)] text-[var(--White)]">
+                  <span className="grid size-6 place-items-center rounded-full bg-primary text-white">
                     <svg
                       className="h-3.5 w-3.5"
                       viewBox="0 0 24 24"
@@ -78,15 +78,15 @@ export default function ParcoursSection() {
                 {steps.map((step, index) => (
                   <li key={step.number}>
                     <div className="flex items-start gap-5 py-6 sm:gap-6 sm:py-7">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[var(--Lime-Cream)] text-[0.875rem] font-black text-[var(--Lime-Cream)]">
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-accent text-body-sm font-black text-accent">
                         {step.number}
                       </span>
 
                       <div>
-                        <h3 className="text-[1.1875rem] font-bold leading-snug text-[var(--White)]">
+                        <h3 className="text-lg font-bold leading-snug text-white">
                           {step.title}
                         </h3>
-                        <p className="mt-1.5 text-[0.875rem] leading-[1.55] text-[var(--White)]/75 sm:text-[0.9375rem]">
+                        <p className="mt-1.5 text-body-sm leading-relaxed text-white/75 sm:text-body">
                           {step.description}
                         </p>
                       </div>

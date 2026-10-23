@@ -27,12 +27,12 @@ const demarches: DemarcheCardData[] = [
     title: 'Gérer vos demandes de subvention',
     description: "Déposez vos dossiers, suivez l'avancement et retrouvez les échanges au même endroit.",
     bgColor: 'bg-[var(--Misty-Rose)]',
-    borderColor: 'border-[var(--ink)]/10',
-    textColor: 'text-[var(--ink)]',
-    tagColor: 'text-[var(--ink)]/60',
-    descColor: 'text-[var(--ink)]/80',
-    buttonBg: 'bg-[var(--ink)]',
-    buttonText: 'text-[var(--White)]',
+    borderColor: 'border-ink/10',
+    textColor: 'text-ink',
+    tagColor: 'text-ink/60',
+    descColor: 'text-ink/80',
+    buttonBg: 'bg-ink',
+    buttonText: 'text-white',
     href: '/connexion',
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -47,13 +47,13 @@ const demarches: DemarcheCardData[] = [
     number: '02',
     title: 'Réserver une salle municipale',
     description: "Consultez les disponibilités et réservez l'espace adapté à votre prochaine manifestation.",
-    bgColor: 'bg-[var(--Lime-Cream)]',
-    borderColor: 'border-[var(--ink)]/10',
-    textColor: 'text-[var(--ink)]',
-    tagColor: 'text-[var(--ink)]/60',
-    descColor: 'text-[var(--ink)]/80',
-    buttonBg: 'bg-[var(--ink)]',
-    buttonText: 'text-[var(--White)]',
+    bgColor: 'bg-accent',
+    borderColor: 'border-ink/10',
+    textColor: 'text-ink',
+    tagColor: 'text-ink/60',
+    descColor: 'text-ink/80',
+    buttonBg: 'bg-ink',
+    buttonText: 'text-white',
     href: '/connexion',
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -70,13 +70,13 @@ const demarches: DemarcheCardData[] = [
     number: '03',
     title: 'Faire une demande de matériel',
     description: "Exprimez vos besoins et organisez simplement la mise à disposition de matériel.",
-    bgColor: 'bg-[var(--Indigo-Bloom)]',
+    bgColor: 'bg-indigo',
     borderColor: 'border-white/20',
-    textColor: 'text-[var(--White)]',
-    tagColor: 'text-[var(--White)]/70',
-    descColor: 'text-[var(--White)]/85',
-    buttonBg: 'bg-[var(--ink)]',
-    buttonText: 'text-[var(--White)]',
+    textColor: 'text-white',
+    tagColor: 'text-white/70',
+    descColor: 'text-white/85',
+    buttonBg: 'bg-ink',
+    buttonText: 'text-white',
     href: '/connexion',
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -92,13 +92,13 @@ const demarches: DemarcheCardData[] = [
     number: '04',
     title: 'Déclarer un événement associatif',
     description: "Transmettez les informations utiles à la mairie pour la bonne tenue de vos événements.",
-    bgColor: 'bg-[var(--Mint-Cream)]',
-    borderColor: 'border-[var(--ink)]/10',
-    textColor: 'text-[var(--ink)]',
-    tagColor: 'text-[var(--ink)]/60',
-    descColor: 'text-[var(--ink)]/80',
-    buttonBg: 'bg-[var(--ink)]',
-    buttonText: 'text-[var(--White)]',
+    bgColor: 'bg-primary-soft',
+    borderColor: 'border-ink/10',
+    textColor: 'text-ink',
+    tagColor: 'text-ink/60',
+    descColor: 'text-ink/80',
+    buttonBg: 'bg-ink',
+    buttonText: 'text-white',
     href: '/connexion',
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -118,21 +118,21 @@ export default function DemarchesSection() {
       aria-labelledby="demarches-heading"
       className="scroll-mt-24 py-16 sm:py-20 lg:py-24"
     >
-      <div className="mx-auto max-w-[85rem] px-4 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-340 px-4 sm:px-8 lg:px-12">
         <header className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="max-w-2xl">
-            <p className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-[var(--moss)]">
+            <p className="text-meta font-bold uppercase tracking-eyebrow text-moss">
               — Tout au même endroit
             </p>
             <h2
               id="demarches-heading"
-              className="mt-3 text-[clamp(1.875rem,3.75vw,2.75rem)] font-black leading-tight tracking-[-0.03em] text-[var(--ink)]"
+              className="mt-3 text-[clamp(1.875rem,3.75vw,2.75rem)] font-black leading-tight tracking-display text-ink"
             >
               Les démarches de votre association, simplement.
             </h2>
           </div>
 
-          <p className="max-w-md text-[0.9375rem] leading-[1.6] text-[var(--muted)]">
+          <p className="max-w-md text-body leading-copy text-muted">
             Plus besoin de chercher le bon formulaire ou de multiplier les
             échanges : votre espace vous guide et conserve l&apos;historique.
           </p>
@@ -142,41 +142,41 @@ export default function DemarchesSection() {
           {demarches.map((card) => (
             <li key={card.id} className="list-none">
               <article
-                className={`group flex min-h-[22rem] h-full flex-col justify-between rounded-[24px] border ${card.borderColor} ${card.bgColor} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
+                className={`group flex min-h-88 h-full flex-col justify-between rounded-card border ${card.borderColor} ${card.bgColor} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className={`text-[0.6875rem] font-bold uppercase tracking-[0.16em] ${card.tagColor}`}>
+                    <span className={`text-label font-bold uppercase tracking-[0.16em] ${card.tagColor}`}>
                       {card.tag}
                     </span>
-                    <span className={`text-[0.6875rem] font-bold uppercase tracking-[0.16em] ${card.tagColor}`}>
+                    <span className={`text-label font-bold uppercase tracking-[0.16em] ${card.tagColor}`}>
                       {card.number}
                     </span>
                   </div>
 
-                  <div className="mt-6 flex h-10 w-10 items-center justify-center rounded-xl bg-black/5">
+                  <div className="mt-6 flex size-10 items-center justify-center rounded-xl bg-black/5">
                     <div className={card.textColor}>{card.icon}</div>
                   </div>
 
-                  <h3 className={`mt-5 text-[1.25rem] font-black leading-[1.15] tracking-[-0.02em] ${card.textColor}`}>
+                  <h3 className={`mt-5 text-xl font-black leading-[1.15] tracking-subheading ${card.textColor}`}>
                     {card.title}
                   </h3>
 
-                  <p className={`mt-3 text-[0.875rem] leading-[1.5] ${card.descColor}`}>
+                  <p className={`mt-3 text-body-sm leading-normal ${card.descColor}`}>
                     {card.description}
                   </p>
                 </div>
 
                 <footer className="mt-6 flex items-center justify-between border-t border-current/15 pt-4">
-                  <span className={`text-[0.6875rem] font-bold uppercase tracking-[0.16em] ${card.textColor}`}>
+                  <span className={`text-label font-bold uppercase tracking-[0.16em] ${card.textColor}`}>
                     Disponible en ligne
                   </span>
 
                   <Link
                     href={card.href}
                     aria-label={`Accéder à : ${card.title}`}
-                    className={`grid h-8 w-8 place-items-center rounded-full ${card.buttonBg} ${card.buttonText} transition-all duration-200 group-hover:scale-110 ${
-                      card.id === 'materiel' ? 'group-hover:bg-[var(--White)] group-hover:text-[var(--Indigo-Bloom)]' : ''
+                    className={`grid size-8 place-items-center rounded-full ${card.buttonBg} ${card.buttonText} transition-all duration-200 group-hover:scale-110 ${
+                      card.id === 'materiel' ? 'group-hover:bg-white group-hover:text-indigo' : ''
                     }`}
                   >
                     <svg

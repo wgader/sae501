@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${lato.variable} flex min-h-screen flex-col md:flex-row bg-[var(--White)] font-sans text-[var(--ink)] antialiased`}
+        className={`${lato.variable} flex min-h-screen flex-col bg-white font-sans text-ink antialiased md:flex-row`}
       >
         {shouldShowLateralNav && <LateralNavBar />}
         <div className="min-w-0 flex-1">{children}</div>
