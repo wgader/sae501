@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ReactNode, useEffect, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
-import AdminSidebar from "./AdminSidebar";
-import AdminHeader from "./AdminHeader";
+import { ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
+import AdminSidebar from './AdminSidebar';
+import AdminHeader from './AdminHeader';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -23,21 +23,21 @@ export default function AdminLayout({
 
   const token = useSyncExternalStore(
     emptySubscribe,
-    () => localStorage.getItem("admin_token"),
+    () => localStorage.getItem('admin_token'),
     () => undefined,
   );
 
   useEffect(() => {
     if (token === null) {
-      router.replace("/admin");
+      router.replace('/admin');
     }
   }, [token, router]);
 
   useEffect(() => {
     const prevHtmlOverflow = document.documentElement.style.overflow;
     const prevBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
 
     return () => {
       document.documentElement.style.overflow = prevHtmlOverflow;
@@ -60,8 +60,8 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="fixed inset-0 z-0 flex h-full w-full overflow-hidden bg-[var(--Mosaic-Tile)] font-sans text-[var(--ink)] antialiased">
-      <aside className="hidden h-full w-[250px] shrink-0 lg:block overflow-hidden">
+    <div className="fixed inset-0 z-0 flex h-full w-full overflow-hidden bg-primary font-sans text-ink antialiased">
+      <aside className="hidden h-full w-sidebar shrink-0 lg:block overflow-hidden">
         <AdminSidebar />
       </aside>
 
@@ -83,16 +83,16 @@ export default function AdminLayout({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
-        <div className="shrink-0">
+        <header className="shrink-0">
           <AdminHeader
             searchTerm={searchTerm}
             onSearchChange={onSearchChange}
             isMobileMenuOpen={mobileMenuOpen}
             onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
           />
-        </div>
+        </header>
 
-        <main className="flex-1 overflow-y-auto rounded-tl-[28px] sm:rounded-tl-[32px] bg-[var(--White)] p-6 sm:p-8 lg:p-8 xl:p-10 shadow-sm">
+        <main className="flex-1 overflow-y-auto rounded-tl-panel sm:rounded-tl-panel-soft bg-white p-6 sm:p-8 lg:p-8 xl:p-10 shadow-xs">
           {children}
         </main>
       </div>

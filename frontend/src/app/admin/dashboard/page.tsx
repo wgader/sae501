@@ -58,35 +58,35 @@ export default function AdminDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
-                iconBgClass="bg-[var(--Lime-Cream)] text-[var(--ink)]"
+                iconBgClass="bg-accent text-ink"
                 actionHref="/admin/inscription"
                 actionLabel="Traiter les demandes"
                 loading={loading}
               />
             </li>
 
-            {/* 2. Total des associations (inversé avec le nombre de salles) */}
+            {/* 2. Total des associations */}
             <li>
               <AdminMetricCard
                 title="Total des associations"
                 value={totalCount}
                 description="Nombre total d'associations répertoriées auprès de la commune."
                 icon={<IconAssociation className="h-5 w-5" />}
-                iconBgClass="bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]"
+                iconBgClass="bg-primary-soft text-primary"
                 actionHref="/admin/association"
                 actionLabel="Consulter l'annuaire"
                 loading={loading}
               />
             </li>
 
-            {/* 3. Nombre de salles (remplace la carte associations validées) */}
+            {/* 3. Nombre de salles */}
             <li>
               <AdminMetricCard
                 title="Salles municipales"
                 value={sallesCount ?? 0}
                 description="Espaces et équipements communaux disponibles à la réservation."
                 icon={<IconSalle className="h-5 w-5" />}
-                iconBgClass="bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]"
+                iconBgClass="bg-primary/15 text-primary"
                 actionHref="/admin/salle"
                 actionLabel="Gérer les salles"
                 loading={sallesLoading}
@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/admin/inscription"
-              className="group inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--Mosaic-Tile)] hover:underline"
+              className="group inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:underline"
             >
               <span>Accéder à toutes les inscriptions</span>
               <svg className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
@@ -118,8 +118,8 @@ export default function AdminDashboardPage() {
               Chargement des dossiers...
             </article>
           ) : pendingItems.length === 0 ? (
-            <article className="rounded-2xl border border-line bg-paper p-8 text-center">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <article className="rounded-card border border-line bg-paper p-8 text-center">
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-pill bg-primary-soft text-primary">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
@@ -152,9 +152,9 @@ export default function AdminDashboardPage() {
             <li>
               <Link
                 href="/admin/association"
-                className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-xs"
+                className="group flex items-start gap-4 rounded-card border border-line bg-paper p-5 transition hover:border-primary/40 hover:shadow-xs"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-primary text-white">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
@@ -176,9 +176,9 @@ export default function AdminDashboardPage() {
             <li>
               <Link
                 href="/admin/agent"
-                className="group flex items-start gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-5 transition hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-xs"
+                className="group flex items-start gap-4 rounded-card border border-line bg-paper p-5 transition hover:border-primary/40 hover:shadow-xs"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-ink">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-accent text-ink">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                     <circle cx="9" cy="7" r="4" />

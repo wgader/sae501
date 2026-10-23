@@ -1,27 +1,24 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
 export const buttonViewVariants = cva(
-  "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors cursor-pointer",
+  'inline-flex h-8 w-8 items-center justify-center rounded-pill transition-colors cursor-pointer',
   {
     variants: {
       variant: {
-        selected:
-          "bg-transparent text-[var(--ink)] hover:bg-[var(--line)]/50 hover:text-[var(--Mosaic-Tile)]",
-        unselected:
-          "bg-transparent text-[var(--muted)] hover:bg-[var(--line)]/50 hover:text-[var(--ink)]",
+        selected: 'bg-transparent text-ink hover:bg-line/50 hover:text-primary',
+        unselected: 'bg-transparent text-muted hover:bg-line/50 hover:text-ink',
       },
     },
     defaultVariants: {
-      variant: "unselected",
+      variant: 'unselected',
     },
   },
 );
 
 export interface ButtonViewProps
-  extends
-    ButtonHTMLAttributes<HTMLButtonElement>,
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonViewVariants> {}
 
 export const ButtonView = forwardRef<HTMLButtonElement, ButtonViewProps>(
@@ -30,8 +27,8 @@ export const ButtonView = forwardRef<HTMLButtonElement, ButtonViewProps>(
       variant,
       className,
       children,
-      type = "button",
-      "aria-label": ariaLabel = "Voir",
+      type = 'button',
+      'aria-label': ariaLabel = 'Voir',
       ...props
     },
     ref,
@@ -50,6 +47,6 @@ export const ButtonView = forwardRef<HTMLButtonElement, ButtonViewProps>(
   },
 );
 
-ButtonView.displayName = "ButtonView";
+ButtonView.displayName = 'ButtonView';
 
 export default ButtonView;

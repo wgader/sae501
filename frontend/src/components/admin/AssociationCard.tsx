@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { type Association } from "@/lib/api";
-import StatusBadge from "@/components/ui/StatusBadge";
+import Link from 'next/link';
+import { type Association } from '@/lib/api';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 interface AssociationCardProps {
   association: Association;
@@ -11,23 +11,23 @@ interface AssociationCardProps {
 export default function AssociationCard({
   association,
   compact = false,
-  className = "",
+  className = '',
 }: AssociationCardProps) {
   const formattedDate = association.createdAt
-    ? new Intl.DateTimeFormat("fr-FR", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+    ? new Intl.DateTimeFormat('fr-FR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       }).format(new Date(association.createdAt))
     : null;
 
   return (
     <Link
       href={`/admin/inscription/${association.id}`}
-      className={`group flex items-center justify-between gap-4 rounded-[18px] border border-[var(--line)] bg-[var(--White)] shadow-xs transition-all duration-200 hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-md ${
-        compact ? "p-4" : "p-5 sm:p-6"
+      className={`group flex items-center justify-between gap-4 rounded-card border border-line bg-white shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-md ${
+        compact ? 'p-4' : 'p-5 sm:p-6'
       } ${className}`}
     >
       <span className="min-w-0 flex-1">
@@ -64,7 +64,7 @@ export default function AssociationCard({
         </span>
       </span>
 
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill text-ink transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary">
         <svg
           className="h-5 w-5"
           fill="none"

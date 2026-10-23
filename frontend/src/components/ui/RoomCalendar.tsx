@@ -219,7 +219,7 @@ export default function RoomCalendar({
               setRoomFilter(filter);
               setIsDayMenuOpen(false);
             }}
-            className={`shrink-0 rounded-[4px] border px-4 py-3 text-caption font-bold uppercase tracking-label transition-all cursor-pointer sm:text-meta ${
+            className={`shrink-0 rounded-xs border px-4 py-3 text-caption font-bold uppercase tracking-label transition-all cursor-pointer sm:text-meta ${
               roomFilter === filter
                 ? 'border-primary bg-primary text-white shadow-xs'
                 : 'border-line bg-white text-ink hover:border-primary hover:bg-primary-soft'
@@ -242,7 +242,7 @@ export default function RoomCalendar({
             setRoomFilter(e.target.value);
             setIsDayMenuOpen(false);
           }}
-          className="w-full appearance-none rounded-[4px] border border-ink bg-white px-4 py-3 text-meta font-bold uppercase tracking-label text-ink outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+          className="w-full appearance-none rounded-xs border border-ink bg-white px-4 py-3 text-meta font-bold uppercase tracking-label text-ink outline-none focus:border-primary focus:ring-1 focus:ring-primary"
         >
           {roomFilters.map((filter) => (
             <option key={filter} value={filter}>

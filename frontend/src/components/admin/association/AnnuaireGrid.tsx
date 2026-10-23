@@ -19,11 +19,11 @@ export default function AnnuaireGrid({
 
   if (associations.length === 0) {
     return (
-      <section className="rounded-[20px] border border-[var(--line)] bg-[var(--paper)] py-16 text-center">
-        <p className="text-base font-bold text-[var(--ink)]">
+      <section className="rounded-card border border-line bg-paper py-16 text-center">
+        <p className="text-base font-bold text-ink">
           Aucune association trouvée
         </p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
+        <p className="mt-1 text-xs text-muted">
           {searchTerm
             ? `Aucun résultat pour la recherche « ${searchTerm} ».`
             : 'Il n’y a aucune association répertoriée pour le moment.'}

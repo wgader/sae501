@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   IconAccueil,
   IconHistorique,
@@ -12,21 +12,21 @@ import {
   IconSubvention,
   IconAssociation,
   IconAgent,
-} from "@/components/ui/NavigationBar/NavigationIcon";
+} from '@/components/ui/NavigationBar/NavigationIcon';
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
 }
 
 const navItems = [
-  { label: "Accueil", href: "/admin/dashboard", icon: IconAccueil },
-  { label: "Inscription", href: "/admin/inscription", icon: IconInscription },
-  { label: "Association", href: "/admin/association", icon: IconAssociation },
-  { label: "Salle", href: "/admin/salle", icon: IconSalle },
-  { label: "Matériel", href: "/admin/materiel", icon: IconMateriel },
-  { label: "Subvention", href: "/admin/subvention", icon: IconSubvention },
-  { label: "Agent", href: "/admin/agent", icon: IconAgent },
-  { label: "Historique", href: "/admin/historique", icon: IconHistorique },
+  { label: 'Accueil', href: '/admin/dashboard', icon: IconAccueil },
+  { label: 'Inscription', href: '/admin/inscription', icon: IconInscription },
+  { label: 'Association', href: '/admin/association', icon: IconAssociation },
+  { label: 'Salle', href: '/admin/salle', icon: IconSalle },
+  { label: 'Matériel', href: '/admin/materiel', icon: IconMateriel },
+  { label: 'Subvention', href: '/admin/subvention', icon: IconSubvention },
+  { label: 'Agent', href: '/admin/agent', icon: IconAgent },
+  { label: 'Historique', href: '/admin/historique', icon: IconHistorique },
 ];
 
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
@@ -34,12 +34,12 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token");
-    router.replace("/admin");
+    localStorage.removeItem('admin_token');
+    router.replace('/admin');
   };
 
   return (
-    <aside className="flex h-full w-full flex-col justify-between overflow-y-auto bg-[var(--Mosaic-Tile)] p-5 text-[var(--White)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex h-full w-full flex-col justify-between overflow-y-auto bg-primary p-5 text-white [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div>
         <Link
           href="/admin/dashboard"
@@ -57,32 +57,32 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
           />
         </Link>
 
-        <nav
-          aria-label="Menu principal administration"
-          className="flex flex-col gap-2"
-        >
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive =
-              pathname === href ||
-              (href !== "/admin/dashboard" && pathname.startsWith(href));
+        <nav aria-label="Menu principal administration">
+          <ul className="flex flex-col gap-2">
+            {navItems.map(({ href, label, icon: Icon }) => {
+              const isActive =
+                pathname === href ||
+                (href !== '/admin/dashboard' && pathname.startsWith(href));
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={onNavigate}
-                aria-current={isActive ? "page" : undefined}
-                className={`flex h-12 items-center gap-3.5 rounded-control px-4 text-body-sm transition-colors ${
-                  isActive
-                    ? "bg-white font-bold text-primary shadow-sm"
-                    : "font-medium text-white/80 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={onNavigate}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex h-12 items-center gap-3.5 rounded-control px-4 text-body-sm transition-colors ${
+                      isActive
+                        ? 'bg-white font-bold text-primary shadow-xs'
+                        : 'font-medium text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span>{label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
       </div>
 
@@ -90,7 +90,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex h-12 w-full items-center gap-3 rounded-control bg-white px-4 text-body-sm font-bold text-primary shadow-sm transition-colors hover:bg-accent"
+          className="flex h-12 w-full items-center gap-3 rounded-control bg-white px-4 text-body-sm font-bold text-primary shadow-xs transition-colors hover:bg-accent cursor-pointer"
         >
           <svg
             className="h-5 w-5 shrink-0"
@@ -109,6 +109,6 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
           <span>Se déconnecter</span>
         </button>
       </div>
-    </aside>
+    </div>
   );
 }

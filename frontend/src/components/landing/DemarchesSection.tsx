@@ -26,7 +26,7 @@ const demarches: DemarcheCardData[] = [
     number: '01',
     title: 'Gérer vos demandes de subvention',
     description: "Déposez vos dossiers, suivez l'avancement et retrouvez les échanges au même endroit.",
-    bgColor: 'bg-[var(--Misty-Rose)]',
+    bgColor: 'bg-Misty-Rose',
     borderColor: 'border-ink/10',
     textColor: 'text-ink',
     tagColor: 'text-ink/60',
@@ -154,7 +154,7 @@ export default function DemarchesSection() {
                     </span>
                   </div>
 
-                  <div className="mt-6 flex size-10 items-center justify-center rounded-xl bg-black/5">
+                  <div className="mt-6 flex size-10 items-center justify-center rounded-control bg-black/5">
                     <div className={card.textColor}>{card.icon}</div>
                   </div>
 
@@ -175,7 +175,7 @@ export default function DemarchesSection() {
                   <Link
                     href={card.href}
                     aria-label={`Accéder à : ${card.title}`}
-                    className={`grid size-8 place-items-center rounded-full ${card.buttonBg} ${card.buttonText} transition-all duration-200 group-hover:scale-110 ${
+                    className={`grid size-8 place-items-center rounded-pill ${card.buttonBg} ${card.buttonText} transition-all duration-200 group-hover:scale-110 ${
                       card.id === 'materiel' ? 'group-hover:bg-white group-hover:text-indigo' : ''
                     }`}
                   >
@@ -184,7 +184,7 @@ export default function DemarchesSection() {
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2.5"
+                      strokeWidth={2.5}
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       aria-hidden="true"

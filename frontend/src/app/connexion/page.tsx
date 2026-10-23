@@ -155,11 +155,11 @@ export default function LoginPage() {
                     ? "Masquer le mot de passe"
                     : "Afficher le mot de passe"
                 }
-                className="absolute right-[14px] top-1/2 flex -translate-y-1/2 items-center justify-center"
+                className="absolute right-3.5 top-1/2 flex -translate-y-1/2 items-center justify-center"
               >
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-[20px] w-[20px]"
+                  className="h-5 w-5"
                   aria-hidden="true"
                   fill="none"
                   stroke="currentColor"

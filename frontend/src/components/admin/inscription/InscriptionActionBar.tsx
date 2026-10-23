@@ -13,8 +13,8 @@ export default function InscriptionActionBar({
   onUpdateStatus,
 }: InscriptionActionBarProps) {
   return (
-    <footer className="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-6 sm:p-8">
-      <span className="text-xs text-[var(--muted)]">
+    <footer className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-line bg-paper p-6 sm:p-8">
+      <span className="text-xs text-muted">
         {status === 'PENDING_VALIDATION'
           ? 'Une décision d’acceptation déclenche l’envoi du lien d’activation à l’association.'
           : status === 'VALIDATED'
@@ -116,4 +116,3 @@ export default function InscriptionActionBar({
     </footer>
   );
 }
-

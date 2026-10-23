@@ -40,7 +40,7 @@ export default function AssociationAccountActions({
 
   return (
     <section className="space-y-4 pt-2">
-      <h3 className="text-sm font-bold text-[var(--Flush-Mahogany)]">
+      <h3 className="text-sm font-bold text-danger">
         Gestion du compte
       </h3>
 
@@ -49,7 +49,7 @@ export default function AssociationAccountActions({
           type="button"
           onClick={() => setModalType('DELETE')}
           disabled={disabled}
-          className="rounded-[8px] bg-[var(--Flush-Mahogany)] px-5 py-2.5 text-xs font-bold text-[var(--White)] transition-colors hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+          className="rounded-control bg-danger px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-danger/90 disabled:opacity-50 cursor-pointer"
         >
           Supprimer le compte
         </button>
@@ -58,13 +58,13 @@ export default function AssociationAccountActions({
           type="button"
           onClick={() => setModalType('SUSPEND')}
           disabled={disabled}
-          className="rounded-[8px] border border-[var(--Flush-Mahogany)] bg-transparent px-5 py-2.5 text-xs font-bold text-[var(--Flush-Mahogany)] transition-colors hover:bg-rose-50/50 disabled:opacity-50 cursor-pointer"
+          className="rounded-control border border-danger bg-transparent px-5 py-2.5 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:opacity-50 cursor-pointer"
         >
           {isSuspended ? 'Réactiver le compte' : 'Suspendre le compte'}
         </button>
       </div>
 
-      <p className="border-t border-[var(--line)] pt-4 text-xs text-[var(--muted)]">
+      <p className="border-t border-line pt-4 text-xs text-muted">
         Les informations non communiquées par l’association sont indiquées « Non renseigné ».
       </p>
 

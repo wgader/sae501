@@ -317,9 +317,9 @@ export function IconDoubleChevronRight({ className = 'h-4 w-4', 'aria-hidden': a
 export function IconPdfFile({ className = 'h-8 w-8', 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg viewBox="0 0 32 36" className={className} fill="none" aria-hidden={ariaHidden}>
-      <path d="M20 2H6C4.89543 2 4 2.89543 4 4V32C4 33.1046 4.89543 34 6 34H26C27.1046 34 28 33.1046 28 32V10L20 2Z" stroke="var(--Mosaic-Tile)" strokeWidth="2" strokeLinejoin="round" fill="var(--paper)" />
-      <path d="M20 2V10H28" stroke="var(--Mosaic-Tile)" strokeWidth="2" strokeLinejoin="round" />
-      <text x="7" y="24" fill="var(--Mosaic-Tile)" fontSize="7" fontWeight="bold" fontFamily="sans-serif">PDF</text>
+      <path d="M20 2H6C4.89543 2 4 2.89543 4 4V32C4 33.1046 4.89543 34 6 34H26C27.1046 34 28 33.1046 28 32V10L20 2Z" className="stroke-primary fill-paper" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M20 2V10H28" className="stroke-primary" strokeWidth="2" strokeLinejoin="round" />
+      <text x="7" y="24" className="fill-primary" fontSize="7" fontWeight="bold" fontFamily="sans-serif">PDF</text>
     </svg>
   );
 }
@@ -327,9 +327,9 @@ export function IconPdfFile({ className = 'h-8 w-8', 'aria-hidden': ariaHidden =
 export function IconImageFile({ className = 'h-8 w-8', 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg viewBox="0 0 32 36" className={className} fill="none" aria-hidden={ariaHidden}>
-      <path d="M20 2H6C4.89543 2 4 2.89543 4 4V32C4 33.1046 4.89543 34 6 34H26C27.1046 34 28 33.1046 28 32V10L20 2Z" stroke="var(--Mosaic-Tile)" strokeWidth="2" strokeLinejoin="round" fill="var(--paper)" />
-      <path d="M20 2V10H28" stroke="var(--Mosaic-Tile)" strokeWidth="2" strokeLinejoin="round" />
-      <text x="7" y="24" fill="var(--Mosaic-Tile)" fontSize="7" fontWeight="bold" fontFamily="sans-serif">IMG</text>
+      <path d="M20 2H6C4.89543 2 4 2.89543 4 4V32C4 33.1046 4.89543 34 6 34H26C27.1046 34 28 33.1046 28 32V10L20 2Z" className="stroke-primary fill-paper" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M20 2V10H28" className="stroke-primary" strokeWidth="2" strokeLinejoin="round" />
+      <text x="7" y="24" className="fill-primary" fontSize="7" fontWeight="bold" fontFamily="sans-serif">IMG</text>
     </svg>
   );
 }
@@ -337,9 +337,9 @@ export function IconImageFile({ className = 'h-8 w-8', 'aria-hidden': ariaHidden
 export function IconGenericFile({ className = 'h-8 w-8', 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg viewBox="0 0 32 36" className={className} fill="none" aria-hidden={ariaHidden}>
-      <path d="M20 2H6C4.89543 2 4 2.89543 4 4V32C4 33.1046 4.89543 34 6 34H26C27.1046 34 28 33.1046 28 32V10L20 2Z" stroke="var(--Mosaic-Tile)" strokeWidth="2" strokeLinejoin="round" fill="var(--paper)" />
-      <path d="M20 2V10H28" stroke="var(--Mosaic-Tile)" strokeWidth="2" strokeLinejoin="round" />
-      <text x="7" y="24" fill="var(--Mosaic-Tile)" fontSize="7" fontWeight="bold" fontFamily="sans-serif">DOC</text>
+      <path d="M20 2H6C4.89543 2 4 2.89543 4 4V32C4 33.1046 4.89543 34 6 34H26C27.1046 34 28 33.1046 28 32V10L20 2Z" className="stroke-primary fill-paper" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M20 2V10H28" className="stroke-primary" strokeWidth="2" strokeLinejoin="round" />
+      <text x="7" y="24" className="fill-primary" fontSize="7" fontWeight="bold" fontFamily="sans-serif">DOC</text>
     </svg>
   );
 }

@@ -12,20 +12,20 @@ function AssociationDetailLayoutContent({ children }: { children: ReactNode }) {
     <AdminLayout>
       <section className="space-y-8">
         {loading ? (
-          <section className="py-20 text-center text-[var(--muted)]" aria-live="polite">
+          <section className="py-20 text-center text-muted" aria-live="polite">
             <svg
-              className="mx-auto h-8 w-8 animate-spin text-[var(--Mosaic-Tile)]"
+              className="mx-auto h-8 w-8 animate-spin text-primary"
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden="true"
             >
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <p className="mt-3 text-xs font-bold uppercase tracking-wider">Chargement de la fiche...</p>
           </section>
         ) : error && !association ? (
-          <section className="rounded-[14px] border border-[var(--Flush-Mahogany)]/30 bg-rose-50/70 p-6 text-center text-[var(--Flush-Mahogany)]">
+          <section className="rounded-card border border-danger/30 bg-rose-50/70 p-6 text-center text-danger">
             <p className="text-sm font-semibold">{error}</p>
           </section>
         ) : association ? (
@@ -37,7 +37,7 @@ function AssociationDetailLayoutContent({ children }: { children: ReactNode }) {
 
             {feedback && (
               <p
-                className="rounded-[10px] border border-[var(--Mosaic-Tile)]/30 bg-[var(--Pale-Sage)]/50 p-4 text-xs font-semibold text-[var(--Mosaic-Tile)]"
+                className="rounded-control border border-primary/30 bg-primary-soft/50 p-4 text-xs font-semibold text-primary"
                 role="status"
               >
                 {feedback}
@@ -46,7 +46,7 @@ function AssociationDetailLayoutContent({ children }: { children: ReactNode }) {
 
             {error && (
               <p
-                className="rounded-[10px] border border-[var(--Flush-Mahogany)]/30 bg-rose-50/70 p-4 text-xs font-semibold text-[var(--Flush-Mahogany)]"
+                className="rounded-control border border-danger/30 bg-rose-50/70 p-4 text-xs font-semibold text-danger"
                 role="alert"
               >
                 {error}

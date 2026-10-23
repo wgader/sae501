@@ -48,12 +48,12 @@ export default function AssociationModulesCard({
   disabled = false,
 }: AssociationModulesCardProps) {
   return (
-    <article className="rounded-[14px] border border-[var(--line)] bg-[var(--White)] p-6 sm:p-7 shadow-xs">
-      <header className="border-b border-[var(--line)] pb-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+    <article className="rounded-card border border-line bg-white p-6 sm:p-7 shadow-xs">
+      <header className="border-b border-line pb-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-ink">
           Modules
         </h2>
-        <p className="mt-1 text-xs text-[var(--muted)]">
+        <p className="mt-1 text-xs text-muted">
           Droits par module
         </p>
       </header>
@@ -66,19 +66,19 @@ export default function AssociationModulesCard({
           return (
             <li
               key={mod.id}
-              className="flex items-center justify-between gap-4 rounded-[12px] border border-[var(--line)] bg-[var(--paper)] p-4 transition-colors"
+              className="flex items-center justify-between gap-4 rounded-soft border border-line bg-paper p-4 transition-colors"
             >
               <div className="flex items-center gap-3.5 min-w-0">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--White)] text-[var(--Mosaic-Tile)] shadow-2xs">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-white text-primary shadow-xs">
                   <Icon className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
-                  <h3 className="truncate text-xs font-bold text-[var(--ink)]">
+                  <h3 className="truncate text-xs font-bold text-ink">
                     {mod.label}
                   </h3>
                   <p
-                    className={`mt-0.5 text-[0.6875rem] font-semibold ${
-                      isChecked ? 'text-[var(--Mosaic-Tile)]' : 'text-[var(--muted)]'
+                    className={`mt-0.5 text-label font-semibold ${
+                      isChecked ? 'text-primary' : 'text-muted'
                     }`}
                   >
                     {isChecked ? 'Accès attribué' : 'Accès désactivé'}

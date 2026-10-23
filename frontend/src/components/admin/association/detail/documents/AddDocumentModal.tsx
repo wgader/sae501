@@ -80,22 +80,22 @@ export default function AddDocumentModal({
       aria-labelledby="add-doc-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-lg rounded-[20px] border border-[var(--line)] bg-[var(--White)] p-6 sm:p-8 shadow-xl">
-        <header className="border-b border-[var(--line)] pb-4">
-          <span className="text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+      <div className="relative w-full max-w-lg rounded-card border border-line bg-white p-6 sm:p-8 shadow-xl">
+        <header className="border-b border-line pb-4">
+          <span className="text-label font-bold uppercase tracking-kicker text-primary">
             Administration des pièces justificatives
           </span>
-          <h2 id="add-doc-title" className="mt-1 text-lg font-black uppercase text-[var(--ink)]">
+          <h2 id="add-doc-title" className="mt-1 text-lg font-black uppercase text-ink">
             Ajouter un document
           </h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">
+          <p className="mt-1 text-xs text-muted">
             Dossier de l’association {associationNom}
           </p>
         </header>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           {error && (
-            <p className="rounded-[10px] border border-[var(--Flush-Mahogany)]/30 bg-rose-50/70 p-3 text-xs font-semibold text-[var(--Flush-Mahogany)]">
+            <p className="rounded-control border border-danger/30 bg-rose-50/70 p-3 text-xs font-semibold text-danger">
               {error}
             </p>
           )}
@@ -103,7 +103,7 @@ export default function AddDocumentModal({
           <div>
             <label
               htmlFor="doc-file-input"
-              className="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2"
+              className="block text-xs font-bold uppercase tracking-wider text-ink mb-2"
             >
               Fichier source (PDF, PNG, JPG · Max 10 Mo) *
             </label>
@@ -114,10 +114,10 @@ export default function AddDocumentModal({
               accept=".pdf,.png,.jpg,.jpeg,.webp"
               onChange={handleFileChange}
               required
-              className="block w-full text-xs text-[var(--muted)] file:mr-3 file:rounded-[8px] file:border-0 file:bg-[var(--Pale-Sage)] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[var(--Mosaic-Tile)] hover:file:bg-[var(--Pale-Sage)]/70 cursor-pointer"
+              className="block w-full text-xs text-muted file:mr-3 file:rounded-control file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:text-xs file:font-bold file:text-primary hover:file:bg-primary-soft/70 cursor-pointer"
             />
             {selectedFile && (
-              <p className="mt-1.5 text-xs text-[var(--Mosaic-Tile)] font-semibold">
+              <p className="mt-1.5 text-xs text-primary font-semibold">
                 Fichier sélectionné : {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} Ko)
               </p>
             )}
@@ -126,7 +126,7 @@ export default function AddDocumentModal({
           <div>
             <label
               htmlFor="doc-title-input"
-              className="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-ink mb-1"
             >
               Intitulé du document affiché
             </label>
@@ -136,33 +136,33 @@ export default function AddDocumentModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Statuts de l'association.pdf"
-              className="w-full rounded-[10px] border border-[var(--line)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:outline-none"
+              className="w-full rounded-control border border-line px-3.5 py-2 text-sm text-ink focus:border-primary focus:outline-none"
             />
           </div>
 
-          <label className="flex items-center gap-2.5 text-xs font-semibold text-[var(--ink)] cursor-pointer">
+          <label className="flex items-center gap-2.5 text-xs font-semibold text-ink cursor-pointer">
             <input
               type="checkbox"
               checked={isVerified}
               onChange={(e) => setIsVerified(e.target.checked)}
-              className="h-4 w-4 rounded text-[var(--Mosaic-Tile)] focus:ring-[var(--Mosaic-Tile)]"
+              className="h-4 w-4 rounded text-primary focus:ring-primary"
             />
             <span>Marquer le document comme vérifié d’office</span>
           </label>
 
-          <footer className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--line)]">
+          <footer className="flex items-center justify-end gap-3 pt-3 border-t border-line">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-[8px] border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer"
+              className="rounded-control border border-line px-4 py-2 text-xs font-bold text-ink hover:bg-paper transition cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-[8px] bg-[var(--Mosaic-Tile)] px-4 py-2 text-xs font-bold text-[var(--White)] hover:bg-[var(--moss)] transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover transition disabled:opacity-50 cursor-pointer"
             >
               <IconUpload className="h-4 w-4" />
               <span>{loading ? 'Téléversement...' : 'Ajouter au dossier'}</span>

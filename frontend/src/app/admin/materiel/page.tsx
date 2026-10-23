@@ -244,15 +244,15 @@ export default function AdminMaterielPage() {
               {filteredList.map((item) => (
                 <article
                   key={item.id}
-                  className={`group flex flex-col justify-between overflow-hidden rounded-[20px] border bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
+                  className={`group flex flex-col justify-between overflow-hidden rounded-card border bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
                     item.isArchived
                       ? 'border-gray-200 opacity-80'
-                      : 'border-[var(--line)] hover:border-[var(--Mosaic-Tile)]/40'
+                      : 'border-line hover:border-primary/40'
                   }`}
                 >
                   <div>
                     {/* Image / Thumbnail avec badges superposés */}
-                    <div className="relative flex h-52 sm:h-56 w-full items-center justify-center overflow-hidden bg-[var(--Pale-Sage)] border-b border-[var(--line)]">
+                    <div className="relative flex h-52 sm:h-56 w-full items-center justify-center overflow-hidden bg-primary-soft border-b border-line">
                       {item.imagePath && !brokenImageIds.includes(item.id) ? (
                         <Image
                           src={getMediaUrl(item.imagePath)!}
@@ -269,13 +269,13 @@ export default function AdminMaterielPage() {
                         />
                       ) : (
                         <div
-                          className="flex h-full w-full flex-col items-center justify-center bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]"
+                          className="flex h-full w-full flex-col items-center justify-center bg-primary-soft text-primary"
                           role="img"
                           aria-label={`Illustration pour ${item.designation}`}
                         >
-                          <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--Mosaic-Tile)]/20 bg-white/70 shadow-xs transition-transform duration-300 group-hover:scale-110">
+                          <span className="flex h-16 w-16 items-center justify-center rounded-pill border-2 border-primary/20 bg-white/70 shadow-xs transition-transform duration-300 group-hover:scale-110">
                             <svg
-                              className="h-8 w-8 text-[var(--Mosaic-Tile)]"
+                              className="h-8 w-8 text-primary"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
@@ -288,7 +288,7 @@ export default function AdminMaterielPage() {
                               <line x1="12" y1="22.08" x2="12" y2="12" />
                             </svg>
                           </span>
-                          <span className="mt-2 text-xs font-semibold text-[var(--Mosaic-Tile)]/80">
+                          <span className="mt-2 text-xs font-semibold text-primary/80">
                             Photo illustrative
                           </span>
                         </div>
@@ -296,12 +296,12 @@ export default function AdminMaterielPage() {
 
                       {/* Badges Catégorie et Statut */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
-                        <span className="rounded-full bg-white/95 backdrop-blur-xs px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--Mosaic-Tile)] border border-[var(--line)] shadow-2xs">
+                        <span className="rounded-pill bg-white/95 backdrop-blur-xs px-3 py-1 text-caption font-bold uppercase tracking-wider text-primary border border-line shadow-2xs">
                           {item.categorie}
                         </span>
 
                         <span
-                          className={`rounded-full px-3 py-1 text-[11px] font-bold shadow-2xs ${
+                          className={`rounded-pill px-3 py-1 text-caption font-bold shadow-2xs ${
                             item.isArchived
                               ? 'bg-gray-100 text-gray-700'
                               : 'bg-emerald-100 text-emerald-800'
@@ -315,26 +315,26 @@ export default function AdminMaterielPage() {
                     {/* Contenu de la carte */}
                     <div className="p-6">
                       {item.referenceInterne && (
-                        <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[var(--muted)] mb-1.5">
-                          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--Mosaic-Tile)]/60" />
+                        <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-muted mb-1.5">
+                          <span className="inline-block h-1.5 w-1.5 rounded-pill bg-primary/60" />
                           <span>Réf : {item.referenceInterne}</span>
                         </div>
                       )}
 
-                      <h3 className="text-lg font-bold text-[var(--ink)] leading-snug transition-colors group-hover:text-[var(--Mosaic-Tile)]">
+                      <h3 className="text-lg font-bold text-ink leading-snug transition-colors group-hover:text-primary">
                         {item.designation}
                       </h3>
 
                       {item.description && (
-                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--muted)]">
+                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted">
                           {item.description}
                         </p>
                       )}
 
                       {item.consignesUtilisation && (
-                        <div className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-xs leading-relaxed text-[var(--ink)]/85">
-                          <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[var(--muted)] text-[10px]">
-                            <svg className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <div className="mt-4 rounded-soft border border-line bg-paper p-3 text-xs leading-relaxed text-ink/85">
+                          <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-muted text-caption">
+                            <svg className="h-3.5 w-3.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10" />
                               <line x1="12" y1="8" x2="12" y2="12" />
                               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -348,14 +348,14 @@ export default function AdminMaterielPage() {
                   </div>
 
                   {/* Stock & Boutons d'action adaptés */}
-                  <footer className="border-t border-[var(--line)] bg-[var(--paper)]/50 p-6 pt-4">
+                  <footer className="border-t border-line bg-paper/50 p-6 pt-4">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)]">
+                      <span className="text-caption font-bold uppercase tracking-wider text-muted">
                         Stock communal
                       </span>
-                      <p className="text-2xl font-black text-[var(--ink)]">
+                      <p className="text-2xl font-black text-ink">
                         {item.stockTotal}{' '}
-                        <span className="text-xs font-medium text-[var(--muted)]">unités</span>
+                        <span className="text-xs font-medium text-muted">unités</span>
                       </p>
                     </div>
 
@@ -364,9 +364,9 @@ export default function AdminMaterielPage() {
                         type="button"
                         onClick={() => handleOpenAdjust(item)}
                         title="Ajuster le stock communal"
-                        className="h-10 px-2 sm:px-3 rounded-control border border-[var(--line)] bg-white text-xs font-bold uppercase tracking-wider text-[var(--ink)] transition hover:border-[var(--Mosaic-Tile)] hover:bg-[var(--paper)] flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                        className="h-10 px-2 sm:px-3 rounded-control border border-line bg-white text-xs font-bold uppercase tracking-wider text-ink transition hover:border-primary hover:bg-paper flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                       >
-                        <svg className="h-3.5 w-3.5 shrink-0 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="h-3.5 w-3.5 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
                           <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
                           <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
@@ -379,7 +379,7 @@ export default function AdminMaterielPage() {
                         type="button"
                         onClick={() => handleOpenEdit(item)}
                         title="Modifier les informations"
-                        className="h-10 px-2 sm:px-3 rounded-control bg-[var(--Mosaic-Tile)] text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[var(--hover)] flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                        className="h-10 px-2 sm:px-3 rounded-control bg-primary text-xs font-bold uppercase tracking-wider text-white transition hover:bg-primary-hover flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                       >
                         <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 20h9" />

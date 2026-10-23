@@ -1,15 +1,15 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import type { ReactNode } from "react";
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 export const navItemVariants = cva(
-  "group flex min-h-[2.75rem] w-full items-center justify-center gap-3.5 rounded-[0.63rem] px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--Mosaic-Tile)] md:justify-start md:px-3.5",
+  'group flex min-h-[2.75rem] w-full items-center justify-center gap-3.5 rounded-control px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:justify-start md:px-3.5',
   {
     variants: {
       selected: {
-        true: "bg-[var(--Mosaic-Tile)] text-white shadow-xs font-bold [&_svg]:text-white",
-        false: "text-[var(--ink)] hover:bg-[var(--sage)]/40 hover:text-[var(--Mosaic-Tile)] [&_svg]:text-[var(--Mosaic-Tile)]",
+        true: 'bg-primary text-white shadow-xs font-bold [&_svg]:text-white',
+        false: 'text-ink hover:bg-sage/40 hover:text-primary [&_svg]:text-primary',
       },
     },
     defaultVariants: {
@@ -31,17 +31,17 @@ export interface NavItemProps
 }
 
 export default function NavItem({
-  className = "",
+  className = '',
   icon,
   isSelected = false,
   root,
   name,
 }: NavItemDataProps & NavItemProps) {
-  const href = root ? `/${root}` : "/";
+  const href = root ? `/${root}` : '/';
 
   return (
     <Link
-      aria-current={isSelected ? "page" : undefined}
+      aria-current={isSelected ? 'page' : undefined}
       aria-label={name}
       className={cn(navItemVariants({ selected: isSelected }), className)}
       href={href}
@@ -51,4 +51,3 @@ export default function NavItem({
     </Link>
   );
 }
-

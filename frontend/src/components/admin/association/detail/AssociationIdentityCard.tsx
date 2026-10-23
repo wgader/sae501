@@ -27,8 +27,8 @@ export default function AssociationIdentityCard({ association }: AssociationIden
   const categoryText = association.categorie || 'Non renseigné';
 
   return (
-    <article className="overflow-hidden rounded-[14px] border border-[var(--line)] bg-[var(--White)] shadow-xs">
-      <figure className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-[var(--Pale-Sage)] sm:h-52">
+    <article className="overflow-hidden rounded-card border border-line bg-white shadow-xs">
+      <figure className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-primary-soft sm:h-52">
         {!imageError && association.imageUrl ? (
           <Image
             src={association.imageUrl}
@@ -41,12 +41,12 @@ export default function AssociationIdentityCard({ association }: AssociationIden
           />
         ) : (
           <span
-            className="flex h-full w-full items-center justify-center bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)]"
+            className="flex h-full w-full items-center justify-center bg-primary-soft text-primary"
             role="img"
             aria-label={`Illustration pour ${association.nom}`}
           >
-            <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--Mosaic-Tile)]/30 bg-[var(--White)]/50 shadow-xs">
-              <IconMembres className="h-8 w-8 text-[var(--Mosaic-Tile)]" />
+            <span className="flex h-16 w-16 items-center justify-center rounded-pill border-2 border-primary/30 bg-white/50 shadow-xs">
+              <IconMembres className="h-8 w-8 text-primary" />
             </span>
           </span>
         )}
@@ -54,72 +54,72 @@ export default function AssociationIdentityCard({ association }: AssociationIden
       </figure>
 
       <section className="p-6 sm:p-7">
-        <header className="border-b border-[var(--line)] pb-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+        <header className="border-b border-line pb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink">
             Identité et présentation
           </h2>
         </header>
 
         <dl className="mt-5 space-y-4">
           <div>
-            <dt className="flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--muted)]">
-              <IconAssociation className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+            <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
+              <IconAssociation className="h-3.5 w-3.5 text-primary" />
               <span>Nom de l’association</span>
             </dt>
-            <dd className="mt-1 text-sm font-bold uppercase text-[var(--ink)]">
+            <dd className="mt-1 text-sm font-bold uppercase text-ink">
               {association.nom}
             </dd>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <dt className="flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--muted)]">
-                <IconCategorie className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+              <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
+                <IconCategorie className="h-3.5 w-3.5 text-primary" />
                 <span>Catégorie d’activité</span>
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+              <dd className="mt-1 text-sm font-semibold text-ink">
                 {categoryText}
               </dd>
             </div>
 
             <div>
-              <dt className="flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--muted)]">
-                <IconMembres className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+              <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
+                <IconMembres className="h-3.5 w-3.5 text-primary" />
                 <span>Nombre d’adhérents</span>
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+              <dd className="mt-1 text-sm font-semibold text-ink">
                 {membersText}
               </dd>
             </div>
           </div>
 
           <div>
-            <dt className="flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--muted)]">
-              <IconPresentation className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+            <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
+              <IconPresentation className="h-3.5 w-3.5 text-primary" />
               <span>Présentation</span>
             </dt>
-            <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+            <dd className="mt-1 text-sm font-semibold text-ink">
               Non renseigné
             </dd>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <dt className="flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--muted)]">
-                <IconDocument className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+              <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
+                <IconDocument className="h-3.5 w-3.5 text-primary" />
                 <span>N° RNA / SIRET</span>
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+              <dd className="mt-1 text-sm font-semibold text-ink">
                 {association.numeroRna || 'Non renseigné'}
               </dd>
             </div>
 
             <div>
-              <dt className="flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-wider text-[var(--muted)]">
-                <IconLocation className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+              <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
+                <IconLocation className="h-3.5 w-3.5 text-primary" />
                 <span>Adresse du siège</span>
               </dt>
-              <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+              <dd className="mt-1 text-sm font-semibold text-ink">
                 Non renseigné
               </dd>
             </div>

@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils';
 import type { AssociationStatus } from '@/lib/api';
 
 export const statusBadgeVariants = cva(
-  'inline-block rounded-full font-bold transition-colors',
+  'inline-block rounded-pill font-bold transition-colors',
   {
     variants: {
       status: {
-        PENDING_VALIDATION: 'bg-[var(--Lime-Cream)] text-[var(--ink)]',
-        VALIDATED: 'bg-emerald-100 text-emerald-800',
-        REFUSED: 'bg-rose-100 text-rose-800',
-        SUSPENDED: 'bg-amber-100 text-amber-800',
+        PENDING_VALIDATION: 'bg-accent text-ink',
+        VALIDATED: 'bg-primary-soft text-primary',
+        REFUSED: 'bg-danger/10 text-danger',
+        SUSPENDED: 'bg-amber-100 text-amber-900',
       },
       size: {
         sm: 'px-3 py-0.5 text-xs',
@@ -58,4 +58,3 @@ export default function StatusBadge({
     </span>
   );
 }
-

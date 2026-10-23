@@ -63,17 +63,17 @@ function AssociationDirectoryContent({ initialQuery }: AssociationDirectoryConte
           <header className="flex flex-wrap items-center justify-between gap-4">
             <h2
               id="associations-count-heading"
-              className="text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl"
+              className="text-xl font-bold tracking-tight text-ink sm:text-2xl"
             >
               {loading ? (
-                <span className="inline-flex items-center gap-2 text-base font-semibold text-[var(--muted)]">
+                <span className="inline-flex items-center gap-2 text-base font-semibold text-muted">
                   <svg
-                    className="h-4 w-4 animate-spin text-[var(--Mosaic-Tile)]"
+                    className="h-4 w-4 animate-spin text-primary"
                     viewBox="0 0 24 24"
                     fill="none"
                     aria-hidden="true"
                   >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   <span>Recherche en cours...</span>
@@ -89,18 +89,17 @@ function AssociationDirectoryContent({ initialQuery }: AssociationDirectoryConte
               <button
                 type="button"
                 onClick={() => handleSearchChange('')}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--Mosaic-Tile)] transition-colors hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary transition-colors hover:underline cursor-pointer"
               >
                 <IconChevronLeft className="h-3.5 w-3.5" />
                 <span>Voir toutes les associations</span>
               </button>
-
             )}
           </header>
 
           {error && (
             <p
-              className="rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]"
+              className="rounded-control border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-danger"
               role="alert"
             >
               {error}

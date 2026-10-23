@@ -6,17 +6,17 @@ import type { AssociationStatus, AssociationModule } from '@/lib/api';
 export type { AssociationModule } from '@/lib/api';
 
 export const statusTagVariants = cva(
-  'inline-flex w-fit items-center rounded-full px-[0.81rem] py-[0.44rem] text-[0.63rem] font-bold uppercase leading-normal tracking-[0.11rem]',
+  'inline-flex w-fit items-center rounded-pill px-3 py-1 text-caption font-bold uppercase leading-normal tracking-label',
   {
     variants: {
       status: {
-        PENDING_VALIDATION: 'bg-[#9c7a19] text-white',
-        VALIDATED: 'bg-[var(--Mosaic-Tile)] text-white',
-        REFUSED: 'bg-[var(--Flush-Mahogany)] text-white',
+        PENDING_VALIDATION: 'bg-amber-700 text-white',
+        VALIDATED: 'bg-primary text-white',
+        REFUSED: 'bg-danger text-white',
         SUSPENDED: 'bg-amber-600 text-white',
-        salles: 'bg-[var(--Mosaic-Tile)] text-white',
-        subventions: 'bg-[var(--Misty-Rose)] text-[var(--ink)]',
-        materiel: 'bg-[#5c6ac4] text-white',
+        salles: 'bg-primary text-white',
+        subventions: 'bg-Misty-Rose text-ink',
+        materiel: 'bg-indigo text-white',
       },
     },
   },

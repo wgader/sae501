@@ -1,8 +1,7 @@
-"use client";
+'use client';
 
-import AdminSearchBar from "@/components/admin/search/AdminSearchBar";
-
-import { getStoredUserName, getUserInitials } from "@/lib/authUtils";
+import AdminSearchBar from '@/components/admin/search/AdminSearchBar';
+import { getStoredUserName, getUserInitials } from '@/lib/authUtils';
 
 interface AdminHeaderProps {
   searchTerm?: string;
@@ -12,26 +11,26 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({
-  searchTerm = "",
+  searchTerm = '',
   onSearchChange,
   onToggleMobileMenu,
   isMobileMenuOpen = false,
 }: AdminHeaderProps) {
-  const adminName = getStoredUserName() || "Agent municipal";
+  const adminName = getStoredUserName() || 'Agent municipal';
   const initials = getUserInitials(adminName);
 
   return (
-    <header className="flex h-20 w-full items-center justify-between bg-[var(--Mosaic-Tile)] px-6 lg:px-10">
+    <div className="flex h-20 w-full items-center justify-between bg-primary px-6 lg:px-10">
       <div className="flex flex-1 items-center gap-4">
         <button
           type="button"
           onClick={onToggleMobileMenu}
           aria-label={
             isMobileMenuOpen
-              ? "Fermer le menu de navigation"
-              : "Ouvrir le menu de navigation"
+              ? 'Fermer le menu de navigation'
+              : 'Ouvrir le menu de navigation'
           }
-          className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20 lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-control bg-white/10 text-white transition hover:bg-white/20 lg:hidden cursor-pointer"
         >
           {isMobileMenuOpen ? (
             <svg
@@ -40,6 +39,7 @@ export default function AdminHeader({
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -54,6 +54,7 @@ export default function AdminHeader({
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -71,8 +72,8 @@ export default function AdminHeader({
       </div>
 
       <div className="flex items-center pl-4">
-        <div className="flex items-center gap-2.5 rounded-full bg-white px-3 py-1.5 shadow-xs">
-          <span className="flex size-7 items-center justify-center rounded-full bg-accent text-label font-black text-ink">
+        <div className="flex items-center gap-2.5 rounded-pill bg-white px-3 py-1.5 shadow-xs">
+          <span className="flex size-7 items-center justify-center rounded-pill bg-accent text-label font-black text-ink">
             {initials}
           </span>
           <span className="hidden text-xs font-bold text-ink sm:inline">
@@ -80,6 +81,6 @@ export default function AdminHeader({
           </span>
         </div>
       </div>
-    </header>
+    </div>
   );
 }

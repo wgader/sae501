@@ -14,32 +14,32 @@ export default function AssociationContactCard({ contact }: AssociationContactCa
   const hasInfo = Boolean(fullName || email || telephone);
 
   return (
-    <article className="rounded-[20px] border border-[var(--line)] bg-[var(--White)] p-6 sm:p-8 shadow-xs">
-      <h2 className="text-base font-bold uppercase tracking-wider text-[var(--ink)]">
+    <article className="rounded-card border border-line bg-white p-6 sm:p-8 shadow-xs">
+      <h2 className="text-base font-bold uppercase tracking-wider text-ink">
         Coordonnées & Référent
       </h2>
 
       {hasInfo ? (
         <dl className="mt-4 space-y-4">
           {fullName && (
-            <div className="flex items-start gap-3 rounded-[12px] bg-[var(--paper)] p-4">
-              <IconPresidence className="mt-0.5 h-4 w-4 shrink-0 text-[var(--Mosaic-Tile)]" />
+            <div className="flex items-start gap-3 rounded-soft bg-paper p-4">
+              <IconPresidence className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
-                <dt className="text-xs font-semibold text-[var(--muted)]">Présidence / Contact</dt>
-                <dd className="mt-0.5 text-sm font-bold text-[var(--ink)]">{fullName}</dd>
+                <dt className="text-xs font-semibold text-muted">Présidence / Contact</dt>
+                <dd className="mt-0.5 text-sm font-bold text-ink">{fullName}</dd>
               </div>
             </div>
           )}
 
           {email && (
-            <div className="flex items-start gap-3 rounded-[12px] bg-[var(--paper)] p-4">
-              <IconEmail className="mt-0.5 h-4 w-4 shrink-0 text-[var(--Mosaic-Tile)]" />
+            <div className="flex items-start gap-3 rounded-soft bg-paper p-4">
+              <IconEmail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
-                <dt className="text-xs font-semibold text-[var(--muted)]">Adresse e-mail</dt>
-                <dd className="mt-0.5 text-sm font-bold text-[var(--ink)]">
+                <dt className="text-xs font-semibold text-muted">Adresse e-mail</dt>
+                <dd className="mt-0.5 text-sm font-bold text-ink">
                   <a
                     href={`mailto:${email}`}
-                    className="hover:text-[var(--Mosaic-Tile)] hover:underline"
+                    className="hover:text-primary hover:underline"
                   >
                     {email}
                   </a>
@@ -49,14 +49,14 @@ export default function AssociationContactCard({ contact }: AssociationContactCa
           )}
 
           {telephone && (
-            <div className="flex items-start gap-3 rounded-[12px] bg-[var(--paper)] p-4">
-              <IconTelephone className="mt-0.5 h-4 w-4 shrink-0 text-[var(--Mosaic-Tile)]" />
+            <div className="flex items-start gap-3 rounded-soft bg-paper p-4">
+              <IconTelephone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
-                <dt className="text-xs font-semibold text-[var(--muted)]">Numéro de téléphone</dt>
-                <dd className="mt-0.5 text-sm font-bold text-[var(--ink)]">
+                <dt className="text-xs font-semibold text-muted">Numéro de téléphone</dt>
+                <dd className="mt-0.5 text-sm font-bold text-ink">
                   <a
                     href={`tel:${telephone}`}
-                    className="hover:text-[var(--Mosaic-Tile)] hover:underline"
+                    className="hover:text-primary hover:underline"
                   >
                     {telephone}
                   </a>
@@ -66,8 +66,8 @@ export default function AssociationContactCard({ contact }: AssociationContactCa
           )}
         </dl>
       ) : (
-        <div className="mt-4 flex items-center gap-2.5 rounded-[12px] bg-[var(--paper)] p-4 text-xs text-[var(--muted)]">
-          <IconInfo className="h-4 w-4 shrink-0 text-[var(--Mosaic-Tile)]" />
+        <div className="mt-4 flex items-center gap-2.5 rounded-soft bg-paper p-4 text-xs text-muted">
+          <IconInfo className="h-4 w-4 shrink-0 text-primary" />
           <span>Aucune coordonnée de contact direct n’a été renseignée pour cette structure.</span>
         </div>
       )}

@@ -36,19 +36,19 @@ export default function InscriptionStatusTabs({
             key={tab.value}
             type="button"
             onClick={() => onTabChange(tab.value)}
-            className={`inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2.5 rounded-pill px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
               isActive
-                ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                : 'border border-[var(--Mosaic-Tile)] bg-transparent text-[var(--Mosaic-Tile)] hover:bg-[var(--Mosaic-Tile)]/5'
+                ? 'bg-primary text-white shadow-xs'
+                : 'border border-primary bg-transparent text-primary hover:bg-primary/5'
             }`}
           >
             <span>{tab.label}</span>
             {countValue !== null && (
               <span
-                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-bold ${
+                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1.5 text-label font-bold ${
                   isActive
-                    ? 'bg-[var(--Lime-Cream)] text-[var(--ink)]'
-                    : 'bg-[var(--Mosaic-Tile)]/15 text-[var(--Mosaic-Tile)]'
+                    ? 'bg-accent text-ink'
+                    : 'bg-primary/15 text-primary'
                 }`}
               >
                 {countValue}

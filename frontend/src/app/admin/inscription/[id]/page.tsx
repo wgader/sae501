@@ -99,7 +99,7 @@ export default function AssociationDetailPage() {
         <nav aria-label="Retour à la liste" className="mb-6">
           <Link
             href="/admin/inscription"
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[var(--Mosaic-Tile)] transition-opacity hover:opacity-80"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-primary transition-opacity hover:opacity-80"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -110,8 +110,8 @@ export default function AssociationDetailPage() {
 
         {/* ── État de chargement ───────────────────────────── */}
         {loading && (
-          <article className="py-20 text-center text-[var(--muted)]">
-            <svg className="mx-auto h-8 w-8 animate-spin text-[var(--Mosaic-Tile)]" viewBox="0 0 24 24" fill="none">
+          <article className="py-20 text-center text-muted">
+            <svg className="mx-auto h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -121,14 +121,14 @@ export default function AssociationDetailPage() {
 
         {/* ── Erreur ───────────────────────────────────────── */}
         {error && (
-          <p className="mb-6 rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-[var(--Flush-Mahogany)]" role="alert">
+          <p className="mb-6 rounded-control border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold leading-5 text-danger" role="alert">
             {error}
           </p>
         )}
 
         {/* ── Message de succès ────────────────────────────── */}
         {feedbackMessage && (
-          <p className="mb-6 rounded-[10px] border-l-4 border-emerald-600 bg-emerald-50/80 p-4 text-xs font-semibold leading-5 text-emerald-800" role="status">
+          <p className="mb-6 rounded-control border-l-4 border-emerald-600 bg-emerald-50/80 p-4 text-xs font-semibold leading-5 text-emerald-800" role="status">
             {feedbackMessage}
           </p>
         )}

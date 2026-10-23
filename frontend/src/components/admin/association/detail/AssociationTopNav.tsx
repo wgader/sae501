@@ -41,10 +41,10 @@ export default function AssociationTopNav({
 
   return (
     <header className="space-y-6">
-      <nav aria-label="Fil d'ariane" className="flex flex-wrap items-center justify-between gap-4 text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+      <nav aria-label="Fil d'ariane" className="flex flex-wrap items-center justify-between gap-4 text-xs font-bold uppercase tracking-wider text-ink">
         <Link
           href="/admin/association"
-          className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--Mosaic-Tile)] cursor-pointer"
+          className="inline-flex items-center gap-1.5 transition-colors hover:text-primary cursor-pointer"
         >
           <IconChevronLeft className="h-3.5 w-3.5" />
           <span>ANNUAIRE DES ASSOCIATIONS</span>
@@ -53,7 +53,7 @@ export default function AssociationTopNav({
         {searchQuery ? (
           <Link
             href={`/admin/association?q=${encodeURIComponent(searchQuery)}`}
-            className="inline-flex items-center gap-1.5 text-[var(--muted)] transition-colors hover:text-[var(--Mosaic-Tile)] cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-muted transition-colors hover:text-primary cursor-pointer"
           >
             <IconChevronLeft className="h-3.5 w-3.5" />
             <span>Résultats pour « {searchQuery} »</span>
@@ -62,15 +62,15 @@ export default function AssociationTopNav({
       </nav>
 
       <div>
-        <h1 className="text-2xl font-black uppercase tracking-tight text-[var(--ink)] sm:text-3xl">
+        <h1 className="text-2xl font-black uppercase tracking-tight text-ink sm:text-3xl">
           {nom}
         </h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+        <p className="mt-1 text-sm text-muted">
           Informations de l’association et suivi de ses démarches auprès de la municipalité.
         </p>
       </div>
 
-      <nav aria-label="Sections du dossier association" className="border-b border-[var(--line)] pb-4">
+      <nav aria-label="Sections du dossier association" className="border-b border-line pb-4">
         <ul className="m-0 flex flex-wrap items-center gap-2.5 p-0 list-none">
           {tabs.map((tab) => {
             const active = isTabActive(tab.href);
@@ -78,10 +78,10 @@ export default function AssociationTopNav({
               <li key={tab.key}>
                 <Link
                   href={tab.href}
-                  className={`inline-block rounded-[8px] px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`inline-block rounded-control px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     active
-                      ? 'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs'
-                      : 'border border-[var(--Mosaic-Tile)] bg-transparent text-[var(--Mosaic-Tile)] hover:bg-[var(--Pale-Sage)]/40'
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'border border-primary bg-transparent text-primary hover:bg-primary-soft/40'
                   }`}
                 >
                   {tab.label}

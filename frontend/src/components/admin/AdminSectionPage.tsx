@@ -17,12 +17,12 @@ export default function AdminSectionPage({
 
       <section
         aria-labelledby="admin-section-content"
-        className="rounded-[20px] border border-[var(--line)] bg-[var(--paper)] p-8 text-center"
+        className="rounded-card border border-line bg-paper p-8 text-center"
       >
-        <h2 id="admin-section-content" className="text-base font-bold text-[var(--ink)]">
+        <h2 id="admin-section-content" className="text-base font-bold text-ink">
           {title}
         </h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">{emptyMessage}</p>
+        <p className="mt-2 text-sm text-muted">{emptyMessage}</p>
       </section>
     </section>
   );

@@ -149,28 +149,27 @@ export default function AssociationDocumentsSection({
     }
   };
 
-
   return (
     <section className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--ink)]">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-ink">
             Documents de l’association
           </h2>
-          <p className="mt-0.5 text-xs text-[var(--muted)]">
+          <p className="mt-0.5 text-xs text-muted">
             Les pièces disponibles dans le dossier de {association.nom}.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-[var(--paper)] border border-[var(--line)] px-3 py-1 text-xs font-semibold text-[var(--muted)]">
+          <span className="rounded-pill bg-paper border border-line px-3 py-1 text-xs font-semibold text-muted">
             {documents.length} document{documents.length > 1 ? 's' : ''}
           </span>
 
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-[8px] bg-[var(--Mosaic-Tile)] px-3.5 py-2 text-xs font-bold text-[var(--White)] shadow-xs transition hover:bg-[var(--moss)] cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-primary-hover cursor-pointer"
           >
             <IconUpload className="h-3.5 w-3.5" />
             <span>Ajouter un document</span>
@@ -180,7 +179,7 @@ export default function AssociationDocumentsSection({
 
       {feedback && (
         <p
-          className="rounded-[10px] border border-[var(--Mosaic-Tile)]/30 bg-[var(--Pale-Sage)]/50 p-3.5 text-xs font-semibold text-[var(--Mosaic-Tile)]"
+          className="rounded-control border border-primary/30 bg-primary-soft/50 p-3.5 text-xs font-semibold text-primary"
           role="status"
         >
           {feedback}
@@ -189,7 +188,7 @@ export default function AssociationDocumentsSection({
 
       {error && (
         <p
-          className="rounded-[10px] border border-[var(--Flush-Mahogany)]/30 bg-rose-50/70 p-3.5 text-xs font-semibold text-[var(--Flush-Mahogany)]"
+          className="rounded-control border border-danger/30 bg-rose-50/70 p-3.5 text-xs font-semibold text-danger"
           role="alert"
         >
           {error}
@@ -197,15 +196,15 @@ export default function AssociationDocumentsSection({
       )}
 
       {documents.length === 0 ? (
-        <section className="rounded-[14px] border border-[var(--line)] bg-[var(--White)] p-12 text-center">
-          <p className="text-sm font-bold text-[var(--ink)]">Aucun document dans le dossier</p>
-          <p className="mt-1 text-xs text-[var(--muted)]">
+        <section className="rounded-card border border-line bg-white p-12 text-center">
+          <p className="text-sm font-bold text-ink">Aucun document dans le dossier</p>
+          <p className="mt-1 text-xs text-muted">
             Téléversez un premier justificatif pour cette association.
           </p>
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-[8px] bg-[var(--Mosaic-Tile)] px-4 py-2 text-xs font-bold text-[var(--White)] shadow-xs hover:bg-[var(--moss)]"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-control bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary-hover cursor-pointer"
           >
             <IconUpload className="h-3.5 w-3.5" />
             <span>Téléverser une pièce</span>
@@ -228,7 +227,7 @@ export default function AssociationDocumentsSection({
         </ul>
       )}
 
-      <p className="border-t border-[var(--line)] pt-4 text-xs text-[var(--muted)]">
+      <p className="border-t border-line pt-4 text-xs text-muted">
         Les documents sont consultables et téléchargeables depuis cette rubrique.
       </p>
 

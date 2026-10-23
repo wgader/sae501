@@ -46,16 +46,16 @@ export default function RenameDocumentModal({
       aria-labelledby="rename-doc-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-md rounded-[20px] border border-[var(--line)] bg-[var(--White)] p-6 sm:p-7 shadow-xl">
-        <header className="border-b border-[var(--line)] pb-3">
-          <h2 id="rename-doc-title" className="text-base font-bold uppercase tracking-wider text-[var(--ink)]">
+      <div className="relative w-full max-w-md rounded-card border border-line bg-white p-6 sm:p-7 shadow-xl">
+        <header className="border-b border-line pb-3">
+          <h2 id="rename-doc-title" className="text-base font-bold uppercase tracking-wider text-ink">
             Renommer le document
           </h2>
         </header>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {error && (
-            <p className="rounded-[10px] border border-[var(--Flush-Mahogany)]/30 bg-rose-50/70 p-3 text-xs font-semibold text-[var(--Flush-Mahogany)]">
+            <p className="rounded-control border border-danger/30 bg-rose-50/70 p-3 text-xs font-semibold text-danger">
               {error}
             </p>
           )}
@@ -63,7 +63,7 @@ export default function RenameDocumentModal({
           <div>
             <label
               htmlFor="rename-doc-input"
-              className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1"
+              className="block text-xs font-bold uppercase tracking-wider text-muted mb-1"
             >
               Intitulé du document
             </label>
@@ -73,23 +73,23 @@ export default function RenameDocumentModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full rounded-[10px] border border-[var(--line)] px-3.5 py-2 text-sm text-[var(--ink)] focus:border-[var(--Mosaic-Tile)] focus:outline-none"
+              className="w-full rounded-control border border-line px-3.5 py-2 text-sm text-ink focus:border-primary focus:outline-none"
             />
           </div>
 
-          <footer className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--line)]">
+          <footer className="flex items-center justify-end gap-3 pt-3 border-t border-line">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-[8px] border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer"
+              className="rounded-control border border-line px-4 py-2 text-xs font-bold text-ink hover:bg-paper transition cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-[8px] bg-[var(--Mosaic-Tile)] px-4 py-2 text-xs font-bold text-[var(--White)] hover:bg-[var(--moss)] transition disabled:opacity-50 cursor-pointer"
+              className="rounded-control bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary-hover transition disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'Enregistrement...' : 'Enregistrer'}
             </button>

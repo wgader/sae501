@@ -114,7 +114,7 @@ export default function AdminSearchBar({
           Rechercher une association
         </label>
 
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]">
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
           <svg
             className="h-4 w-4"
             viewBox="0 0 24 24"
@@ -130,7 +130,6 @@ export default function AdminSearchBar({
           </svg>
         </span>
 
-        {/* Input de recherche text avec suppression de la croix native webkit pour éviter la double croix */}
         <input
           id="admin-search-input"
           type="text"
@@ -142,7 +141,7 @@ export default function AdminSearchBar({
           }}
           onChange={(e) => handleInputChange(e.target.value)}
           placeholder="Rechercher une association..."
-          className="h-10 w-full rounded-full border-0 bg-[var(--White)]/95 pl-10 pr-9 text-[0.875rem] text-[var(--ink)] placeholder-[var(--muted)]/75 shadow-xs transition focus:bg-[var(--White)] focus:outline-none focus:ring-2 focus:ring-[var(--Lime-Cream)] [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+          className="h-10 w-full rounded-pill border-0 bg-white/95 pl-10 pr-9 text-body-sm text-ink placeholder-muted/75 shadow-xs transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
         />
 
         {query && (
@@ -150,7 +149,7 @@ export default function AdminSearchBar({
             type="button"
             onClick={handleClear}
             aria-label="Effacer la recherche"
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-pill p-1 text-muted hover:text-ink cursor-pointer transition-colors"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -159,7 +158,6 @@ export default function AdminSearchBar({
         )}
       </form>
 
-      {/* Menu dropdown autocomplétion sous la barre de recherche */}
       {isOpen && query.trim().length > 0 && (
         <AdminSearchDropdown
           query={query}

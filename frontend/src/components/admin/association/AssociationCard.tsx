@@ -26,12 +26,12 @@ export default function AssociationCard({
   return (
     <Link
       href={`/admin/inscription/${association.id}`}
-      className={`group flex items-center justify-between gap-4 rounded-[18px] border border-[var(--line)] bg-[var(--White)] shadow-xs transition-all duration-200 hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-md ${
+      className={`group flex items-center justify-between gap-4 rounded-card border border-line bg-white shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-md ${
         compact ? 'p-4' : 'p-5 sm:p-6'
       } ${className}`}
     >
       <span className="min-w-0 flex-1">
-        <span className="block text-[0.9375rem] sm:text-[1rem] font-bold uppercase tracking-tight text-[var(--ink)] group-hover:text-[var(--Mosaic-Tile)] transition-colors">
+        <span className="block text-body sm:text-base font-bold uppercase tracking-tight text-ink group-hover:text-primary transition-colors">
           {association.nom}
         </span>
 
@@ -39,9 +39,9 @@ export default function AssociationCard({
           <StatusBadge status={association.statut} />
 
           {formattedDate && (
-            <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+            <span className="flex items-center gap-1.5 text-xs text-muted">
               <svg
-                className="h-3.5 w-3.5 text-[var(--muted)]/70"
+                className="h-3.5 w-3.5 text-muted/70"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -56,14 +56,14 @@ export default function AssociationCard({
           )}
 
           {association.contact && (
-            <span className="hidden text-xs text-[var(--muted)] sm:inline">
+            <span className="hidden text-xs text-muted sm:inline">
               · {association.contact.prenom} {association.contact.nom} ({association.contact.email})
             </span>
           )}
         </span>
       </span>
 
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--ink)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--Mosaic-Tile)]">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill text-ink transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary">
         <svg
           className="h-5 w-5"
           fill="none"

@@ -55,22 +55,21 @@ export default function DocumentItemCard({
   const FileIcon = isPdf ? IconPdfFile : isImage ? IconImageFile : IconGenericFile;
 
   return (
-    <article className="group flex flex-col gap-4 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 transition-all hover:border-[var(--Mosaic-Tile)]/30 hover:shadow-xs">
+    <article className="group flex flex-col gap-4 rounded-card border border-line bg-paper p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 transition-all hover:border-primary/30 hover:shadow-xs">
       <div className="flex items-center gap-4 min-w-0">
         <span className="shrink-0">
-          <FileIcon className="h-10 w-9 text-[var(--Mosaic-Tile)]" />
+          <FileIcon className="h-10 w-9 text-primary" />
         </span>
 
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-bold text-[var(--ink)]">
+          <h3 className="truncate text-sm font-bold text-ink">
             {document.typeDocument}
           </h3>
-          <p className="mt-0.5 text-xs text-[var(--muted)]">
+          <p className="mt-0.5 text-xs text-muted">
             {formatLabel} · {formattedSize}
           </p>
         </div>
       </div>
-
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Badge vérification cliquable */}
@@ -79,9 +78,9 @@ export default function DocumentItemCard({
           onClick={() => onToggleVerify(document)}
           disabled={disabled}
           title="Cliquer pour modifier l'état de vérification"
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition cursor-pointer ${
+          className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1 text-xs font-bold transition cursor-pointer ${
             document.isVerified
-              ? 'bg-[var(--Pale-Sage)] text-[var(--Mosaic-Tile)] border border-[var(--Mosaic-Tile)]/30 hover:bg-[var(--Pale-Sage)]/80'
+              ? 'bg-primary-soft text-primary border border-primary/30 hover:bg-primary-soft/80'
               : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
           }`}
         >
@@ -93,7 +92,7 @@ export default function DocumentItemCard({
         <button
           type="button"
           onClick={() => onPreview(document)}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--Mosaic-Tile)] transition hover:bg-[var(--Pale-Sage)]/50 cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-control px-2.5 py-1.5 text-xs font-bold text-primary transition hover:bg-primary-soft/50 cursor-pointer"
         >
           <IconEye className="h-4 w-4" />
           <span>Consulter</span>
@@ -103,9 +102,9 @@ export default function DocumentItemCard({
         <button
           type="button"
           onClick={() => onDownload?.(document)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 py-1.5 text-xs font-bold text-[var(--ink)] shadow-2xs transition hover:bg-[var(--paper)] cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-control border border-line bg-white px-3 py-1.5 text-xs font-bold text-ink shadow-xs transition hover:bg-paper cursor-pointer"
         >
-          <IconDownload className="h-3.5 w-3.5 text-[var(--Mosaic-Tile)]" />
+          <IconDownload className="h-3.5 w-3.5 text-primary" />
           <span>Télécharger</span>
         </button>
 
@@ -115,7 +114,7 @@ export default function DocumentItemCard({
           onClick={() => onRename(document)}
           disabled={disabled}
           title="Renommer le document"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--White)] text-[var(--muted)] transition hover:text-[var(--Mosaic-Tile)] hover:border-[var(--Mosaic-Tile)] cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-control border border-line bg-white text-muted transition hover:text-primary hover:border-primary cursor-pointer"
         >
           <IconEdit className="h-3.5 w-3.5" />
           <span className="sr-only">Renommer</span>
@@ -127,7 +126,7 @@ export default function DocumentItemCard({
           onClick={() => onDelete(document)}
           disabled={disabled}
           title="Supprimer le document"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--White)] text-[var(--muted)] transition hover:text-[var(--Flush-Mahogany)] hover:border-[var(--Flush-Mahogany)] hover:bg-rose-50 cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-control border border-line bg-white text-muted transition hover:text-danger hover:border-danger hover:bg-rose-50 cursor-pointer"
         >
           <IconTrash className="h-3.5 w-3.5" />
           <span className="sr-only">Supprimer</span>
