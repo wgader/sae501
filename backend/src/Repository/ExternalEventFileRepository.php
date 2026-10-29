@@ -16,6 +16,14 @@ class ExternalEventFileRepository extends ServiceEntityRepository
         parent::__construct($registry, ExternalEventFile::class);
     }
 
+    /**
+     * @return ExternalEventFile[]
+     */
+    public function findForEvent(int $eventId): array
+    {
+        return $this->findBy(['event_id' => $eventId], ['id' => 'ASC']);
+    }
+
 //    /**
 //     * @return ExternalEventFile[] Returns an array of ExternalEventFile objects
 //     */

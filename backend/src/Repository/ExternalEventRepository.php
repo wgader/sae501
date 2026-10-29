@@ -16,6 +16,28 @@ class ExternalEventRepository extends ServiceEntityRepository
         parent::__construct($registry, ExternalEvent::class);
     }
 
+    public function countForAdministration(): int
+    {
+        return (int) $this->createQueryBuilder('e')
+            ->select('COUNT(e.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return ExternalEvent[]
+     */
+    public function findForAdministration(int $page, int $itemsPerPage): array
+    {
+        return $this->createQueryBuilder('e')
+            ->orderBy('e.start_date', 'ASC')
+            ->addOrderBy('e.id', 'ASC')
+            ->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage)
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return ExternalEvent[] Returns an array of ExternalEvent objects
 //     */

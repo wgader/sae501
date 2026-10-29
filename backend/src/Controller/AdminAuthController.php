@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * Authentification dédiée aux administrateurs (agents de la mairie).
  *
  * Différence clé avec /api/auth/login :
- *   - Le JWT n'est jamais émis si le compte n'a pas ROLE_ADMIN
+ *   - Le JWT n'est jamais émis si le compte n'a pas un rôle mairie autorisé
  *   - Le check de rôle est entièrement côté serveur
  */
 #[Route('/api/auth')]
@@ -31,7 +31,7 @@ final class AdminAuthController extends AbstractController
      *   200 → { "token": "<JWT>" }
      *   400 → champs manquants
      *   401 → identifiants incorrects
-     *   403 → compte valide mais pas ROLE_ADMIN
+     *   403 → compte valide mais sans rôle mairie autorisé
      */
     #[Route('/admin/login', name: 'api_admin_login', methods: ['POST'])]
     public function adminLogin(
@@ -64,11 +64,13 @@ final class AdminAuthController extends AbstractController
             );
         }
 
-        // ── Vérification du rôle ADMIN côté serveur ───────────────────────────
-        // Le JWT n'est jamais généré si le compte n'est pas admin
-        if (!in_array('ROLE_ADMIN', $user->getRoles(), true)) {
+        // ── Vérification des rôles mairie côté serveur ────────────────────────
+        if (
+            !in_array('ROLE_ADMIN', $user->getRoles(), true)
+            && !in_array('ROLE_ADMIN_GESTION_EVENT', $user->getRoles(), true)
+        ) {
             return $this->json(
-                ['message' => 'Accès refusé — droits administrateur requis.'],
+                ['message' => 'Accès refusé — un rôle mairie est requis.'],
                 Response::HTTP_FORBIDDEN
             );
         }

@@ -19,6 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Rôles disponibles :
  *   - ROLE_ASSOCIATION         → accès espace association
  *   - ROLE_ADMIN               → accès total (admin mairie)
+ *   - ROLE_ADMIN_GESTION_EVENT → gestion des événements externes
  *   - ROLE_GESTION_SUBVENTION  → accès module subventions
  *   - ROLE_GESTION_MATERIEL    → accès module matériel
  *   - ROLE_GESTION_SALLE       → accès module salles
@@ -41,6 +42,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public const ROLES_MAIRIE = [
         'ROLE_ADMIN',
+        'ROLE_GESTION_EVENT',
         'ROLE_GESTION_SUBVENTION',
         'ROLE_GESTION_MATERIEL',
         'ROLE_GESTION_SALLE',
