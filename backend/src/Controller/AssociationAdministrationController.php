@@ -34,25 +34,36 @@ final class AssociationAdministrationController extends AbstractController
         $page = max(1, $request->query->getInt('page', 1));
         $itemsPerPage = min(50, max(1, $request->query->getInt('itemsPerPage', 10)));
         $status = $request->query->get('status');
+        $search = $request->query->get('q');
 
         if ($status !== null && !in_array($status, self::STATUSES, true)) {
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $totalItems = $this->associationRepository->countForAdministration($status);
-        $counts = $this->associationRepository->getCountsForAdministration();
+        $includeCountsParam = $request->query->get('includeCounts');
+        $includeCounts = $includeCountsParam !== null
+            ? filter_var($includeCountsParam, FILTER_VALIDATE_BOOLEAN)
+            : true;
+
+        $totalItems = $this->associationRepository->countForAdministration($status, $search);
+        $counts = $includeCounts ? $this->associationRepository->getCountsForAdministration() : null;
         $items = array_map(
             static fn (Association $association): array => self::serializeAssociation($association),
-            $this->associationRepository->findForAdministration($status, $page, $itemsPerPage),
+            $this->associationRepository->findForAdministration($status, $page, $itemsPerPage, $search),
         );
 
-        return $this->json([
+        $responseData = [
             'items' => $items,
             'page' => $page,
             'itemsPerPage' => $itemsPerPage,
             'totalItems' => $totalItems,
-            'counts' => $counts,
-        ]);
+        ];
+
+        if ($counts !== null) {
+            $responseData['counts'] = $counts;
+        }
+
+        return $this->json($responseData);
     }
 
     #[Route('/{id}', name: 'admin_association_show', methods: ['GET'])]
