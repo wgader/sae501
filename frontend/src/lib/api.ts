@@ -89,6 +89,71 @@ export type Equipment = {
   createdAt: string | null;
 };
 
+export type EquipmentAvailability = Equipment & {
+  stockEngage: number;
+  stockDisponible: number;
+};
+
+export type EquipmentAvailabilityResponse = {
+  start: string;
+  end: string;
+  items: EquipmentAvailability[];
+};
+
+export type EquipmentReservationLineInput = {
+  materielId: number;
+  quantite: number;
+};
+
+export type EquipmentReservationInput = {
+  motifEvenement: string;
+  dateRetrait: string;
+  dateRestitution: string;
+  lignes: EquipmentReservationLineInput[];
+};
+
+export type EquipmentReservation = {
+  id: number | null;
+  statut: 'En attente' | 'Validée' | 'Refusée' | 'Clôturée';
+  motifEvenement: string | null;
+  dateRetrait: string | null;
+  dateRestitution: string | null;
+  lignes: Array<{
+    materielId: number | null;
+    designation: string | null;
+    quantite: number | null;
+  }>;
+};
+
+export type AdminEquipmentReservation = EquipmentReservation & {
+  createdAt: string | null;
+  updatedAt: string | null;
+  noteInterne: string | null;
+  association: {
+    id: number | null;
+    nom: string | null;
+    contact: {
+      nom: string | null;
+      prenom: string | null;
+      email: string | null;
+      telephone: string | null;
+    };
+  };
+};
+
+export type AdminEquipmentReservationPage = {
+  items: AdminEquipmentReservation[];
+  page: number;
+  itemsPerPage: number;
+  totalItems: number;
+  counts: {
+    pending: number;
+    validated: number;
+    refused: number;
+    total: number;
+  };
+};
+
 export type StockCheckResult = {
   equipmentId: number;
   currentStock: number;
@@ -221,6 +286,23 @@ export function updateAccountProfile(payload: {
   });
 }
 
+export function getEquipmentAvailability(
+  start: string,
+  end: string,
+): Promise<EquipmentAvailabilityResponse> {
+  const params = new URLSearchParams({ start, end });
+  return accountRequest<EquipmentAvailabilityResponse>(`/api/equipment/availability?${params.toString()}`);
+}
+
+export function createEquipmentReservation(
+  payload: EquipmentReservationInput,
+): Promise<EquipmentReservation> {
+  return accountRequest<EquipmentReservation>('/api/equipment/reservations', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function registerAssociation(payload: {
   nomAssociation: string;
   nom: string;
@@ -304,6 +386,36 @@ export function getAdminEquipment(category?: string, archived?: boolean): Promis
   if (archived !== undefined) params.set('archived', String(archived));
   const query = params.toString() ? `?${params.toString()}` : '';
   return request<Equipment[]>(`/api/admin/equipment${query}`);
+}
+
+export function getAdminEquipmentReservations(
+  page: number,
+  status: AdminEquipmentReservation['statut'] | '',
+  search?: string,
+  itemsPerPage = 10,
+): Promise<AdminEquipmentReservationPage> {
+  const params = new URLSearchParams({
+    page: String(page),
+    itemsPerPage: String(itemsPerPage),
+  });
+  if (status) params.set('status', status);
+  if (search) params.set('q', search);
+  return request<AdminEquipmentReservationPage>(`/api/admin/equipment/reservations?${params.toString()}`);
+}
+
+export function getAdminEquipmentReservation(id: number): Promise<AdminEquipmentReservation> {
+  return request<AdminEquipmentReservation>(`/api/admin/equipment/reservations/${id}`);
+}
+
+export function updateAdminEquipmentReservationStatus(
+  id: number,
+  status: 'Validée' | 'Refusée',
+  noteInterne?: string,
+): Promise<AdminEquipmentReservation> {
+  return request<AdminEquipmentReservation>(`/api/admin/equipment/reservations/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, noteInterne }),
+  });
 }
 
 export function createAdminEquipment(data: FormData | Record<string, unknown>): Promise<Equipment> {

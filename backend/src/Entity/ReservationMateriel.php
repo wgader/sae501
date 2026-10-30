@@ -69,6 +69,9 @@ class ReservationMateriel
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    #[ORM\Column(name: 'note_interne', type: Types::TEXT, nullable: true)]
+    private ?string $noteInterne = null;
+
     /**
      * @var Collection<int, ReservationMaterielLigne>
      */
@@ -231,6 +234,18 @@ class ReservationMateriel
         return $this;
     }
 
+    public function getNoteInterne(): ?string
+    {
+        return $this->noteInterne;
+    }
+
+    public function setNoteInterne(?string $noteInterne): static
+    {
+        $this->noteInterne = $noteInterne;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, ReservationMaterielLigne>
      */
@@ -260,4 +275,3 @@ class ReservationMateriel
         return $this;
     }
 }
-

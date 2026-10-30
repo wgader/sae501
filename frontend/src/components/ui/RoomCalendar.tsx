@@ -188,7 +188,7 @@ export default function RoomCalendar({
             <IconChevronLeft className="h-4 w-4" />
           </button>
         </div>
-        <span className="min-w-[15rem] text-center sm:min-w-[18.75rem]">{formatHeader()}</span>
+        <span className="min-w-60 text-center sm:min-w-75">{formatHeader()}</span>
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
