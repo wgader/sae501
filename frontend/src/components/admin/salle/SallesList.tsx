@@ -1,5 +1,4 @@
 'use client';
-
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { archiveSalle, getSalles, type Salle, updateSalle, updateSalleStatus } from '@/lib/api';
@@ -87,7 +86,6 @@ function ActionIcon({ name }: { name: 'edit' | 'archive' | 'status' }) {
     archive: <><path d="M4 7h12v9H4zM3 4h14v3H3zM7 10h6" /></>,
     status: <><path d="M4 10a6 6 0 1 0 2-4.5" /><path d="M4 4v4h4" /></>,
   };
-
   return <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
@@ -116,11 +114,11 @@ export default function SallesList() {
 
   const filteredSalles = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-
     return salles.filter((salle) => {
       const matchesSearch = !normalizedSearch
         || salle.nom.toLowerCase().includes(normalizedSearch)
         || salle.adresse.toLowerCase().includes(normalizedSearch);
+
       const matchesStatus = statusFilter === 'ALL'
         || (statusFilter === 'ARCHIVED' && salle.deletedAt !== null)
         || (statusFilter === 'ACTIVE' && salle.deletedAt === null && salle.isActive)
@@ -145,7 +143,6 @@ export default function SallesList() {
     const timeoutId = window.setTimeout(() => {
       void loadSalles();
     }, 0);
-
     return () => window.clearTimeout(timeoutId);
   }, []);
 
@@ -159,13 +156,15 @@ export default function SallesList() {
 
   async function save() {
     if (!form || !form.nom.trim() || !form.adresse.trim() || form.capaciteMax <= 0) {
-      setError('Le nom, l’adresse et une capacité supérieure à zéro sont obligatoires.');
+      setError('Le nom, l\'adresse et une capacité supérieure à zéro sont obligatoires.');
       return;
     }
+
     if (!isFrenchAddress(form.adresse)) {
       setError('Saisissez une adresse avec une voie, un code postal à 5 chiffres et une ville.');
       return;
     }
+
     if (editingImage && (!['image/jpeg', 'image/png', 'image/webp'].includes(editingImage.type) || editingImage.size > 5 * 1024 * 1024)) {
       setError('La nouvelle image doit être au format JPEG, PNG ou WebP et ne pas dépasser 5 Mo.');
       return;
@@ -181,6 +180,7 @@ export default function SallesList() {
         equipementsInclus: form.equipementsInclus,
         image: editingImage ?? undefined,
       });
+
       setSalles((current) => current.map((salle) => salle.id === updated.id ? updated : salle));
       setBrokenImageIds((current) => current.filter((id) => id !== updated.id));
       setEditingId(null);
@@ -205,10 +205,9 @@ export default function SallesList() {
   }
 
   async function archive(salle: Salle) {
-    if (!window.confirm(`Archiver la salle « ${salle.nom} » ?`)) {
+    if (!window.confirm(`Archiver la salle "${salle.nom}" ?`)) {
       return;
     }
-
     setError('');
     setMessage('');
     try {
@@ -216,7 +215,7 @@ export default function SallesList() {
       setSalles((current) => current.map((item) => item.id === updated.id ? updated : item));
       setMessage('La salle a été archivée et bloquée pour les réservations.');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Impossible d’archiver la salle.');
+      setError(cause instanceof Error ? cause.message : 'Impossible d\'archiver la salle.');
     }
   }
 
@@ -226,10 +225,11 @@ export default function SallesList() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-caption font-black uppercase tracking-section text-primary">Catalogue</p>
-            <h2 className="mt-1 text-xl font-black tracking-display text-ink">Salles disponibles</h2>
+            <h2 className="mt-1 text-xl font-black tracking-display text-ink">Gestion des salles</h2>
           </div>
           <span className="rounded-pill bg-primary-soft px-3 py-1.5 text-xs font-bold text-primary">{filteredSalles.length} résultat{filteredSalles.length > 1 ? 's' : ''}</span>
         </div>
+
         <div className="mt-5 flex flex-col gap-3 md:flex-row">
           <label className="relative flex-1">
             <span className="sr-only">Rechercher une salle</span>
@@ -263,9 +263,11 @@ export default function SallesList() {
           </div>
         </div>
       </div>
+
       <div className="p-6">
         {error && <p className="mb-4 rounded-control border border-danger/30 bg-rose-50/70 p-3 text-sm font-semibold text-danger" role="alert">{error}</p>}
         {message && <p className="mb-4 rounded-control border border-primary/30 bg-primary-soft/40 p-3 text-sm font-semibold text-primary" role="status">{message}</p>}
+
         {salles.length === 0 ? (
           <p className="rounded-control border border-dashed border-line bg-paper px-5 py-12 text-center text-sm text-muted">Aucune salle enregistrée.</p>
         ) : visibleSalles.length === 0 ? (
@@ -284,16 +286,19 @@ export default function SallesList() {
                         onChange={(event) => setEditingImage(event.target.files?.[0] ?? null)}
                         className="mt-2 w-full rounded-control border border-dashed border-line bg-white px-3 py-2.5 text-sm font-normal text-ink"
                       />
-                      <span className="mt-1 block text-xs font-normal text-muted">Facultatif · JPEG, PNG ou WebP, 5 Mo maximum.</span>
+                      <span className="mt-1 block text-xs font-normal text-muted">Facultatif : JPEG, PNG ou WebP, 5 Mo maximum.</span>
                     </label>
+
                     <input value={form.nom} onChange={(event) => setForm({ ...form, nom: event.target.value })} className="rounded-control border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary" aria-label="Nom de la salle" />
                     <textarea value={form.adresse} onChange={(event) => setForm({ ...form, adresse: event.target.value })} rows={2} className="rounded-control border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary" aria-label="Adresse de la salle" />
                     <textarea value={form.description ?? ''} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={3} className="rounded-control border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary md:col-span-2" aria-label="Description de la salle" />
                     <input type="number" min="1" value={form.capaciteMax} onChange={(event) => setForm({ ...form, capaciteMax: Number(event.target.value) })} className="rounded-control border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary" aria-label="Capacité maximale" />
+
                     <label className="flex items-center gap-2 text-sm font-bold text-ink cursor-pointer">
                       <input type="checkbox" checked={form.accesPmr} onChange={(event) => setForm({ ...form, accesPmr: event.target.checked })} className="accent-primary" />
                       Accès PMR
                     </label>
+
                     <fieldset className="md:col-span-2">
                       <legend className="text-sm font-bold text-ink">Équipements inclus</legend>
                       <div className="mt-2 flex flex-wrap gap-4">
@@ -314,6 +319,7 @@ export default function SallesList() {
                         ))}
                       </div>
                     </fieldset>
+
                     <div className="flex gap-2 md:col-span-2">
                       <button type="button" onClick={() => void save()} className="rounded-control bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-hover cursor-pointer">Enregistrer</button>
                       <button type="button" onClick={() => { setEditingId(null); setForm(null); setEditingImage(null); }} className="rounded-control border border-line px-4 py-2 text-sm font-bold text-ink transition hover:bg-paper cursor-pointer">Annuler</button>
@@ -364,7 +370,6 @@ export default function SallesList() {
                           Capacité d&apos;accueil : <span className="font-bold text-ink">{salle.capaciteMax} personnes</span>
                         </p>
 
-                        {/* Tags équipements & accessibilité */}
                         <div className="mt-3 flex flex-wrap items-center gap-1.5">
                           {salle.accesPmr && (
                             <span
@@ -375,7 +380,6 @@ export default function SallesList() {
                               <span>PMR</span>
                             </span>
                           )}
-
                           {salle.equipementsInclus && salle.equipementsInclus.length > 0 ? (
                             salle.equipementsInclus.map((eq) => {
                               const info = getEquipmentInfo(eq);
@@ -423,6 +427,7 @@ export default function SallesList() {
             ))}
           </div>
         )}
+
         {filteredSalles.length > 0 && (
           <div className="mt-6 flex items-center justify-between border-t border-line pt-4 text-xs font-semibold text-muted">
             <span>Page {page} sur {totalPages}</span>

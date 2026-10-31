@@ -9,6 +9,10 @@ frontend/out/
 frontend/.turbo/
 frontend/coverage/
 frontend/.npm
+frontend/.cache
+frontend/playwright-report/
+frontend/test-results/
+
 
 # ── Symfony / PHP ──────────────────────────────
 backend/vendor/
@@ -31,3 +35,4 @@ caddy_config/
 *.swo
 Thumbs.db
 CLAUDE.md
+
