@@ -38,5 +38,22 @@ class ReservationMaterielRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return list<ReservationMateriel>
+     */
+    public function findByAssociation(\App\Entity\Association $association): array
+    {
+        return $this->createQueryBuilder('r')
+            ->leftJoin('r.lignes', 'l')
+            ->addSelect('l')
+            ->leftJoin('l.materiel', 'm')
+            ->addSelect('m')
+            ->andWhere('r.association = :association')
+            ->setParameter('association', $association)
+            ->orderBy('r.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }
 

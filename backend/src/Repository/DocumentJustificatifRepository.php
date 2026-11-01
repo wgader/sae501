@@ -16,28 +16,19 @@ class DocumentJustificatifRepository extends ServiceEntityRepository
         parent::__construct($registry, DocumentJustificatif::class);
     }
 
-//    /**
-//     * @return DocumentJustificatif[] Returns an array of DocumentJustificatif objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('d')
-//            ->andWhere('d.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('d.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?DocumentJustificatif
-//    {
-//        return $this->createQueryBuilder('d')
-//            ->andWhere('d.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /**
+     * @return list<DocumentJustificatif>
+     */
+    public function findByLinkedEntity(string $type, int $id): array
+    {
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.lieAType = :type')
+            ->andWhere('d.lieAId = :id')
+            ->andWhere('d.deletedAt IS NULL')
+            ->setParameter('type', $type)
+            ->setParameter('id', $id)
+            ->orderBy('d.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

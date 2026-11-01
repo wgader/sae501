@@ -128,6 +128,94 @@ export type AccountProfile = {
   typeCompte?: string | null;
 };
 
+export type RequestType = 'subvention' | 'materiel' | 'salle';
+export type RequestStatusCategory = 'active' | 'closed';
+
+export type AssociationRequestSummary = {
+  id: string;
+  rawId: number;
+  type: RequestType;
+  typeLabel: string;
+  intitule: string;
+  statut: string;
+  statusCategory: RequestStatusCategory;
+  createdAt: string;
+  year: number;
+  keyDates: {
+    depot: string;
+    exercice?: string;
+    retrait?: string;
+    restitution?: string;
+    debut?: string;
+    fin?: string;
+  };
+  decisionMotif?: string | null;
+  observations?: string | null;
+  summary: string;
+};
+
+export type RequestTimelineEvent = {
+  id?: number;
+  statut: string;
+  label: string;
+  commentaire?: string | null;
+  auteur?: string | null;
+  date: string;
+};
+
+export type RequestDocument = {
+  id: number;
+  typeDocument: string;
+  fichierUrl: string;
+  description?: string | null;
+  createdAt?: string | null;
+};
+
+export type AssociationRequestDetail = AssociationRequestSummary & {
+  typeSubvention?: string;
+  description?: string | null;
+  montantDemande?: number;
+  montantAccorde?: number | null;
+  anneeExercice?: number;
+  lignes?: Array<{
+    materielId?: number;
+    designation: string;
+    categorie?: string;
+    quantite: number;
+    imagePath?: string | null;
+  }>;
+  cautionMontant?: number | null;
+  cautionPayeeAt?: string | null;
+  materielRetireAt?: string | null;
+  materielRestitueAt?: string | null;
+  cautionRendueAt?: string | null;
+  salleId?: number;
+  salleNom?: string;
+  salleAdresse?: string;
+  salleCapaciteMax?: number;
+  salleAccesPmr?: boolean;
+  salleEquipements?: string[];
+  capaciteAttendue?: number | null;
+  documents: RequestDocument[];
+  timeline: RequestTimelineEvent[];
+};
+
+export type AssociationRequestsResponse = {
+  items: AssociationRequestSummary[];
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  counts: {
+    all: number;
+    active: number;
+    closed: number;
+    subvention: number;
+    materiel: number;
+    salle: number;
+  };
+};
+
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly data?: unknown) {
     super(message);
@@ -139,6 +227,16 @@ function redirectToAdminLogin(): never {
   localStorage.removeItem('token');
   window.location.replace('/admin');
   throw new ApiError('Redirection vers la connexion administrateur.', 401);
+}
+
+function redirectToAssociationLogin(): never {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('association_name');
+    window.dispatchEvent(new Event('auth-change'));
+    window.location.replace('/connexion');
+  }
+  throw new ApiError('Votre session a expiré. Redirection vers la page de connexion...', 401);
 }
 
 function getToken(): string {
@@ -177,12 +275,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
-async function accountRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function accountRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  defaultErrorMessage = 'Une erreur est survenue lors de la communication avec le serveur.',
+): Promise<T> {
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem('token') || localStorage.getItem('admin_token'))
     : null;
   if (!token) {
-    throw new ApiError('Vous devez être connecté pour accéder à votre profil.', 401);
+    return redirectToAssociationLogin();
   }
 
   const response = await fetch(`${API_URL}${path}`, {
@@ -196,9 +298,13 @@ async function accountRequest<T>(path: string, options: RequestInit = {}): Promi
   });
   const data = await response.json().catch(() => null);
 
+  if (response.status === 401) {
+    return redirectToAssociationLogin();
+  }
+
   if (!response.ok) {
     throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Impossible de mettre à jour le profil.',
+      typeof data?.message === 'string' ? data.message : defaultErrorMessage,
       response.status,
       data,
     );
@@ -208,17 +314,61 @@ async function accountRequest<T>(path: string, options: RequestInit = {}): Promi
 }
 
 export function getAccountProfile(): Promise<AccountProfile> {
-  return accountRequest<AccountProfile>('/api/account/profile');
+  return accountRequest<AccountProfile>(
+    '/api/account/profile',
+    {},
+    'Impossible de charger les informations du profil.',
+  );
 }
 
 export function updateAccountProfile(payload: {
   email?: string;
   telephone?: string | null;
 }): Promise<AccountProfile> {
-  return accountRequest<AccountProfile>('/api/account/profile', {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  });
+  return accountRequest<AccountProfile>(
+    '/api/account/profile',
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+    'Impossible de mettre à jour le profil.',
+  );
+}
+
+export function getAssociationRequests(filters?: {
+  status?: string;
+  type?: string;
+  year?: string | number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AssociationRequestsResponse> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.type) params.set('type', filters.type);
+  if (filters?.year) params.set('year', String(filters.year));
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.page) params.set('page', String(filters.page));
+  if (filters?.limit) params.set('limit', String(filters.limit));
+
+  const qs = params.toString();
+  return accountRequest<AssociationRequestsResponse>(
+    `/api/association/requests${qs ? `?${qs}` : ''}`,
+    {},
+    'Impossible de récupérer la liste des démarches.',
+  );
+}
+
+export function getAssociationRequestDetail(
+  id: string,
+  type?: string
+): Promise<AssociationRequestDetail> {
+  const qs = type ? `?type=${encodeURIComponent(type)}` : '';
+  return accountRequest<AssociationRequestDetail>(
+    `/api/association/requests/${encodeURIComponent(id)}${qs}`,
+    {},
+    'Impossible de charger le détail du dossier.',
+  );
 }
 
 export async function registerAssociation(payload: {
