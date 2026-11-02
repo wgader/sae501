@@ -33,7 +33,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('', name: 'api_events_external_list', methods: ['GET'])]
-    #[IsGranted('ROLE_GESTION_EVENT')]
+    #[IsGranted('ROLE_ADMIN_GESTION_EVENT')]
     public function list(Request $request): JsonResponse
     {
         $page = max(1, $request->query->getInt('page', 1));
@@ -51,7 +51,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'api_events_external_show', methods: ['GET'])]
-    #[IsGranted('ROLE_GESTION_EVENT')]
+    #[IsGranted('ROLE_ADMIN_GESTION_EVENT')]
     public function show(int $id): JsonResponse
     {
         $event = $this->eventRepository->find($id);
@@ -69,7 +69,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('/files/{id<\d+>}', name: 'api_events_external_file_download', methods: ['GET'])]
-    #[IsGranted('ROLE_GESTION_EVENT')]
+    #[IsGranted('ROLE_ADMIN_GESTION_EVENT')]
     public function downloadFile(int $id): BinaryFileResponse|JsonResponse
     {
         $file = $this->eventFileRepository->find($id);

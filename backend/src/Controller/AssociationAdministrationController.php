@@ -15,7 +15,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 
 #[Route('/api/admin/associations')]
-#[IsGranted('ROLE_MAIRIE')]
+#[IsGranted('ROLE_ADMIN')]
 final class AssociationAdministrationController extends AbstractController
 {
     private const STATUSES = ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED'];
