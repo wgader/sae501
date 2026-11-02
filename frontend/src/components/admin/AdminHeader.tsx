@@ -35,7 +35,7 @@ export default function AdminHeader({
 
         <form role="search" onSubmit={(e) => e.preventDefault()} className="relative w-full max-w-sm sm:max-w-md">
           <label htmlFor="admin-search-input" className="sr-only">
-            Rechercher une association
+            Rechercher
           </label>
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)]">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -48,7 +48,7 @@ export default function AdminHeader({
             type="search"
             value={searchTerm}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder="Rechercher une association"
+            placeholder="Rechercher..."
             className="h-10 w-full rounded-full border-0 bg-[var(--White)]/95 pl-10 pr-4 text-sm text-[var(--ink)] placeholder-[var(--muted)]/75 shadow-xs transition focus:bg-[var(--White)] focus:outline-none focus:ring-2 focus:ring-[var(--Lime-Cream)]"
           />
         </form>
