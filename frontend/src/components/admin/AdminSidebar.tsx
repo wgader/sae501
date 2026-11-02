@@ -11,13 +11,20 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const roles = getAdminRoles();
+  const isAdmin = roles.includes('ROLE_ADMIN');
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     router.replace('/admin');
   };
 
-  const navItems = [
+  const navItems: Array<{
+    label: string;
+    href: string;
+    roles?: string[];
+    icon: React.ReactNode;
+  }> = [
     {
       label: 'Accueil',
       href: '/admin/dashboard',
@@ -40,6 +47,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
     {
       label: 'Inscription',
       href: '/admin/inscriptions',
+      roles: ['ROLE_ADMIN'],
       icon: (
         <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -52,6 +60,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
     {
       label: 'Modules',
       href: '/admin/modules',
+      roles: ['ROLE_ADMIN', 'ROLE_GESTION_SUBVENTION', 'ROLE_GESTION_MATERIEL', 'ROLE_GESTION_SALLE'],
       icon: (
         <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -62,8 +71,20 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
       ),
     },
     {
+      label: 'Événements',
+      href: '/admin/evenements',
+      roles: ['ROLE_ADMIN', 'ROLE_GESTION_EVENT'],
+      icon: (
+        <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="17" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      ),
+    },
+    {
       label: 'Agents',
       href: '/admin/agents',
+      roles: ['ROLE_ADMIN'],
       icon: (
         <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -95,7 +116,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         </Link>
 
         <nav aria-label="Menu principal administration" className="flex flex-col gap-2">
-          {navItems.map((item) => {
+          {navItems.filter((item) => isAdmin || !item.roles || item.roles.some((role) => roles.includes(role))).map((item) => {
             const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
 
             return (
@@ -132,4 +153,18 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
       </div>
     </aside>
   );
+}
+
+function getAdminRoles(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  const token = localStorage.getItem('admin_token');
+  if (!token) return [];
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return Array.isArray(payload.roles) ? payload.roles.filter((role: unknown): role is string => typeof role === 'string') : [];
+  } catch {
+    return [];
+  }
 }
