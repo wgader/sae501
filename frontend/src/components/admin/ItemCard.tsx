@@ -8,8 +8,6 @@ import StatusTag, { type AssociationModule } from './StatusTag';
 import Button from '@/components/ui/Button';
 import type { ModuleChangeItem } from '@/components/ui/ConfirmationModal';
 
-type AssociationManagedModule = Exclude<AssociationModule, 'evenements'>;
-
 export const itemCardVariants = cva(
   'group flex flex-col rounded-[1.13rem] border border-[var(--line)] bg-[var(--White)] shadow-xs transition-all duration-200 hover:border-[var(--Mosaic-Tile)]/40 hover:shadow-md w-full overflow-hidden',
 );
@@ -41,7 +39,7 @@ export interface ItemCardProps
 }
 
 const MODULES_CONFIG: Array<{
-  id: AssociationManagedModule;
+  id: AssociationModule;
   label: string;
   icon: string;
 }> = [
@@ -160,7 +158,7 @@ export default function ItemCard({
     }
   };
 
-  const handleCheckboxToggle = (modId: AssociationManagedModule) => {
+  const handleCheckboxToggle = (modId: AssociationModule) => {
     setDraft({
       ...currentSelection,
       [modId]: !currentSelection[modId],
@@ -356,3 +354,4 @@ export default function ItemCard({
     </li>
   );
 }
+

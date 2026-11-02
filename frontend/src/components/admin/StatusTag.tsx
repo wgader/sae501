@@ -13,7 +13,6 @@ export const statusTagVariants = cva(
         PENDING_VALIDATION: 'bg-[#9c7a19] text-white',
         VALIDATED: 'bg-Mosaic-Tile text-white',
         REFUSED: 'bg-Flush-Mahogany text-white',
-        evenements: 'bg-[#d9c2a7] text-ink',
         salles: 'bg-Mosaic-Tile text-white',
         subventions: 'bg-Misty-Rose text-ink',
         materiel: 'bg-Indigo-Bloom text-white',
@@ -28,7 +27,6 @@ export const TAG_LABELS: Record<StatusTagType, string> = {
   PENDING_VALIDATION: 'En attente',
   VALIDATED: 'Accepté',
   REFUSED: 'Refusé',
-  evenements: 'Événement',
   salles: 'Salle',
   subventions: 'Subvention',
   materiel: 'Matériel',
@@ -55,3 +53,4 @@ export default function StatusTag({
     </span>
   );
 }
+
