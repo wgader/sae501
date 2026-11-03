@@ -5,7 +5,3 @@ _security_logout:
 api_login:
     path: /api/auth/login
     methods: [POST]
-
-api_admin_login:
-    path: /api/auth/admin/login
-    methods: [POST]

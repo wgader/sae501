@@ -20,8 +20,11 @@ class AssociationRepository extends ServiceEntityRepository
      * @return list<Association>
      */
     public function findForAdministration(?string $status, int $page, int $itemsPerPage, ?string $search = null): array
+    public function findForAdministration(?string $status, int $page, int $itemsPerPage, ?string $search = null): array
     {
         $queryBuilder = $this->createQueryBuilder('association')
+            ->leftJoin('association.users', 'user')
+            ->addSelect('user')
             ->orderBy('association.createdAt', 'DESC')
             ->addOrderBy('association.id', 'DESC')
             ->setFirstResult(($page - 1) * $itemsPerPage)
@@ -40,12 +43,28 @@ class AssociationRepository extends ServiceEntityRepository
                 ->setParameter('search', '%' . strtolower(trim($search)) . '%');
         }
 
+<<<<<<< HEAD
+        if ($search !== null && trim($search) !== '') {
+            $queryBuilder
+                ->leftJoin('association.users', 'user')
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+=======
+        if ($search !== null && $search !== '') {
+            $queryBuilder
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search')
+                ->setParameter('search', '%' . mb_strtolower($search) . '%');
+>>>>>>> origin/feature/gestion-agent
+        }
+
         return $queryBuilder->getQuery()->getResult();
     }
 
     public function countForAdministration(?string $status, ?string $search = null): int
+    public function countForAdministration(?string $status, ?string $search = null): int
     {
         $queryBuilder = $this->createQueryBuilder('association')
+            ->select('COUNT(DISTINCT association.id)');
             ->select('COUNT(DISTINCT association.id)');
 
         if ($status !== null) {
@@ -61,6 +80,21 @@ class AssociationRepository extends ServiceEntityRepository
                 ->setParameter('search', '%' . strtolower(trim($search)) . '%');
         }
 
+<<<<<<< HEAD
+        if ($search !== null && trim($search) !== '') {
+            $queryBuilder
+                ->leftJoin('association.users', 'user')
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+=======
+        if ($search !== null && $search !== '') {
+            $queryBuilder
+                ->leftJoin('association.users', 'user')
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search')
+                ->setParameter('search', '%' . mb_strtolower($search) . '%');
+>>>>>>> origin/feature/gestion-agent
+        }
+
         return (int) $queryBuilder->getQuery()->getSingleScalarResult();
     }
 
@@ -69,11 +103,21 @@ class AssociationRepository extends ServiceEntityRepository
      */
     public function getCountsForAdministration(): array
     {
+        $qb = $this->createQueryBuilder('association')
+            ->select("
+                SUM(CASE WHEN association.statut = 'PENDING_VALIDATION' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN association.statut = 'VALIDATED' THEN 1 ELSE 0 END) AS validated,
+                SUM(CASE WHEN association.statut = 'REFUSED' THEN 1 ELSE 0 END) AS refused,
+                COUNT(association.id) AS total
+            ");
+
+        $result = $qb->getQuery()->getSingleResult();
+
         return [
-            'pending' => $this->countForAdministration('PENDING_VALIDATION'),
-            'validated' => $this->countForAdministration('VALIDATED'),
-            'refused' => $this->countForAdministration('REFUSED'),
-            'total' => $this->countForAdministration(null),
+            'pending' => (int) ($result['pending'] ?? 0),
+            'validated' => (int) ($result['validated'] ?? 0),
+            'refused' => (int) ($result['refused'] ?? 0),
+            'total' => (int) ($result['total'] ?? 0),
         ];
     }
 }

@@ -33,17 +33,17 @@ security:
             jwt: ~
 
     # Note: Only the *first* matching rule is applied
-    access_control:
-        - { path: ^/api/auth/admin/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/activate, roles: PUBLIC_ACCESS }
-        - { path: ^/api/auth/resend-activation, roles: PUBLIC_ACCESS }
-        - { path: ^/api/docs, roles: PUBLIC_ACCESS }
-        - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+  access_control:
+    - { path: ^/api/auth/admin/login$, roles: PUBLIC_ACCESS }
+    - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
+    - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+    - { path: ^/api/auth/activate, roles: PUBLIC_ACCESS }
+    - { path: ^/api/auth/resend-activation, roles: PUBLIC_ACCESS }
+    - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+    - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+    - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
+    - { path: ^/api/admin, roles: ROLE_ADMIN }
+    - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:
