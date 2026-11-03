@@ -255,7 +255,7 @@ final class SalleAdministrationController extends AbstractController
             return null;
         }
 
-        $pattern = "/^(?:[\\p{L}\\d][\\p{L}\\d .'-]*,\\s*\\d{5}\\s+[\\p{L}][\\p{L} .'-]*|[\\p{L}\\d][\\p{L}\\d .'-]*,\\s*[\\p{L}][\\p{L} .'-]*\\s+\\d{5})$/u";
+        $pattern = "/^(?:[\\p{L}\\d][^,]{2,},\\s*\\d{5}(?:\\s+[\\p{L}][\\p{L} .'-]*)?|[\\p{L}\\d][^,]{2,},\\s*[\\p{L}][\\p{L} .'-]*\\s+\\d{5})$/u";
 
         return preg_match($pattern, $address) === 1 ? $address : null;
     }

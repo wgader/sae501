@@ -193,7 +193,23 @@ export type AccountProfile = {
   typeCompte?: string | null;
 };
 
-export type RequestType = 'subvention' | 'materiel' | 'salle';
+export type MunicipalAgent = {
+  id: number;
+  nom: string;
+  prenom: string;
+  email: string;
+  roles: string[];
+};
+
+export function getMunicipalAgents(): Promise<MunicipalAgent[]> {
+  return request<MunicipalAgent[]>('/api/admin/agents');
+}
+
+export function deleteMunicipalAgent(id: number): Promise<void> {
+  return request<void>(`/api/admin/agents/${id}`, { method: 'DELETE' });
+}
+
+export type RequestType = 'subvention' | 'materiel' | 'salle' | 'evenement';
 export type RequestStatusCategory = 'active' | 'closed';
 
 export type AssociationRequestSummary = {
@@ -278,6 +294,7 @@ export type AssociationRequestsResponse = {
     subvention: number;
     materiel: number;
     salle: number;
+    evenement: number;
   };
 };
 

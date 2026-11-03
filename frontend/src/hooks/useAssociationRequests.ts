@@ -34,6 +34,7 @@ export function useAssociationRequests(options: UseAssociationRequestsOptions = 
     subvention: 0,
     materiel: 0,
     salle: 0,
+    evenement: 0,
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(true);

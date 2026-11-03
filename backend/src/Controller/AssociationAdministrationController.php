@@ -129,7 +129,14 @@ final class AssociationAdministrationController extends AbstractController
             $this->entityManager->persist($association);
             $this->entityManager->flush();
 
-            if ($status !== null && $previousStatus !== $status) {
+            $needsActivationEmail = $status === 'VALIDATED'
+                && (
+                    $previousStatus !== $status
+                    || $association->getUsers()->exists(
+                        static fn (int $_index, \App\Entity\User $user): bool => !$user->isVerified() && $user->getActivationToken() === null
+                    )
+                );
+            if ($needsActivationEmail) {
                 $this->statusNotifier->notify($association, $status);
             }
 

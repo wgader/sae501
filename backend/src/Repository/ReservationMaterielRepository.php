@@ -38,5 +38,25 @@ class ReservationMaterielRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
-}
 
+    /**
+     * @return list<array{id: int, engagedStock: int}>
+     */
+    public function getEngagedStockByEquipment(
+        \DateTimeImmutable $start,
+        \DateTimeImmutable $end,
+    ): array {
+        return $this->createQueryBuilder('r')
+            ->select('IDENTITY(l.materiel) AS id, SUM(l.quantite) AS engagedStock')
+            ->innerJoin('r.lignes', 'l')
+            ->andWhere('r.statut IN (:statuses)')
+            ->andWhere('r.dateRetrait < :end')
+            ->andWhere('r.dateRestitution > :start')
+            ->setParameter('statuses', ['En attente', 'En cours de traitement', 'Validée'])
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->groupBy('l.materiel')
+            ->getQuery()
+            ->getArrayResult();
+    }
+}

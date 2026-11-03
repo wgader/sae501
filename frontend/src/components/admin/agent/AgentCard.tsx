@@ -10,9 +10,10 @@ export interface MunicipalAgent {
 
 interface AgentCardProps {
   agent: MunicipalAgent;
+  onDelete?: (id: number) => void;
 }
 
-export default function AgentCard({ agent }: AgentCardProps) {
+export default function AgentCard({ agent, onDelete }: AgentCardProps) {
   return (
     <article className="flex items-center justify-between gap-4 rounded-card border border-line bg-paper p-5 sm:p-6 transition hover:border-primary/40 hover:shadow-xs">
       <header className="flex items-center gap-4">
@@ -30,9 +31,20 @@ export default function AgentCard({ agent }: AgentCardProps) {
         </div>
       </header>
 
-      <span className="rounded-pill bg-primary px-3 py-1 text-xs font-bold text-white">
-        {agent.role}
-      </span>
+      <div className="flex items-center gap-3">
+        <span className="rounded-pill bg-primary px-3 py-1 text-xs font-bold text-white">
+          {agent.role}
+        </span>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={() => onDelete(agent.id)}
+            className="text-xs font-bold text-danger underline underline-offset-4"
+          >
+            Supprimer
+          </button>
+        )}
+      </div>
     </article>
   );
 }

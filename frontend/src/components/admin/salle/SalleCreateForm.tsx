@@ -13,7 +13,7 @@ const EQUIPMENT_OPTIONS = [
 
 function isFrenchAddress(value: string): boolean {
   const address = value.trim().replace(/\s+/g, ' ');
-  return /^(?:[\p{L}\d][\p{L}\d .'-]*,\s*\d{5}\s+[\p{L}][\p{L} .'-]*|[\p{L}\d][\p{L}\d .'-]*,\s*[\p{L}][\p{L} .'-]*\s+\d{5})$/u.test(address);
+  return /^(?:[\p{L}\d][^,]{2,},\s*\d{5}(?:\s+[\p{L}][\p{L} .'-]*)?|[\p{L}\d][^,]{2,},\s*[\p{L}][\p{L} .'-]*\s+\d{5})$/u.test(address);
 }
 
 type SalleCreateFormProps = {

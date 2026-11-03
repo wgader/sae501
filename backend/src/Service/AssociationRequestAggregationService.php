@@ -6,11 +6,13 @@ use App\Entity\Association;
 use App\Entity\DemandeStatusHistory;
 use App\Entity\DemandeSubvention;
 use App\Entity\DocumentJustificatif;
+use App\Entity\ExternalEvent;
 use App\Entity\ReservationMateriel;
 use App\Entity\ReservationSalle;
 use App\Repository\DemandeStatusHistoryRepository;
 use App\Repository\DemandeSubventionRepository;
 use App\Repository\DocumentJustificatifRepository;
+use App\Repository\ExternalEventRepository;
 use App\Repository\ReservationMaterielRepository;
 use App\Repository\ReservationSalleRepository;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -20,6 +22,7 @@ final class AssociationRequestAggregationService
     public const TYPE_SUBVENTION = 'subvention';
     public const TYPE_MATERIEL = 'materiel';
     public const TYPE_SALLE = 'salle';
+    public const TYPE_EVENEMENT = 'evenement';
 
     public const ACTIVE_STATUSES = [
         'En cours de traitement',
@@ -40,6 +43,7 @@ final class AssociationRequestAggregationService
         private readonly ReservationSalleRepository $salleRepository,
         private readonly DemandeStatusHistoryRepository $historyRepository,
         private readonly DocumentJustificatifRepository $documentRepository,
+        private readonly ExternalEventRepository $eventRepository,
     ) {
     }
 
@@ -84,6 +88,10 @@ final class AssociationRequestAggregationService
             $all[] = $this->serializeSalleSummary($sal);
         }
 
+        foreach ($this->eventRepository->findBy(['asso_id' => $association->getId()], ['created_at' => 'DESC']) as $event) {
+            $all[] = $this->serializeEventSummary($event);
+        }
+
         // Global counts before status/type filtering
         $counts = [
             'all' => count($all),
@@ -92,6 +100,7 @@ final class AssociationRequestAggregationService
             'subvention' => 0,
             'materiel' => 0,
             'salle' => 0,
+            'evenement' => 0,
         ];
 
         foreach ($all as $item) {
@@ -204,6 +213,14 @@ final class AssociationRequestAggregationService
             if (!$salle) {
                 return null;
             }
+
+            if ($resolvedType === self::TYPE_EVENEMENT) {
+                $event = $this->eventRepository->find($resolvedId);
+                if (!$event || $event->getAssoId() !== $association->getId()) {
+                    return null;
+                }
+                return $this->serializeEventSummary($event);
+            }
             if ($salle->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Cette réservation de salle n'appartient pas à votre association.");
             }
@@ -257,6 +274,10 @@ final class AssociationRequestAggregationService
 
         if (preg_match('/^(sal|salle)[-_](\d+)$/i', $rawId, $m)) {
             return [self::TYPE_SALLE, (int) $m[2]];
+        }
+
+        if (preg_match('/^(event|evenement)[-_](\d+)$/i', $rawId, $m)) {
+            return [self::TYPE_EVENEMENT, (int) $m[2]];
         }
 
         return [null, (int) $rawId];
@@ -361,6 +382,39 @@ final class AssociationRequestAggregationService
             'decisionMotif' => $salle->getObservations(),
             'observations' => $salle->getObservations(),
             'summary' => $salle->getSalle()?->getNom() ?? 'Salle communale',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeEventSummary(ExternalEvent $event): array
+    {
+        $id = $event->getId() ?? 0;
+        $status = $event->getStatus() ?? 'PENDING';
+        $statusLabel = match ($status) {
+            'VALIDATED' => 'Validé',
+            'REFUSED' => 'Refusé',
+            default => 'En attente',
+        };
+        $createdAt = $event->getCreatedAt();
+
+        return [
+            'id' => 'event-' . $id,
+            'rawId' => $id,
+            'type' => self::TYPE_EVENEMENT,
+            'typeLabel' => 'Événement',
+            'intitule' => $event->getTitle() ?? 'Événement déclaré',
+            'statut' => $statusLabel,
+            'statusCategory' => $status === 'REFUSED' ? 'closed' : 'active',
+            'createdAt' => $createdAt?->format(\DateTimeInterface::ATOM),
+            'year' => (int) ($createdAt?->format('Y') ?? date('Y')),
+            'keyDates' => [
+                'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'debut' => $event->getStartDate()?->format(\DateTimeInterface::ATOM),
+                'fin' => $event->getEndTime()?->format(\DateTimeInterface::ATOM),
+            ],
+            'summary' => sprintf('%s · %s', $event->getEventType(), $event->getLocation()),
         ];
     }
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
-import FilterTag from '@/components/admin/FilterTag';
 import {
   downloadExternalEventFile,
   getExternalEvent,
@@ -11,7 +10,6 @@ import {
   type ExternalEvent,
   type ExternalEventFile,
 } from '@/lib/api';
-import { useAdminSearch } from '@/app/admin/layout';
 
 type StatusFilter = 'ALL' | 'PENDING' | 'VALIDATED' | 'REFUSED';
 
@@ -56,8 +54,11 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function AdminEvenementsPage() {
-  const { searchTerm } = useAdminSearch();
+type AdminEvenementsPageProps = {
+  searchTerm?: string;
+};
+
+export default function AdminEvenementsPage({ searchTerm = '' }: AdminEvenementsPageProps) {
   const [events, setEvents] = useState<ExternalEvent[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [dateFilter, setDateFilter] = useState('');
@@ -170,13 +171,19 @@ export default function AdminEvenementsPage() {
                 ['VALIDATED', 'Validés'],
                 ['REFUSED', 'Refusés'],
               ].map(([value, label]) => (
-                <FilterTag
+                <button
                   key={value}
-                  label={label}
-                  isSelected={statusFilter === value}
+                  type="button"
                   onClick={() => setStatusFilter(value as StatusFilter)}
-                  className="min-h-10 min-w-0 px-4 py-2 text-[0.7rem]"
-                />
+                  aria-pressed={statusFilter === value}
+                  className={`min-h-10 min-w-0 rounded-control border px-4 py-2 text-[0.7rem] font-bold uppercase tracking-label ${
+                    statusFilter === value
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-line bg-paper text-ink hover:border-primary'
+                  }`}
+                >
+                  {label}
+                </button>
               ))}
             </nav>
             <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)]">

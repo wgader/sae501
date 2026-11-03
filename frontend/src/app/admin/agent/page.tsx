@@ -1,31 +1,31 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
-import AgentCard, { type MunicipalAgent } from '@/components/admin/agent/AgentCard';
-
-const AGENTS: MunicipalAgent[] = [
-  {
-    id: 1,
-    nom: 'Faure',
-    prenom: 'Alain',
-    initials: 'AF',
-    email: 'admin@mairie.fr',
-    role: 'Administrateur général',
-    service: 'Direction générale des services',
-  },
-  {
-    id: 2,
-    nom: 'Mairie',
-    prenom: 'Admin',
-    initials: 'AM',
-    email: 'admin@feytiat-association.fr',
-    role: 'Administrateur technique',
-    service: 'Service Vie associative',
-  },
-];
+import AgentCard from '@/components/admin/agent/AgentCard';
+import { deleteMunicipalAgent, getMunicipalAgents, type MunicipalAgent } from '@/lib/api';
 
 export default function AdminAgentsPage() {
+  const [agents, setAgents] = useState<MunicipalAgent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getMunicipalAgents()
+      .then(setAgents)
+      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Impossible de charger les agents.'));
+  }, []);
+
+  async function handleDelete(id: number) {
+    if (!window.confirm('Supprimer cet agent municipal ?')) return;
+    try {
+      await deleteMunicipalAgent(id);
+      setAgents((current) => current.filter((agent) => agent.id !== id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de supprimer cet agent.');
+    }
+  }
+
   return (
     <AdminLayout>
       <section className="mx-auto max-w-5xl space-y-8">
@@ -37,10 +37,19 @@ export default function AdminAgentsPage() {
         <section aria-labelledby="agents-list-heading">
           <h2 id="agents-list-heading" className="sr-only">Liste des agents</h2>
 
+          {error && <p role="alert" className="mb-4 text-sm font-semibold text-danger">{error}</p>}
           <ul className="space-y-4 p-0 list-none">
-            {AGENTS.map((agent) => (
+            {agents.map((agent) => (
               <li key={agent.id}>
-                <AgentCard agent={agent} />
+                <AgentCard
+                  agent={{
+                    ...agent,
+                    initials: `${agent.prenom[0] ?? ''}${agent.nom[0] ?? ''}`.toUpperCase(),
+                    role: agent.roles.join(', '),
+                    service: 'Administration municipale',
+                  }}
+                  onDelete={handleDelete}
+                />
               </li>
             ))}
           </ul>

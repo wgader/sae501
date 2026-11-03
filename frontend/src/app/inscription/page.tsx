@@ -7,12 +7,14 @@ import { registerAssociation, ApiError } from '@/lib/api';
 
 import BackButton from '@/components/ui/BackButton';
 import Link from 'next/link';
+import TermsModal from '@/components/ui/TermsModal';
 
 export default function SignupPage() {
   const router = useRouter();
   const [isAccepted, setIsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -143,7 +145,15 @@ export default function SignupPage() {
               className="mt-0.5 h-4 w-4 rounded border border-line accent-primary"
             />
             <span>
-              J&apos;accepte les conditions générales d&apos;utilisation (CGU).
+              J&apos;accepte les{' '}
+              <button
+                type="button"
+                onClick={() => setIsTermsOpen(true)}
+                className="font-semibold text-primary underline underline-offset-4 hover:text-primary-hover"
+              >
+                conditions générales d&apos;utilisation (CGU)
+              </button>
+              .
             </span>
           </label>
 
@@ -169,6 +179,7 @@ export default function SignupPage() {
           </div>
         </form>
       </div>
+      {isTermsOpen && <TermsModal onClose={() => setIsTermsOpen(false)} />}
     </div>
   );
 }
