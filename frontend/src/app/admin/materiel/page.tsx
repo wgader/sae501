@@ -6,6 +6,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import EquipmentFormModal from '@/components/admin/EquipmentFormModal';
 import EquipmentStockModal from '@/components/admin/EquipmentStockModal';
+import EquipmentSectionSwitcher from '@/components/admin/equipment/EquipmentSectionSwitcher';
 import {
   Equipment,
   getAdminEquipment,
@@ -139,17 +140,21 @@ export default function AdminMaterielPage() {
           <AdminPageHeader
             title="Parc Matériel"
             description="Gestion du stock communal d'équipements municipaux, ajustement des disponibilités et archivage logique."
-          />
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Ajouter un équipement
-          </button>
+            <EquipmentSectionSwitcher />
+          </AdminPageHeader>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter un équipement
+            </button>
+          </div>
         </header>
 
         {/* Feedback toast */}

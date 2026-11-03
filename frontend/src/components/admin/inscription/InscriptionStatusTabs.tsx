@@ -45,7 +45,7 @@ export default function InscriptionStatusTabs({
             <span>{tab.label}</span>
             {countValue !== null && (
               <span
-                className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1.5 text-label font-bold ${
+                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-pill px-1.5 text-label font-bold ${
                   isActive
                     ? 'bg-accent text-ink'
                     : 'bg-primary/15 text-primary'

@@ -38,5 +38,98 @@ class ReservationMaterielRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
-}
 
+    /**
+     * Retourne les quantités engagées sur une période pour chaque équipement.
+     *
+     * Les demandes en attente sont comptabilisées afin de pré-réserver le stock.
+     *
+     * @return list<array{id: int, engagedStock: int|string}>
+     */
+    public function getEngagedStockByEquipment(
+        \DateTimeImmutable $start,
+        \DateTimeImmutable $end,
+    ): array {
+        return $this->createQueryBuilder('r')
+            ->select('IDENTITY(l.materiel) AS id')
+            ->addSelect('COALESCE(SUM(l.quantite), 0) AS engagedStock')
+            ->innerJoin('r.lignes', 'l')
+            ->where('r.statut IN (:statuts)')
+            ->andWhere('r.dateRetrait < :end')
+            ->andWhere('r.dateRestitution > :start')
+            ->setParameter('statuts', ['En attente', 'Validée'])
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->groupBy('l.materiel')
+            ->getQuery()
+            ->getArrayResult();
+    }
+
+    /**
+     * @return list<ReservationMateriel>
+     */
+    public function findForAdministration(
+        ?string $status,
+        int $page,
+        int $itemsPerPage,
+        ?string $search = null,
+    ): array {
+        $queryBuilder = $this->createQueryBuilder('reservation')
+            ->leftJoin('reservation.association', 'association')
+            ->leftJoin('association.users', 'user')
+            ->addSelect('association', 'user')
+            ->orderBy('reservation.createdAt', 'DESC')
+            ->addOrderBy('reservation.id', 'DESC')
+            ->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage);
+
+        if ($status !== null) {
+            $queryBuilder
+                ->andWhere('reservation.statut = :status')
+                ->setParameter('status', $status);
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $queryBuilder
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+        }
+
+        return $queryBuilder->getQuery()->getResult();
+    }
+
+    public function countForAdministration(?string $status, ?string $search = null): int
+    {
+        $queryBuilder = $this->createQueryBuilder('reservation')
+            ->select('COUNT(DISTINCT reservation.id)')
+            ->leftJoin('reservation.association', 'association')
+            ->leftJoin('association.users', 'user');
+
+        if ($status !== null) {
+            $queryBuilder
+                ->andWhere('reservation.statut = :status')
+                ->setParameter('status', $status);
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $queryBuilder
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+        }
+
+        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * @return array{pending: int, validated: int, refused: int, total: int}
+     */
+    public function getCountsForAdministration(): array
+    {
+        return [
+            'pending' => $this->countForAdministration('En attente'),
+            'validated' => $this->countForAdministration('Validée'),
+            'refused' => $this->countForAdministration('Refusée'),
+            'total' => $this->countForAdministration(null),
+        ];
+    }
+}

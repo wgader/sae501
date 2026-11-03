@@ -7,6 +7,7 @@ export interface FormFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   error?: string;
   className?: string;
   containerClassName?: string;
+  labelClassName?: string;
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
@@ -16,6 +17,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
       children,
       className = '',
       containerClassName = '',
+      labelClassName = '',
       type = 'text',
       placeholder,
       value,
@@ -30,7 +32,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
 
     return (
       <label className={cn('block w-full', containerClassName)}>
-        <span className="mb-2 flex items-center gap-1 text-meta font-bold uppercase tracking-section text-ink">
+        <span className={cn('mb-2 flex items-center gap-1 text-meta font-bold uppercase tracking-section text-ink', labelClassName)}>
           {label}
           {required && <span className="text-danger" aria-hidden="true">*</span>}
         </span>
