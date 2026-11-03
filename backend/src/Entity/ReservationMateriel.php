@@ -18,9 +18,12 @@ class ReservationMateriel
 {
     public const STATUTS = [
         'En attente',
+        'En cours de traitement',
+        'Complément requis',
         'Validée',
         'Refusée',
         'Clôturée',
+        'Matériel restitué',
     ];
 
     #[ORM\Id]
@@ -71,6 +74,9 @@ class ReservationMateriel
 
     #[ORM\Column(name: 'note_interne', type: Types::TEXT, nullable: true)]
     private ?string $noteInterne = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $observations = null;
 
     /**
      * @var Collection<int, ReservationMaterielLigne>
@@ -274,4 +280,17 @@ class ReservationMateriel
 
         return $this;
     }
+
+    public function getObservations(): ?string
+    {
+        return $this->observations;
+    }
+
+    public function setObservations(?string $observations): static
+    {
+        $this->observations = $observations;
+
+        return $this;
+    }
 }
+

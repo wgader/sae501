@@ -107,6 +107,15 @@ export default function ConnectedDashboard() {
               Retrouvez toutes vos démarches municipales dans un espace simple,
               pensé pour vous faire gagner du temps.
             </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href="/historique"
+                className="inline-flex h-11 items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover"
+              >
+                Suivre mes démarches →
+              </a>
+            </div>
           </div>
         </section>
 
