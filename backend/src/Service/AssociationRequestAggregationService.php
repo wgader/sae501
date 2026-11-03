@@ -208,18 +208,19 @@ final class AssociationRequestAggregationService
             return $this->serializeMaterielDetail($materiel);
         }
 
+        if ($resolvedType === self::TYPE_EVENEMENT) {
+            $event = $this->eventRepository->find($resolvedId);
+            if (!$event || $event->getAssoId() !== $association->getId()) {
+                return null;
+            }
+
+            return $this->serializeEventSummary($event);
+        }
+
         if ($resolvedType === self::TYPE_SALLE) {
             $salle = $this->salleRepository->find($resolvedId);
             if (!$salle) {
                 return null;
-            }
-
-            if ($resolvedType === self::TYPE_EVENEMENT) {
-                $event = $this->eventRepository->find($resolvedId);
-                if (!$event || $event->getAssoId() !== $association->getId()) {
-                    return null;
-                }
-                return $this->serializeEventSummary($event);
             }
             if ($salle->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Cette réservation de salle n'appartient pas à votre association.");
