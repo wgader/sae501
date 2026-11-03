@@ -1,0 +1,13 @@
+framework:
+    rate_limiter:
+        # Inscription : 5 tentatives par IP sur 15 minutes
+        register_association:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '15 minutes'
+
+        # Vérification email : 5 tentatives par IP sur 15 minutes
+        verify_email:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '15 minutes'

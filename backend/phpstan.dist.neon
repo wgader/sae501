@@ -5,3 +5,4 @@ parameters:
     ignoreErrors:
         - '#Property App\\Entity\\User::\$id \(int\|null\) is never assigned int#'
         - '#Method App\\Kernel::getAllowedEnvs\(\) is unused#'
+        - '#Property App\\Entity\\Association::\$id \(int\|null\) is never assigned int#'
