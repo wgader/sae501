@@ -36,8 +36,18 @@ jobs:
       - name: PHPStan
         run: cd backend && vendor/bin/phpstan analyse --no-progress
 
+      - name: Generate JWT test keys
+        run: |
+          mkdir -p backend/config/jwt
+          openssl genpkey -out backend/config/jwt/private.pem -pass pass:test_passphrase -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+          openssl pkey -in backend/config/jwt/private.pem -passin pass:test_passphrase -pubout -out backend/config/jwt/public.pem
+
       - name: PHPUnit
         run: cd backend && vendor/bin/phpunit
+        env:
+          JWT_SECRET_KEY: '%kernel.project_dir%/config/jwt/private.pem'
+          JWT_PUBLIC_KEY: '%kernel.project_dir%/config/jwt/public.pem'
+          JWT_PASSPHRASE: 'test_passphrase'
 
   frontend:
     name: Next.js — lint + build
