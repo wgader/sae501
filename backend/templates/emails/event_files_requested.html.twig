@@ -1,0 +1,19 @@
+<h1>Pièces complémentaires demandées</h1>
+
+<p>Bonjour {{ prenom }},</p>
+
+<p>
+    La mairie vous demande des pièces complémentaires pour l'événement
+    « {{ eventTitle }} » de l'association {{ nomAssociation }}.
+</p>
+
+<p>{{ message }}</p>
+
+<p>Pièces demandées :</p>
+<ul>
+    {% for missingFile in missingFiles %}
+        <li>{{ missingFile }}</li>
+    {% endfor %}
+</ul>
+
+<p>Merci de déposer ces documents dans votre espace association.</p>
