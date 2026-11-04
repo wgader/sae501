@@ -45,7 +45,7 @@ final class AccountActivationController extends AbstractController
      * Active le compte en définissant le mot de passe via le token reçu par email.
      *
      * Payload JSON attendu :
-     * { "token": "...", "password": "MonMdp123!" }
+     * { "token": "...", "password": "<password>" }
      *
      * Réponses :
      *   200 → compte activé, JWT retourné (auto-login)
@@ -131,8 +131,6 @@ final class AccountActivationController extends AbstractController
         $this->entityManager->flush();
 
         // ── Email de confirmation ─────────────────────────────────────────────
-        // Wrappé dans un try/catch : un problème d'envoi ne doit PAS faire planter
-        // la réponse — le flush() est déjà passé, le compte est activé en base.
         try {
             $this->mailer->send(
                 (new TemplatedEmail())
@@ -148,7 +146,6 @@ final class AccountActivationController extends AbstractController
                     ])
             );
         } catch (\Throwable $e) {
-            // L'email n'est pas bloquant : on logue l'erreur mais on retourne le JWT quand même
             $this->logger->error('account_activation: email de confirmation non envoyé', [
                 'user'      => $user->getEmail(),
                 'exception' => $e->getMessage(),

@@ -72,4 +72,4 @@ export const ValidatedInput = forwardRef<HTMLInputElement, ValidatedInputDataPro
 
 ValidatedInput.displayName = 'ValidatedInput';
 
-export default ValidatedInput;
+export default ValidatedInput;

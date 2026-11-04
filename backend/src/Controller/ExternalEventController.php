@@ -44,8 +44,8 @@ final class ExternalEventController extends AbstractController
     ) {
     }
 
-    #[Route('/external', name: 'api_events_external_list', methods: ['GET'])]
-    #[IsGranted('ROLE_GESTION_EVENT')]
+    #[Route('', name: 'api_events_external_list', methods: ['GET'])]
+    #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GESTION_EVENT')"))]
     public function list(Request $request): JsonResponse
     {
         $page = max(1, $request->query->getInt('page', 1));
@@ -62,8 +62,8 @@ final class ExternalEventController extends AbstractController
         ]);
     }
 
-    #[Route('/external/{id<\d+>}', name: 'api_events_external_show', methods: ['GET'])]
-    #[IsGranted('ROLE_GESTION_EVENT')]
+    #[Route('/{id<\d+>}', name: 'api_events_external_show', methods: ['GET'])]
+    #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GESTION_EVENT')"))]
     public function show(int $id): JsonResponse
     {
         $event = $this->eventRepository->find($id);
@@ -80,8 +80,33 @@ final class ExternalEventController extends AbstractController
         return $this->json($data);
     }
 
-    #[Route('/files/{id<\d+>}', name: 'api_events_file_download', methods: ['GET'])]
-    #[IsGranted('ROLE_GESTION_EVENT')]
+    #[Route('/{id<\d+>}/status', name: 'api_events_external_status', methods: ['PATCH'])]
+    #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GESTION_EVENT')"))]
+    public function updateStatus(int $id, Request $request): JsonResponse
+    {
+        $event = $this->eventRepository->find($id);
+        if (!$event instanceof ExternalEvent) {
+            return $this->json(['message' => 'Événement introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $status = is_array($payload) ? ($payload['status'] ?? null) : null;
+
+        if ($status !== 'VALIDATED') {
+            return $this->json(
+                ['message' => 'Le statut demandé est invalide.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $event->setStatus($status);
+        $this->entityManager->flush();
+
+        return $this->json(self::serializeEvent($event));
+    }
+
+    #[Route('/files/{id<\d+>}', name: 'api_events_external_file_download', methods: ['GET'])]
+    #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_ADMIN_GESTION_EVENT')"))]
     public function downloadFile(int $id): BinaryFileResponse|JsonResponse
     {
         $file = $this->eventFileRepository->find($id);

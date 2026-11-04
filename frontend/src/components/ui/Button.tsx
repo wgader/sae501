@@ -1,36 +1,36 @@
-import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-[0.63rem] font-bold uppercase transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
+  "inline-flex items-center justify-center gap-2 rounded-control font-bold uppercase transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer",
   {
     variants: {
       variant: {
         primary:
-          'bg-[var(--Mosaic-Tile)] text-[var(--White)] shadow-xs hover:opacity-90 active:opacity-100',
+          "bg-primary text-white shadow-xs transition-colors hover:bg-primary-hover active:bg-primary-hover",
         secondary:
-          'border border-[var(--line)] bg-[var(--White)] text-[var(--ink)] shadow-xs hover:bg-[var(--paper)] active:bg-[var(--line)]',
+          "border border-line bg-white text-ink shadow-xs hover:bg-paper active:bg-line",
         danger:
-          'border border-[var(--Flush-Mahogany)] bg-[var(--White)] text-[var(--Flush-Mahogany)] shadow-xs hover:bg-[var(--Flush-Mahogany)] hover:text-[var(--White)] active:opacity-95',
-        ghost:
-          'bg-transparent text-[var(--ink)] hover:bg-[var(--paper)] active:bg-[var(--line)]',
+          "border border-danger bg-white text-danger shadow-xs hover:bg-danger hover:text-white active:opacity-95",
+        ghost: "bg-transparent text-ink hover:bg-paper active:bg-line",
       },
       size: {
-        sm: 'h-9 px-4 text-[0.69rem] tracking-[0.12em]',
-        md: 'h-[3rem] px-6 text-xs tracking-[0.14em]',
-        lg: 'h-[3.25rem] px-8 text-xs tracking-[0.16em]',
+        sm: "h-9 px-4 text-[0.69rem] tracking-[0.12em]",
+        md: "h-12 px-6 text-xs tracking-label",
+        lg: "h-[3.25rem] px-8 text-xs tracking-[0.16em]",
       },
     },
     defaultVariants: {
-      variant: 'primary',
-      size: 'md',
+      variant: "primary",
+      size: "md",
     },
   },
 );
 
 export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
   leftIcon?: ReactNode;
@@ -48,7 +48,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       className,
       disabled,
-      type = 'button',
+      type = "button",
       ...props
     },
     ref,
@@ -63,9 +63,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <>
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <svg
+              className="h-4 w-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
             </svg>
             <span>Traitement...</span>
           </>
@@ -81,6 +97,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";
 
 export default Button;

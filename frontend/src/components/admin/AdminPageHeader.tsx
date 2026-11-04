@@ -1,19 +1,11 @@
-import type { HTMLAttributes, ReactNode } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
-export const adminPageHeaderVariants = cva('');
-
-export interface AdminPageHeaderDataProps {
-  title: string;
+interface AdminPageHeaderProps {
   eyebrow?: string;
+  title: string;
   description?: string;
-}
-
-export interface AdminPageHeaderProps
-  extends HTMLAttributes<HTMLElement>,
-    VariantProps<typeof adminPageHeaderVariants> {
   children?: ReactNode;
+  className?: string;
 }
 
 export default function AdminPageHeader({
@@ -21,21 +13,20 @@ export default function AdminPageHeader({
   title,
   description,
   children,
-  className,
-  ...props
-}: AdminPageHeaderDataProps & AdminPageHeaderProps) {
+  className = '',
+}: AdminPageHeaderProps) {
   return (
-    <header className={cn(adminPageHeaderVariants(), className)} {...props}>
+    <header className={className}>
       {eyebrow && (
-        <span className="inline-block text-[0.69rem] font-bold uppercase tracking-[0.2em] text-[var(--Mosaic-Tile)]">
+        <span className="inline-block text-label font-bold uppercase tracking-kicker text-primary">
           {eyebrow}
         </span>
       )}
-      <h1 className="mt-2 text-2xl sm:text-3xl font-black uppercase tracking-wider text-[var(--ink)]">
+      <h1 className="mt-2 text-2xl font-black uppercase tracking-wider text-ink sm:text-3xl">
         {title}
       </h1>
       {description && (
-        <p className="mt-2 text-sm text-[var(--muted)]">
+        <p className="mt-2 text-sm text-muted">
           {description}
         </p>
       )}
@@ -43,4 +34,3 @@ export default function AdminPageHeader({
     </header>
   );
 }
-

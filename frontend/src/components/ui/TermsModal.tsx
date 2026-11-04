@@ -5,11 +5,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export const termsModalOverlayVariants = cva(
-  'fixed inset-0 z-10 flex items-center justify-center bg-[#1e2420]/50 px-5 py-8',
+  'fixed inset-0 z-10 flex items-center justify-center bg-ink/50 px-5 py-8',
 );
 
 export const termsModalContentVariants = cva(
-  'max-h-full w-full max-w-2xl overflow-y-auto bg-[#f7f8f4] p-7 text-[#1e2420] shadow-2xl sm:p-10',
+  'max-h-full w-full max-w-2xl overflow-y-auto bg-paper p-7 text-ink shadow-2xl sm:p-10',
 );
 
 export interface TermsSection {
@@ -78,17 +78,17 @@ export default function TermsModal({
         aria-labelledby="terms-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mb-7 flex items-start justify-between gap-6 border-b border-[#d9ded9] pb-5">
+        <div className="mb-7 flex items-start justify-between gap-6 border-b border-line pb-5">
           <div>
-            <p className="mb-2 text-[0.63rem] font-bold uppercase tracking-[0.2em] text-[#496a56]">
+            <p className="mb-2 text-caption font-bold uppercase tracking-kicker text-moss">
               {subtitle}
             </p>
-            <h2 id="terms-title" className="text-2xl font-black uppercase tracking-[-0.04em] sm:text-3xl">
+            <h2 id="terms-title" className="text-2xl font-black uppercase tracking-heading sm:text-3xl">
               {title}
             </h2>
           </div>
           <button
-            className="shrink-0 text-2xl leading-none text-[#6d746e] transition hover:text-[#1e2420]"
+            className="shrink-0 text-2xl leading-none text-muted transition hover:text-ink cursor-pointer"
             type="button"
             aria-label="Fermer les conditions générales d'utilisation"
             onClick={onClose}
@@ -97,18 +97,18 @@ export default function TermsModal({
           </button>
         </div>
 
-        <div className="space-y-6 text-sm leading-6 text-[#4f5851]">
+        <div className="space-y-6 text-sm leading-6 text-moss">
           <p>Dernière mise à jour : {lastUpdated}</p>
           {sections.map((section) => (
             <div key={section.title}>
-              <h3 className="mb-1 font-bold text-[#1e2420]">{section.title}</h3>
+              <h3 className="mb-1 font-bold text-ink">{section.title}</h3>
               <p>{section.text}</p>
             </div>
           ))}
         </div>
 
         <button
-          className="mt-8 w-full bg-[#1e2420] px-5 py-3.5 text-xs font-bold uppercase tracking-[0.15em] text-white transition hover:bg-[#496a56]"
+          className="mt-8 w-full bg-ink px-5 py-3.5 text-xs font-bold uppercase tracking-label text-white transition hover:bg-moss cursor-pointer"
           type="button"
           onClick={onClose}
         >
@@ -118,4 +118,3 @@ export default function TermsModal({
     </div>
   );
 }
-

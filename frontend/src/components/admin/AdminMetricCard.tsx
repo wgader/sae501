@@ -1,25 +1,14 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import Link from 'next/link';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
 
-export const adminMetricCardVariants = cva(
-  'flex h-full flex-col justify-between rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-6 transition-shadow hover:shadow-md',
-);
-
-export interface AdminMetricCardDataProps {
+interface AdminMetricCardProps {
   title: string;
   value: number | string;
   description: string;
   icon: ReactNode;
+  iconBgClass?: string;
   actionHref: string;
   actionLabel: string;
-}
-
-export interface AdminMetricCardProps
-  extends HTMLAttributes<HTMLElement>,
-    VariantProps<typeof adminMetricCardVariants> {
-  iconBgClass?: string;
   loading?: boolean;
 }
 
@@ -28,34 +17,32 @@ export default function AdminMetricCard({
   value,
   description,
   icon,
-  iconBgClass = 'bg-[var(--Lime-Cream)] text-[var(--ink)]',
+  iconBgClass = 'bg-accent text-ink',
   actionHref,
   actionLabel,
   loading = false,
-  className,
-  ...props
-}: AdminMetricCardDataProps & AdminMetricCardProps) {
+}: AdminMetricCardProps) {
   return (
-    <article className={cn(adminMetricCardVariants(), className)} {...props}>
+    <article className="flex h-full flex-col justify-between rounded-card border border-line bg-paper p-6 transition-shadow hover:shadow-md">
       <header>
-        <span className={cn('flex h-11 w-11 items-center justify-center rounded-xl', iconBgClass)}>
+        <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconBgClass}`}>
           {icon}
         </span>
-        <p className="mt-4 text-3xl font-black text-[var(--ink)]">
+        <p className="mt-4 text-3xl font-black text-ink">
           {loading ? (
-            <span className="inline-block h-8 w-12 animate-pulse rounded bg-[var(--line)]" />
+            <span className="inline-block h-8 w-12 animate-pulse rounded bg-line" />
           ) : (
             value
           )}
         </p>
-        <h3 className="mt-1 text-sm font-bold text-[var(--ink)]">{title}</h3>
-        <p className="mt-1 text-xs text-[var(--muted)]">{description}</p>
+        <h3 className="mt-1 text-sm font-bold text-ink">{title}</h3>
+        <p className="mt-1 text-xs text-muted">{description}</p>
       </header>
 
-      <footer className="mt-5 border-t border-[var(--line)] pt-3">
+      <footer className="mt-5 border-t border-line pt-3">
         <Link
           href={actionHref}
-          className="group inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--Mosaic-Tile)] hover:underline"
+          className="group inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:underline"
         >
           <span>{actionLabel}</span>
           <svg
@@ -73,4 +60,3 @@ export default function AdminMetricCard({
     </article>
   );
 }
-

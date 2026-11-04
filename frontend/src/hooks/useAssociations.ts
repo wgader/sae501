@@ -8,7 +8,12 @@ import {
   updateAssociationStatus,
 } from '@/lib/api';
 
-export function useAssociations(page: number, status: AssociationStatus | '', search: string = '') {
+export function useAssociations(
+  page: number,
+  status: AssociationStatus | '',
+  search: string = '',
+  itemsPerPage: number = 10,
+) {
   const [associations, setAssociations] = useState<Association[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [counts, setCounts] = useState<AssociationCounts | null>(null);
@@ -21,9 +26,14 @@ export function useAssociations(page: number, status: AssociationStatus | '', se
   const reload = useCallback(async (forceCounts = false) => {
     setLoading(true);
     setError('');
+    // Temps de chargement minimum (350ms) pour rendre la transition fluide et supprimer le clignotement instantané
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 350));
     try {
       const needCounts = forceCounts || !hasLoadedCountsRef.current;
-      const result = await getAssociations(page, status, search, needCounts);
+      const [result] = await Promise.all([
+        getAssociations(page, status, search, needCounts, itemsPerPage),
+        minDelay,
+      ]);
       setAssociations(result.items);
       setTotalItems(result.totalItems);
       if (result.counts) {
@@ -35,13 +45,15 @@ export function useAssociations(page: number, status: AssociationStatus | '', se
     } finally {
       setLoading(false);
     }
-  }, [page, status, search]);
+  }, [page, status, search, itemsPerPage]);
 
   useEffect(() => {
-    const request = window.setTimeout(() => void reload(), 0);
+    // Si une saisie textuelle est effectuée, on applique un léger debounce de 250ms
+    const delay = search ? 250 : 0;
+    const request = window.setTimeout(() => void reload(), delay);
 
     return () => window.clearTimeout(request);
-  }, [reload]);
+  }, [reload, search]);
 
   const updateStatus = useCallback(async (
     association: Association,

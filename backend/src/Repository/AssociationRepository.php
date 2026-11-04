@@ -35,10 +35,10 @@ class AssociationRepository extends ServiceEntityRepository
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && $search !== '') {
+        if ($search !== null && trim($search) !== '') {
             $queryBuilder
-                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search')
-                ->setParameter('search', '%' . mb_strtolower($search) . '%');
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
         }
 
         return $queryBuilder->getQuery()->getResult();
@@ -55,11 +55,11 @@ class AssociationRepository extends ServiceEntityRepository
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && $search !== '') {
+        if ($search !== null && trim($search) !== '') {
             $queryBuilder
                 ->leftJoin('association.users', 'user')
-                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search')
-                ->setParameter('search', '%' . mb_strtolower($search) . '%');
+                ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
+                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
         }
 
         return (int) $queryBuilder->getQuery()->getSingleScalarResult();

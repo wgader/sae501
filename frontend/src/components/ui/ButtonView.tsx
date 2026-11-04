@@ -3,16 +3,16 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export const buttonViewVariants = cva(
-  'inline-flex h-[1.94rem] w-[1.94rem] items-center justify-center rounded-[0.63rem] transition-colors',
+  'inline-flex h-8 w-8 items-center justify-center rounded-pill transition-colors cursor-pointer',
   {
     variants: {
       variant: {
-        selected: 'bg-white text-black hover:bg-gray-50',
-        unselected: 'bg-transparent text-black hover:bg-gray-100',
+        selected: 'bg-transparent text-ink hover:bg-line/50 hover:text-primary',
+        unselected: 'bg-transparent text-muted hover:bg-line/50 hover:text-ink',
       },
     },
     defaultVariants: {
-      variant: 'selected',
+      variant: 'unselected',
     },
   },
 );
@@ -50,4 +50,3 @@ export const ButtonView = forwardRef<HTMLButtonElement, ButtonViewProps>(
 ButtonView.displayName = 'ButtonView';
 
 export default ButtonView;
-

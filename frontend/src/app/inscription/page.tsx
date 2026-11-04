@@ -7,12 +7,14 @@ import { registerAssociation, ApiError } from '@/lib/api';
 
 import BackButton from '@/components/ui/BackButton';
 import Link from 'next/link';
+import TermsModal from '@/components/ui/TermsModal';
 
 export default function SignupPage() {
   const router = useRouter();
   const [isAccepted, setIsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,25 +70,25 @@ export default function SignupPage() {
 
   return (
     <div className="flex min-h-full items-center justify-center bg-white px-6 py-10 sm:px-10 lg:px-16">
-      <div className="w-full max-w-[620px]">
+      <div className="w-full max-w-155">
         {/* Mobile Back Button */}
         <div className="mb-6 lg:hidden">
-          <BackButton className="text-[var(--ink)]" />
+          <BackButton className="text-ink" />
         </div>
 
         <header>
-          <h1 className="text-[clamp(1.75rem,2.8vw,2.5rem)] font-black leading-[1.08] tracking-[-0.03em] text-[var(--ink)]">
+          <h1 className="text-[clamp(1.75rem,2.8vw,2.5rem)] font-black leading-[1.08] tracking-display text-ink">
             Parlez-nous de votre
-            <span className="block text-[var(--Mosaic-Tile)]">association</span>
+            <span className="block text-primary">association</span>
           </h1>
 
-          <p className="mt-3 text-[0.875rem] text-[var(--muted)]">
+          <p className="mt-3 text-body-sm text-muted">
             Tous les champs suivis d&apos;un astérisque (*) sont obligatoires.
           </p>
         </header>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-xs leading-5 text-[var(--Flush-Mahogany)]" role="alert">
+          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-xs leading-5 text-danger" role="alert">
             {error}
           </p>
         )}
@@ -135,15 +137,23 @@ export default function SignupPage() {
             />
           </div>
 
-          <label className="flex items-start gap-3 pt-2 text-[0.875rem] text-[var(--ink)] cursor-pointer">
+          <label className="flex items-start gap-3 pt-2 text-body-sm text-ink cursor-pointer">
             <input
               type="checkbox"
               checked={isAccepted}
               onChange={(e) => setIsAccepted(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border border-[var(--line)] accent-[var(--Mosaic-Tile)]"
+              className="mt-0.5 h-4 w-4 rounded border border-line accent-primary"
             />
             <span>
-              J&apos;accepte les conditions générales d&apos;utilisation (CGU).
+              J&apos;accepte les{' '}
+              <button
+                type="button"
+                onClick={() => setIsTermsOpen(true)}
+                className="font-semibold text-primary underline underline-offset-4 hover:text-primary-hover"
+              >
+                conditions générales d&apos;utilisation (CGU)
+              </button>
+              .
             </span>
           </label>
 
@@ -151,7 +161,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={!isAccepted || isLoading}
-              className="inline-flex h-[3rem] items-center justify-center gap-2.5 rounded-[10px] bg-[var(--Mosaic-Tile)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-xs transition-colors hover:bg-[#0e5550] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-12 items-center justify-center gap-2.5 rounded-lg bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span>{isLoading ? 'Envoi en cours...' : 'Envoyer la demande'}</span>
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -162,13 +172,14 @@ export default function SignupPage() {
 
             <Link
               href="/connexion"
-              className="text-[0.875rem] font-semibold text-[var(--ink)] underline underline-offset-4 transition-colors hover:text-[var(--Mosaic-Tile)]"
+              className="text-body-sm font-semibold text-ink underline underline-offset-4 transition-colors hover:text-primary"
             >
               Déjà un compte ? Se connecter
             </Link>
           </div>
         </form>
       </div>
+      {isTermsOpen && <TermsModal onClose={() => setIsTermsOpen(false)} />}
     </div>
   );
 }

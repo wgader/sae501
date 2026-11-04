@@ -42,6 +42,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public const ROLES_MAIRIE = [
         'ROLE_ADMIN',
+        'ROLE_ADMIN_GESTION_EVENT',
         'ROLE_GESTION_EVENT',
         'ROLE_GESTION_SUBVENTION',
         'ROLE_GESTION_MATERIEL',
