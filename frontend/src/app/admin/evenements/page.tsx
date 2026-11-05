@@ -54,11 +54,8 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-type AdminEvenementsPageProps = {
-  searchTerm?: string;
-};
-
-export default function AdminEvenementsPage({ searchTerm = '' }: AdminEvenementsPageProps) {
+export default function AdminEvenementsPage() {
+  const searchTerm = '';
   const [events, setEvents] = useState<ExternalEvent[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [dateFilter, setDateFilter] = useState('');

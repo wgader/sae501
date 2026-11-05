@@ -20,6 +20,7 @@ class ReservationSalle
         'Validée',
         'Refusée',
         'Clôturée',
+        'Annulée',
     ];
 
     #[ORM\Id]
@@ -194,4 +195,3 @@ class ReservationSalle
         return $this;
     }
 }
-

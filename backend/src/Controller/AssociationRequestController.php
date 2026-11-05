@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\AssociationRequestAggregationService;
+use App\Service\AssociationRequestCancellationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +18,7 @@ final class AssociationRequestController extends AbstractController
 {
     public function __construct(
         private readonly AssociationRequestAggregationService $aggregationService,
+        private readonly AssociationRequestCancellationService $cancellationService,
     ) {
     }
 
@@ -89,5 +91,59 @@ final class AssociationRequestController extends AbstractController
             );
         }
     }
-}
 
+    #[Route('/{id}/cancel', name: 'app_association_requests_cancel', methods: ['POST'])]
+    public function cancel(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->json(
+                ['message' => 'Authentification requise pour annuler une réservation.'],
+                Response::HTTP_UNAUTHORIZED,
+            );
+        }
+
+        $association = $user->getAssociation();
+        if ($association === null) {
+            return $this->json(
+                ['message' => "Votre compte n'est rattaché à aucune association."],
+                Response::HTTP_FORBIDDEN,
+            );
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $type = is_array($payload) && is_string($payload['type'] ?? null)
+            ? $payload['type']
+            : $request->query->get('type');
+
+        if (!is_string($type) || !in_array($type, [
+            AssociationRequestAggregationService::TYPE_MATERIEL,
+            AssociationRequestAggregationService::TYPE_SALLE,
+        ], true)) {
+            return $this->json(
+                ['message' => 'Le type de réservation est invalide.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        try {
+            $reservation = $this->cancellationService->cancel(
+                $association,
+                $type,
+                (int) preg_replace('/\D/', '', $id),
+            );
+
+            return $this->json([
+                'id' => $id,
+                'type' => $type,
+                'statut' => $reservation->getStatut(),
+                'updatedAt' => $reservation->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
+            ]);
+        } catch (\OutOfBoundsException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        } catch (\LogicException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+        } catch (\DomainException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+}

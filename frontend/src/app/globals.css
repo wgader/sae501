@@ -50,6 +50,7 @@
 
     /* Reusable typography tokens */
     --text-caption: 0.625rem;
+    --text-micro: 0.5625rem;
     --text-meta: 0.75rem;
     --text-label: 0.6875rem;
     --text-body-sm: 0.875rem;

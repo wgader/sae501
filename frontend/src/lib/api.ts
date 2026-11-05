@@ -224,6 +224,7 @@ export type AssociationRequestSummary = {
   year: number;
   keyDates: {
     depot: string;
+    decision?: string;
     exercice?: string;
     retrait?: string;
     restitution?: string;
@@ -450,6 +451,20 @@ export function getAssociationRequestDetail(
     `/api/association/requests/${encodeURIComponent(id)}${qs}`,
     {},
     'Impossible de charger le détail du dossier.',
+  );
+}
+
+export function cancelAssociationRequest(
+  id: string,
+  type: 'materiel' | 'salle',
+): Promise<{ id: string; type: string; statut: string; updatedAt: string | null }> {
+  return accountRequest(
+    `/api/association/requests/${encodeURIComponent(id)}/cancel`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ type }),
+    },
+    'Impossible d’annuler cette réservation.',
   );
 }
 
