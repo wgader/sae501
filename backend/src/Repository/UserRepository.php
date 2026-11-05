@@ -33,28 +33,23 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-//    /**
-//     * @return User[] Returns an array of User objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('u.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * Retourne les agents municipaux compétents pour traiter les réservations de salles.
+     * (Agents avec ROLE_GESTION_SALLE ou ROLE_ADMIN).
+     *
+     * @return list<User>
+     */
+    public function findMunicipalAgentsForRooms(): array
+    {
+        $users = $this->createQueryBuilder('u')
+            ->andWhere('u.typeCompte = :typeCompte')
+            ->setParameter('typeCompte', 'mairie')
+            ->getQuery()
+            ->getResult();
 
-//    public function findOneBySomeField($value): ?User
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        return array_values(array_filter($users, static function (User $user): bool {
+            $roles = $user->getRoles();
+            return in_array('ROLE_GESTION_SALLE', $roles, true) || in_array('ROLE_ADMIN', $roles, true);
+        }));
+    }
 }

@@ -322,7 +322,11 @@ function redirectToAssociationLogin(): never {
 }
 
 function getToken(): string {
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+  const isUserPage = typeof window !== 'undefined' && !window.location.pathname.startsWith('/admin');
+  const userToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const adminToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+
+  const token = isUserPage ? (userToken || adminToken) : (adminToken || userToken);
   if (!token) return redirectToAdminLogin();
   return token;
 }
@@ -964,3 +968,114 @@ export async function getPublicEquipment(): Promise<Equipment[]> {
   }
   return response.json();
 }
+
+export type RoomOpeningHours = {
+  debut: string;
+  fin: string;
+};
+
+export type PublicRoom = {
+  id: number;
+  nom: string;
+  description: string | null;
+  imageUrl: string | null;
+  adresse: string;
+  capaciteMax: number;
+  accesPmr: boolean;
+  equipementsInclus: string[];
+  horairesOuverture: RoomOpeningHours;
+  isActive: boolean;
+};
+
+export type OccupiedSlot = {
+  id: number;
+  start: string;
+  end: string;
+  statut: string;
+  isPreReserved: boolean;
+};
+
+export type RoomAvailabilityResponse = {
+  room: PublicRoom;
+  start: string;
+  end: string;
+  occupiedSlots: OccupiedSlot[];
+};
+
+export type CreateRoomReservationInput = {
+  salleId: number;
+  motifEvenement: string;
+  dateDebut: string;
+  dateFin: string;
+  capaciteAttendue?: number | null;
+  justificatif?: File | null;
+};
+
+export type RoomReservationResponse = {
+  id: number;
+  statut: string;
+  motifEvenement: string;
+  dateDebut: string;
+  dateFin: string;
+  capaciteAttendue: number | null;
+  createdAt: string;
+  salle: PublicRoom | null;
+  message: string;
+};
+
+export async function getPublicRooms(): Promise<PublicRoom[]> {
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('token') || localStorage.getItem('admin_token'))
+    : null;
+
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/api/rooms`, {
+    headers,
+  });
+  if (!response.ok) {
+    throw new ApiError('Impossible de charger le catalogue des salles.', response.status);
+  }
+  return response.json();
+}
+
+export async function getRoomAvailability(
+  roomId: number,
+  start?: string,
+  end?: string,
+): Promise<RoomAvailabilityResponse> {
+  const params = new URLSearchParams();
+  if (start) params.set('start', start);
+  if (end) params.set('end', end);
+
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return request<RoomAvailabilityResponse>(`/api/rooms/${roomId}/availability${query}`);
+}
+
+export async function createRoomReservation(
+  input: CreateRoomReservationInput,
+): Promise<RoomReservationResponse> {
+  const formData = new FormData();
+  formData.append('salleId', String(input.salleId));
+  formData.append('motifEvenement', input.motifEvenement);
+  formData.append('dateDebut', input.dateDebut);
+  formData.append('dateFin', input.dateFin);
+  if (input.capaciteAttendue !== undefined && input.capaciteAttendue !== null) {
+    formData.append('capaciteAttendue', String(input.capaciteAttendue));
+  }
+  if (input.justificatif) {
+    formData.append('justificatif', input.justificatif);
+  }
+
+  return request<RoomReservationResponse>('/api/rooms/reservations', {
+    method: 'POST',
+    body: formData,
+  });
+}
+

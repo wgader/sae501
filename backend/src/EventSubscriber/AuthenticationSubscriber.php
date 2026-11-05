@@ -84,8 +84,12 @@ class AuthenticationSubscriber implements EventSubscriberInterface
 
         if ($user instanceof User) {
             $payload = $event->getData();
-            if ($user->getAssociation()) {
-                $payload['nomAssociation'] = $user->getAssociation()->getNom();
+            $association = $user->getAssociation();
+            if ($association) {
+                $payload['nomAssociation'] = $association->getNom();
+                $payload['moduleSalleActif'] = $association->isModuleSalleActif();
+                $payload['moduleMaterielActif'] = $association->isModuleMaterielActif();
+                $payload['moduleSubventionActif'] = $association->isModuleSubventionActif();
             }
             $payload['prenom'] = $user->getPrenom();
             $payload['nom'] = $user->getNom();
