@@ -5,3 +5,6 @@ parameters:
     ignoreErrors:
         - '#Property App\\Entity\\User::\$id \(int\|null\) is never assigned int#'
         - '#Method App\\Kernel::getAllowedEnvs\(\) is unused#'
+        - '#Property App\\Entity\\Association::\$id \(int\|null\) is never assigned int#'
+        - '#Property App\\Entity\\(DemandeStatusHistory|DemandeSubvention|DocumentJustificatif|ExternalEventFile|Materiel|ReservationMateriel|ReservationMaterielLigne|ReservationSalle|Salle|StockAdjustment)::\$id \(int\|null\) is never assigned int#'
+        - '#Property App\\Entity\\Materiel::\$stockTotal \(int\|null\) is never assigned null#'

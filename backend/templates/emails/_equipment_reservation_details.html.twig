@@ -1,0 +1,12 @@
+<div style="margin:24px 0;padding:20px;background:#F4F4F0;border-left:3px solid #D8EC95;">
+  <p style="margin:0 0 12px;color:#146E67;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Récapitulatif</p>
+  <p style="margin:6px 0;"><strong>Motif :</strong> {{ reservation.motifEvenement }}</p>
+  <p style="margin:6px 0;"><strong>Retrait :</strong> {{ reservation.dateRetrait|date('d/m/Y à H\\hi') }}</p>
+  <p style="margin:6px 0;"><strong>Restitution :</strong> {{ reservation.dateRestitution|date('d/m/Y à H\\hi') }}</p>
+  <p style="margin:12px 0 6px;"><strong>Matériel demandé :</strong></p>
+  <ul style="margin:0;padding-left:20px;">
+    {% for ligne in lignes %}
+      <li>{{ ligne.materiel.designation }} — {{ ligne.quantite }} unité{% if ligne.quantite != 1 %}s{% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
