@@ -32,6 +32,7 @@ caddy_config/
 .docker/
 
 # ── IDE & OS ───────────────────────────────────
+/node_modules/
 .DS_Store
 .idea/
 .vscode/
