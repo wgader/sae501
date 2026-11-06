@@ -23,7 +23,7 @@ export default function LandingFooter() {
               />
             </Link>
 
-            <p className="mt-4 max-w-[20rem] text-body-sm leading-[1.65] text-white/70">
+            <p className="mt-4 max-w-80 text-body-sm leading-relaxed text-white/70">
               L&apos;espace numérique qui accompagne les associations de Feytiat
               dans leurs démarches municipales.
             </p>

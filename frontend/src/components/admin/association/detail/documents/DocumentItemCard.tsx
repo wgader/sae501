@@ -84,7 +84,7 @@ export default function DocumentItemCard({
               : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
           }`}
         >
-          {document.isVerified && <IconCheck className="h-3 w-3 stroke-[3]" />}
+          {document.isVerified && <IconCheck className="h-3 w-3 stroke-3" />}
           <span>{document.isVerified ? 'Vérifié' : 'À vérifier'}</span>
         </button>
 

@@ -37,7 +37,7 @@ export default function ParcoursSection() {
 
               <h2
                 id="parcours-heading"
-                className="mt-3 text-[clamp(2.125rem,4.25vw,3.25rem)] font-black leading-[1.08] tracking-display text-white"
+                className="mt-3 text-5xl font-black leading-tight tracking-display text-white"
               >
                 Simple dès la<br />
                 première demande.

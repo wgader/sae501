@@ -18,7 +18,7 @@ export const requestTabVariants = cva(
 );
 
 export const requestTabBadgeVariants = cva(
-  'inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1.5 text-caption font-black transition-colors',
+  'inline-flex h-5 min-w-5 items-center justify-center rounded-pill px-1.5 text-caption font-black transition-colors',
   {
     variants: {
       isSelected: {

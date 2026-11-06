@@ -31,7 +31,7 @@ export default function EventFilters({
             type="button"
             onClick={() => onStatusChange(value)}
             aria-pressed={statusFilter === value}
-            className={`min-h-10 min-w-0 rounded-control border px-4 py-2 text-[0.7rem] font-bold uppercase tracking-label ${
+            className={`min-h-10 min-w-0 rounded-control border px-4 py-2 text-xs font-bold uppercase tracking-label ${
               statusFilter === value
                 ? 'border-primary bg-primary text-white'
                 : 'border-line bg-paper text-ink hover:border-primary'
@@ -41,13 +41,13 @@ export default function EventFilters({
           </button>
         ))}
       </nav>
-      <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+      <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted">
         Date de début
         <input
           type="date"
           value={dateFilter}
           onChange={(event) => onDateChange(event.target.value)}
-          className="rounded-lg border border-[var(--line)] bg-[var(--White)] px-3 py-2 text-sm font-normal normal-case tracking-normal text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/30"
+          className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-normal normal-case tracking-normal text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </label>
     </div>

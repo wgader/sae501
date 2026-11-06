@@ -33,7 +33,7 @@ export default function AnnuaireGrid({
   }
 
   return (
-    <ul className="grid grid-cols-1 gap-5 p-0 list-none sm:grid-cols-2 min-[1200px]:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-5 p-0 list-none sm:grid-cols-2 xl:grid-cols-3">
       {associations.map((association, idx) => (
         <li key={association.id} className="h-full">
           <AnnuaireCard association={association} index={idx} />

@@ -64,7 +64,7 @@ export default function VerificationModal({
               placeholder="000000"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
-              className="w-full rounded-md border border-line bg-paper px-4 py-3 text-center text-2xl font-bold tracking-[0.25em] outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full rounded-md border border-line bg-paper px-4 py-3 text-center text-2xl font-bold tracking-widest outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               maxLength={6}
               autoFocus
             />

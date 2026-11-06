@@ -33,7 +33,7 @@ export default function ActivationForm({
     <section aria-labelledby="form-heading">
       <header className="mb-8">
         <p className="text-label font-bold uppercase tracking-kicker text-primary">Activation de compte</p>
-        <h1 id="form-heading" className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink">Définissez votre mot de passe</h1>
+        <h1 id="form-heading" className="mt-2 text-3xl font-black tracking-tight text-ink">Définissez votre mot de passe</h1>
         <p className="mt-2 text-body-sm leading-copy text-muted">Choisissez un mot de passe sécurisé pour finaliser l&apos;accès à votre espace association.</p>
         <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-3.5 py-1.5 text-xs text-ink"><span className="font-semibold text-muted">Compte :</span><span className="font-bold">{email}</span></p>
       </header>

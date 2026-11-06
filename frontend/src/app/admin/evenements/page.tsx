@@ -113,7 +113,7 @@ export default function AdminEvenementsPage({ searchTerm = '' }: AdminEvenements
           onDateChange={setDateFilter}
         />
       </AdminPageHeader>
-      {error && <p role="alert" className="mb-6 rounded-[10px] border-l-4 border-[var(--Flush-Mahogany)] bg-rose-50/70 p-4 text-xs font-semibold text-[var(--Flush-Mahogany)]">{error}</p>}
+      {error && <p role="alert" className="mb-6 rounded-control border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold text-danger">{error}</p>}
       <EventList events={filteredEvents} loading={loading} onOpen={openEvent} />
       {selectedEvent && (
         <EventDetailModal

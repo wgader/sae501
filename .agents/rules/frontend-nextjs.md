@@ -8,7 +8,7 @@ description: "Standards Next.js 16, React, TypeScript, HTML sémantique, accessi
 ## Architecture App Router
 - Respecter la séparation stricte entre les **Server Components** (récupération de données, SEO) et les **Client Components** (directive `"use client"`, limités à l'interactivité pure).
 - **Data Fetching** : Les appels de données doivent cibler strictement le backend API Platform (Symfony). N'utilise pas d'ORMs (comme Prisma) directement dans Next.js.
-- Principe de responsabilité unique (KISS) : Extraire la logique métier complexe dans des hooks personnalisés (`src/hooks/`) ou des utilitaires (`src/utils/`).
+- Principe de responsabilité unique (KISS) : Extraire la logique métier complexe dans des hooks personnalisés (`src/hooks/`) ou des utilitaires (`src/lib/`).
 - **Décomposition** : Une page orchestre une fonctionnalité ; un composant présente une responsabilité. Extraire les blocs réutilisables ou les sous-parties avec leur propre état, et préférer la composition par `children`/props à des composants monolithiques ou à des composants définis dans le rendu.
 - **Rendu lisible** : Calculer les états de rendu avant le JSX. Éviter les IIFE, ternaires imbriqués et fonctions qui retournent du JSX dans un autre `return`. Les `map` doivent rester dédiés à une liste homogène et utiliser une clé stable.
 - **HTML sémantique** : Utiliser `main`, `header`, `nav`, `section`, `article`, `aside` et `footer` selon leur sens, avec un titre associé pour chaque `section`. Utiliser `ul`/`ol` pour les listes, `figure`/`figcaption` pour une illustration accompagnée de sa légende, et ne pas remplacer un élément interactif natif par un `div` cliquable.

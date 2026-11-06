@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 export const navItemVariants = cva(
-  'group flex min-h-[2.75rem] w-full items-center justify-center gap-3.5 rounded-control px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:justify-start md:px-3.5',
+  'group flex min-h-11 w-full items-center justify-center gap-3.5 rounded-control px-0 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:justify-start md:px-3.5',
   {
     variants: {
       selected: {

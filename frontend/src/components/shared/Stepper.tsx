@@ -9,9 +9,9 @@ export const stepperCircleVariants = cva(
   {
     variants: {
       status: {
-        active: "bg-[#0b644d] text-white",
-        completed: "bg-[#0b644d] text-white",
-        upcoming: "border-2 border-[#d9ded9] bg-white text-[#d9ded9]",
+        active: "bg-primary text-white",
+        completed: "bg-primary text-white",
+        upcoming: "border-2 border-line bg-white text-line",
       },
     },
     defaultVariants: {
@@ -21,13 +21,13 @@ export const stepperCircleVariants = cva(
 );
 
 export const stepperLabelVariants = cva(
-  "hidden text-center text-[0.63rem] font-bold uppercase tracking-wider md:block sm:text-xs transition-colors",
+  "hidden text-center text-xs font-bold uppercase tracking-wider md:block sm:text-xs transition-colors",
   {
     variants: {
       status: {
-        active: "text-[#0b644d]",
-        completed: "text-[#0b644d]",
-        upcoming: "text-[#6d746e]",
+        active: "text-primary",
+        completed: "text-primary",
+        upcoming: "text-muted",
       },
     },
     defaultVariants: {
@@ -67,10 +67,10 @@ export default function Stepper({
   return (
     <div className={cn(stepperVariants(), className)} {...props}>
       <div className="mb-8 sm:mb-10 px-4 text-center">
-        <h1 className="mb-3 text-2xl font-black uppercase tracking-tight text-[#1e2420] sm:text-3xl">
+        <h1 className="mb-3 text-2xl font-black uppercase tracking-tight text-ink sm:text-3xl">
           Inscrire mon association
         </h1>
-        <p className="text-xs text-[#6d746e] sm:text-sm">
+        <p className="text-xs text-muted sm:text-sm">
           Complétez votre dossier en 4 étapes — la mairie validera votre
           inscription sous 48h ouvrées ⚙️
         </p>
@@ -118,7 +118,7 @@ export default function Stepper({
               {index < steps.length - 1 && (
                 <div
                   className={`mx-1 h-0.5 flex-1 sm:mx-2 md:-mt-6 ${
-                    isCompleted ? "bg-[#0b644d]" : "bg-[#d9ded9]"
+                    isCompleted ? "bg-primary" : "bg-line"
                   }`}
                 />
               )}
@@ -127,7 +127,7 @@ export default function Stepper({
         })}
       </div>
 
-      <div className="mt-6 text-center text-xs font-medium text-[#6d746e] sm:mt-8 md:hidden">
+      <div className="mt-6 text-center text-xs font-medium text-muted sm:mt-8 md:hidden">
         Etape {currentStep} sur {steps.length} -{" "}
         {steps[currentStep - 1]?.label ?? ""}
       </div>

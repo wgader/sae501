@@ -6,6 +6,7 @@
 /secrets/
 
 # ── Next.js ────────────────────────────────────
+node_modules/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
@@ -37,4 +38,3 @@ caddy_config/
 *.swp
 *.swo
 Thumbs.db
-CLAUDE.md

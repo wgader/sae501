@@ -103,7 +103,7 @@ export default function AdminEquipmentReservationDetailPage() {
               </div>
             </header>
 
-            <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+            <div className="grid gap-6 lg:grid-cols-5">
               <div className="space-y-6">
                 <section className="rounded-control border border-line bg-paper p-5" aria-labelledby="association-heading">
                   <h2 id="association-heading" className="text-xs font-bold uppercase tracking-section text-ink">Identité de l’association</h2>

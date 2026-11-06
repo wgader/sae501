@@ -18,7 +18,7 @@ export default function EventStatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toUpperCase();
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wider ${STATUS_STYLES[normalizedStatus] ?? 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${STATUS_STYLES[normalizedStatus] ?? 'border-slate-200 bg-slate-50 text-slate-700'}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {STATUS_LABELS[normalizedStatus] ?? status}
     </span>

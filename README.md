@@ -23,6 +23,23 @@ cp .env.example .env  # remplir les valeurs
 docker compose up --build
 ```
 
+Après l'installation des dépendances Node à la racine, Husky active le hook
+`pre-commit` et `lint-staged` vérifie uniquement les fichiers staged :
+
+```bash
+npm install
+```
+
+Le backend fournit également PHP CS Fixer via Composer :
+
+```bash
+docker compose exec backend composer install --no-scripts
+docker compose exec backend php vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php
+```
+
+Le service `backend` doit être démarré pour exécuter ces commandes et le hook
+`pre-commit`.
+
 | Service    | URL                         |
 |------------|-----------------------------|
 | Frontend   | http://localhost:3000       |

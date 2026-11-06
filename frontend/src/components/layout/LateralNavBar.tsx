@@ -176,7 +176,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative flex h-full w-[17.5rem] max-w-[85vw] flex-col justify-between border-r border-line bg-white p-4 shadow-2xl">
+          <aside className="relative flex h-full w-70 max-w-full flex-col justify-between border-r border-line bg-white p-4 shadow-2xl">
             <div>
               <div className="flex items-center justify-between border-b border-line pb-4 pt-2">
                 <Link
@@ -290,7 +290,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
 
       <nav
         aria-label="Navigation principale"
-        className={`hidden md:sticky md:top-0 md:flex md:h-screen md:w-[15rem] lg:w-[16.25rem] shrink-0 flex-col justify-between border-r border-line bg-white ${className}`}
+        className={`hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 lg:w-65 shrink-0 flex-col justify-between border-r border-line bg-white ${className}`}
       >
         <div>
           <Link
@@ -304,7 +304,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
               width={364}
               height={75}
               priority
-              className="h-auto w-full max-w-[10.63rem]"
+              className="h-auto w-full max-w-42"
             />
           </Link>
 

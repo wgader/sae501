@@ -97,7 +97,7 @@ export default function ConnectedDashboard() {
 
             <h1
               id="dashboard-welcome-heading"
-              className="mt-3 text-[clamp(2.5rem,4.4vw,3.625rem)] font-black leading-[1.04] tracking-display text-ink"
+              className="mt-3 text-5xl font-black leading-tight tracking-display text-ink"
             >
               Bonjour,<br />
               <span className="text-primary">{associationName}</span>
@@ -126,7 +126,7 @@ export default function ConnectedDashboard() {
             </p>
             <h2
               id="commencer-heading"
-              className="mt-1 text-[clamp(1.5rem,2.5vw,2rem)] font-black tracking-display text-ink"
+              className="mt-1 text-2xl font-black tracking-display text-ink"
             >
               Que souhaitez-vous faire ?
             </h2>
