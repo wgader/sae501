@@ -1,0 +1,283 @@
+export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED' | 'SUSPENDED';
+export type AssociationModule = 'subventions' | 'materiel' | 'salles';
+
+export type AssociationContact = {
+  nom: string;
+  prenom: string;
+  nomComplet?: string;
+  email: string;
+  telephone: string | null;
+};
+
+export type Association = {
+  id: number;
+  nom: string;
+  numeroRna?: string;
+  statut: AssociationStatus;
+  permissions: AssociationModule[];
+  moduleSubventionActif?: boolean;
+  moduleSalleActif?: boolean;
+  moduleMaterielActif?: boolean;
+  createdAt: string | null;
+  contact?: AssociationContact | null;
+  nombreMembres?: number | null;
+  categorie?: string | null;
+  imageUrl?: string | null;
+  documents?: AssociationDocument[];
+};
+
+export type AssociationDocument = {
+  id: number;
+  typeDocument: string;
+  fichierUrl: string;
+  isVerified: boolean;
+  size: number;
+  originalName: string;
+  mimeType: string;
+  createdAt: string | null;
+};
+
+export type AssociationCounts = {
+  pending: number;
+  validated: number;
+  refused: number;
+  total: number;
+};
+
+export type AssociationPage = {
+  items: Association[];
+  page: number;
+  itemsPerPage: number;
+  totalItems: number;
+  counts?: AssociationCounts;
+};
+
+export type Salle = {
+  id: number;
+  nom: string;
+  description: string | null;
+  imageUrl: string | null;
+  adresse: string;
+  capaciteMax: number;
+  accesPmr: boolean;
+  equipementsInclus: string[];
+  createdAt: string | null;
+  updatedAt: string | null;
+  isActive: boolean;
+  deletedAt: string | null;
+};
+
+export type Equipment = {
+  id: number;
+  designation: string;
+  categorie: string;
+  referenceInterne: string | null;
+  description: string | null;
+  consignesUtilisation: string | null;
+  stockTotal: number;
+  isArchived: boolean;
+  statut: 'Disponible' | 'Archivé';
+  imagePath: string | null;
+  createdAt: string | null;
+};
+
+export type EquipmentAvailability = Equipment & {
+  stockEngage: number;
+  stockDisponible: number;
+};
+
+export type EquipmentAvailabilityResponse = {
+  start: string;
+  end: string;
+  items: EquipmentAvailability[];
+};
+
+export type EquipmentReservationLineInput = {
+  materielId: number;
+  quantite: number;
+};
+
+export type EquipmentReservationInput = {
+  motifEvenement: string;
+  dateRetrait: string;
+  dateRestitution: string;
+  lignes: EquipmentReservationLineInput[];
+};
+
+export type EquipmentReservation = {
+  id: number | null;
+  statut: 'En attente' | 'Validée' | 'Refusée' | 'Clôturée';
+  motifEvenement: string | null;
+  dateRetrait: string | null;
+  dateRestitution: string | null;
+  lignes: Array<{
+    materielId: number | null;
+    designation: string | null;
+    quantite: number | null;
+  }>;
+};
+
+export type AdminEquipmentReservation = EquipmentReservation & {
+  createdAt: string | null;
+  updatedAt: string | null;
+  noteInterne: string | null;
+  association: {
+    id: number | null;
+    nom: string | null;
+    contact: {
+      nom: string | null;
+      prenom: string | null;
+      email: string | null;
+      telephone: string | null;
+    };
+  };
+};
+
+export type AdminEquipmentReservationPage = {
+  items: AdminEquipmentReservation[];
+  page: number;
+  itemsPerPage: number;
+  totalItems: number;
+  counts: {
+    pending: number;
+    validated: number;
+    refused: number;
+    total: number;
+  };
+};
+
+export type StockCheckResult = {
+  equipmentId: number;
+  currentStock: number;
+  requestedStock: number;
+  hasConflict: boolean;
+  maxBooked: number;
+  conflictingReservations: Array<{
+    id: number;
+    association: string;
+    motif: string;
+    dateRetrait: string;
+    dateRestitution: string;
+    quantite: number;
+  }>;
+};
+
+export type StockAdjustment = {
+  id: number;
+  previousStock: number;
+  newStock: number;
+  reason: string;
+  createdAt: string;
+  agent: {
+    id: number | null;
+    nom: string | null;
+    prenom: string | null;
+  };
+};
+
+export type AccountProfile = {
+  id: number | null;
+  email: string | null;
+  telephone: string | null;
+  nom: string | null;
+  prenom: string | null;
+  nomAssociation?: string | null;
+  typeCompte?: string | null;
+};
+
+export type MunicipalAgent = {
+  id: number;
+  nom: string;
+  prenom: string;
+  email: string;
+  roles: string[];
+};
+
+export type RequestType = 'subvention' | 'materiel' | 'salle' | 'evenement';
+export type RequestStatusCategory = 'active' | 'closed';
+
+export type AssociationRequestSummary = {
+  id: string;
+  rawId: number;
+  type: RequestType;
+  typeLabel: string;
+  intitule: string;
+  statut: string;
+  statusCategory: RequestStatusCategory;
+  createdAt: string;
+  year: number;
+  keyDates: {
+    depot: string;
+    exercice?: string;
+    retrait?: string;
+    restitution?: string;
+    debut?: string;
+    fin?: string;
+  };
+  decisionMotif?: string | null;
+  observations?: string | null;
+  summary: string;
+};
+
+export type RequestTimelineEvent = {
+  id?: number;
+  statut: string;
+  label: string;
+  commentaire?: string | null;
+  auteur?: string | null;
+  date: string;
+};
+
+export type RequestDocument = {
+  id: number;
+  typeDocument: string;
+  fichierUrl: string;
+  description?: string | null;
+  createdAt?: string | null;
+};
+
+export type AssociationRequestDetail = AssociationRequestSummary & {
+  typeSubvention?: string;
+  description?: string | null;
+  montantDemande?: number;
+  montantAccorde?: number | null;
+  anneeExercice?: number;
+  lignes?: Array<{
+    materielId?: number;
+    designation: string;
+    categorie?: string;
+    quantite: number;
+    imagePath?: string | null;
+  }>;
+  cautionMontant?: number | null;
+  cautionPayeeAt?: string | null;
+  materielRetireAt?: string | null;
+  materielRestitueAt?: string | null;
+  cautionRendueAt?: string | null;
+  salleId?: number;
+  salleNom?: string;
+  salleAdresse?: string;
+  salleCapaciteMax?: number;
+  salleAccesPmr?: boolean;
+  salleEquipements?: string[];
+  capaciteAttendue?: number | null;
+  documents: RequestDocument[];
+  timeline: RequestTimelineEvent[];
+};
+
+export type AssociationRequestsResponse = {
+  items: AssociationRequestSummary[];
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  counts: {
+    all: number;
+    active: number;
+    closed: number;
+    subvention: number;
+    materiel: number;
+    salle: number;
+    evenement: number;
+  };
+};

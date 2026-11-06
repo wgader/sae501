@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\AssociationRepository;
+use App\State\AssociationStatusProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -23,6 +25,12 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Modules activés par la mairie selon les besoins de l'association.
  */
 #[ORM\Entity(repositoryClass: AssociationRepository::class)]
+#[ApiResource(
+    processor: AssociationStatusProcessor::class,
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class Association
 {
     public const STATUTS = [

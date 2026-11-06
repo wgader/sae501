@@ -1,0 +1,3 @@
+backend/vendor
+backend/var/cache
+backend/var/log
