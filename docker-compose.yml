@@ -17,6 +17,23 @@ services:
     networks:
       - app_network
 
+  campaign-scheduler:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    command: sh -c "while true; do php bin/console app:campaigns:synchronize --no-interaction; sleep 60; done"
+    env_file: .env
+    environment:
+      APP_ENV: dev
+    volumes:
+      - ./backend:/app
+      - /app/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app_network
+
   backend:
     build:
       context: .
