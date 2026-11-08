@@ -123,6 +123,9 @@ final class AssociationStatusNotifier
         if ($association->isModuleSalleActif()) {
             $modules[] = 'Réservation de salles';
         }
+        if ($association->isModuleEvenementActif()) {
+            $modules[] = 'Événements';
+        }
         return $modules;
     }
 }

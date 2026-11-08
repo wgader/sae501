@@ -18,6 +18,10 @@ import {
   getStoredAssociationName,
   getAssociationInitials,
 } from '@/lib/authUtils';
+import {
+  isAssociationModuleEnabled,
+  useAssociationModules,
+} from '@/hooks/useAssociationModules';
 
 interface NavItemData {
   root: string;
@@ -81,6 +85,7 @@ interface LateralNavBarProps {
 }
 
 export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
+  const modules = useAssociationModules();
   const currentPage = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -221,7 +226,17 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
                 aria-label="Menu mobile dashboard"
                 className="mt-4 flex flex-col gap-1.5"
               >
-                {moduleItems.map((item) => {
+                {moduleItems.filter((item) =>
+                  item.root === 'subventions'
+                    ? isAssociationModuleEnabled(modules, 'subventions')
+                    : item.root === 'salles'
+                      ? isAssociationModuleEnabled(modules, 'salles')
+                      : item.root === 'materiel'
+                        ? isAssociationModuleEnabled(modules, 'materiel')
+                        : item.root === 'evenements'
+                          ? isAssociationModuleEnabled(modules, 'evenements')
+                          : true
+                ).map((item) => {
                   const href = item.root ? `/${item.root}` : '/';
                   const isSelected =
                     href === '/'
@@ -309,7 +324,17 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
           </Link>
 
           <section className="flex flex-col gap-1.5 px-3 md:px-4">
-            {moduleItems.map((item) => {
+            {moduleItems.filter((item) =>
+              item.root === 'subventions'
+                ? isAssociationModuleEnabled(modules, 'subventions')
+                : item.root === 'salles'
+                  ? isAssociationModuleEnabled(modules, 'salles')
+                  : item.root === 'materiel'
+                    ? isAssociationModuleEnabled(modules, 'materiel')
+                    : item.root === 'evenements'
+                      ? isAssociationModuleEnabled(modules, 'evenements')
+                      : true
+            ).map((item) => {
               const href = item.root ? `/${item.root}` : '/';
               const isSelected =
                 href === '/'

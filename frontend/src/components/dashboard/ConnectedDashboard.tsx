@@ -2,6 +2,10 @@
 
 import { useSyncExternalStore } from 'react';
 import { getStoredAssociationName } from '@/lib/authUtils';
+import {
+  isAssociationModuleEnabled,
+  useAssociationModules,
+} from '@/hooks/useAssociationModules';
 import DashboardActionCard, { DashboardActionCardProps } from './DashboardActionCard';
 
 function subscribeAuth(callback: () => void) {
@@ -70,6 +74,7 @@ const dashboardCards: DashboardActionCardProps[] = [
 ];
 
 export default function ConnectedDashboard() {
+  const modules = useAssociationModules();
   const rawName = useSyncExternalStore(
     subscribeAuth,
     getStoredAssociationName,
@@ -136,7 +141,19 @@ export default function ConnectedDashboard() {
             aria-label="Démarches disponibles"
             className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
           >
-            {dashboardCards.map((card) => (
+            {dashboardCards
+              .filter((card) =>
+                card.href === '/subventions'
+                  ? isAssociationModuleEnabled(modules, 'subventions')
+                  : card.href === '/salles'
+                    ? isAssociationModuleEnabled(modules, 'salles')
+                    : card.href === '/materiel'
+                      ? isAssociationModuleEnabled(modules, 'materiel')
+                      : card.href === '/evenements'
+                        ? isAssociationModuleEnabled(modules, 'evenements')
+                        : true
+              )
+              .map((card) => (
               <DashboardActionCard
                 key={card.step}
                 step={card.step}

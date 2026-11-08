@@ -89,7 +89,7 @@ final class AccountProfileController extends AbstractController
     }
 
     /**
-     * @return array{ id: int|null, email: string|null, telephone: string|null, nom: string|null, prenom: string|null, nomAssociation: string|null, typeCompte: string|null }
+     * @return array{ id: int|null, email: string|null, telephone: string|null, nom: string|null, prenom: string|null, nomAssociation: string|null, typeCompte: string|null, moduleSubventionActif: bool|null, moduleMaterielActif: bool|null, moduleSalleActif: bool|null, moduleEvenementActif: bool|null }
      */
     private static function serializeProfile(User $user): array
     {
@@ -101,6 +101,10 @@ final class AccountProfileController extends AbstractController
             'prenom' => $user->getPrenom(),
             'nomAssociation' => $user->getAssociation()?->getNom(),
             'typeCompte' => $user->getTypeCompte(),
+            'moduleSubventionActif' => $user->getAssociation()?->isModuleSubventionActif(),
+            'moduleMaterielActif' => $user->getAssociation()?->isModuleMaterielActif(),
+            'moduleSalleActif' => $user->getAssociation()?->isModuleSalleActif(),
+            'moduleEvenementActif' => $user->getAssociation()?->isModuleEvenementActif(),
         ];
     }
 }

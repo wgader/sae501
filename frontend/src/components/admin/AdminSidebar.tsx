@@ -12,6 +12,7 @@ import {
   IconSubvention,
   IconAssociation,
   IconAgent,
+  IconEvenement,
 } from '@/components/ui/NavigationBar/NavigationIcon';
 
 interface AdminSidebarProps {
@@ -20,18 +21,21 @@ interface AdminSidebarProps {
 
 const navItems = [
   { label: 'Accueil', href: '/admin/dashboard', icon: IconAccueil },
-  { label: 'Inscription', href: '/admin/inscription', icon: IconInscription },
-  { label: 'Association', href: '/admin/association', icon: IconAssociation },
-  { label: 'Salle', href: '/admin/salle', icon: IconSalle },
-  { label: 'Matériel', href: '/admin/materiel', icon: IconMateriel },
-  { label: 'Subvention', href: '/admin/subvention', icon: IconSubvention },
-  { label: 'Agent', href: '/admin/agent', icon: IconAgent },
-  { label: 'Historique', href: '/admin/historique', icon: IconHistorique },
+  { label: 'Inscription', href: '/admin/inscription', roles: ['ROLE_ADMIN'], icon: IconInscription },
+  { label: 'Association', href: '/admin/association', roles: ['ROLE_ADMIN'], icon: IconAssociation },
+  { label: 'Salle', href: '/admin/salle', roles: ['ROLE_ADMIN', 'ROLE_GESTION_SALLE'], icon: IconSalle },
+  { label: 'Matériel', href: '/admin/materiel', roles: ['ROLE_ADMIN', 'ROLE_GESTION_MATERIEL'], icon: IconMateriel },
+  { label: 'Subvention', href: '/admin/subvention', roles: ['ROLE_ADMIN', 'ROLE_GESTION_SUBVENTION'], icon: IconSubvention },
+  { label: 'Événements', href: '/admin/evenements', allRoles: ['ROLE_MAIRIE', 'ROLE_GESTION_EVENT'], icon: IconEvenement },
+  { label: 'Agents', href: '/admin/agent', roles: ['ROLE_ADMIN'], icon: IconAgent },
+  { label: 'Historique', href: '/admin/historique', roles: ['ROLE_ADMIN'], icon: IconHistorique },
 ];
 
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const roles = getAdminRoles();
+  const isAdmin = roles.includes('ROLE_ADMIN');
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
@@ -59,7 +63,11 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
 
         <nav aria-label="Menu principal administration">
           <ul className="flex flex-col gap-2">
-            {navItems.map(({ href, label, icon: Icon }) => {
+            {navItems.filter((item) => (
+              isAdmin
+              || (!item.allRoles && (!item.roles || item.roles.some((role) => roles.includes(role))))
+              || (item.allRoles && item.allRoles.every((role) => roles.includes(role)))
+            )).map(({ href, label, icon: Icon }) => {
               const isActive =
                 pathname === href ||
                 (href !== '/admin/dashboard' && pathname.startsWith(href));
@@ -111,4 +119,20 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
       </div>
     </div>
   );
+}
+
+function getAdminRoles(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  const token = localStorage.getItem('admin_token');
+  if (!token) return [];
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return Array.isArray(payload.roles)
+      ? payload.roles.filter((role: unknown): role is string => typeof role === 'string')
+      : [];
+  } catch {
+    return [];
+  }
 }

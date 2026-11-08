@@ -7,7 +7,27 @@ export function getMediaUrl(path: string | null | undefined): string | null {
 }
 
 export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED' | 'SUSPENDED';
-export type AssociationModule = 'subventions' | 'materiel' | 'salles';
+export type AssociationModule = 'evenements' | 'subventions' | 'materiel' | 'salles';
+
+export type AdminAgent = {
+  id: number;
+  email: string;
+  nom: string;
+  prenom: string;
+  telephone: string | null;
+  roles: string[];
+  isVerified: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string | null;
+};
+
+export type AdminAgentPayload = {
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string | null;
+  roles: string[];
+};
 
 export type AssociationContact = {
   nom: string;
@@ -191,6 +211,10 @@ export type AccountProfile = {
   prenom: string | null;
   nomAssociation?: string | null;
   typeCompte?: string | null;
+  moduleSubventionActif?: boolean | null;
+  moduleMaterielActif?: boolean | null;
+  moduleSalleActif?: boolean | null;
+  moduleEvenementActif?: boolean | null;
 };
 
 export type MunicipalAgent = {
@@ -201,8 +225,15 @@ export type MunicipalAgent = {
   roles: string[];
 };
 
-export function getMunicipalAgents(): Promise<MunicipalAgent[]> {
-  return request<MunicipalAgent[]>('/api/admin/agents');
+export type MunicipalAgentsResponse = {
+  items: MunicipalAgent[];
+  page: number;
+  itemsPerPage: number;
+  totalItems: number;
+};
+
+export function getMunicipalAgents(): Promise<MunicipalAgentsResponse> {
+  return request<MunicipalAgentsResponse>('/api/admin/agents?page=1&itemsPerPage=50');
 }
 
 export function deleteMunicipalAgent(id: number): Promise<void> {
@@ -509,6 +540,42 @@ export function getAssociations(
   if (search) params.set('q', search);
   if (includeCounts !== undefined) params.set('includeCounts', String(includeCounts));
   return request<AssociationPage>(`/api/admin/associations?${params.toString()}`);
+}
+
+export function getAdminAgents(
+  page = 1,
+  search?: string,
+): Promise<{
+  items: AdminAgent[];
+  page: number;
+  itemsPerPage: number;
+  totalItems: number;
+}> {
+  const params = new URLSearchParams({
+    page: String(page),
+    itemsPerPage: '50',
+  });
+  if (search) params.set('q', search);
+
+  return request(`/api/admin/agents?${params.toString()}`);
+}
+
+export function createAdminAgent(payload: AdminAgentPayload): Promise<AdminAgent> {
+  return request<AdminAgent>('/api/admin/agents', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminAgent(id: number, payload: Partial<AdminAgentPayload>): Promise<AdminAgent> {
+  return request<AdminAgent>(`/api/admin/agents/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteAdminAgent(id: number): Promise<void> {
+  return request<void>(`/api/admin/agents/${id}`, { method: 'DELETE' });
 }
 
 export function getAssociation(id: number): Promise<Association> {

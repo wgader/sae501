@@ -22,7 +22,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class AssociationAdministrationController extends AbstractController
 {
     private const STATUSES = ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED'];
-    private const MODULES = ['subventions', 'materiel', 'salles'];
+    private const MODULES = ['subventions', 'materiel', 'salles', 'evenements'];
 
     public function __construct(
         private readonly AssociationRepository $associationRepository,
@@ -124,6 +124,7 @@ final class AssociationAdministrationController extends AbstractController
                 $association->setModuleSubventionActif(in_array('subventions', $permissions, true));
                 $association->setModuleMaterielActif(in_array('materiel', $permissions, true));
                 $association->setModuleSalleActif(in_array('salles', $permissions, true));
+                $association->setModuleEvenementActif(in_array('evenements', $permissions, true));
             }
 
             $this->entityManager->persist($association);
@@ -173,6 +174,7 @@ final class AssociationAdministrationController extends AbstractController
             $association->setModuleSubventionActif(in_array('subventions', $permissions, true));
             $association->setModuleMaterielActif(in_array('materiel', $permissions, true));
             $association->setModuleSalleActif(in_array('salles', $permissions, true));
+            $association->setModuleEvenementActif(in_array('evenements', $permissions, true));
 
             $this->entityManager->persist($association);
             $this->entityManager->flush();
@@ -390,6 +392,9 @@ final class AssociationAdministrationController extends AbstractController
         }
         if ($association->isModuleSalleActif()) {
             $permissions[] = 'salles';
+        }
+        if ($association->isModuleEvenementActif()) {
+            $permissions[] = 'evenements';
         }
 
         $primaryUser = $association->getUsers()->first() ?: null;
