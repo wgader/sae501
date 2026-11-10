@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import Link from 'next/link';
 import { getStoredAssociationName } from '@/lib/authUtils';
 import {
   isAssociationModuleEnabled,
@@ -114,12 +115,12 @@ export default function ConnectedDashboard() {
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <a
+              <Link
                 href="/historique"
                 className="inline-flex h-11 items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover"
               >
                 Suivre mes démarches →
-              </a>
+              </Link>
             </div>
           </div>
         </section>

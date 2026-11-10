@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
+import RequestStatusTabs from './RequestStatusTabs';
 
 export interface RequestFilterBarProps extends HTMLAttributes<HTMLDivElement> {
   searchQuery: string;
@@ -10,6 +11,13 @@ export interface RequestFilterBarProps extends HTMLAttributes<HTMLDivElement> {
   onYearChange: (value: string) => void;
   onResetFilters?: () => void;
   hasActiveFilters?: boolean;
+  statusFilter?: string;
+  onStatusChange?: (value: 'all' | 'active' | 'closed') => void;
+  statusCounts?: {
+    all: number;
+    active: number;
+    closed: number;
+  };
 }
 
 export default function RequestFilterBar({
@@ -21,6 +29,9 @@ export default function RequestFilterBar({
   onYearChange,
   onResetFilters,
   hasActiveFilters,
+  statusFilter,
+  onStatusChange,
+  statusCounts,
   className,
   ...props
 }: RequestFilterBarProps) {
@@ -33,6 +44,15 @@ export default function RequestFilterBar({
       )}
       {...props}
     >
+      {statusFilter && onStatusChange && statusCounts && (
+        <RequestStatusTabs
+          activeTab={statusFilter}
+          onTabChange={onStatusChange}
+          counts={statusCounts}
+          className="mb-5 border-b border-line pb-4"
+        />
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:items-end">
         {/* Search */}
         <div className="lg:col-span-6">
@@ -146,4 +166,3 @@ export default function RequestFilterBar({
     </section>
   );
 }
-

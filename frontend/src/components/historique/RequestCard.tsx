@@ -34,12 +34,12 @@ export default function RequestCard({
   return (
     <article
       className={cn(
-        'group relative flex flex-col justify-between gap-4 rounded-card border border-line bg-white p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-card md:flex-row md:items-center',
+        'group relative flex flex-col justify-between gap-4 rounded-soft border border-line bg-white p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-card md:flex-row md:items-center',
         className,
       )}
       {...props}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         {/* Type badge */}
         <div className="shrink-0">
           <RequestTypeBadge requestType={request.type} label={request.typeLabel} />
@@ -47,29 +47,16 @@ export default function RequestCard({
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-ink group-hover:text-primary transition-colors">
+          <h3 className="truncate text-sm font-bold uppercase text-ink group-hover:text-primary transition-colors">
             {request.intitule}
           </h3>
-          <p className="mt-0.5 truncate text-xs text-muted">
-            {request.summary}
+          <p className="mt-0.5 truncate text-caption text-muted">
+            {depositDate}
           </p>
         </div>
       </div>
 
       <div className="flex shrink-0 items-center justify-between gap-4 border-t border-line/50 pt-3 md:border-t-0 md:pt-0">
-        {/* Deposit date */}
-        <div className="text-left md:text-right">
-          <span className="block text-caption font-bold uppercase tracking-label text-muted">
-            Déposé le
-          </span>
-          <time
-            dateTime={request.createdAt}
-            className="text-xs font-semibold text-ink"
-          >
-            {depositDate}
-          </time>
-        </div>
-
         {/* Current status */}
         <div className="shrink-0">
           <RequestStatusBadge statusLabel={request.statut} />
@@ -80,11 +67,10 @@ export default function RequestCard({
           type="button"
           onClick={() => onSelect(request.id, request.type)}
           aria-label={`Consulter le détail du dossier ${request.intitule}`}
-          className="inline-flex h-9 items-center justify-center rounded-control border border-line bg-paper px-3.5 text-xs font-bold uppercase tracking-label text-ink transition-colors hover:border-primary hover:bg-primary hover:text-white cursor-pointer"
+          className="inline-flex h-9 items-center justify-center rounded-control px-2 text-xs font-bold uppercase tracking-label text-ink transition-colors hover:text-primary cursor-pointer"
         >
-          Détail
-          <svg
-            className="ml-1.5 h-3.5 w-3.5"
+        <svg
+          className="h-6 w-6"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -98,4 +84,3 @@ export default function RequestCard({
     </article>
   );
 }
-

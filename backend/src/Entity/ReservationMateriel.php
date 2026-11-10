@@ -23,6 +23,7 @@ class ReservationMateriel
         'Validée',
         'Refusée',
         'Clôturée',
+        'Annulée',
         'Matériel restitué',
     ];
 
@@ -293,4 +294,3 @@ class ReservationMateriel
         return $this;
     }
 }
-

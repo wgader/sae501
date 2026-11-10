@@ -34,6 +34,7 @@ final class AssociationRequestAggregationService
     public const CLOSED_STATUSES = [
         'Refusée',
         'Clôturée',
+        'Annulée',
         'Matériel restitué',
     ];
 
@@ -311,6 +312,7 @@ final class AssociationRequestAggregationService
             'year' => $year,
             'keyDates' => [
                 'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'decision' => $subvention->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
                 'exercice' => (string) $year,
             ],
             'decisionMotif' => $subvention->getObservations(),
@@ -346,10 +348,11 @@ final class AssociationRequestAggregationService
             'year' => $year,
             'keyDates' => [
                 'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'decision' => $materiel->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
                 'retrait' => $materiel->getDateRetrait()?->format(\DateTimeInterface::ATOM),
                 'restitution' => $materiel->getDateRestitution()?->format(\DateTimeInterface::ATOM),
             ],
-            'decisionMotif' => $materiel->getObservations(),
+            'decisionMotif' => $materiel->getNoteInterne() ?? $materiel->getObservations(),
             'observations' => $materiel->getObservations(),
             'summary' => $itemsSummary !== [] ? implode(', ', $itemsSummary) : 'Matériel communal',
         ];
@@ -377,6 +380,7 @@ final class AssociationRequestAggregationService
             'year' => $year,
             'keyDates' => [
                 'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'decision' => $salle->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
                 'debut' => $salle->getDateDebut()?->format(\DateTimeInterface::ATOM),
                 'fin' => $salle->getDateFin()?->format(\DateTimeInterface::ATOM),
             ],
@@ -557,6 +561,7 @@ final class AssociationRequestAggregationService
                 'Refusée' => 'Dossier refusé par la commune',
                 'Matériel restitué' => 'Matériel restitué et contrôlé',
                 'Clôturée' => 'Dossier clôturé',
+                'Annulée' => 'Réservation annulée par l’association',
                 default => 'Mise à jour du dossier',
             };
 
