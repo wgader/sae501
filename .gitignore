@@ -36,3 +36,5 @@ caddy_config/
 Thumbs.db
 CLAUDE.md
 
+/node_modules/
+

@@ -29,6 +29,7 @@ services:
       SERVER_ROOT: "/app/public"
     volumes:
       - ./backend:/app
+      - ./.env:/app/.env:ro
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:
