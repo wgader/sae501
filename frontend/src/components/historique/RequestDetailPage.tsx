@@ -9,6 +9,7 @@ import {
   type AssociationRequestDetail,
 } from '@/lib/api';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import Button from '@/components/ui/Button';
 import RequestStatusBadge from './RequestStatusBadge';
 import RequestTypeBadge from './RequestTypeBadge';
 
@@ -94,6 +95,17 @@ function RequestInformation({ detail }: { detail: AssociationRequestDetail }) {
     );
   }
 
+  if (detail.type === 'evenement') {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2">
+        <InfoField label="Type d’événement" value={detail.eventType} />
+        <InfoField label="Lieu" value={detail.location} />
+        <InfoField label="Début" value={formatDate(detail.keyDates.debut, true)} />
+        <InfoField label="Fin" value={formatDate(detail.keyDates.fin, true)} />
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <InfoField label="Salle demandée" value={detail.salleNom} />
@@ -115,18 +127,20 @@ function InfoField({ label, value }: { label: string; value?: string | null }) {
 }
 
 function Documents({ documents }: Pick<AssociationRequestDetail, 'documents'>) {
+  const requestDocuments = documents ?? [];
+
   return (
     <section aria-labelledby="documents-title" className="space-y-3">
       <h2 id="documents-title" className="text-xs font-bold uppercase tracking-label text-muted">
         Informations transmises
       </h2>
-      {documents.length === 0 ? (
+      {requestDocuments.length === 0 ? (
         <p className="rounded-soft border border-line bg-paper p-4 text-sm italic text-muted">
           Aucune pièce justificative déposée pour cette démarche.
         </p>
       ) : (
         <ul className="space-y-2">
-          {documents.map((document) => (
+          {requestDocuments.map((document) => (
             <li key={document.id} className="flex items-center justify-between gap-4 rounded-soft border border-line bg-white p-3">
               <span className="truncate text-sm font-semibold text-ink">{document.typeDocument}</span>
               {document.fichierUrl && (
@@ -184,6 +198,8 @@ export default function RequestDetailPage() {
     () =>
       detail !== null &&
       (detail.type === 'materiel' || detail.type === 'salle') &&
+      detail.statut !== null &&
+      detail.statut !== undefined &&
       ['En attente', 'En cours de traitement', 'Validée'].includes(detail.statut),
     [detail],
   );
@@ -230,8 +246,33 @@ export default function RequestDetailPage() {
                 </div>
                 <h2 className="mt-2 text-lg font-bold uppercase text-ink">{detail.intitule}</h2>
               </div>
-              <RequestStatusBadge statusLabel={detail.statut} size="md" />
+              {detail.type !== 'evenement' && detail.statut && (
+                <RequestStatusBadge statusLabel={detail.statut} size="md" />
+              )}
             </section>
+
+            {detail.type !== 'subvention' && (
+              <Button
+                type="button"
+                size="md"
+                className="self-end sm:self-start"
+                rightIcon={
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m15.5 6.5-6.7 6.7a3 3 0 0 0 4.2 4.2l6-6a4.5 4.5 0 0 0-6.4-6.4l-6.7 6.7a6 6 0 1 0 8.5 8.5l5.2-5.2" />
+                  </svg>
+                }
+                onClick={() => router.push(`/historique/${detail.id}/pieces-annexes?type=${detail.type}`)}
+              >
+                Pièces annexes
+              </Button>
+            )}
 
             <section aria-labelledby="dates-title" className="grid gap-3 sm:grid-cols-2">
               <h2 id="dates-title" className="sr-only">Dates clés de la demande</h2>
@@ -261,7 +302,9 @@ export default function RequestDetailPage() {
               </section>
             )}
 
-            <Documents documents={detail.documents} />
+            <div id="documents">
+              <Documents documents={detail.documents} />
+            </div>
 
             {canCancel && (
               <section className="flex flex-col justify-between gap-4 rounded-soft border border-danger/20 bg-white p-5 sm:flex-row sm:items-center">

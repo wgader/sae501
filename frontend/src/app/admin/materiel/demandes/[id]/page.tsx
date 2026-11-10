@@ -8,6 +8,8 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
   getAdminEquipmentReservation,
+  getMediaUrl,
+  requestAdminAssociationDocuments,
   updateAdminEquipmentReservationStatus,
   type AdminEquipmentReservation,
 } from '@/lib/api';
@@ -25,7 +27,13 @@ function formatDate(value: string | null): string {
 }
 
 function statusCode(status: AdminEquipmentReservation['statut']) {
-  return status === 'En attente' ? 'PENDING_VALIDATION' : status === 'Validée' ? 'VALIDATED' : 'REFUSED';
+  return status === 'En attente'
+    ? 'PENDING_VALIDATION'
+    : status === 'Validée'
+      ? 'VALIDATED'
+      : status === 'Refusée'
+        ? 'REFUSED'
+        : 'PENDING_VALIDATION';
 }
 
 export default function AdminEquipmentReservationDetailPage() {
@@ -38,6 +46,10 @@ export default function AdminEquipmentReservationDetailPage() {
   const [feedback, setFeedback] = useState('');
   const [noteInterne, setNoteInterne] = useState('');
   const [pendingStatus, setPendingStatus] = useState<'Validée' | 'Refusée' | null>(null);
+  const [missingFile, setMissingFile] = useState('');
+  const [documentsMessage, setDocumentsMessage] = useState('');
+  const [requestingDocuments, setRequestingDocuments] = useState(false);
+  const [showDocumentsRequest, setShowDocumentsRequest] = useState(false);
 
   const loadReservation = useCallback(async () => {
     if (!Number.isInteger(reservationId) || reservationId <= 0) {
@@ -78,6 +90,35 @@ export default function AdminEquipmentReservationDetailPage() {
       setUpdating(false);
       setPendingStatus(null);
     }
+  }
+
+  async function handleRequestDocuments(event: React.FormEvent<HTMLFormElement>) {
+      event.preventDefault();
+      if (!reservation?.association.id || !reservation.id || !missingFile.trim() || !documentsMessage.trim()) {
+        setError('Renseignez la pièce manquante et le message de relance.');
+        return;
+      }
+
+      try {
+        setRequestingDocuments(true);
+        setError('');
+        await requestAdminAssociationDocuments(
+          reservation.association.id,
+          String(reservation.id),
+          'materiel',
+          [missingFile.trim()],
+          documentsMessage.trim(),
+        );
+        await loadReservation();
+        setFeedback('La demande de pièces a été envoyée à l’association.');
+        setMissingFile('');
+        setDocumentsMessage('');
+        setShowDocumentsRequest(false);
+      } catch (requestError: unknown) {
+        setError(requestError instanceof Error ? requestError.message : 'Impossible d’envoyer la demande de pièces.');
+      } finally {
+        setRequestingDocuments(false);
+      }
   }
 
   return (
@@ -133,6 +174,68 @@ export default function AdminEquipmentReservationDetailPage() {
                       </li>
                     ))}
                   </ul>
+                </section>
+
+                <section className="rounded-control border border-line bg-paper p-5" aria-labelledby="documents-heading">
+                  <div className="flex items-center justify-between gap-4">
+                    <h2 id="documents-heading" className="text-xs font-bold uppercase tracking-section text-ink">Pièces annexes</h2>
+                    <span className="text-xs text-muted">
+                      {reservation.documents.length} document{reservation.documents.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="mt-4 border-t border-line pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowDocumentsRequest((visible) => !visible)}
+                      className="rounded-control bg-primary px-4 py-3 text-xs font-bold uppercase tracking-label text-white hover:bg-primary-hover"
+                    >
+                      {showDocumentsRequest ? 'Fermer la demande' : 'Demander des pièces annexes'}
+                    </button>
+                    {showDocumentsRequest && (
+                      <form onSubmit={handleRequestDocuments} className="mt-4 space-y-4 rounded-control border border-accent bg-white p-4">
+                        <div>
+                          <label htmlFor="missing-equipment-file" className="text-label font-bold uppercase tracking-label text-muted">Pièce attendue</label>
+                          <input id="missing-equipment-file" value={missingFile} onChange={(event) => setMissingFile(event.target.value)} maxLength={150} placeholder="Ex. attestation d’assurance" className="mt-2 w-full rounded-control border border-line bg-paper px-3 py-3 text-sm text-ink focus:border-primary focus:outline-none" />
+                        </div>
+                        <div>
+                          <label htmlFor="equipment-documents-message" className="text-label font-bold uppercase tracking-label text-muted">Message</label>
+                          <textarea id="equipment-documents-message" value={documentsMessage} onChange={(event) => setDocumentsMessage(event.target.value)} maxLength={2000} rows={4} placeholder="Précisez les éléments attendus..." className="mt-2 w-full resize-y rounded-control border border-line bg-paper px-3 py-3 text-sm text-ink focus:border-primary focus:outline-none" />
+                        </div>
+                        <button type="submit" disabled={requestingDocuments} className="rounded-control bg-primary px-4 py-3 text-xs font-bold uppercase tracking-label text-white disabled:opacity-50">
+                          {requestingDocuments ? 'Envoi en cours...' : reservation.statut === 'Complément requis' ? 'Relancer l’association' : 'Envoyer la demande'}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                  {reservation.documents.length === 0 ? (
+                    <p className="mt-4 border-t border-line pt-4 text-sm italic text-muted">
+                      Aucun justificatif déposé par l’association.
+                    </p>
+                  ) : (
+                    <ul className="mt-4 space-y-2 border-t border-line pt-4">
+                      {reservation.documents.map((document) => {
+                        const documentUrl = getMediaUrl(document.fichierUrl);
+                        return (
+                          <li key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-soft bg-white p-3">
+                            <div>
+                              <p className="text-sm font-semibold text-ink">{document.originalName}</p>
+                              <p className="mt-1 text-xs text-muted">{document.typeDocument}</p>
+                            </div>
+                            {documentUrl && (
+                              <a
+                                href={documentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
+                              >
+                                Consulter
+                              </a>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </section>
               </div>
 

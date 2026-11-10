@@ -1,19 +1,10 @@
-<h1>Pièces complémentaires demandées</h1>
-
-<p>Bonjour {{ prenom }},</p>
-
-<p>
-    La mairie vous demande des pièces complémentaires pour l'événement
-    « {{ eventTitle }} » de l'association {{ nomAssociation }}.
-</p>
-
-<p>{{ message }}</p>
-
-<p>Pièces demandées :</p>
-<ul>
-    {% for missingFile in missingFiles %}
-        <li>{{ missingFile }}</li>
-    {% endfor %}
-</ul>
-
-<p>Merci de déposer ces documents dans votre espace association.</p>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Pièces complémentaires demandées</title></head>
+<body style="margin:0;padding:32px 16px;background:#F4F4F0;font-family:Arial,Helvetica,sans-serif;color:#1E2420;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;">
+<tr><td style="padding:40px;background:#146E67;color:#fff;"><p style="margin:0 0 12px;color:#D8EC95;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">Espace Association</p><h1 style="margin:0;font-size:30px;">Pièces complémentaires demandées</h1></td></tr>
+<tr><td style="padding:40px;"><p>Bonjour {{ prenom }},</p><p>La mairie vous demande des pièces complémentaires pour l'événement <strong>« {{ eventTitle }} »</strong> de l'association <strong>{{ nomAssociation }}</strong>.</p><p style="padding:16px;background:#FFE3E7;border-left:4px solid #CD2429;">{{ message|nl2br }}</p><p><strong>Pièces demandées :</strong></p><ul>{% for missingFile in missingFiles %}<li>{{ missingFile }}</li>{% endfor %}</ul><p style="margin:32px 0;"><a href="{{ documentsUrl }}" style="display:inline-block;padding:14px 22px;background:#146E67;color:#fff;text-decoration:none;font-weight:bold;">Déposer les documents</a></p><p>Vous pouvez aussi retrouver cette demande depuis votre espace association.</p></td></tr>
+<tr><td style="padding:24px 40px;background:#000;color:#fff;font-size:12px;">Mairie de Feytiat — Plateforme Associations</td></tr>
+</table></td></tr></table></body></html>

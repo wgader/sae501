@@ -41,6 +41,7 @@ final class ExternalEventController extends AbstractController
         private readonly MailerInterface $mailer,
         private readonly NotificationService $notificationService,
         #[Autowire(env: 'MAILER_FROM')] private readonly string $mailerFrom,
+        #[Autowire(env: 'FRONTEND_URL')] private readonly string $frontendUrl,
     ) {
     }
 
@@ -53,7 +54,7 @@ final class ExternalEventController extends AbstractController
 
         return $this->json([
             'items' => array_map(
-                fn (ExternalEvent $event): array => self::serializeEvent($event),
+                fn (ExternalEvent $event): array => $this->serializeEvent($event),
                 $this->eventRepository->findForAdministration($page, $itemsPerPage),
             ),
             'page' => $page,
@@ -71,7 +72,7 @@ final class ExternalEventController extends AbstractController
             return $this->json(['message' => 'Événement introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
-        $data = self::serializeEvent($event);
+        $data = $this->serializeEvent($event);
         $data['files'] = array_map(
             static fn (ExternalEventFile $file): array => self::serializeFile($file),
             $this->eventFileRepository->findForEvent($id),
@@ -102,7 +103,7 @@ final class ExternalEventController extends AbstractController
         $event->setStatus($status);
         $this->entityManager->flush();
 
-        return $this->json(self::serializeEvent($event));
+        return $this->json($this->serializeEvent($event));
     }
 
     #[Route('/files/{id<\d+>}', name: 'api_events_external_file_download', methods: ['GET'])]
@@ -127,6 +128,42 @@ final class ExternalEventController extends AbstractController
             'Content-Type',
             $file->getMimeType() ?? 'application/octet-stream'
         );
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $file->getOriginalName() ?? 'download'
+        );
+
+        return $response;
+    }
+
+    #[Route('/association/files/{id<\d+>}', name: 'api_events_association_file_download', methods: ['GET'])]
+    #[IsGranted('ROLE_ASSOCIATION')]
+    public function downloadAssociationFile(int $id): BinaryFileResponse|JsonResponse
+    {
+        $user = $this->getUser();
+        $association = $user instanceof User ? $user->getAssociation() : null;
+        $file = $this->eventFileRepository->find($id);
+
+        if ($association === null || !$file instanceof ExternalEventFile) {
+            return $this->json(['message' => 'Fichier introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $event = $this->eventRepository->find($file->getEventId());
+        if (!$event instanceof ExternalEvent || $event->getAssoId() !== $association->getId()) {
+            return $this->json(['message' => 'Fichier introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $absolutePath = $this->fileStorage->resolve($file->getFilePath() ?? '');
+        if ($absolutePath === null) {
+            return $this->json(
+                ['message' => 'Fichier introuvable sur le serveur.'],
+                Response::HTTP_NOT_FOUND
+            );
+        }
+
+        $response = new BinaryFileResponse($absolutePath);
+        $response->headers->set('Content-Type', $file->getMimeType() ?? 'application/octet-stream');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
@@ -318,7 +355,11 @@ final class ExternalEventController extends AbstractController
         ));
         $normalizedMessage = trim($message);
 
-        $event->setStatus('WAITING_DOCUMENTS');
+        $event
+            ->setStatus('WAITING_DOCUMENTS')
+            ->setMissingFiles($normalizedMissingFiles)
+            ->setDocumentsRequestMessage($normalizedMessage)
+            ->setDocumentsRequestedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
 
         foreach ($association->getUsers() as $user) {
@@ -352,6 +393,9 @@ final class ExternalEventController extends AbstractController
                         'eventTitle' => $event->getTitle(),
                         'missingFiles' => $normalizedMissingFiles,
                         'message' => $normalizedMessage,
+                        'documentsUrl' => rtrim($this->frontendUrl, '/')
+                            . '/historique/event-' . $event->getId()
+                            . '/pieces-annexes?type=evenement',
                     ]),
             );
         }
@@ -454,17 +498,23 @@ final class ExternalEventController extends AbstractController
     /**
      * @return array<string, mixed>
      */
-    private static function serializeEvent(ExternalEvent $event): array
+    private function serializeEvent(ExternalEvent $event): array
     {
+        $association = $this->associationRepository->find($event->getAssoId());
+
         return [
             'id' => $event->getId(),
             'asso_id' => $event->getAssoId(),
+            'association_name' => $association?->getNom(),
             'title' => $event->getTitle(),
             'location' => $event->getLocation(),
             'event_type' => $event->getEventType(),
             'start_date' => $event->getStartDate()?->format(\DateTimeInterface::ATOM),
             'end_time' => $event->getEndTime()?->format(\DateTimeInterface::ATOM),
             'status' => $event->getStatus(),
+            'missing_files' => $event->getMissingFiles() ?? [],
+            'documents_request_message' => $event->getDocumentsRequestMessage(),
+            'documents_requested_at' => $event->getDocumentsRequestedAt()?->format(\DateTimeInterface::ATOM),
             'created_at' => $event->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ];
     }

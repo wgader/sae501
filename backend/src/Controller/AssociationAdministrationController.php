@@ -3,8 +3,16 @@
 namespace App\Controller;
 
 use App\Entity\Association;
+use App\Entity\ReservationMateriel;
+use App\Entity\ReservationSalle;
 use App\Repository\AssociationRepository;
+use App\Repository\ReservationMaterielRepository;
+use App\Repository\ReservationSalleRepository;
+use App\Repository\ExternalEventRepository;
+use App\Entity\ExternalEvent;
 use App\Service\AssociationStatusNotifier;
+use App\Service\AssociationRequestAggregationService;
+use App\Service\AssociationRequestDocumentsNotifier;
 use App\Entity\DocumentJustificatif;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,8 +34,13 @@ final class AssociationAdministrationController extends AbstractController
 
     public function __construct(
         private readonly AssociationRepository $associationRepository,
+        private readonly ReservationMaterielRepository $materielRepository,
+        private readonly ReservationSalleRepository $salleRepository,
+        private readonly ExternalEventRepository $eventRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly AssociationStatusNotifier $statusNotifier,
+        private readonly AssociationRequestAggregationService $requestAggregationService,
+        private readonly AssociationRequestDocumentsNotifier $requestDocumentsNotifier,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
     ) {
@@ -81,6 +94,132 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         return $this->json(self::serializeAssociation($association));
+    }
+
+    #[Route('/{id<\d+>}/requests', name: 'admin_association_requests', methods: ['GET'])]
+    public function requests(int $id): JsonResponse
+    {
+        $association = $this->associationRepository->find($id);
+        if (!$association) {
+            return $this->json(['message' => 'Association introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json($this->requestAggregationService->getConsolidatedRequests($association, [
+            'limit' => 100,
+            'page' => 1,
+        ]));
+    }
+
+    #[Route('/{id<\d+>}/events', name: 'admin_association_events', methods: ['GET'])]
+    public function events(int $id): JsonResponse
+    {
+        if (!$this->associationRepository->find($id)) {
+            return $this->json(['message' => 'Association introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json([
+            'items' => array_map(
+                static fn (ExternalEvent $event): array => [
+                    'id' => $event->getId(),
+                    'asso_id' => $event->getAssoId(),
+                    'title' => $event->getTitle(),
+                    'location' => $event->getLocation(),
+                    'event_type' => $event->getEventType(),
+                    'start_date' => $event->getStartDate()?->format(\DateTimeInterface::ATOM),
+                    'end_time' => $event->getEndTime()?->format(\DateTimeInterface::ATOM),
+                    'status' => $event->getStatus(),
+                    'created_at' => $event->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+                ],
+                $this->eventRepository->findByAssociation($id),
+            ),
+        ]);
+    }
+
+    #[Route('/{id<\d+>}/requests/{requestId}', name: 'admin_association_request_show', methods: ['GET'])]
+    public function requestDetail(int $id, string $requestId, Request $request): JsonResponse
+    {
+        $association = $this->associationRepository->find($id);
+        if (!$association) {
+            return $this->json(['message' => 'Association introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $type = $request->query->get('type');
+        $detail = $this->requestAggregationService->getRequestDetail(
+            $association,
+            $requestId,
+            is_string($type) ? $type : null,
+        );
+
+        if ($detail === null) {
+            return $this->json(['message' => 'Dossier introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json($detail);
+    }
+
+    #[Route('/{id<\d+>}/requests/{requestId}/request-documents', name: 'admin_association_request_documents_request', methods: ['POST'])]
+    public function requestDocuments(int $id, string $requestId, Request $request): JsonResponse
+    {
+        $association = $this->associationRepository->find($id);
+        if (!$association) {
+            return $this->json(['message' => 'Association introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['message' => 'Le corps de la requête est invalide.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $type = $payload['type'] ?? null;
+        $message = isset($payload['message']) && is_string($payload['message']) ? trim($payload['message']) : '';
+        $missingFiles = $payload['missingFiles'] ?? null;
+        if (!is_string($type) || !in_array($type, ['materiel', 'salle'], true)) {
+            return $this->json(['message' => 'Le type de demande est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        if ($message === '' || mb_strlen($message) > 2000) {
+            return $this->json(['message' => 'Le message est obligatoire et limité à 2000 caractères.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        if (!is_array($missingFiles) || $missingFiles === []) {
+            return $this->json(['message' => 'Au moins une pièce manquante doit être indiquée.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $normalizedFiles = [];
+        foreach ($missingFiles as $missingFile) {
+            if (!is_string($missingFile) || trim($missingFile) === '') {
+                return $this->json(['message' => 'Chaque pièce manquante doit être renseignée.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $normalizedFiles[] = mb_substr(trim($missingFile), 0, 150);
+        }
+
+        $numericId = (int) preg_replace('/\D/', '', $requestId);
+        $reservation = $type === 'materiel'
+            ? $this->materielRepository->find($numericId)
+            : $this->salleRepository->find($numericId);
+        if (!$reservation || $reservation->getAssociation()?->getId() !== $association->getId()) {
+            return $this->json(['message' => 'Dossier introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!in_array($reservation->getStatut(), ['En attente', 'En cours de traitement', 'Complément requis', 'Validée'], true)) {
+            return $this->json(['message' => 'Une demande clôturée ne peut plus faire l’objet d’une relance.'], Response::HTTP_CONFLICT);
+        }
+
+        if ($reservation instanceof ReservationMateriel || $reservation instanceof ReservationSalle) {
+            $reservation
+                ->setStatut('Complément requis')
+                ->setObservations($message)
+                ->setUpdatedAt(new \DateTimeImmutable());
+            $this->entityManager->flush();
+            $this->requestDocumentsNotifier->notify($reservation, $normalizedFiles, $message);
+            $this->entityManager->flush();
+        }
+
+        $detail = $this->requestAggregationService->getRequestDetail($association, $requestId, $type);
+
+        return $this->json([
+            'message' => 'La demande de pièces a été enregistrée.',
+            'missingFiles' => $normalizedFiles,
+            'detail' => $detail,
+        ]);
     }
 
     #[Route('/{id<\d+>}/status', name: 'admin_association_status', methods: ['PATCH'])]

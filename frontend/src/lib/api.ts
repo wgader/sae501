@@ -104,7 +104,7 @@ export type Equipment = {
   consignesUtilisation: string | null;
   stockTotal: number;
   isArchived: boolean;
-  statut: 'Disponible' | 'Archivé';
+  statut: 'Disponible' | 'ArchivÃ©';
   imagePath: string | null;
   createdAt: string | null;
 };
@@ -134,7 +134,7 @@ export type EquipmentReservationInput = {
 
 export type EquipmentReservation = {
   id: number | null;
-  statut: 'En attente' | 'Validée' | 'Refusée' | 'Clôturée';
+  statut: 'En attente' | 'En cours de traitement' | 'Complément requis' | 'Validée' | 'Refusée' | 'Clôturée';
   motifEvenement: string | null;
   dateRetrait: string | null;
   dateRestitution: string | null;
@@ -159,6 +159,7 @@ export type AdminEquipmentReservation = EquipmentReservation & {
       telephone: string | null;
     };
   };
+  documents: AssociationDocument[];
 };
 
 export type AdminEquipmentReservationPage = {
@@ -249,7 +250,7 @@ export type AssociationRequestSummary = {
   type: RequestType;
   typeLabel: string;
   intitule: string;
-  statut: string;
+  statut?: string | null;
   statusCategory: RequestStatusCategory;
   createdAt: string;
   year: number;
@@ -309,8 +310,31 @@ export type AssociationRequestDetail = AssociationRequestSummary & {
   salleAccesPmr?: boolean;
   salleEquipements?: string[];
   capaciteAttendue?: number | null;
-  documents: RequestDocument[];
+  location?: string;
+  eventType?: string;
+  files?: EventAnnexFile[];
+  missingFiles?: string[];
+  documentsRequestMessage?: string | null;
+  documentsRequestedAt?: string | null;
+  documents?: RequestDocument[];
   timeline: RequestTimelineEvent[];
+};
+
+export type EventAnnexFile = {
+  id: number;
+  originalName: string;
+  fileType: string;
+  mimeType: string;
+  fileSize: number;
+  createdAt: string | null;
+};
+
+export type EventAnnexes = {
+  event: AssociationRequestDetail;
+  files: EventAnnexFile[];
+  missingFiles: string[];
+  documentsRequestMessage: string | null;
+  documentsRequestedAt: string | null;
 };
 
 export type AssociationRequestsResponse = {
@@ -329,6 +353,29 @@ export type AssociationRequestsResponse = {
     evenement: number;
   };
 };
+
+export type AssociationNotification = {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  event_id?: number | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type AssociationNotificationsResponse = {
+  items: AssociationNotification[];
+  unreadCount: number;
+};
+
+export function getAssociationNotifications(): Promise<AssociationNotificationsResponse> {
+  return request<AssociationNotificationsResponse>('/api/notifications?itemsPerPage=10');
+}
+
+export function markAssociationNotificationRead(id: number): Promise<AssociationNotification> {
+  return request<AssociationNotification>(`/api/notifications/${id}/read`, { method: 'PATCH' });
+}
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number, public readonly data?: unknown) {
@@ -350,7 +397,7 @@ function redirectToAssociationLogin(): never {
     window.dispatchEvent(new Event('auth-change'));
     window.location.replace('/connexion');
   }
-  throw new ApiError('Votre session a expiré. Redirection vers la page de connexion...', 401);
+  throw new ApiError('Votre session a expirÃ©. Redirection vers la page de connexion...', 401);
 }
 
 function getToken(): string {
@@ -405,7 +452,7 @@ async function accountRequest<T>(
     ...options,
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
+      ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       Authorization: `Bearer ${token}`,
       ...options.headers,
     },
@@ -445,7 +492,7 @@ export function updateAccountProfile(payload: {
       method: 'PATCH',
       body: JSON.stringify(payload),
     },
-    'Impossible de mettre à jour le profil.',
+    'Impossible de mettre Ã  jour le profil.',
   );
 }
 
@@ -469,7 +516,7 @@ export function getAssociationRequests(filters?: {
   return accountRequest<AssociationRequestsResponse>(
     `/api/association/requests${qs ? `?${qs}` : ''}`,
     {},
-    'Impossible de récupérer la liste des démarches.',
+    'Impossible de rÃ©cupÃ©rer la liste des dÃ©marches.',
   );
 }
 
@@ -481,8 +528,86 @@ export function getAssociationRequestDetail(
   return accountRequest<AssociationRequestDetail>(
     `/api/association/requests/${encodeURIComponent(id)}${qs}`,
     {},
-    'Impossible de charger le détail du dossier.',
+    'Impossible de charger le dÃ©tail du dossier.',
   );
+}
+
+export function uploadAssociationRequestDocument(
+  id: string,
+  type: 'materiel' | 'salle',
+  file: File,
+  typeDocument?: string,
+): Promise<RequestDocument> {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('type', type);
+  if (typeDocument) body.append('typeDocument', typeDocument);
+
+  return accountRequest<RequestDocument>(
+    `/api/association/requests/${encodeURIComponent(id)}/documents`,
+    {
+      method: 'POST',
+      body,
+    },
+    'Impossible de dÃ©poser cette piÃ¨ce.',
+  );
+}
+
+export async function getAssociationEventAnnexes(eventId: number): Promise<EventAnnexes> {
+  const detail = await getAssociationRequestDetail(`event-${eventId}`, 'evenement');
+
+  return {
+    event: detail,
+    files: detail.files ?? [],
+    missingFiles: detail.missingFiles ?? [],
+    documentsRequestMessage: detail.documentsRequestMessage ?? null,
+    documentsRequestedAt: detail.documentsRequestedAt ?? null,
+  };
+}
+
+export function uploadAssociationEventFile(
+  eventId: number,
+  file: File,
+): Promise<ExternalEventFile> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return accountRequest<ExternalEventFile>(
+    `/api/events/${eventId}/files`,
+    {
+      method: 'POST',
+      body: formData,
+    },
+    'Impossible de dÃ©poser cette piÃ¨ce.',
+  );
+}
+
+export async function downloadAssociationEventFile(fileId: number): Promise<Blob> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (!token) {
+    return redirectToAssociationLogin();
+  }
+
+  const response = await fetch(`${API_URL}/api/events/association/files/${fileId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 401) {
+    return redirectToAssociationLogin();
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(
+      typeof data?.message === 'string' ? data.message : 'Impossible de consulter cette piÃ¨ce.',
+      response.status,
+      data,
+    );
+  }
+
+  return response.blob();
 }
 
 export function cancelAssociationRequest(
@@ -495,7 +620,7 @@ export function cancelAssociationRequest(
       method: 'POST',
       body: JSON.stringify({ type }),
     },
-    'Impossible d’annuler cette réservation.',
+    'Impossible dâ€™annuler cette rÃ©servation.',
   );
 }
 
@@ -597,6 +722,40 @@ export function getAssociation(id: number): Promise<Association> {
   return request<Association>(`/api/admin/associations/${id}`);
 }
 
+export function getAdminAssociationRequests(id: number): Promise<AssociationRequestsResponse> {
+  return request<AssociationRequestsResponse>(`/api/admin/associations/${id}/requests`);
+}
+
+export function getAdminAssociationEvents(id: number): Promise<{ items: ExternalEvent[] }> {
+  return request<{ items: ExternalEvent[] }>(`/api/admin/associations/${id}/events`);
+}
+
+export function getAdminAssociationRequestDetail(
+  associationId: number,
+  requestId: string,
+  type: RequestType,
+): Promise<AssociationRequestDetail> {
+  return request<AssociationRequestDetail>(
+    `/api/admin/associations/${associationId}/requests/${encodeURIComponent(requestId)}?type=${encodeURIComponent(type)}`,
+  );
+}
+
+export function requestAdminAssociationDocuments(
+  associationId: number,
+  requestId: string,
+  type: 'materiel' | 'salle',
+  missingFiles: string[],
+  message: string,
+): Promise<{ message: string; missingFiles: string[]; detail: AssociationRequestDetail }> {
+  return request<{ message: string; missingFiles: string[]; detail: AssociationRequestDetail }>(
+    `/api/admin/associations/${associationId}/requests/${encodeURIComponent(requestId)}/request-documents`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ type, missingFiles, message }),
+    },
+  );
+}
+
 export function updateAssociationStatus(
   id: number,
   status: AssociationStatus,
@@ -625,12 +784,16 @@ export type ExternalEventFile = {
 export type ExternalEvent = {
   id: number;
   asso_id: number;
+  association_name?: string | null;
   title: string;
   location: string;
   event_type: string;
   start_date: string;
   end_time: string;
   status: string;
+  missing_files?: string[];
+  documents_request_message?: string | null;
+  documents_requested_at?: string | null;
   created_at: string;
   files?: ExternalEventFile[];
   description?: string;
@@ -657,7 +820,7 @@ export type CreateExternalEventPayload = {
 export async function createExternalEvent(payload: CreateExternalEventPayload): Promise<ExternalEvent> {
   const token = localStorage.getItem('token');
   if (!token) {
-    throw new ApiError('Vous devez être connecté avec un compte association.', 401);
+    throw new ApiError('Vous devez Ãªtre connectÃ© avec un compte association.', 401);
   }
 
   const response = await fetch(`${API_URL}/api/events/external`, {
@@ -673,7 +836,7 @@ export async function createExternalEvent(payload: CreateExternalEventPayload): 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    let message = 'Erreur lors de la déclaration de l’événement.';
+    let message = 'Erreur lors de la dÃ©claration de lâ€™Ã©vÃ©nement.';
     if (data?.errors && typeof data.errors === 'object') {
       message = Object.values(data.errors).join(' ');
     } else if (typeof data?.message === 'string') {
@@ -688,7 +851,7 @@ export async function createExternalEvent(payload: CreateExternalEventPayload): 
 export async function uploadExternalEventFile(eventId: number, file: File): Promise<ExternalEventFile> {
   const token = localStorage.getItem('token');
   if (!token) {
-    throw new ApiError('Vous devez être connecté avec un compte association.', 401);
+    throw new ApiError('Vous devez Ãªtre connectÃ© avec un compte association.', 401);
   }
 
   const formData = new FormData();
@@ -707,7 +870,7 @@ export async function uploadExternalEventFile(eventId: number, file: File): Prom
 
   if (!response.ok) {
     throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Erreur lors du téléversement du fichier.',
+      typeof data?.message === 'string' ? data.message : 'Erreur lors du tÃ©lÃ©versement du fichier.',
       response.status,
     );
   }
@@ -726,7 +889,7 @@ export async function getExternalEvents(page = 1, itemsPerPage = 10): Promise<Ex
     itemsPerPage: String(itemsPerPage),
   });
 
-  const response = await fetch(`${API_URL}/api/events/external?${params.toString()}`, {
+  const response = await fetch(`${API_URL}/api/events?${params.toString()}`, {
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${token}`,
@@ -737,7 +900,7 @@ export async function getExternalEvents(page = 1, itemsPerPage = 10): Promise<Ex
 
   if (!response.ok) {
     throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Erreur lors du chargement des événements.',
+      typeof data?.message === 'string' ? data.message : 'Erreur lors du chargement des Ã©vÃ©nements.',
       response.status,
     );
   }
@@ -751,7 +914,7 @@ export async function getExternalEvent(id: number): Promise<ExternalEvent> {
     redirectToAdminLogin();
   }
 
-  const response = await fetch(`${API_URL}/api/events/external/${id}`, {
+  const response = await fetch(`${API_URL}/api/events/${id}`, {
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${token}`,
@@ -762,7 +925,7 @@ export async function getExternalEvent(id: number): Promise<ExternalEvent> {
 
   if (!response.ok) {
     throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Événement introuvable.',
+      typeof data?.message === 'string' ? data.message : 'Ã‰vÃ©nement introuvable.',
       response.status,
     );
   }
@@ -779,7 +942,8 @@ export async function updateExternalEventStatus(
     redirectToAdminLogin();
   }
 
-  const response = await fetch(`${API_URL}/api/events/external/${id}/status`, {
+
+  const response = await fetch(`${API_URL}/api/events/${id}/status`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -793,7 +957,7 @@ export async function updateExternalEventStatus(
 
   if (!response.ok) {
     throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Impossible de valider l’événement.',
+      typeof data?.message === 'string' ? data.message : 'Impossible de valider lâ€™Ã©vÃ©nement.',
       response.status,
     );
   }
@@ -807,7 +971,7 @@ export async function downloadExternalEventFile(fileId: number, originalName: st
     redirectToAdminLogin();
   }
 
-  const response = await fetch(`${API_URL}/api/events/external/files/${fileId}`, {
+  const response = await fetch(`${API_URL}/api/events/files/${fileId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -816,7 +980,7 @@ export async function downloadExternalEventFile(fileId: number, originalName: st
   if (!response.ok) {
     const data = await response.json().catch(() => null);
     throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Impossible de télécharger le fichier.',
+      typeof data?.message === 'string' ? data.message : 'Impossible de tÃ©lÃ©charger le fichier.',
       response.status,
     );
   }
@@ -830,6 +994,38 @@ export async function downloadExternalEventFile(fileId: number, originalName: st
   a.click();
   a.remove();
   window.URL.revokeObjectURL(blobUrl);
+}
+
+export async function requestExternalEventFiles(
+  eventId: number,
+  missingFiles: string[],
+  message: string,
+): Promise<{ message: string; event_id: number; status: string; missing_files: string[] }> {
+  const token = localStorage.getItem('admin_token');
+  if (!token) {
+    redirectToAdminLogin();
+  }
+
+  const response = await fetch(`${API_URL}/api/events/external/${eventId}/request-files`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ missing_files: missingFiles, message }),
+  });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new ApiError(
+      typeof data?.message === 'string' ? data.message : 'Impossible d’envoyer la relance.',
+      response.status,
+      data,
+    );
+  }
+
+  return data as { message: string; event_id: number; status: string; missing_files: string[] };
 }
 
 export function updateAssociationModules(
@@ -1042,7 +1238,7 @@ export async function getPublicEquipment(): Promise<Equipment[]> {
     headers,
   });
   if (!response.ok) {
-    throw new ApiError('Impossible de charger le catalogue de matériel.', response.status);
+    throw new ApiError('Impossible de charger le catalogue de matÃ©riel.', response.status);
   }
   return response.json();
 }

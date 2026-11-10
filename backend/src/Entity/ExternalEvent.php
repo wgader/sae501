@@ -36,6 +36,18 @@ class ExternalEvent
     #[ORM\Column(length: 255)]
     private ?string $status = null;
 
+    /**
+     * @var list<string>|null
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $missing_files = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $documents_request_message = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $documents_requested_at = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $created_at = null;
 
@@ -131,6 +143,48 @@ class ExternalEvent
     public function setStatus(string $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function getMissingFiles(): ?array
+    {
+        return $this->missing_files;
+    }
+
+    /**
+     * @param list<string>|null $missing_files
+     */
+    public function setMissingFiles(?array $missing_files): static
+    {
+        $this->missing_files = $missing_files;
+
+        return $this;
+    }
+
+    public function getDocumentsRequestMessage(): ?string
+    {
+        return $this->documents_request_message;
+    }
+
+    public function setDocumentsRequestMessage(?string $documents_request_message): static
+    {
+        $this->documents_request_message = $documents_request_message;
+
+        return $this;
+    }
+
+    public function getDocumentsRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->documents_requested_at;
+    }
+
+    public function setDocumentsRequestedAt(?\DateTimeImmutable $documents_requested_at): static
+    {
+        $this->documents_requested_at = $documents_requested_at;
 
         return $this;
     }

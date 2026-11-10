@@ -1,33 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import AdminLayout from '@/components/admin/AdminLayout';
 import {
   downloadExternalEventFile,
-  getExternalEvent,
   getExternalEvents,
-  updateExternalEventStatus,
   type ExternalEvent,
   type ExternalEventFile,
 } from '@/lib/api';
 
-type StatusFilter = 'ALL' | 'PENDING' | 'VALIDATED' | 'REFUSED';
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'En attente',
-  VALIDATED: 'Validé',
-  ACCEPTED: 'Validé',
-  REFUSED: 'Refusé',
-  REJECTED: 'Refusé',
-};
-
-const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'border-amber-200 bg-amber-50 text-amber-800',
-  VALIDATED: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  ACCEPTED: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  REFUSED: 'border-rose-200 bg-rose-50 text-rose-800',
-  REJECTED: 'border-rose-200 bg-rose-50 text-rose-800',
-};
+type EventPeriodFilter = 'CURRENT' | 'UPCOMING' | 'PAST';
 
 function formatDate(value: string, withTime = false): string {
   const date = new Date(value);
@@ -44,28 +28,18 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const normalizedStatus = status.toUpperCase();
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wider ${STATUS_STYLES[normalizedStatus] ?? 'border-slate-200 bg-slate-50 text-slate-700'}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {STATUS_LABELS[normalizedStatus] ?? status}
-    </span>
-  );
-}
-
 export default function AdminEvenementsPage() {
   const searchTerm = '';
   const [events, setEvents] = useState<ExternalEvent[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [periodFilter, setPeriodFilter] = useState<EventPeriodFilter>('UPCOMING');
+  const [now] = useState(() => Date.now());
   const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ExternalEvent | null>(null);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -86,74 +60,37 @@ export default function AdminEvenementsPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!selectedEvent) return;
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setSelectedEvent(null);
-    }
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [selectedEvent]);
-
-  const filteredEvents = useMemo(() => {
-    const query = searchTerm.trim().toLocaleLowerCase('fr-FR');
-    return events.filter((event) => {
-      const matchesStatus = statusFilter === 'ALL' || event.status.toUpperCase() === statusFilter;
-      const matchesDate = !dateFilter || event.start_date.slice(0, 10) === dateFilter;
-      const matchesSearch = !query || [event.title, event.location, event.event_type]
-        .some((value) => value.toLocaleLowerCase('fr-FR').includes(query));
-      return matchesStatus && matchesDate && matchesSearch;
-    });
-  }, [dateFilter, events, searchTerm, statusFilter]);
-
-  async function openEvent(event: ExternalEvent) {
-    setSelectedEvent(event);
-    setDetailError(null);
-    setIsDetailLoading(true);
-    try {
-      const detail = await getExternalEvent(event.id);
-      setSelectedEvent(detail);
-    } catch (err: unknown) {
-      setDetailError(err instanceof Error ? err.message : 'Impossible de charger le dossier.');
-    } finally {
-      setIsDetailLoading(false);
-    }
-  }
-
   async function handleDownload(file: ExternalEventFile) {
     setDownloadingFileId(file.id);
-    setDetailError(null);
     try {
       await downloadExternalEventFile(file.id, file.original_name);
-    } catch (err: unknown) {
-      setDetailError(err instanceof Error ? err.message : 'Impossible de télécharger le fichier.');
+    } catch (requestError) {
+      setDetailError(requestError instanceof Error ? requestError.message : 'Impossible de télécharger le fichier.');
     } finally {
       setDownloadingFileId(null);
     }
   }
 
-  async function handleValidate() {
-    if (!selectedEvent) return;
-
-    setIsValidating(true);
-    setDetailError(null);
-    try {
-      const updatedEvent = await updateExternalEventStatus(selectedEvent.id, 'VALIDATED');
-      setSelectedEvent((current) => current ? { ...current, ...updatedEvent } : updatedEvent);
-      setEvents((current) => current.map((event) => (
-        event.id === updatedEvent.id ? { ...event, ...updatedEvent } : event
-      )));
-    } catch (err: unknown) {
-      setDetailError(err instanceof Error ? err.message : 'Impossible de valider l’événement.');
-    } finally {
-      setIsValidating(false);
-    }
-  }
+  const filteredEvents = useMemo(() => {
+    const query = searchTerm.trim().toLocaleLowerCase('fr-FR');
+    return events.filter((event) => {
+      const start = new Date(event.start_date).getTime();
+      const end = new Date(event.end_time).getTime();
+      const matchesPeriod = periodFilter === 'CURRENT'
+        ? start <= now && end >= now
+        : periodFilter === 'UPCOMING'
+          ? start > now
+          : end < now;
+      const matchesDate = !dateFilter || event.start_date.slice(0, 10) === dateFilter;
+      const matchesSearch = !query || [event.title, event.location, event.event_type]
+        .some((value) => value.toLocaleLowerCase('fr-FR').includes(query));
+      return matchesPeriod && matchesDate && matchesSearch;
+    }).sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+  }, [dateFilter, events, now, periodFilter, searchTerm]);
 
   return (
-    <>
+    <AdminLayout>
+      <>
       <section className="mx-auto max-w-6xl">
         <AdminPageHeader
           title="Événements extérieurs"
@@ -161,20 +98,19 @@ export default function AdminEvenementsPage() {
           className="mb-7"
         >
           <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <nav aria-label="Filtrer par statut" className="flex flex-wrap gap-2">
+            <nav aria-label="Filtrer par période" className="flex flex-wrap gap-2">
               {[
-                ['ALL', 'Tous'],
-                ['PENDING', 'En attente'],
-                ['VALIDATED', 'Validés'],
-                ['REFUSED', 'Refusés'],
+                ['CURRENT', 'En cours'],
+                ['UPCOMING', 'À venir'],
+                ['PAST', 'Passés'],
               ].map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setStatusFilter(value as StatusFilter)}
-                  aria-pressed={statusFilter === value}
+                  onClick={() => setPeriodFilter(value as EventPeriodFilter)}
+                  aria-pressed={periodFilter === value}
                   className={`min-h-10 min-w-0 rounded-control border px-4 py-2 text-[0.7rem] font-bold uppercase tracking-label ${
-                    statusFilter === value
+                    periodFilter === value
                       ? 'border-primary bg-primary text-white'
                       : 'border-line bg-paper text-ink hover:border-primary'
                   }`}
@@ -212,15 +148,14 @@ export default function AdminEvenementsPage() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--White)] shadow-xs">
-            <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(140px,1fr)_minmax(130px,1fr)_auto] gap-5 border-b border-[var(--line)] bg-[var(--paper)] px-6 py-3 text-[0.68rem] font-bold uppercase tracking-wider text-[var(--muted)] md:grid">
+            <div className="hidden grid-cols-[minmax(0,1.5fr)_minmax(140px,1fr)_auto] gap-5 border-b border-[var(--line)] bg-[var(--paper)] px-6 py-3 text-[0.68rem] font-bold uppercase tracking-wider text-[var(--muted)] md:grid">
               <span>Manifestation</span>
               <span>Date</span>
-              <span>Statut</span>
               <span className="text-right">Action</span>
             </div>
             <ul className="divide-y divide-[var(--line)]">
               {filteredEvents.map((event) => (
-                <li key={event.id} className="grid gap-4 px-5 py-5 md:grid-cols-[minmax(0,1.5fr)_minmax(140px,1fr)_minmax(130px,1fr)_auto] md:items-center md:gap-5 md:px-6">
+                <li key={event.id} className="grid gap-4 px-5 py-5 md:grid-cols-[minmax(0,1.5fr)_minmax(140px,1fr)_auto] md:items-center md:gap-5 md:px-6">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-[var(--ink)]">{event.title}</p>
                     <p className="mt-1 truncate text-xs text-[var(--muted)]">{event.event_type} · {event.location}</p>
@@ -229,10 +164,8 @@ export default function AdminEvenementsPage() {
                     <p className="text-sm font-semibold text-[var(--ink)]">{formatDate(event.start_date)}</p>
                     <p className="mt-1 text-xs text-[var(--muted)]">Dossier #{event.id}</p>
                   </div>
-                  <div><StatusBadge status={event.status} /></div>
-                  <button
-                    type="button"
-                    onClick={() => openEvent(event)}
+                  <Link
+                    href={`/admin/evenements/${event.id}/pieces-annexes`}
                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--Mosaic-Tile)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--Mosaic-Tile)]/40"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -240,7 +173,7 @@ export default function AdminEvenementsPage() {
                       <circle cx="12" cy="12" r="2.5" />
                     </svg>
                     Voir les pièces
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -256,30 +189,24 @@ export default function AdminEvenementsPage() {
                 <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[var(--Mosaic-Tile)]">Fiche événement · #{selectedEvent.id}</p>
                 <h2 id="event-modal-title" className="mt-2 text-xl font-black text-[var(--ink)]">{selectedEvent.title}</h2>
               </div>
-              <button type="button" onClick={() => setSelectedEvent(null)} aria-label="Fermer la fiche" className="rounded-lg p-2 text-[var(--muted)] transition hover:bg-[var(--paper)] hover:text-[var(--ink)]">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12M18 6 6 18" /></svg>
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/evenements/${selectedEvent.id}/pieces-annexes`}
+                  className="rounded-control bg-primary px-3 py-2 text-xs font-bold uppercase tracking-label text-white hover:bg-primary-hover"
+                >
+                  Pièces annexes
+                </Link>
+                <button type="button" onClick={() => setSelectedEvent(null)} aria-label="Fermer la fiche" className="rounded-lg p-2 text-[var(--muted)] transition hover:bg-[var(--paper)] hover:text-[var(--ink)]">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12M18 6 6 18" /></svg>
+                </button>
+              </div>
             </header>
 
             <div className="space-y-6 px-6 py-6 sm:px-8">
-              {selectedEvent.status.toUpperCase() === 'PENDING' && (
-                <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-amber-900">Dossier en attente d’instruction</p>
-                    <p className="mt-1 text-xs text-amber-800">La validation rendra cet événement accepté par la Mairie.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleValidate}
-                    disabled={isValidating || isDetailLoading}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--Mosaic-Tile)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
-                  >
-                    {isValidating ? 'Validation...' : 'Valider l’événement'}
-                  </button>
-                </div>
-              )}
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <StatusBadge status={selectedEvent.status} />
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wider text-emerald-800">
+                  Déclaration enregistrée
+                </span>
                 <span className="text-xs text-[var(--muted)]">Déclaré le {formatDate(selectedEvent.created_at)}</span>
               </div>
               <dl className="grid gap-4 rounded-[16px] bg-[var(--paper)] p-5 sm:grid-cols-2">
@@ -323,6 +250,7 @@ export default function AdminEvenementsPage() {
           </section>
         </div>
       )}
-    </>
+      </>
+    </AdminLayout>
   );
 }

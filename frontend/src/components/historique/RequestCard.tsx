@@ -57,10 +57,11 @@ export default function RequestCard({
       </div>
 
       <div className="flex shrink-0 items-center justify-between gap-4 border-t border-line/50 pt-3 md:border-t-0 md:pt-0">
-        {/* Current status */}
-        <div className="shrink-0">
-          <RequestStatusBadge statusLabel={request.statut} />
-        </div>
+        {request.type !== 'evenement' && request.statut && (
+          <div className="shrink-0">
+            <RequestStatusBadge statusLabel={request.statut} />
+          </div>
+        )}
 
         {/* Action button */}
         <button

@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { Lato } from 'next/font/google';
 import './globals.css';
 import LateralNavBar from '@/components/layout/LateralNavBar';
+import AssociationNotificationBell from '@/components/notifications/AssociationNotificationBell';
 import { usePathname } from 'next/navigation';
 
 const lato = Lato({
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${lato.variable} flex min-h-screen flex-col bg-white font-sans text-ink antialiased md:flex-row`}
       >
         {shouldShowLateralNav && <LateralNavBar />}
+        {shouldShowLateralNav && <AssociationNotificationBell />}
         <div className="min-w-0 flex-1">{children}</div>
       </body>
     </html>
