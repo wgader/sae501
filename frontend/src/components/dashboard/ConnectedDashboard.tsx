@@ -1,7 +1,9 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { getStoredAssociationName } from '@/lib/authUtils';
+import { getCurrentCampaign } from '@/lib/api/campaigns';
+import type { CampaignCurrentResponse } from '@/lib/api/types';
 import DashboardActionCard, { DashboardActionCardProps } from './DashboardActionCard';
 
 function subscribeAuth(callback: () => void) {
@@ -70,6 +72,17 @@ const dashboardCards: DashboardActionCardProps[] = [
 ];
 
 export default function ConnectedDashboard() {
+  const [campaignState, setCampaignState] = useState<CampaignCurrentResponse | null>(null);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void getCurrentCampaign().then((res) => {
+        setCampaignState(res);
+      });
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   const rawName = useSyncExternalStore(
     subscribeAuth,
     getStoredAssociationName,
@@ -91,9 +104,17 @@ export default function ConnectedDashboard() {
           />
 
           <div className="relative z-10 max-w-3xl">
-            <p className="text-label font-bold uppercase tracking-eyebrow text-ink/80 sm:text-meta">
-              Espace associations
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-label font-bold uppercase tracking-eyebrow text-ink/80 sm:text-meta">
+                Espace associations
+              </p>
+              {campaignState?.active && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900 shadow-2xs ring-1 ring-emerald-600/30">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                  Campagne ouverte {campaignState.campaign?.seasonLabel ? `· ${campaignState.campaign.seasonLabel}` : ''}
+                </span>
+              )}
+            </div>
 
             <h1
               id="dashboard-welcome-heading"

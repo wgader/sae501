@@ -12,6 +12,7 @@ import {
   IconSubvention,
   IconAssociation,
   IconAgent,
+  IconCampagne,
 } from '@/components/ui/NavigationBar/NavigationIcon';
 
 interface AdminSidebarProps {
@@ -25,6 +26,7 @@ const navItems = [
   { label: 'Salle', href: '/admin/salle', icon: IconSalle },
   { label: 'Matériel', href: '/admin/materiel', icon: IconMateriel },
   { label: 'Subvention', href: '/admin/subvention', icon: IconSubvention },
+  { label: 'Campagnes', href: '/admin/campagnes', icon: IconCampagne },
   { label: 'Agent', href: '/admin/agent', icon: IconAgent },
   { label: 'Historique', href: '/admin/historique', icon: IconHistorique },
 ];

@@ -281,3 +281,23 @@ export type AssociationRequestsResponse = {
     evenement: number;
   };
 };
+
+export type CampaignStatus = 'PROGRAMMED' | 'ACTIVE' | 'CLOSED';
+
+export type Campaign = {
+  id: number;
+  seasonLabel: string;
+  openingAt: string;
+  closingAt: string;
+  resourceTypes: string[];
+  status: CampaignStatus;
+  statusLabel?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CampaignCurrentResponse = {
+  active: boolean;
+  campaign: Campaign | null;
+};
+
