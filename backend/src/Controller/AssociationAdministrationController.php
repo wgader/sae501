@@ -13,10 +13,10 @@ use App\Entity\ExternalEvent;
 use App\Service\AssociationStatusNotifier;
 use App\Service\AssociationRequestAggregationService;
 use App\Service\AssociationRequestDocumentsNotifier;
+use App\Service\PrivateDocumentStorage;
 use App\Entity\DocumentJustificatif;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,8 +41,7 @@ final class AssociationAdministrationController extends AbstractController
         private readonly AssociationStatusNotifier $statusNotifier,
         private readonly AssociationRequestAggregationService $requestAggregationService,
         private readonly AssociationRequestDocumentsNotifier $requestDocumentsNotifier,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private readonly PrivateDocumentStorage $documentStorage,
     ) {
     }
 
@@ -338,11 +337,7 @@ final class AssociationAdministrationController extends AbstractController
 
             foreach ($association->getDocumentJustificatifs() as $doc) {
                 if ($doc->getFichierUrl()) {
-                    $cleanFilename = basename($doc->getFichierUrl());
-                    $filePath = $this->projectDir . '/public/uploads/documents/' . $cleanFilename;
-                    if (file_exists($filePath) && is_file($filePath)) {
-                        @unlink($filePath);
-                    }
+                    $this->documentStorage->delete($doc->getFichierUrl());
                 }
                 $this->entityManager->remove($doc);
             }
@@ -369,55 +364,32 @@ final class AssociationAdministrationController extends AbstractController
             return $this->json(['message' => 'Fichier invalide ou manquant.'], Response::HTTP_BAD_REQUEST);
         }
 
-        if ($file->getSize() === false || $file->getSize() > 10 * 1024 * 1024) {
-            return $this->json(['message' => 'Le fichier ne doit pas dépasser 10 Mo.'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $mimeType = $file->getMimeType();
-        $allowed = [
-            'application/pdf' => 'pdf',
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-        ];
-
-        if (!isset($allowed[$mimeType])) {
-            return $this->json(['message' => 'Seuls les formats PDF, JPEG, PNG et WebP sont autorisés.'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $directory = $this->projectDir . '/public/uploads/documents';
-        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-            return $this->json(['message' => 'Impossible de préparer le répertoire de stockage.'], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-
         try {
-            $extension = $allowed[$mimeType];
-            $filename = bin2hex(random_bytes(24)) . '.' . $extension;
-            $fileSize = $file->getSize() ?: 0;
-            $originalName = $file->getClientOriginalName();
-            $file->move($directory, $filename);
+            $storedFile = $this->documentStorage->store($file);
 
-            $typeDocument = (string) $request->request->get('typeDocument', $originalName);
+            $typeDocument = (string) $request->request->get('typeDocument', $storedFile['originalName']);
             if (trim($typeDocument) === '') {
-                $typeDocument = $originalName;
+                $typeDocument = $storedFile['originalName'];
             }
             $isVerified = filter_var($request->request->get('isVerified', false), FILTER_VALIDATE_BOOLEAN);
 
             $doc = new DocumentJustificatif();
             $doc->setAssociation($association);
             $doc->setTypeDocument($typeDocument);
-            $doc->setFichierUrl('/uploads/documents/' . $filename);
+            $doc->setFichierUrl($storedFile['path']);
             $doc->setDescription(json_encode([
                 'verified' => $isVerified,
-                'size' => $fileSize,
-                'originalName' => $originalName,
-                'mimeType' => $mimeType,
+                'size' => $storedFile['size'],
+                'originalName' => $storedFile['originalName'],
+                'mimeType' => $storedFile['mimeType'],
             ], JSON_THROW_ON_ERROR));
 
             $this->entityManager->persist($doc);
             $this->entityManager->flush();
 
             return $this->json(self::serializeDocument($doc), Response::HTTP_CREATED);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['message' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (\Throwable $e) {
             return $this->json(['message' => 'Erreur lors de l’enregistrement du document.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -506,7 +478,7 @@ final class AssociationAdministrationController extends AbstractController
         return [
             'id' => $doc->getId(),
             'typeDocument' => $doc->getTypeDocument(),
-            'fichierUrl' => $doc->getFichierUrl(),
+            'fichierUrl' => $doc->getId() !== null ? '/api/documents/' . $doc->getId() . '/download' : null,
             'isVerified' => (bool) ($meta['verified'] ?? false),
             'size' => (int) ($meta['size'] ?? 0),
             'originalName' => $meta['originalName'] ?? $doc->getTypeDocument(),

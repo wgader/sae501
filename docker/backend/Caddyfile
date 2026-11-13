@@ -7,6 +7,9 @@
     root * /app/public
     encode zstd br gzip
 
+    @private_documents path /uploads/documents/*
+    respond @private_documents 404
+
     @cors_preflight {
         method OPTIONS
         header Origin http://localhost:3000

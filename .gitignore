@@ -4,6 +4,7 @@
 .env.prod
 !backend/.env
 /secrets/
+.copilot-handoff.md
 
 # ── Next.js ────────────────────────────────────
 node_modules/

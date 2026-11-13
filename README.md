@@ -40,6 +40,13 @@ docker compose exec backend php vendor/bin/php-cs-fixer check --config=.php-cs-f
 Le service `backend` doit être démarré pour exécuter ces commandes et le hook
 `pre-commit`.
 
+Les tests PHPUnit forcent automatiquement l’environnement Symfony `test`, y
+compris lorsque le conteneur Docker utilise `APP_ENV=dev` pour l’application :
+
+```bash
+docker compose exec backend php bin/phpunit
+```
+
 | Service    | URL                         |
 |------------|-----------------------------|
 | Frontend   | http://localhost:3000       |

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   cancelAssociationRequest,
+  downloadPrivateDocument,
   getAssociationRequestDetail,
-  getMediaUrl,
   type AssociationRequestDetail,
 } from '@/lib/api';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
@@ -144,14 +144,13 @@ function Documents({ documents }: Pick<AssociationRequestDetail, 'documents'>) {
             <li key={document.id} className="flex items-center justify-between gap-4 rounded-soft border border-line bg-white p-3">
               <span className="truncate text-sm font-semibold text-ink">{document.typeDocument}</span>
               {document.fichierUrl && (
-                <a
-                  href={getMediaUrl(document.fichierUrl) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => downloadPrivateDocument(document.fichierUrl, document.typeDocument)}
                   className="shrink-0 text-xs font-bold uppercase tracking-label text-primary hover:text-primary-hover"
                 >
-                  Consulter
-                </a>
+                  Télécharger
+                </button>
               )}
             </li>
           ))}

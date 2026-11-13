@@ -8,7 +8,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
   getAdminEquipmentReservation,
-  getMediaUrl,
+  downloadPrivateDocument,
   requestAdminAssociationDocuments,
   updateAdminEquipmentReservationStatus,
   type AdminEquipmentReservation,
@@ -214,22 +214,20 @@ export default function AdminEquipmentReservationDetailPage() {
                   ) : (
                     <ul className="mt-4 space-y-2 border-t border-line pt-4">
                       {reservation.documents.map((document) => {
-                        const documentUrl = getMediaUrl(document.fichierUrl);
                         return (
                           <li key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-soft bg-white p-3">
                             <div>
                               <p className="text-sm font-semibold text-ink">{document.originalName}</p>
                               <p className="mt-1 text-xs text-muted">{document.typeDocument}</p>
                             </div>
-                            {documentUrl && (
-                              <a
-                                href={documentUrl}
-                                target="_blank"
-                                rel="noreferrer"
+                            {document.fichierUrl && (
+                              <button
+                                type="button"
+                                onClick={() => downloadPrivateDocument(document.fichierUrl, document.originalName)}
                                 className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
                               >
-                                Consulter
-                              </a>
+                                Télécharger
+                              </button>
                             )}
                           </li>
                         );

@@ -46,7 +46,7 @@ jobs:
           openssl pkey -in backend/config/jwt/private.pem -passin pass:test_passphrase -pubout -out backend/config/jwt/public.pem
 
       - name: PHPUnit
-        run: cd backend && vendor/bin/phpunit
+        run: cd backend && php bin/phpunit
         env:
           JWT_SECRET_KEY: '%kernel.project_dir%/config/jwt/private.pem'
           JWT_PUBLIC_KEY: '%kernel.project_dir%/config/jwt/public.pem'

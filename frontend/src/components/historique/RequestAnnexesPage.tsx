@@ -13,6 +13,7 @@ import {
 } from '@/components/annexes/AnnexesShared';
 import {
   downloadAssociationEventFile,
+  downloadPrivateDocument,
   getAssociationEventAnnexes,
   getAssociationRequestDetail,
   uploadAssociationRequestDocument,
@@ -343,14 +344,13 @@ export default function RequestAnnexesPage() {
                           <span className="rounded-pill bg-primary-soft px-3 py-1 text-xs font-bold text-primary">Déposée</span>
                         </div>
                         {document.fichierUrl && (
-                          <a
-                            href={document.fichierUrl.startsWith('http') ? document.fichierUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}${document.fichierUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => downloadPrivateDocument(document.fichierUrl, document.typeDocument)}
                             className="mt-4 inline-flex text-xs font-bold uppercase tracking-label text-primary hover:text-primary-hover"
                           >
-                            Consulter le document
-                          </a>
+                            Télécharger le document
+                          </button>
                         )}
                       </li>
                     ))}

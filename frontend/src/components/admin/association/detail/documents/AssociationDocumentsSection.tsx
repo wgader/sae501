@@ -7,6 +7,7 @@ import {
   uploadAssociationDocument,
   updateAssociationDocument,
   deleteAssociationDocument,
+  downloadPrivateDocument,
 } from '@/lib/api';
 import { IconUpload } from '@/components/ui/icons';
 import DocumentItemCard from './DocumentItemCard';
@@ -94,58 +95,27 @@ export default function AssociationDocumentsSection({
 
   const handlePreview = async (doc: AssociationDocument) => {
     setError('');
-    const fullUrl = doc.fichierUrl.startsWith('http') || doc.fichierUrl.startsWith('blob:')
-      ? doc.fichierUrl
-      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}${doc.fichierUrl}`;
-
-    if (doc.fichierUrl.startsWith('blob:')) {
-      window.open(fullUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
     try {
-      const res = await fetch(fullUrl, { method: 'HEAD' });
-      if (!res.ok) {
-        setError(`Le document « ${doc.typeDocument} » n'est pas disponible ou introuvable sur le serveur.`);
-        return;
-      }
-      window.open(fullUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      window.open(fullUrl, '_blank', 'noopener,noreferrer');
+      await downloadPrivateDocument(doc.fichierUrl, doc.typeDocument);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Le document n’est pas disponible.');
     }
   };
 
   const handleDownload = async (doc: AssociationDocument) => {
     setError('');
-    const fullUrl = doc.fichierUrl.startsWith('http') || doc.fichierUrl.startsWith('blob:')
-      ? doc.fichierUrl
-      : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}${doc.fichierUrl}`;
-
     if (doc.fichierUrl.startsWith('blob:')) {
       const a = window.document.createElement('a');
-      a.href = fullUrl;
+      a.href = doc.fichierUrl;
       a.download = doc.typeDocument;
       a.click();
       return;
     }
 
     try {
-      const res = await fetch(fullUrl);
-      if (!res.ok) {
-        setError(`Impossible de télécharger « ${doc.typeDocument} » : le document est introuvable sur le serveur.`);
-        return;
-      }
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = window.document.createElement('a');
-      a.href = blobUrl;
-      a.download = doc.typeDocument;
-      window.document.body.appendChild(a);
-      a.click();
-      window.document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      setError(`Impossible de télécharger « ${doc.typeDocument} » : fichier inaccessible.`);
+      await downloadPrivateDocument(doc.fichierUrl, doc.typeDocument);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : `Impossible de télécharger « ${doc.typeDocument} » : fichier inaccessible.`);
     }
   };
 

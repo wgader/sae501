@@ -15,7 +15,6 @@ use App\Message\SendRoomReservationNotificationMessage;
 use App\Repository\ReservationSalleRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -26,10 +25,9 @@ final class RoomReservationService
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly PrivateDocumentStorage $documentStorage,
         private readonly ReservationSalleRepository $reservationSalleRepository,
         private readonly MessageBusInterface $messageBus,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
     ) {
     }
 
@@ -191,38 +189,19 @@ final class RoomReservationService
 
     private function storeJustificatif(UploadedFile $file, Association $association, int $reservationId): void
     {
-        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-        $mime = $file->getMimeType() ?? '';
-        if (!in_array($mime, $allowedMimes, true)) {
-            throw new \InvalidArgumentException('Format de pièce justificative non supporté (PDF, JPEG, PNG, WEBP uniquement).');
-        }
-
-        if ($file->getSize() > 10 * 1024 * 1024) {
-            throw new \InvalidArgumentException('La taille du fichier ne doit pas dépasser 10 Mo.');
-        }
-
-        $ext = $file->guessExtension() ?? 'bin';
-        $filename = sprintf('justificatif_salle_%d_%s.%s', $reservationId, bin2hex(random_bytes(6)), $ext);
-        $targetDir = $this->projectDir . '/public/uploads/documents';
-        if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0775, true);
-        }
-
-        $originalName = $file->getClientOriginalName();
-        $fileSize = $file->getSize();
-        $file->move($targetDir, $filename);
+        $storedFile = $this->documentStorage->store($file);
 
         $doc = new DocumentJustificatif();
         $doc->setAssociation($association);
         $doc->setTypeDocument('Attestation d’assurance / Pièce justificative');
-        $doc->setFichierUrl('/uploads/documents/' . $filename);
+        $doc->setFichierUrl($storedFile['path']);
         $doc->setLieAType('salle');
         $doc->setLieAId($reservationId);
         $doc->setDescription(json_encode([
             'verified' => false,
-            'size' => $fileSize,
-            'originalName' => $originalName,
-            'mimeType' => $mime,
+            'size' => $storedFile['size'],
+            'originalName' => $storedFile['originalName'],
+            'mimeType' => $storedFile['mimeType'],
         ], JSON_THROW_ON_ERROR));
 
         $this->entityManager->persist($doc);

@@ -11,7 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import {
   getAdminAssociationRequestDetail,
-  getMediaUrl,
+  downloadPrivateDocument,
   requestAdminAssociationDocuments,
   type AssociationRequestDetail,
   type RequestType,
@@ -121,14 +121,13 @@ export default function AdminAssociationRequestAnnexesPage() {
             ) : (
               <ul className="mt-4 space-y-2 border-t border-line pt-4">
                 {documents.map((document) => {
-                  const url = getMediaUrl(document.fichierUrl);
                   return (
                     <li key={document.id} className="flex flex-wrap items-center justify-between gap-3 rounded-soft bg-paper p-3">
                       <div>
                         <p className="text-sm font-semibold text-ink">{document.typeDocument}</p>
                         <p className="mt-1 text-xs text-muted">{document.createdAt ? new Date(document.createdAt).toLocaleDateString('fr-FR') : 'Date inconnue'}</p>
                       </div>
-                      {url && <a href={url} target="_blank" rel="noreferrer" className="text-xs font-bold uppercase tracking-label text-primary hover:underline">Consulter</a>}
+                      {document.fichierUrl && <button type="button" onClick={() => downloadPrivateDocument(document.fichierUrl, document.typeDocument)} className="text-xs font-bold uppercase tracking-label text-primary hover:underline">Télécharger</button>}
                     </li>
                   );
                 })}

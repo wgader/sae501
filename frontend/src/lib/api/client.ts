@@ -122,3 +122,13 @@ export async function requestBlob(path: string): Promise<Blob> {
   }
   return response.blob();
 }
+
+export async function downloadPrivateDocument(path: string, filename = 'document'): Promise<void> {
+  const blob = await requestBlob(path);
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}

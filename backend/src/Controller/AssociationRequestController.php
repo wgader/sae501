@@ -8,8 +8,8 @@ use App\Repository\ReservationMaterielRepository;
 use App\Repository\ReservationSalleRepository;
 use App\Service\AssociationRequestAggregationService;
 use App\Service\AssociationRequestCancellationService;
+use App\Service\PrivateDocumentStorage;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -28,7 +28,7 @@ final class AssociationRequestController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly ReservationMaterielRepository $materielRepository,
         private readonly ReservationSalleRepository $salleRepository,
-        #[Autowire('%kernel.project_dir%')] private readonly string $projectDir,
+        private readonly PrivateDocumentStorage $documentStorage,
     ) {
     }
 
@@ -146,30 +146,17 @@ final class AssociationRequestController extends AbstractController
             return $this->json(['message' => 'Le fichier ne doit pas dépasser 10 Mo.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $mimeType = $file->getMimeType();
-        $allowedTypes = [
-            'application/pdf' => 'pdf',
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-        ];
-        if (!is_string($mimeType) || !isset($allowedTypes[$mimeType])) {
-            return $this->json(
-                ['message' => 'Seuls les formats PDF, JPEG, PNG et WebP sont autorisés.'],
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-            );
+        try {
+            $storedFile = $this->documentStorage->store($file);
+        } catch (\InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (\RuntimeException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $directory = $this->projectDir . '/public/uploads/documents';
-        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-            return $this->json(
-                ['message' => 'Impossible de préparer le répertoire de stockage.'],
-                Response::HTTP_INTERNAL_SERVER_ERROR,
-            );
-        }
-
-        $originalName = $file->getClientOriginalName();
-        $fileSize = $file->getSize() ?: 0;
+        $originalName = $storedFile['originalName'];
+        $fileSize = $storedFile['size'];
+        $mimeType = $storedFile['mimeType'];
         $typeDocument = trim((string) $request->request->get('typeDocument', $originalName));
         if ($typeDocument === '') {
             $typeDocument = $originalName;
@@ -180,14 +167,11 @@ final class AssociationRequestController extends AbstractController
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
-        $filename = bin2hex(random_bytes(24)) . '.' . $allowedTypes[$mimeType];
-        $file->move($directory, $filename);
-
         $document = new DocumentJustificatif();
         $document
             ->setAssociation($association)
             ->setTypeDocument($typeDocument)
-            ->setFichierUrl('/uploads/documents/' . $filename)
+            ->setFichierUrl($storedFile['path'])
             ->setLieAType($type)
             ->setLieAId($requestId)
             ->setDescription(json_encode([
@@ -269,7 +253,7 @@ final class AssociationRequestController extends AbstractController
         return [
             'id' => $document->getId(),
             'typeDocument' => $document->getTypeDocument(),
-            'fichierUrl' => $document->getFichierUrl(),
+            'fichierUrl' => $document->getId() !== null ? '/api/documents/' . $document->getId() . '/download' : null,
             'isVerified' => (bool) ($metadata['verified'] ?? false),
             'size' => (int) ($metadata['size'] ?? 0),
             'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),

@@ -145,7 +145,7 @@ final class EquipmentReservationAdministrationController extends AbstractControl
         return [
             'id' => $document->getId(),
             'typeDocument' => $document->getTypeDocument(),
-            'fichierUrl' => $document->getFichierUrl(),
+            'fichierUrl' => $document->getId() !== null ? '/api/documents/' . $document->getId() . '/download' : null,
             'isVerified' => (bool) ($metadata['verified'] ?? false),
             'size' => (int) ($metadata['size'] ?? 0),
             'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),

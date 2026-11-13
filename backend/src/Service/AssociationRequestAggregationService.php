@@ -538,7 +538,7 @@ final class AssociationRequestAggregationService
         return array_map(static fn(DocumentJustificatif $doc): array => [
             'id' => $doc->getId(),
             'typeDocument' => $doc->getTypeDocument(),
-            'fichierUrl' => $doc->getFichierUrl(),
+            'fichierUrl' => $doc->getId() !== null ? '/api/documents/' . $doc->getId() . '/download' : null,
             'description' => $doc->getDescription(),
             'createdAt' => $doc->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ], $docs);
