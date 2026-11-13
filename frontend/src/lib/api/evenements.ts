@@ -1,4 +1,4 @@
-import { ApiError, redirectToAdminLogin, API_URL } from './client';
+import { ApiError, redirectToAdminLogin, API_URL, request } from './client';
 
 export type ExternalEventFile = {
   id: number;
@@ -13,6 +13,7 @@ export type ExternalEventFile = {
 export type ExternalEvent = {
   id: number;
   asso_id: number;
+  association_name?: string | null;
   title: string;
   location: string;
   event_type: string;
@@ -25,7 +26,24 @@ export type ExternalEvent = {
   contact_nom?: string;
   contact_email?: string;
   contact_telephone?: string;
+  missing_files?: string[];
+  documents_request_message?: string | null;
+  documents_requested_at?: string | null;
 };
+
+export async function requestExternalEventFiles(
+  eventId: number,
+  missingFiles: string[],
+  message: string,
+): Promise<{ message: string; event_id: number; status: string; missing_files: string[] }> {
+  return request<{ message: string; event_id: number; status: string; missing_files: string[] }>(
+    `/api/events/external/${eventId}/request-files`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ missing_files: missingFiles, message }),
+    },
+  );
+}
 
 export type ExternalEventListPage = {
   items: ExternalEvent[];

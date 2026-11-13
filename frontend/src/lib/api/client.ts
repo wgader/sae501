@@ -102,3 +102,23 @@ export async function accountRequest<T>(
 
   return data as T;
 }
+
+export async function requestBlob(path: string): Promise<Blob> {
+  const token = getToken();
+  const response = await fetch(`${API_URL}${path}`, {
+    headers: {
+      Accept: 'application/octet-stream',
+      Authorization: 'Bearer ' + token,
+    },
+  });
+  if (response.status === 401) redirectToAssociationLogin();
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(
+      typeof data?.message === 'string' ? data.message : 'Impossible de télécharger le fichier.',
+      response.status,
+      data,
+    );
+  }
+  return response.blob();
+}

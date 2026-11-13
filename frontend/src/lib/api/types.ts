@@ -1,5 +1,5 @@
 export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED' | 'SUSPENDED';
-export type AssociationModule = 'subventions' | 'materiel' | 'salles';
+export type AssociationModule = 'evenements' | 'subventions' | 'materiel' | 'salles';
 
 export type AssociationContact = {
   nom: string;
@@ -106,7 +106,7 @@ export type EquipmentReservationInput = {
 
 export type EquipmentReservation = {
   id: number | null;
-  statut: 'En attente' | 'Validée' | 'Refusée' | 'Clôturée';
+  statut: 'En attente' | 'En cours de traitement' | 'Complément requis' | 'Validée' | 'Refusée' | 'Clôturée';
   motifEvenement: string | null;
   dateRetrait: string | null;
   dateRestitution: string | null;
@@ -131,6 +131,7 @@ export type AdminEquipmentReservation = EquipmentReservation & {
       telephone: string | null;
     };
   };
+  documents: AssociationDocument[];
 };
 
 export type AdminEquipmentReservationPage = {
@@ -183,6 +184,10 @@ export type AccountProfile = {
   prenom: string | null;
   nomAssociation?: string | null;
   typeCompte?: string | null;
+  moduleSubventionActif?: boolean | null;
+  moduleMaterielActif?: boolean | null;
+  moduleSalleActif?: boolean | null;
+  moduleEvenementActif?: boolean | null;
 };
 
 export type MunicipalAgent = {
@@ -202,12 +207,13 @@ export type AssociationRequestSummary = {
   type: RequestType;
   typeLabel: string;
   intitule: string;
-  statut: string;
+  statut?: string | null;
   statusCategory: RequestStatusCategory;
   createdAt: string;
   year: number;
   keyDates: {
     depot: string;
+    decision?: string;
     exercice?: string;
     retrait?: string;
     restitution?: string;
@@ -261,8 +267,122 @@ export type AssociationRequestDetail = AssociationRequestSummary & {
   salleAccesPmr?: boolean;
   salleEquipements?: string[];
   capaciteAttendue?: number | null;
+  location?: string;
+  eventType?: string;
+  files?: EventAnnexFile[];
+  missingFiles?: string[];
+  documentsRequestMessage?: string | null;
+  documentsRequestedAt?: string | null;
   documents: RequestDocument[];
   timeline: RequestTimelineEvent[];
+};
+
+export type EventAnnexFile = {
+  id: number;
+  originalName: string;
+  fileType: string;
+  mimeType: string;
+  fileSize: number;
+  createdAt: string | null;
+  original_name?: string;
+  file_type?: string;
+  mime_type?: string;
+  file_size?: number;
+};
+
+export type EventAnnexes = {
+  event: AssociationRequestDetail;
+  files: EventAnnexFile[];
+  missingFiles: string[];
+  documentsRequestMessage: string | null;
+  documentsRequestedAt: string | null;
+};
+
+export type AssociationNotification = {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  event_id?: number | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type AssociationNotificationsResponse = {
+  items: AssociationNotification[];
+  unreadCount: number;
+};
+
+export type AdminAgent = {
+  id: number;
+  email: string;
+  nom: string;
+  prenom: string;
+  telephone: string | null;
+  roles: string[];
+  isVerified: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string | null;
+};
+
+export type AdminAgentPayload = {
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone: string | null;
+  roles: string[];
+};
+
+export type AdminAgentsResponse = {
+  items: AdminAgent[];
+  page: number;
+  itemsPerPage: number;
+  totalItems: number;
+};
+
+export type RoomOpeningHours = {
+  debut: string;
+  fin: string;
+};
+
+export type PublicRoom = Salle & {
+  horairesOuverture: RoomOpeningHours;
+};
+
+export type OccupiedSlot = {
+  id: number;
+  start: string;
+  end: string;
+  statut: string;
+  isPreReserved: boolean;
+};
+
+export type RoomAvailabilityResponse = {
+  room: PublicRoom;
+  start: string;
+  end: string;
+  occupiedSlots: OccupiedSlot[];
+};
+
+export type CreateRoomReservationInput = {
+  salleId: number;
+  motifEvenement: string;
+  dateDebut: string;
+  dateFin: string;
+  capaciteAttendue?: number | null;
+  justificatif?: File | null;
+};
+
+export type RoomReservationResponse = {
+  id: number;
+  statut: string;
+  motifEvenement: string;
+  dateDebut: string;
+  dateFin: string;
+  capaciteAttendue: number | null;
+  createdAt: string;
+  salle: PublicRoom | null;
+  message: string;
 };
 
 export type AssociationRequestsResponse = {
@@ -300,4 +420,3 @@ export type CampaignCurrentResponse = {
   active: boolean;
   campaign: Campaign | null;
 };
-

@@ -1,6 +1,9 @@
-import { accountRequest, API_URL, ApiError } from './client';
+import { accountRequest, API_URL, ApiError, redirectToAssociationLogin, requestBlob } from './client';
+import type { ExternalEventFile } from './evenements';
 import type {
   AccountProfile,
+  EventAnnexes,
+  RequestDocument,
   AssociationRequestDetail,
   AssociationRequestsResponse,
 } from './types';
@@ -60,6 +63,59 @@ export function getAssociationRequestDetail(
     `/api/association/requests/${encodeURIComponent(id)}${qs}`,
     {},
     'Impossible de charger le détail du dossier.',
+  );
+}
+
+export function uploadAssociationRequestDocument(
+  id: string,
+  type: 'materiel' | 'salle',
+  file: File,
+  typeDocument?: string,
+): Promise<RequestDocument> {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('type', type);
+  if (typeDocument) body.append('typeDocument', typeDocument);
+  return accountRequest<RequestDocument>(
+    `/api/association/requests/${encodeURIComponent(id)}/documents`,
+    { method: 'POST', body },
+    'Impossible de déposer cette pièce.',
+  );
+}
+
+export async function getAssociationEventAnnexes(eventId: number): Promise<EventAnnexes> {
+  const detail = await getAssociationRequestDetail(`event-${eventId}`, 'evenement');
+  return {
+    event: detail,
+    files: detail.files ?? [],
+    missingFiles: detail.missingFiles ?? [],
+    documentsRequestMessage: detail.documentsRequestMessage ?? null,
+    documentsRequestedAt: detail.documentsRequestedAt ?? null,
+  };
+}
+
+export function uploadAssociationEventFile(eventId: number, file: File): Promise<ExternalEventFile> {
+  const body = new FormData();
+  body.append('file', file);
+  return accountRequest<ExternalEventFile>(
+    `/api/events/${eventId}/files`,
+    { method: 'POST', body },
+    'Impossible de déposer cette pièce.',
+  );
+}
+
+export async function downloadAssociationEventFile(fileId: number): Promise<Blob> {
+  return requestBlob(`/api/events/association/files/${fileId}`);
+}
+
+export function cancelAssociationRequest(
+  id: string,
+  type: 'materiel' | 'salle',
+): Promise<{ id: string; type: string; statut: string; updatedAt: string | null }> {
+  return accountRequest(
+    `/api/association/requests/${encodeURIComponent(id)}/cancel`,
+    { method: 'POST', body: JSON.stringify({ type }) },
+    'Impossible d’annuler cette réservation.',
   );
 }
 

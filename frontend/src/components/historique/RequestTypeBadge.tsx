@@ -11,6 +11,7 @@ export const requestTypeBadgeVariants = cva(
         subvention: 'bg-rose-100 text-rose-900 border border-rose-200',
         materiel: 'bg-indigo/10 text-indigo border border-indigo/20',
         salle: 'bg-accent text-ink border border-accent/40',
+        evenement: 'bg-slate-100 text-slate-700 border border-slate-200',
       },
     },
     defaultVariants: {
@@ -38,7 +39,9 @@ export default function RequestTypeBadge({
       ? 'Subvention'
       : requestType === 'materiel'
         ? 'Matériel'
-        : 'Salle municipale');
+        : requestType === 'salle'
+          ? 'Salle municipale'
+          : 'Événement');
 
   return (
     <span
@@ -100,4 +103,3 @@ export default function RequestTypeBadge({
     </span>
   );
 }
-

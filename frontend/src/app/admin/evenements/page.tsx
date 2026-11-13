@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import EventDetailModal from '@/components/admin/events/EventDetailModal';
 import EventFilters, { type StatusFilter } from '@/components/admin/events/EventFilters';
@@ -14,11 +15,9 @@ import {
   type ExternalEventFile,
 } from '@/lib/api';
 
-type AdminEvenementsPageProps = {
-  searchTerm?: string;
-};
-
-export default function AdminEvenementsPage({ searchTerm = '' }: AdminEvenementsPageProps) {
+export default function AdminEvenementsPage() {
+  const searchParams = useSearchParams();
+  const searchTerm = searchParams.get('search') ?? '';
   const [events, setEvents] = useState<ExternalEvent[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [dateFilter, setDateFilter] = useState('');
