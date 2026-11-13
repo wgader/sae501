@@ -68,6 +68,8 @@ final class AdminAuthController extends AbstractController
         // ── Vérification des rôles mairie côté serveur ────────────────────────
         if (
             $user->isDeleted()
+            || !$user->isVerified()
+            || $user->getInactivatedAt() !== null
             || array_intersect(User::ROLES_MAIRIE, $user->getRoles()) === []
         ) {
             return $this->json(

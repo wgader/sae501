@@ -27,8 +27,13 @@ function getStrength(password: string): StrengthLevel | null {
 function ActivationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token') ?? '';
-  const ref = searchParams.get('ref') ?? '';
+  const [fragmentParams] = useState<URLSearchParams | null>(() => (
+    typeof window === 'undefined'
+      ? null
+      : new URLSearchParams(window.location.hash.slice(1))
+  ));
+  const token = fragmentParams?.get('token') ?? searchParams.get('token') ?? '';
+  const ref = fragmentParams?.get('ref') ?? searchParams.get('ref') ?? '';
   let email = '';
   try { email = ref ? atob(ref) : ''; } catch { email = ''; }
   const isParamsValid = Boolean(token && email);

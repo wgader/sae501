@@ -12,8 +12,13 @@ Les derniers correctifs applicatifs réalisés concernent :
 - la correction de la vérification d’unicité de l’adresse e-mail du profil ;
 - l’harmonisation des pages, marges, titres, badges et formulaires ;
 - la restauration et l’harmonisation des écrans d’authentification.
+- l’invalidation serveur des JWT lors de la déconnexion grâce à la blocklist Lexik ;
+- le refus de connexion admin pour les comptes supprimés, non vérifiés ou suspendus ;
+- le déplacement du token d’activation dans le fragment URL, afin qu’il ne soit pas envoyé au serveur dans les requêtes de page.
 
 Le build frontend passe actuellement. Le lint passe avec des avertissements Tailwind historiques qui devront être traités progressivement.
+
+La déconnexion appelle maintenant `/api/auth/logout` avant de supprimer les données locales. Le serveur invalide le JWT via le cache de blocklist jusqu’à son expiration. Une déconnexion locale reste appliquée même si l’appel réseau échoue.
 
 ## Objectif d’hébergement
 
@@ -177,3 +182,29 @@ Chaque exécution de pipeline devra produire un artefact Markdown contenant :
 - réaliser ensuite le déploiement contrôlé sur `main` ;
 - effectuer un audit final avant ouverture publique.
 
+## Compléments de sécurité à prévoir
+
+La revue ciblée a également confirmé les améliorations suivantes à planifier :
+
+- remplacer le stockage des JWT dans `localStorage` par des cookies `HttpOnly`, `Secure` et `SameSite` ;
+- activer une protection CSRF adaptée si l’authentification passe par cookie ;
+- ajouter une rotation de refresh tokens si les sessions longues sont nécessaires ;
+- limiter les tentatives de connexion et de réinitialisation de mot de passe côté serveur ;
+- rendre les tokens d’activation strictement mono-usage et plus courts ;
+- ajouter une politique CSP stricte et vérifier les en-têtes de sécurité ;
+- journaliser les connexions, déconnexions, échecs et changements de privilèges sans enregistrer de secrets ;
+- ajouter des tests d’accès pour les comptes suspendus, supprimés et les tokens révoqués ;
+- configurer une durée de conservation et une protection des logs conformes au besoin RGPD.
+
+## Vérifications réalisées
+
+| Vérification | Résultat |
+|---|---|
+| Build Next.js | Réussi |
+| Lint frontend | Réussi, avertissements Tailwind historiques uniquement |
+| Vérification TypeScript via le build | Réussie |
+| PHPStan | Réussi, aucune erreur |
+| Lint de configuration YAML Symfony | Réussi |
+| Validation du conteneur Symfony | Réussie |
+| Déconnexion serveur puis réutilisation du JWT | Réussi : déconnexion `200`, token révoqué `401` |
+| PHPUnit ciblé | Non exécutable dans le conteneur courant : `framework.test` n’est pas activé |

@@ -14,6 +14,7 @@ import {
   IconAgent,
   IconCampagne,
 } from '@/components/ui/NavigationBar/NavigationIcon';
+import { API_URL } from '@/lib/api/client';
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
@@ -36,8 +37,14 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    router.replace('/admin');
+    const token = localStorage.getItem('admin_token');
+    void fetch(`${API_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    }).finally(() => {
+      localStorage.removeItem('admin_token');
+      router.replace('/admin');
+    });
   };
 
   return (
