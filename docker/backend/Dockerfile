@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:1.12-php8.5-alpine
+FROM dunglas/frankenphp:1.13.5-php8.5-alpine
 
 COPY docker/backend/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/backend/Caddyfile /etc/caddy/Caddyfile
