@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 export const paginationNavVariants = cva('', {
   variants: {
     fixed: {
-      true: 'fixed bottom-0 right-0 left-0 z-20 border-t border-line bg-white/95 backdrop-blur-md px-6 py-3.5 shadow-[0_-0.25rem_1rem_rgba(0,0,0,0.06)]',
+      true: 'fixed bottom-0 right-0 left-0 z-20 border-t border-line bg-white/95 backdrop-blur-md px-6 py-3.5 shadow-sm',
       false: 'mt-8 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between text-xs',
     },
     withAdminSidebar: {

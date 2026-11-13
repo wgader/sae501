@@ -16,9 +16,9 @@ export const buttonVariants = cva(
         ghost: "bg-transparent text-ink hover:bg-paper active:bg-line",
       },
       size: {
-        sm: "h-9 px-4 text-[0.69rem] tracking-[0.12em]",
+        sm: "h-9 px-4 text-xs tracking-widest",
         md: "h-12 px-6 text-xs tracking-label",
-        lg: "h-[3.25rem] px-8 text-xs tracking-[0.16em]",
+        lg: "h-13 px-8 text-xs tracking-widest",
       },
     },
     defaultVariants: {

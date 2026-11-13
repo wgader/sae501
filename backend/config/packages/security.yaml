@@ -40,6 +40,8 @@ security:
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/campaigns/current, roles: PUBLIC_ACCESS }
+        - { path: ^/api/admin/campaigns, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 

@@ -14,7 +14,6 @@ WORKDIR /app
 
 COPY backend/composer.json backend/composer.lock backend/symfony.lock* ./
 RUN composer install \
-    --no-dev \
     --no-scripts \
     --no-autoloader \
     --prefer-dist

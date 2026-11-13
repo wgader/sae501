@@ -12,7 +12,7 @@ globs: "backend/src/**/*"
 ## Sécurité et Rôles (Mairie vs Associations)
 Le projet sépare strictement les accès entre la "Mairie" (qui administre et valide) et les "Associations" (qui formulent et suivent leurs demandes).
 - Chaque route API Platform doit vérifier la présence et la validité du token JWT.
-- **Contrôle d'accès** : Bloquer l'écriture, la modification et la suppression (403 Forbidden) si l'utilisateur n'est pas le propriétaire de la ressource (l'association elle-même) OU s'il n'a pas le rôle administrateur (`ROLE_MAIRIE`).
+- **Contrôle d'accès** : Bloquer l'écriture, la modification et la suppression (403 Forbidden) si l'utilisateur n'est pas le propriétaire de la ressource (l'association elle-même) OU s'il n'a pas le rôle administrateur (`ROLE_ADMIN`).
 - Vérifier systématiquement que la Mairie a activé l'accès pour l'association concernée avant de traiter une demande (modules subventions, matériel, salles).
 
 ## Gestion des Erreurs

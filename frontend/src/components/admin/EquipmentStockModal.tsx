@@ -136,7 +136,7 @@ export default function EquipmentStockModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="equipment-stock-title"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-panel bg-white p-6 shadow-panel"
+        className="max-h-screen w-full max-w-lg overflow-y-auto rounded-panel bg-white p-6 shadow-panel"
       >
         <div className="flex items-center justify-between border-b border-line pb-4">
           <div>

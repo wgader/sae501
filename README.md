@@ -23,6 +23,23 @@ cp .env.example .env  # remplir les valeurs
 docker compose up --build
 ```
 
+Après l'installation des dépendances Node à la racine, Husky active le hook
+`pre-commit` et `lint-staged` vérifie uniquement les fichiers staged :
+
+```bash
+npm install
+```
+
+Le backend fournit également PHP CS Fixer via Composer :
+
+```bash
+docker compose exec backend composer install --no-scripts
+docker compose exec backend php vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php
+```
+
+Le service `backend` doit être démarré pour exécuter ces commandes et le hook
+`pre-commit`.
+
 | Service    | URL                         |
 |------------|-----------------------------|
 | Frontend   | http://localhost:3000       |
@@ -58,6 +75,29 @@ SAE501/
 ├── .env.example            # Template des variables d'environnement
 └── docker-compose.yml      # Orchestration des services
 ```
+
+## Production
+
+La CD publie les images backend et frontend dans GHCR. Configurez la variable
+de dépôt GitHub `PUBLIC_API_URL` avec l'URL publique de l'API. Sur le serveur,
+copiez
+`.env.prod.example` vers `.env.prod`, renseignez les valeurs et remplacez les
+domaines et secrets d'exemple. Le fichier `.env.prod` ne doit pas être commité.
+Créez également les clés JWT hors du dépôt dans `secrets/jwt/private.pem` et
+`secrets/jwt/public.pem` avant le premier démarrage.
+
+```bash
+mkdir -p secrets/jwt
+openssl genrsa -out secrets/jwt/private.pem 4096
+openssl rsa -pubout -in secrets/jwt/private.pem -out secrets/jwt/public.pem
+docker compose --env-file .env.prod -f docker-compose.prod.yml pull
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+```
+
+Le backend écoute sur les ports 80/443 et Caddy gère automatiquement HTTPS pour
+`API_DOMAIN`. Le frontend écoute sur `FRONTEND_PORT` (3000 par défaut) et doit
+être exposé derrière le reverse proxy de l'hébergeur avec `PUBLIC_API_URL`
+pointant vers le domaine public de l'API.
 
 ## Git Flow
 

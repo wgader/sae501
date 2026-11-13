@@ -108,11 +108,11 @@ export default function ProfilPage() {
 
           <header>
             <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Mon compte</p>
-            <h1 className="mt-2 text-[clamp(2.5rem,5vw,4rem)] font-black leading-none tracking-display text-black">Mon profil</h1>
+            <h1 className="mt-2 text-5xl font-black leading-none tracking-display text-black">Mon profil</h1>
             <p className="mt-3 text-body-sm text-muted">Gérez les coordonnées et les accès associés à votre compte.</p>
           </header>
 
-          <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(13rem,17.5rem)_minmax(0,1fr)] lg:gap-12">
+          <div className="mt-10 grid gap-10 lg:grid-cols-3 lg:gap-12">
             <section aria-labelledby="profile-summary" className="border-b border-line pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
               <div className="flex size-14 items-center justify-center rounded-full bg-accent text-xl font-black text-black sm:size-16">
                 {initials}
@@ -124,7 +124,7 @@ export default function ProfilPage() {
               <p className="mt-2 text-xs text-muted">
                 {profile?.typeCompte === 'mairie' ? 'Agent communal' : 'Président de l’association'}
               </p>
-              <span className="mt-4 inline-flex rounded-pill bg-primary px-3 py-1.5 text-[0.55rem] font-bold uppercase tracking-label text-white">
+              <span className="mt-4 inline-flex rounded-pill bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-label text-white">
                 Compte vérifié
               </span>
             </section>

@@ -1,108 +1,105 @@
-# AGENTS.md
+# Consignes backend — SAE501
 
-This is a Symfony project. Check `composer.json` for the exact Symfony/PHP version
-in use, and read `symfony.lock` to see which recipes ran. Don't assume Doctrine,
-Twig, API Platform, Messenger, or Lock are installed unless one of those says so.
+## Stack et architecture
 
-## Ask before generating
+Le backend est une API REST Symfony 8.1 servie par FrankenPHP dans Docker.
 
-If the task doesn't specify, ask rather than guess:
+- **PHP** : 8.4 ou supérieur.
+- **API** : API Platform 4.3 pour exposer les ressources et documenter les endpoints.
+- **Persistance** : Doctrine ORM 3.7 avec MySQL 8.4.
+- **Authentification** : JWT via LexikJWTAuthenticationBundle.
+- **Validation et sérialisation** : composants Symfony Validator et Serializer.
+- **Asynchrone et notifications** : composants Symfony Messenger et Mailer lorsque le besoin le justifie.
+- **Tests** : PHPUnit, avec tests HTTP fonctionnels pour les endpoints.
 
-- Persistence: Doctrine ORM, Doctrine ODM, or none?
-- Interface: server-rendered (Twig), API (Serializer, maybe API Platform), or both?
-- Auth: SecurityBundle, and which authenticator?
+L'API est consommée par le frontend Next.js situé dans `../frontend`. Ne pas ajouter
+de nouvelle interface serveur ou d'ODM : les fonctionnalités métier doivent rester
+accessibles via l'API REST et s'appuyer sur Doctrine ORM.
 
-If you can't ask (no interactive channel), state the assumption you're making and
-pick the smallest option (e.g. no persistence layer) rather than scaffolding a
-full stack nobody asked for.
+## Structure du projet
 
-## Adding features: Flex, not hand-wiring
+- `src/Entity/` : entités Doctrine et règles de validation associées.
+- `src/ApiResource/` : ressources et opérations API Platform.
+- `src/Controller/` : contrôleurs HTTP spécifiques, fins et centrés sur l'orchestration.
+- `src/Service/` : logique métier réutilisable et traitements complexes.
+- `src/State/` : providers et processors API Platform.
+- `src/Repository/` : requêtes Doctrine dédiées.
+- `src/Security/` : authentification, vérifications et règles d'accès.
+- `src/EventSubscriber/` : écouteurs et traitement transversal.
+- `tests/` : tests PHPUnit.
+- `migrations/` : migrations Doctrine générées par Symfony.
 
-Install new capabilities with `composer require <package>` (e.g. `symfony/lock`,
-`symfony/messenger`, `orm-pack`) and let the Flex recipe register the bundle and
-generate its config. Don't hand-edit `config/bundles.php` or hand-write a bundle's
-base config; that's what the recipe is for. Don't skip a good-fit component just
-because it isn't installed yet; installing it is one command.
+## Règles de développement
 
-## Conventions
+- Lire la règle ciblée dans `../.agents/rules/` avant toute modification.
+- Utiliser les attributs PHP (`#[ApiResource]`, `#[Route]`, `#[IsGranted]`,
+  `#[Assert\...]`) et le typage strict.
+- Garder les contrôleurs, providers et processors fins ; déléguer la logique métier
+  aux services.
+- Utiliser l'autowiring et l'autoconfiguration existants avant d'ajouter une
+  configuration de service manuelle.
+- Valider et sérialiser les entrées avec les composants Symfony ou API Platform ;
+  ne pas parser manuellement les requêtes JSON sans nécessité démontrée.
+- Respecter les rôles existants (`ROLE_ADMIN`, `ROLE_ASSOCIATION` et rôles de
+  gestion par module) et vérifier la propriété des ressources.
+- Ne jamais exposer de secret, de mot de passe ou de donnée sensible dans une
+  réponse d'API ou un fichier versionné.
+- Ne jamais modifier manuellement un fichier de `migrations/`. Générer la migration,
+  puis la relire avant de l'exécuter.
 
-Follow https://symfony.com/doc/current/best_practices.html to write idiomatic
-Symfony:
+## Environnement Docker
 
-- Use PHP attributes for framework metadata, and not only on controllers:
-  `#[Route]`, `#[MapRequestPayload]`, `#[IsGranted]` on actions, `#[Assert\...]`
-  on properties, `#[AsCommand]`, `#[AsEventListener]`, `#[AsMessageHandler]`, and
-  `#[AsAlias]` / `#[AsTaggedItem]` / `#[Autoconfigure]` on services. No YAML or
-  XML routing.
-- Rely on autowiring and autoconfiguration. Type-hint constructor arguments and
-  let the container resolve them. Where a type-hint can't express it, stay in the
-  class with `#[Autowire]` (parameters, env vars, expressions) or `#[Target]` (one
-  of several implementations of an interface). A YAML service definition is the
-  last resort, not the first.
-- Controllers extend `AbstractController`, stay thin, and delegate to services.
-- Use the framework for what it already does: Form for server-rendered forms,
-  Validator for validation, Serializer for JSON, Messenger for async work,
-  Security (voters, authenticators) for access control, Twig `path()`/`url()`
-  instead of hardcoded URLs.
-- Before hand-writing infrastructure (locks, queues, caches, HTTP clients,
-  mailers, schedulers) or reaching for a third-party library, check whether a
-  Symfony component covers it. It usually does.
+Le développement local se fait depuis la racine du dépôt :
 
-Three specifics worth spelling out, because they are easy to get wrong:
+```bash
+docker compose up --build
+```
 
-- Bind request data with `#[MapRequestPayload]` / `#[MapQueryString]` on action
-  arguments, which wires up Serializer and Validator for you, instead of calling
-  `json_decode()` or `SerializerInterface` by hand. If neither package is
-  installed yet, `composer require` them rather than falling back to manual
-  parsing.
-- Use constructor property promotion, and `readonly` for DTOs and value objects.
-  Don't mark a service `readonly` if it might become `lazy: true`: a lazy proxy
-  can't extend a `readonly` class.
-- Use `symfony/lock` (`LockFactory`) for mutual exclusion. A hand-built flag or
-  lock file looks fine in review and is usually wrong under concurrency.
+Le service `backend` expose l'API sur `http://localhost` et la documentation
+OpenAPI sur `http://localhost/api/docs`. Le service utilise FrankenPHP et monte
+`backend/` dans `/app`.
 
-## Everyday workflow
+Pour exécuter une commande dans le conteneur backend :
 
-- Run the app with `symfony serve -d`, and commands with `symfony console ...`
-  (or `bin/console` when the Symfony CLI isn't available).
-- When something fails, read `var/log/dev.log` and the web profiler
-  (`/_profiler`) before changing code.
-- If `maker-bundle` is installed, prefer `bin/console make:*` with every argument
-  passed up front and `--no-interaction` where supported: makers prompt on a
-  terminal by default, which hangs a non-interactive shell. If a maker still
-  needs interactive input, hand-write the code instead.
-- If Doctrine ORM is installed, schema changes go through migrations
-  (`bin/console make:migration`, then `doctrine:migrations:migrate`), never
-  `doctrine:schema:update` or hand-written SQL.
-- `.env` is committed and holds defaults only. Real secrets belong in `.env.local`
-  (git-ignored) or the secrets vault (`bin/console secrets:set`), read via
-  `%env(...)%`.
+```bash
+docker compose exec backend php bin/console about
+docker compose exec backend php bin/console <commande>
+```
 
-## Testing
+Les variables locales et secrets doivent rester dans `.env.local` ou dans le
+gestionnaire de secrets Symfony. Ne pas ajouter de secret à `.env`, au dépôt ou
+aux fichiers de configuration agentique.
 
-Install `symfony/test-pack` if it isn't already. Functional/HTTP tests extend
-`WebTestCase`; service-level tests extend `KernelTestCase`. Run
-`php bin/phpunit` (falls back to `vendor/bin/phpunit`). A feature isn't done
-until it has a test that exercises it the way a caller would, an HTTP request for
-a controller or a service call for a service, not just "it didn't throw."
+## Migrations et fixtures
 
-## Code style
+Après une modification d'entité, générer et relire la migration depuis le
+conteneur :
 
-Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
-superset). Run `vendor/bin/php-cs-fixer fix` if `friendsofphp/php-cs-fixer` is
-installed; it isn't part of the skeleton by default.
+```bash
+docker compose exec backend php bin/console make:migration --no-interaction
+docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+```
 
-## Discover, don't guess
+Utiliser les fixtures existantes pour les données de développement et de test.
+Ne pas utiliser `doctrine:schema:update` dans le workflow du projet.
 
-Framework APIs change between versions and your training data may be stale. Look
-things up in the project instead of relying on memory:
+## Tests et qualité
 
-- `bin/console about`: versions, environment, paths.
-- `bin/console debug:router`, `debug:container`, `debug:autowiring <name>`,
-  `debug:config <bundle>`, `config:dump-reference <bundle>`: what exists and how
-  it is configured.
-- `bin/console lint:container`, plus `lint:twig templates/` and
-  `lint:yaml config/` where those packages are installed: validate before running.
-- Read the installed source and docblocks under `vendor/`.
-- Docs: https://symfony.com/doc/current/ (switch to the version matching
-  `composer.json` if it differs).
+Depuis la racine :
+
+```bash
+docker compose exec backend php bin/phpunit
+docker compose exec backend vendor/bin/phpstan analyse
+```
+
+Un nouvel endpoint doit avoir des tests fonctionnels couvrant au minimum les
+réponses attendues, l'authentification et les autorisations pertinentes
+(`401`, `403`, `404` et erreurs de validation selon le cas).
+
+Avant de conclure, vérifier les conteneurs, les logs du service backend et la
+documentation API si un endpoint a été ajouté ou modifié :
+
+```bash
+docker compose ps
+docker compose logs backend
+```

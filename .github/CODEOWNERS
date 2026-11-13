@@ -1,0 +1,6 @@
+# Default reviewers for every change.
+* @wgader @Vivien-Pain
+
+# Backend and frontend changes should include the project maintainers.
+backend/ @wgader @Vivien-Pain
+frontend/ @wgader @Vivien-Pain

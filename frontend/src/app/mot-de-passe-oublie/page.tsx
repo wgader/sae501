@@ -23,17 +23,17 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-row font-sans text-ink">
-      <aside className="hidden min-h-screen w-[clamp(18.75rem,32vw,27.5rem)] shrink-0 flex-col bg-primary px-[clamp(1.5rem,3vw,3.5rem)] pt-8 text-white lg:flex">
+      <aside className="hidden min-h-screen w-72 shrink-0 flex-col bg-primary px-6 pt-8 text-white lg:flex">
         <BackButton />
 
-        <div className="mt-[clamp(2.5rem,6vh,4rem)] flex items-center gap-2.5">
+        <div className="mt-16 flex items-center gap-2.5">
           <span className="h-0.5 w-6 rounded-full bg-accent" aria-hidden="true" />
           <p className="text-label font-bold uppercase tracking-section text-white">
             Espace associations
           </p>
         </div>
 
-        <h2 className="mt-6 max-w-85 text-[clamp(2.125rem,3.2vw,3rem)] font-black leading-[1.05] tracking-display text-white">
+        <h2 className="mt-6 max-w-85 text-5xl font-black leading-tight tracking-display text-white">
           <span className="block">Réinitialiser mon</span>
           <span className="block text-accent">mot de passe.</span>
         </h2>
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
           </div>
 
           <header className="mb-8">
-            <h1 className="text-[clamp(1.75rem,2.8vw,2.5rem)] font-black leading-[1.08] tracking-display text-ink">
+            <h1 className="text-3xl font-black leading-tight tracking-display text-ink">
               Mot de passe oublié
             </h1>
             <p className="mt-2 text-body-sm leading-normal text-muted">
