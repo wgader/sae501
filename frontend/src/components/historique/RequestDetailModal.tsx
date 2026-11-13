@@ -66,7 +66,7 @@ export default function RequestDetailModal({
       {/* Dialog box */}
       <div
         ref={modalRef}
-        className="relative flex max-h-screen w-full max-w-3xl flex-col rounded-card border border-line bg-white shadow-2xl transition-all"
+        className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-card border border-line bg-white shadow-2xl transition-all"
       >
         {/* Modal Header */}
         <header className="flex items-start justify-between border-b border-line p-5 sm:p-6">

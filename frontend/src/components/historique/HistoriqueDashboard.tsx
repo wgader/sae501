@@ -61,7 +61,7 @@ export default function HistoriqueDashboard() {
             <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
               Espace associations · Suivi des dossiers
             </p>
-            <h1 className="mt-2 text-4xl font-black tracking-display text-ink">
+            <h1 className="mt-2 text-[clamp(2rem,3.5vw,2.75rem)] font-black tracking-display text-ink">
               Mes démarches & historique
             </h1>
             <p className="mt-2 max-w-2xl text-body leading-copy text-muted">
