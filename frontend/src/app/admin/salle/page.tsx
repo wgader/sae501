@@ -12,11 +12,13 @@ export default function AdminSallesPage() {
   return (
     <AdminLayout>
       <section className="space-y-8">
-        <AdminPageHeader
-          title="GESTION DES SALLES"
-          description="Ajoutez, modifiez et rendez disponibles les espaces municipaux de la ville."
-        />
-        <SalleCreateForm onCreated={() => setSallesListKey((key) => key + 1)} />
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <AdminPageHeader
+            title="GESTION DES SALLES"
+            description="Ajoutez, modifiez et rendez disponibles les espaces municipaux de la ville."
+          />
+          <SalleCreateForm onCreated={() => setSallesListKey((key) => key + 1)} />
+        </header>
         <SallesList key={sallesListKey} />
       </section>
     </AdminLayout>

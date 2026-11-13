@@ -19,7 +19,7 @@ export default function EquipmentInventory({ items, loading, error, brokenImageI
   if (error) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-danger">{error}</div>;
   if (!items.length) return <div className="rounded-2xl border border-line bg-white p-12 text-center"><p className="text-base font-bold text-ink">Aucun équipement trouvé</p><p className="mt-1 text-xs text-muted">Modifiez vos filtres ou enregistrez un nouveau matériel dans le catalogue.</p></div>;
 
-  return <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((item) => (
+  return <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">{items.map((item) => (
     <article key={item.id} className={`group overflow-hidden rounded-card border bg-white shadow-xs ${item.isArchived ? 'border-gray-200 opacity-80' : 'border-line'}`}>
       <div className="relative flex h-52 items-center justify-center overflow-hidden border-b border-line bg-primary-soft">
         {item.imagePath && !brokenImageIds.includes(item.id) ? <Image src={getMediaUrl(item.imagePath)!} alt={`Photo de ${item.designation}`} fill unoptimized sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" onError={() => onBrokenImage(item.id)} /> : <div role="img" aria-label={`Illustration pour ${item.designation}`} className="text-center text-primary"><span className="text-4xl">□</span><p className="text-xs font-semibold">Photo illustrative</p></div>}

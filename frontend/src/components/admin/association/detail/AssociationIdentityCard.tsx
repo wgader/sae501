@@ -7,9 +7,6 @@ import {
   IconMembres,
   IconCategorie,
   IconAssociation,
-  IconDocument,
-  IconLocation,
-  IconPresentation,
 } from '@/components/ui/icons';
 
 interface AssociationIdentityCardProps {
@@ -56,7 +53,7 @@ export default function AssociationIdentityCard({ association }: AssociationIden
       <section className="p-6 sm:p-7">
         <header className="border-b border-line pb-3">
           <h2 className="text-xs font-bold uppercase tracking-wider text-ink">
-            Identité et présentation
+            Identité de l’association
           </h2>
         </header>
 
@@ -93,37 +90,6 @@ export default function AssociationIdentityCard({ association }: AssociationIden
             </div>
           </div>
 
-          <div>
-            <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
-              <IconPresentation className="h-3.5 w-3.5 text-primary" />
-              <span>Présentation</span>
-            </dt>
-            <dd className="mt-1 text-sm font-semibold text-ink">
-              Non renseigné
-            </dd>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
-                <IconDocument className="h-3.5 w-3.5 text-primary" />
-                <span>N° RNA / SIRET</span>
-              </dt>
-              <dd className="mt-1 text-sm font-semibold text-ink">
-                {association.numeroRna || 'Non renseigné'}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="flex items-center gap-1.5 text-label font-bold uppercase tracking-wider text-muted">
-                <IconLocation className="h-3.5 w-3.5 text-primary" />
-                <span>Adresse du siège</span>
-              </dt>
-              <dd className="mt-1 text-sm font-semibold text-ink">
-                Non renseigné
-              </dd>
-            </div>
-          </div>
         </dl>
       </section>
     </article>

@@ -11,3 +11,9 @@ framework:
             policy: 'fixed_window'
             limit: 5
             interval: '15 minutes'
+
+        # Formulaire de contact : 5 envois par IP sur 15 minutes
+        contact_message:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '15 minutes'

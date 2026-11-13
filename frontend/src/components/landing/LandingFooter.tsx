@@ -36,28 +36,28 @@ export default function LandingFooter() {
               </p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 <li>
-                  <a
-                    href="#demarches"
+                  <Link
+                    href="/#demarches"
                     className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Les démarches
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="#comment-ca-marche"
+                  <Link
+                    href="/#comment-ca-marche"
                     className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     Comment ça marche
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="#faq"
+                  <Link
+                    href="/#faq"
                     className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
                     FAQ
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -91,6 +91,14 @@ export default function LandingFooter() {
                     Déconnexion
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/admin"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
+                  >
+                    Administration
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -100,11 +108,19 @@ export default function LandingFooter() {
               </p>
               <ul className="mt-4 flex flex-col gap-2.5">
                 <li>
+                  <Link
+                    href="/contact"
+                    className="text-body-sm text-white/80 transition-colors hover:text-white"
+                  >
+                    Nous contacter
+                  </Link>
+                </li>
+                <li>
                   <a
                     href="mailto:contact@ville-feytiat.fr"
                     className="text-body-sm text-white/80 transition-colors hover:text-white"
                   >
-                    Nous contacter
+                    contact@ville-feytiat.fr
                   </a>
                 </li>
                 <li>
