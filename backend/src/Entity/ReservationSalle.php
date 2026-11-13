@@ -15,6 +15,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ReservationSalle
 {
     public const STATUTS = [
+        'En attente de validation par la mairie',
+        'En attente',
         'En cours de traitement',
         'Complément requis',
         'Validée',
@@ -35,8 +37,7 @@ class ReservationSalle
     #[ORM\JoinColumn(name: 'salle_id', referencedColumnName: 'id', nullable: false)]
     private ?Salle $salle = null;
 
-    #[ORM\Column(name: 'motif_evenement', length: 255)]
-    #[Assert\NotBlank(message: "Le motif de l'événement est obligatoire.")]
+    #[ORM\Column(name: 'motif_evenement', length: 255, nullable: true)]
     private ?string $motifEvenement = null;
 
     #[ORM\Column(name: 'date_debut', type: Types::DATETIME_IMMUTABLE)]
@@ -52,7 +53,7 @@ class ReservationSalle
 
     #[ORM\Column(length: 50)]
     #[Assert\Choice(choices: self::STATUTS)]
-    private string $statut = 'En cours de traitement';
+    private string $statut = 'En attente de validation par la mairie';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observations = null;
@@ -66,7 +67,7 @@ class ReservationSalle
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->statut = 'En cours de traitement';
+        $this->statut = 'En attente de validation par la mairie';
     }
 
     public function getId(): ?int
@@ -103,7 +104,7 @@ class ReservationSalle
         return $this->motifEvenement;
     }
 
-    public function setMotifEvenement(string $motifEvenement): static
+    public function setMotifEvenement(?string $motifEvenement): static
     {
         $this->motifEvenement = $motifEvenement;
 

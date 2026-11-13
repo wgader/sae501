@@ -25,6 +25,7 @@ final class AssociationRequestAggregationService
     public const TYPE_EVENEMENT = 'evenement';
 
     public const ACTIVE_STATUSES = [
+        'En attente de validation par la mairie',
         'En cours de traitement',
         'En attente',
         'Complément requis',

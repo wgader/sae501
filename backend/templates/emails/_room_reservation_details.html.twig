@@ -1,0 +1,16 @@
+<div style="margin:24px 0;padding:20px;background:#F4F4F0;border-left:3px solid #146E67;">
+  <p style="margin:0 0 12px;color:#146E67;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Récapitulatif de la réservation</p>
+  <p style="margin:6px 0;"><strong>Salle demandée :</strong> {{ salle.nom }}</p>
+  <p style="margin:6px 0;"><strong>Adresse :</strong> {{ salle.adresse }}</p>
+  <p style="margin:6px 0;"><strong>Motif de l'événement :</strong> {{ reservation.motifEvenement }}</p>
+  {% if reservation.capaciteAttendue %}
+    <p style="margin:6px 0;"><strong>Effectif attendu :</strong> {{ reservation.capaciteAttendue }} personnes (capacité max : {{ salle.capaciteMax }})</p>
+  {% endif %}
+  <p style="margin:6px 0;"><strong>Début :</strong> {{ reservation.dateDebut|date('d/m/Y à H\\hi') }}</p>
+  <p style="margin:6px 0;"><strong>Fin :</strong> {{ reservation.dateFin|date('d/m/Y à H\\hi') }}</p>
+  <p style="margin:6px 0;"><strong>Statut :</strong> <span style="display:inline-block;padding:2px 8px;background:#FFF3CD;color:#856404;font-weight:bold;border-radius:4px;">{{ reservation.statut }}</span></p>
+  {% if justificatifUrl is defined and justificatifUrl %}
+    <p style="margin:6px 0;"><strong>Pièce justificative :</strong> Document transmis</p>
+  {% endif %}
+</div>
+
