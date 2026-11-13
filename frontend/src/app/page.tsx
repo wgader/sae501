@@ -1,48 +1,71 @@
-'use client';
+"use client";
 
-import { useSyncExternalStore, useEffect } from 'react';
-import LandingPage from '@/components/landing/LandingPage';
-import ConnectedDashboard from '@/components/dashboard/ConnectedDashboard';
-
-function subscribeAuth(callback: () => void) {
-  window.addEventListener('storage', callback);
-  window.addEventListener('auth-change', callback);
-  return () => {
-    window.removeEventListener('storage', callback);
-    window.removeEventListener('auth-change', callback);
-  };
-}
-
-function getAuthSnapshot(): boolean {
-  return Boolean(localStorage.getItem('token'));
-}
-
-function getServerAuthSnapshot(): boolean {
-  return false;
-}
+import Link from "next/link";
+import Image from "next/image";
+import { useState} from "react";
 
 export default function Home() {
-  const isConnected = useSyncExternalStore(
-    subscribeAuth,
-    getAuthSnapshot,
-    getServerAuthSnapshot
-  );
-
-  useEffect(() => {
-    document.title = isConnected
-      ? 'Accueil · Espace associations | Feytiat'
-      : 'Espace Associations | Ville de Feytiat - Vos démarches en un seul endroit';
-  }, [isConnected]);
+  const [isConnected, setIsConnected] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!localStorage.getItem("token");
+    }
+    return false;
+  });
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('association_name');
-    window.dispatchEvent(new Event('auth-change'));
+    localStorage.removeItem("token");
+    setIsConnected(false);
   };
 
-  if (isConnected) {
-    return <ConnectedDashboard />;
-  }
+  return (
+    <main className="home-page">
+      <header className="home-header">
+        <Link href="/" aria-label="Accueil Feytiat">
+          <Image
+            className="home-logo"
+            src="/assets/logo-feytiat.svg"
+            alt="Logo Feytiat"
+            width={112}
+            height={48}
+            priority
+          />
+        </Link>
 
-  return <LandingPage isConnected={false} onLogout={handleLogout} />;
+        {isConnected ? (
+          <div className="home-account">
+            <Link href="/profile">Profil</Link>
+            <button type="button" onClick={handleLogout}>
+              Déconnexion
+            </button>
+          </div>
+        ) : (
+          <div className="home-auth">
+            <Link href="/login">Connexion</Link>
+            <Link className="home-auth-active" href="/signup/step1">
+              Inscription
+            </Link>
+          </div>
+        )}
+      </header>
+
+      <section className="home-content" aria-labelledby="home-title">
+        <p className="home-welcome">Accueil</p>
+        <h1 id="home-title">Bienvenue</h1>
+
+        <div className="home-actions">
+          <Link href="/subvention">Demande de subvention</Link>
+          <Link href="/salle">Demande de salle</Link>
+          <Link href="/materiel">Demande de matériel</Link>
+        </div>
+      </section>
+
+      <button
+        className="home-preview"
+        type="button"
+        onClick={() => setIsConnected((value) => !value)}
+      >
+        Aperçu : {isConnected ? "connecté" : "non connecté"}
+      </button>
+    </main>
+  );
 }

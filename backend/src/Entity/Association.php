@@ -2,9 +2,7 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
 use App\Repository\AssociationRepository;
-use App\State\AssociationStatusProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -25,12 +23,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Modules activés par la mairie selon les besoins de l'association.
  */
 #[ORM\Entity(repositoryClass: AssociationRepository::class)]
-#[ApiResource(
-    processor: AssociationStatusProcessor::class,
-    security: "is_granted('ROLE_USER')",
-    paginationItemsPerPage: 20,
-    paginationMaximumItemsPerPage: 100,
-)]
 class Association
 {
     public const STATUTS = [
@@ -66,17 +58,15 @@ class Association
     #[Assert\Choice(choices: self::STATUTS)]
     private string $statut = 'PENDING_VALIDATION';
 
-    #[ORM\Column(options: ['default' => true])]
-    private bool $moduleSubventionActif = true;
+    /** Modules activés/désactivés par la mairie depuis l'interface admin */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $moduleSubventionActif = false;
 
-    #[ORM\Column(options: ['default' => true])]
-    private bool $moduleMaterielActif = true;
+    #[ORM\Column(options: ['default' => false])]
+    private bool $moduleMaterielActif = false;
 
-    #[ORM\Column(options: ['default' => true])]
-    private bool $moduleSalleActif = true;
-
-    #[ORM\Column(options: ['default' => true])]
-    private bool $moduleEvenementActif = true;
+    #[ORM\Column(options: ['default' => false])]
+    private bool $moduleSalleActif = false;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -97,10 +87,9 @@ class Association
     {
         $this->createdAt             = new \DateTimeImmutable();
         $this->statut                = 'PENDING_VALIDATION';
-        $this->moduleSubventionActif = true;
-        $this->moduleMaterielActif   = true;
-        $this->moduleSalleActif      = true;
-        $this->moduleEvenementActif  = true;
+        $this->moduleSubventionActif = false;
+        $this->moduleMaterielActif   = false;
+        $this->moduleSalleActif      = false;
         $this->users                 = new ArrayCollection();
         $this->documentJustificatifs = new ArrayCollection();
     }
@@ -126,9 +115,6 @@ class Association
 
     public function isModuleSalleActif(): bool { return $this->moduleSalleActif; }
     public function setModuleSalleActif(bool $v): static { $this->moduleSalleActif = $v; return $this; }
-
-    public function isModuleEvenementActif(): bool { return $this->moduleEvenementActif; }
-    public function setModuleEvenementActif(bool $v): static { $this->moduleEvenementActif = $v; return $this; }
 
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function setCreatedAt(\DateTimeImmutable $v): static { $this->createdAt = $v; return $this; }
