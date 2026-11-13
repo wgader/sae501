@@ -29,6 +29,7 @@ class ReservationMateriel
         'Validée',
         'Refusée',
         'Clôturée',
+        'Annulée',
         'Matériel restitué',
     ];
 

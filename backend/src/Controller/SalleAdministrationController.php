@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/admin/salles')]
-#[IsGranted('ROLE_ADMIN')]
+#[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or (is_granted('ROLE_MAIRIE') and is_granted('ROLE_GESTION_SALLE'))"))]
 final class SalleAdministrationController extends AbstractController
 {
     public function __construct(

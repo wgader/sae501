@@ -11,7 +11,7 @@ export const requestStatusBadgeVariants = cva(
         pending: 'bg-amber-100 text-amber-900 border border-amber-200',
         actionRequired: 'bg-orange-100 text-orange-900 border border-orange-200',
         validated: 'bg-primary-soft text-primary border border-primary/25',
-        refused: 'bg-danger/10 text-danger border border-danger/25',
+        refused: 'bg-danger/10 !text-danger border border-danger/25',
         closed: 'bg-paper text-muted border border-line',
         returned: 'bg-indigo/10 text-indigo border border-indigo/25',
       },
@@ -45,6 +45,9 @@ export function mapStatusToVariant(
     return 'returned';
   }
   if (norm.includes('clôtur') || norm.includes('clotur')) {
+    return 'closed';
+  }
+  if (norm.includes('annul')) {
     return 'closed';
   }
   if (norm.includes('cours')) {
@@ -82,4 +85,3 @@ export default function RequestStatusBadge({
     </span>
   );
 }
-

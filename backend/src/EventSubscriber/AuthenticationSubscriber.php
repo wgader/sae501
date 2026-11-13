@@ -71,6 +71,10 @@ class AuthenticationSubscriber implements EventSubscriberInterface
                 'roles' => $user->getRoles(),
                 'typeCompte' => $user->getTypeCompte(),
                 'isVerified' => $user->isVerified(),
+                'moduleSubventionActif' => $user->getAssociation()?->isModuleSubventionActif(),
+                'moduleMaterielActif' => $user->getAssociation()?->isModuleMaterielActif(),
+                'moduleSalleActif' => $user->getAssociation()?->isModuleSalleActif(),
+                'moduleEvenementActif' => $user->getAssociation()?->isModuleEvenementActif(),
             ],
         ]));
     }
@@ -86,6 +90,10 @@ class AuthenticationSubscriber implements EventSubscriberInterface
             $payload = $event->getData();
             if ($user->getAssociation()) {
                 $payload['nomAssociation'] = $user->getAssociation()->getNom();
+                $payload['moduleSubventionActif'] = $user->getAssociation()->isModuleSubventionActif();
+                $payload['moduleMaterielActif'] = $user->getAssociation()->isModuleMaterielActif();
+                $payload['moduleSalleActif'] = $user->getAssociation()->isModuleSalleActif();
+                $payload['moduleEvenementActif'] = $user->getAssociation()->isModuleEvenementActif();
             }
             $payload['prenom'] = $user->getPrenom();
             $payload['nom'] = $user->getNom();

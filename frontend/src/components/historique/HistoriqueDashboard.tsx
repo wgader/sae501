@@ -1,14 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useAssociationRequests } from '@/hooks/useAssociationRequests';
-import RequestStatusTabs from './RequestStatusTabs';
 import RequestFilterBar from './RequestFilterBar';
 import RequestCard from './RequestCard';
 import RequestEmptyState from './RequestEmptyState';
-import RequestDetailModal from './RequestDetailModal';
 import Pagination from '@/components/ui/Pagination';
 
 export default function HistoriqueDashboard() {
+  const router = useRouter();
   const {
     items,
     totalItems,
@@ -27,13 +27,6 @@ export default function HistoriqueDashboard() {
     isLoading,
     error,
     refetch,
-    // Detail modal
-    selectedRequestId,
-    selectedRequestDetail,
-    isLoadingDetail,
-    detailError,
-    openDetail,
-    closeDetail,
   } = useAssociationRequests({ limit: 8 });
 
   const hasActiveFilters =
@@ -93,15 +86,6 @@ export default function HistoriqueDashboard() {
           </button>
         </header>
 
-        {/* Status Tabs Navigation */}
-        <section aria-label="Onglets d'état des démarches">
-          <RequestStatusTabs
-            activeTab={statusFilter}
-            onTabChange={setStatusFilter}
-            counts={counts}
-          />
-        </section>
-
         {/* Filter Bar */}
         <RequestFilterBar
           searchQuery={searchQuery}
@@ -112,6 +96,9 @@ export default function HistoriqueDashboard() {
           onYearChange={setYearFilter}
           hasActiveFilters={hasActiveFilters}
           onResetFilters={handleResetFilters}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusCounts={counts}
         />
 
         {/* Error message */}
@@ -155,7 +142,9 @@ export default function HistoriqueDashboard() {
                 <RequestCard
                   key={request.id}
                   request={request}
-                  onSelect={(id, type) => openDetail(id, type)}
+                  onSelect={(id, type) =>
+                    router.push(`/historique/${encodeURIComponent(id)}?type=${encodeURIComponent(type)}`)
+                  }
                 />
               ))}
             </div>
@@ -174,15 +163,6 @@ export default function HistoriqueDashboard() {
         </section>
       </div>
 
-      {/* Detail Modal */}
-      <RequestDetailModal
-        isOpen={selectedRequestId !== null}
-        onClose={closeDetail}
-        detail={selectedRequestDetail}
-        isLoading={isLoadingDetail}
-        error={detailError}
-      />
     </main>
   );
 }
-

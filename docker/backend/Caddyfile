@@ -6,8 +6,19 @@
 {$SERVER_NAME} {
     root * /app/public
     encode zstd br gzip
+
+    @cors_preflight {
+        method OPTIONS
+        header Origin http://localhost:3000
+    }
+    header {
+        Access-Control-Allow-Origin http://localhost:3000
+        Access-Control-Allow-Methods "GET, OPTIONS, POST, PUT, PATCH, DELETE"
+        Access-Control-Allow-Headers "Content-Type, Authorization"
+    }
+    respond @cors_preflight 204
+
     php_server {
         worker /app/public/index.php
     }
 }
-

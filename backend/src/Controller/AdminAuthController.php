@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -66,8 +67,8 @@ final class AdminAuthController extends AbstractController
 
         // ── Vérification des rôles mairie côté serveur ────────────────────────
         if (
-            !in_array('ROLE_ADMIN', $user->getRoles(), true)
-            && !in_array('ROLE_ADMIN_GESTION_EVENT', $user->getRoles(), true)
+            $user->isDeleted()
+            || array_intersect(User::ROLES_MAIRIE, $user->getRoles()) === []
         ) {
             return $this->json(
                 ['message' => 'Accès refusé — un rôle mairie est requis.'],

@@ -7,12 +7,14 @@ use App\Entity\DemandeStatusHistory;
 use App\Entity\DemandeSubvention;
 use App\Entity\DocumentJustificatif;
 use App\Entity\ExternalEvent;
+use App\Entity\ExternalEventFile;
 use App\Entity\ReservationMateriel;
 use App\Entity\ReservationSalle;
 use App\Repository\DemandeStatusHistoryRepository;
 use App\Repository\DemandeSubventionRepository;
 use App\Repository\DocumentJustificatifRepository;
 use App\Repository\ExternalEventRepository;
+use App\Repository\ExternalEventFileRepository;
 use App\Repository\ReservationMaterielRepository;
 use App\Repository\ReservationSalleRepository;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -34,6 +36,7 @@ final class AssociationRequestAggregationService
     public const CLOSED_STATUSES = [
         'Refusée',
         'Clôturée',
+        'Annulée',
         'Matériel restitué',
     ];
 
@@ -44,6 +47,7 @@ final class AssociationRequestAggregationService
         private readonly DemandeStatusHistoryRepository $historyRepository,
         private readonly DocumentJustificatifRepository $documentRepository,
         private readonly ExternalEventRepository $eventRepository,
+        private readonly ExternalEventFileRepository $eventFileRepository,
     ) {
     }
 
@@ -214,7 +218,7 @@ final class AssociationRequestAggregationService
                 return null;
             }
 
-            return $this->serializeEventSummary($event);
+            return $this->serializeEventDetail($event);
         }
 
         if ($resolvedType === self::TYPE_SALLE) {
@@ -311,6 +315,7 @@ final class AssociationRequestAggregationService
             'year' => $year,
             'keyDates' => [
                 'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'decision' => $subvention->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
                 'exercice' => (string) $year,
             ],
             'decisionMotif' => $subvention->getObservations(),
@@ -346,10 +351,11 @@ final class AssociationRequestAggregationService
             'year' => $year,
             'keyDates' => [
                 'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'decision' => $materiel->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
                 'retrait' => $materiel->getDateRetrait()?->format(\DateTimeInterface::ATOM),
                 'restitution' => $materiel->getDateRestitution()?->format(\DateTimeInterface::ATOM),
             ],
-            'decisionMotif' => $materiel->getObservations(),
+            'decisionMotif' => $materiel->getNoteInterne() ?? $materiel->getObservations(),
             'observations' => $materiel->getObservations(),
             'summary' => $itemsSummary !== [] ? implode(', ', $itemsSummary) : 'Matériel communal',
         ];
@@ -377,6 +383,7 @@ final class AssociationRequestAggregationService
             'year' => $year,
             'keyDates' => [
                 'depot' => $createdAt?->format(\DateTimeInterface::ATOM),
+                'decision' => $salle->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
                 'debut' => $salle->getDateDebut()?->format(\DateTimeInterface::ATOM),
                 'fin' => $salle->getDateFin()?->format(\DateTimeInterface::ATOM),
             ],
@@ -392,12 +399,6 @@ final class AssociationRequestAggregationService
     private function serializeEventSummary(ExternalEvent $event): array
     {
         $id = $event->getId() ?? 0;
-        $status = $event->getStatus() ?? 'PENDING';
-        $statusLabel = match ($status) {
-            'VALIDATED' => 'Validé',
-            'REFUSED' => 'Refusé',
-            default => 'En attente',
-        };
         $createdAt = $event->getCreatedAt();
 
         return [
@@ -406,8 +407,8 @@ final class AssociationRequestAggregationService
             'type' => self::TYPE_EVENEMENT,
             'typeLabel' => 'Événement',
             'intitule' => $event->getTitle() ?? 'Événement déclaré',
-            'statut' => $statusLabel,
-            'statusCategory' => $status === 'REFUSED' ? 'closed' : 'active',
+            'statut' => null,
+            'statusCategory' => 'active',
             'createdAt' => $createdAt?->format(\DateTimeInterface::ATOM),
             'year' => (int) ($createdAt?->format('Y') ?? date('Y')),
             'keyDates' => [
@@ -415,8 +416,36 @@ final class AssociationRequestAggregationService
                 'debut' => $event->getStartDate()?->format(\DateTimeInterface::ATOM),
                 'fin' => $event->getEndTime()?->format(\DateTimeInterface::ATOM),
             ],
+            'location' => $event->getLocation(),
+            'eventType' => $event->getEventType(),
             'summary' => sprintf('%s · %s', $event->getEventType(), $event->getLocation()),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeEventDetail(ExternalEvent $event): array
+    {
+        $id = $event->getId() ?? 0;
+        $files = array_map(
+            static fn (ExternalEventFile $file): array => [
+                'id' => $file->getId(),
+                'originalName' => $file->getOriginalName(),
+                'fileType' => $file->getFileType(),
+                'mimeType' => $file->getMimeType(),
+                'fileSize' => $file->getFileSize(),
+                'createdAt' => $file->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            ],
+            $this->eventFileRepository->findForEvent($id),
+        );
+
+        return array_merge($this->serializeEventSummary($event), [
+            'files' => $files,
+            'missingFiles' => $event->getMissingFiles() ?? [],
+            'documentsRequestMessage' => $event->getDocumentsRequestMessage(),
+            'documentsRequestedAt' => $event->getDocumentsRequestedAt()?->format(\DateTimeInterface::ATOM),
+        ]);
     }
 
     /**
@@ -557,6 +586,7 @@ final class AssociationRequestAggregationService
                 'Refusée' => 'Dossier refusé par la commune',
                 'Matériel restitué' => 'Matériel restitué et contrôlé',
                 'Clôturée' => 'Dossier clôturé',
+                'Annulée' => 'Réservation annulée par l’association',
                 default => 'Mise à jour du dossier',
             };
 

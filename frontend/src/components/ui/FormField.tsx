@@ -1,70 +1,57 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-export interface FormFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'children'> {
+export const formFieldLabelVariants = cva(
+  'flex flex-col gap-2 text-[0.63rem] font-bold uppercase tracking-[0.18em]',
+);
+
+export const formFieldInputVariants = cva(
+  'border border-[#d9ded9] bg-white/60 px-4 py-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-[#496a56] focus:ring-4 focus:ring-[#496a56]/10',
+);
+
+export interface FormFieldDataProps {
   label: string;
-  children?: ReactNode;
-  error?: string;
-  className?: string;
-  containerClassName?: string;
+  required?: boolean;
   labelClassName?: string;
+  error?: string;
 }
 
-export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
+export interface FormFieldProps
+  extends InputHTMLAttributes<HTMLInputElement>,
+    VariantProps<typeof formFieldInputVariants> {
+  children?: ReactNode;
+  containerClassName?: string;
+}
+
+export const FormField = forwardRef<HTMLInputElement, FormFieldDataProps & FormFieldProps>(
   (
     {
       label,
-      children,
-      className = '',
-      containerClassName = '',
-      labelClassName = '',
-      type = 'text',
-      placeholder,
-      value,
+      required = true,
+      labelClassName,
       error,
-      name,
-      required = false,
+      children,
+      className,
+      containerClassName,
       ...inputProps
     },
     ref,
   ) => {
-    const hasError = Boolean(error);
-
     return (
-      <label className={cn('block w-full', containerClassName)}>
-        <span className={cn('mb-2 flex items-center gap-1 text-meta font-bold uppercase tracking-section text-ink', labelClassName)}>
+      <label className={cn(formFieldLabelVariants(), containerClassName, labelClassName)}>
+        <span>
           {label}
-          {required && <span className="text-danger" aria-hidden="true">*</span>}
+          {required ? ' *' : ''}
         </span>
-
-        <div
-          className={cn(
-            'relative flex h-control w-full items-center rounded-control border bg-paper px-4 transition-colors duration-200',
-            hasError
-              ? 'border-danger ring-2 ring-danger/10'
-              : 'border-line focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10',
-            className,
-          )}
-        >
-          <input
-            ref={ref}
-            type={type}
-            value={value}
-            name={name}
-            placeholder={placeholder}
-            required={required}
-            aria-invalid={hasError}
-            className="h-full w-full bg-transparent text-body text-ink placeholder:text-muted/60 outline-none pr-8"
-            {...inputProps}
-          />
-          {children}
-        </div>
-
-        {error && (
-          <span id={name ? `${name}-error` : undefined} className="mt-2 block text-meta text-danger">
-            {error}
-          </span>
-        )}
+        {children}
+        <input
+          ref={ref}
+          required={required}
+          className={cn(formFieldInputVariants(), className)}
+          {...inputProps}
+        />
+        {error && <span className="text-sm font-semibold normal-case tracking-normal text-danger">{error}</span>}
       </label>
     );
   },

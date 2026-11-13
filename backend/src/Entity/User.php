@@ -20,8 +20,9 @@ use Symfony\Component\Serializer\Attribute\Ignore;
  *
  * Rôles disponibles :
  *   - ROLE_ASSOCIATION         → accès espace association
+ *   - ROLE_MAIRIE              → accès à l'espace d'administration mairie
  *   - ROLE_ADMIN               → accès total (admin mairie)
- *   - ROLE_ADMIN_GESTION_EVENT → gestion des événements externes
+ *   - ROLE_GESTION_EVENT       → gestion des événements externes
  *   - ROLE_GESTION_SUBVENTION  → accès module subventions
  *   - ROLE_GESTION_MATERIEL    → accès module matériel
  *   - ROLE_GESTION_SALLE       → accès module salles
@@ -48,6 +49,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * Utilisé pour valider les rôles assignés par l'admin.
      */
     public const ROLES_MAIRIE = [
+        'ROLE_MAIRIE',
         'ROLE_ADMIN',
         'ROLE_ADMIN_GESTION_EVENT',
         'ROLE_GESTION_EVENT',
@@ -193,6 +195,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
+        if ($this->typeCompte === 'mairie') {
+            $roles[] = 'ROLE_MAIRIE';
+        }
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }

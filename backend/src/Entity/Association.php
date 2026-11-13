@@ -75,6 +75,9 @@ class Association
     #[ORM\Column(options: ['default' => true])]
     private bool $moduleSalleActif = true;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $moduleEvenementActif = true;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -97,6 +100,7 @@ class Association
         $this->moduleSubventionActif = true;
         $this->moduleMaterielActif   = true;
         $this->moduleSalleActif      = true;
+        $this->moduleEvenementActif  = true;
         $this->users                 = new ArrayCollection();
         $this->documentJustificatifs = new ArrayCollection();
     }
@@ -122,6 +126,9 @@ class Association
 
     public function isModuleSalleActif(): bool { return $this->moduleSalleActif; }
     public function setModuleSalleActif(bool $v): static { $this->moduleSalleActif = $v; return $this; }
+
+    public function isModuleEvenementActif(): bool { return $this->moduleEvenementActif; }
+    public function setModuleEvenementActif(bool $v): static { $this->moduleEvenementActif = $v; return $this; }
 
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function setCreatedAt(\DateTimeImmutable $v): static { $this->createdAt = $v; return $this; }

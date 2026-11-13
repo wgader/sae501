@@ -6,7 +6,9 @@ namespace App\Controller;
 
 use App\Entity\ReservationMateriel;
 use App\Entity\ReservationMaterielLigne;
+use App\Entity\DocumentJustificatif;
 use App\Service\EquipmentReservationAdministrationService;
+use App\Repository\DocumentJustificatifRepository;
 use App\Repository\ReservationMaterielRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -23,6 +25,7 @@ final class EquipmentReservationAdministrationController extends AbstractControl
     public function __construct(
         private readonly ReservationMaterielRepository $reservationRepository,
         private readonly EquipmentReservationAdministrationService $administrationService,
+        private readonly DocumentJustificatifRepository $documentRepository,
     ) {
     }
 
@@ -40,7 +43,7 @@ final class EquipmentReservationAdministrationController extends AbstractControl
 
         return $this->json([
             'items' => array_map(
-                [self::class, 'serializeReservation'],
+                fn (ReservationMateriel $reservation): array => $this->serializeReservation($reservation),
                 $this->reservationRepository->findForAdministration($status, $page, $itemsPerPage, $search),
             ),
             'page' => $page,
@@ -53,7 +56,7 @@ final class EquipmentReservationAdministrationController extends AbstractControl
     #[Route('/{id}', name: 'admin_equipment_reservation_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(ReservationMateriel $reservation): JsonResponse
     {
-        return $this->json(self::serializeReservation($reservation));
+        return $this->json($this->serializeReservation($reservation));
     }
 
     #[Route('/{id}/status', name: 'admin_equipment_reservation_status', methods: ['PATCH'], requirements: ['id' => '\d+'])]
@@ -80,13 +83,13 @@ final class EquipmentReservationAdministrationController extends AbstractControl
             return $this->json(['message' => $exception->getMessage()], Response::HTTP_CONFLICT);
         }
 
-        return $this->json(self::serializeReservation($updated));
+        return $this->json($this->serializeReservation($updated));
     }
 
     /**
      * @return array<string, mixed>
      */
-    public static function serializeReservation(ReservationMateriel $reservation): array
+    private function serializeReservation(ReservationMateriel $reservation): array
     {
         $association = $reservation->getAssociation();
         $contact = $association?->getUsers()->first();
@@ -119,6 +122,35 @@ final class EquipmentReservationAdministrationController extends AbstractControl
                 ],
                 $reservation->getLignes()->toArray(),
             ),
+            'documents' => array_map(
+                fn (DocumentJustificatif $document): array => $this->serializeDocument($document),
+                $this->documentRepository->findByLinkedEntity('materiel', (int) $reservation->getId()),
+            ),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeDocument(DocumentJustificatif $document): array
+    {
+        $metadata = [];
+        if ($document->getDescription()) {
+            $decoded = json_decode($document->getDescription(), true);
+            if (is_array($decoded)) {
+                $metadata = $decoded;
+            }
+        }
+
+        return [
+            'id' => $document->getId(),
+            'typeDocument' => $document->getTypeDocument(),
+            'fichierUrl' => $document->getFichierUrl(),
+            'isVerified' => (bool) ($metadata['verified'] ?? false),
+            'size' => (int) ($metadata['size'] ?? 0),
+            'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),
+            'mimeType' => $metadata['mimeType'] ?? 'application/pdf',
+            'createdAt' => $document->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ];
     }
 }
