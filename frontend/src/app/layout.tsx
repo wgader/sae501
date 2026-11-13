@@ -23,7 +23,7 @@ function subscribeAuth(callback: () => void) {
 }
 
 function getAuthSnapshot(): boolean {
-  return Boolean(localStorage.getItem('token'));
+  return Boolean(localStorage.getItem('token') || localStorage.getItem('admin_token'));
 }
 
 function getServerAuthSnapshot(): boolean {
