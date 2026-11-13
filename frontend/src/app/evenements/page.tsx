@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import Link from 'next/link';
 import { createExternalEvent, uploadExternalEventFile, type ExternalEvent } from '@/lib/api';
 import EventDeclarationForm, { type EventFormFile } from '@/components/events/EventDeclarationForm';
 import EventDeclarationSuccess from '@/components/events/EventDeclarationSuccess';
@@ -93,10 +92,9 @@ export default function EvenementsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-paper px-4 py-6 sm:px-8 lg:px-12 lg:py-8">
-      <div className="mx-auto max-w-4xl">
-        <nav aria-label="Fil d'Ariane" className="mb-4"><Link href="/" className="text-xs font-semibold text-muted hover:text-primary">← Accueil</Link><span className="mx-2 text-line">|</span><span className="text-xs font-bold text-ink">Déclarer un évènement</span></nav>
-        <header className="rounded-card bg-primary-soft px-6 py-6 sm:px-8 sm:py-7"><p className="text-xs font-bold uppercase tracking-widest text-ink/80">ESPACE ASSOCIATIONS - ORGANISER</p><h1 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">Déclarer un évènement</h1><p className="mt-1 text-sm text-ink/80">Informez la mairie de votre évènement et transmettez les documents utiles.</p></header>
+    <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
+      <div className="mx-auto max-w-328">
+        <header className="rounded-card bg-primary-soft px-6 py-6 sm:px-8 sm:py-7"><p className="text-label font-bold uppercase tracking-eyebrow text-primary">Espace associations · Organiser</p><h1 className="mt-2 text-4xl font-black tracking-display text-ink">Déclarer un évènement</h1><p className="mt-1 text-sm text-muted">Informez la mairie de votre évènement et transmettez les documents utiles.</p></header>
         {successEvent ? <EventDeclarationSuccess event={successEvent} onReset={handleReset} /> : <EventDeclarationForm {...form} files={files} isDragging={isDragging} isSubmitting={isSubmitting} error={error} onTitleChange={(value) => updateField('title', value)} onEventTypeChange={(value) => updateField('eventType', value)} onDescriptionChange={(value) => updateField('description', value)} onStartDateChange={(value) => updateField('startDate', value)} onStartTimeChange={(value) => updateField('startTime', value)} onEndDateChange={(value) => updateField('endDate', value)} onEndTimeChange={(value) => updateField('endTime', value)} onLocationChange={(value) => updateField('location', value)} onContactNameChange={(value) => updateField('contactName', value)} onContactEmailChange={(value) => updateField('contactEmail', value)} onContactPhoneChange={(value) => updateField('contactPhone', value)} onFileAdd={handleFileAdd} onFileRemove={(id) => setFiles((current) => current.filter((file) => file.id !== id))} onDragStateChange={setIsDragging} onSubmit={handleSubmit} />}
       </div>
     </main>

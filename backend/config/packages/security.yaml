@@ -15,7 +15,7 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        
+
         login:
             pattern: ^/api/auth/login
             stateless: true
@@ -41,6 +41,8 @@ security:
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/rooms$, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/salles$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/campaigns/current, roles: PUBLIC_ACCESS }
         - { path: ^/api/admin/campaigns, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
         - { path: ^/api/admin, roles: ROLE_ADMIN }

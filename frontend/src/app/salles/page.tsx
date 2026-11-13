@@ -204,7 +204,7 @@ export default function SallesPage() {
               <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
                 Demande de salle
               </p>
-              <h1 className="mt-1 text-4xl font-black tracking-display text-ink sm:text-5xl">
+              <h1 className="mt-1 text-4xl font-black tracking-display text-ink">
                 Demande de salle
               </h1>
               <p className="mt-2 text-sm text-muted">

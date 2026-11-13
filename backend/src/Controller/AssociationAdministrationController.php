@@ -203,15 +203,13 @@ final class AssociationAdministrationController extends AbstractController
             return $this->json(['message' => 'Une demande clôturée ne peut plus faire l’objet d’une relance.'], Response::HTTP_CONFLICT);
         }
 
-        if ($reservation instanceof ReservationMateriel || $reservation instanceof ReservationSalle) {
-            $reservation
-                ->setStatut('Complément requis')
-                ->setObservations($message)
-                ->setUpdatedAt(new \DateTimeImmutable());
-            $this->entityManager->flush();
-            $this->requestDocumentsNotifier->notify($reservation, $normalizedFiles, $message);
-            $this->entityManager->flush();
-        }
+        $reservation
+            ->setStatut('Complément requis')
+            ->setObservations($message)
+            ->setUpdatedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+        $this->requestDocumentsNotifier->notify($reservation, $normalizedFiles, $message);
+        $this->entityManager->flush();
 
         $detail = $this->requestAggregationService->getRequestDetail($association, $requestId, $type);
 

@@ -28,7 +28,7 @@ const navItems = [
   { label: 'Subvention', href: '/admin/subvention', icon: IconSubvention },
   { label: 'Campagnes', href: '/admin/campagnes', icon: IconCampagne },
   { label: 'Agent', href: '/admin/agent', icon: IconAgent },
-  { label: 'Historique', href: '/admin/historique', icon: IconHistorique },
+  { label: 'Événements', href: '/admin/evenements', icon: IconHistorique },
 ];
 
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {

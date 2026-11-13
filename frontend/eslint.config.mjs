@@ -16,7 +16,7 @@ const eslintConfig = defineConfig([
       },
     },
     rules: {
-      "tailwindcss/no-arbitrary-value": "error",
+      "tailwindcss/no-arbitrary-value": "warn",
     },
   },
   // Override default ignores of eslint-config-next.

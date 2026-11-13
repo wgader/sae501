@@ -68,10 +68,10 @@ export default function RequestCard({
           type="button"
           onClick={() => onSelect(request.id, request.type)}
           aria-label={`Consulter le détail du dossier ${request.intitule}`}
-          className="inline-flex h-9 items-center justify-center rounded-control px-2 text-xs font-bold uppercase tracking-label text-ink transition-colors hover:text-primary cursor-pointer"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-control text-xs font-bold uppercase tracking-label text-ink transition-colors hover:bg-paper hover:text-primary cursor-pointer"
         >
         <svg
-          className="h-6 w-6"
+          className="h-7 w-7"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

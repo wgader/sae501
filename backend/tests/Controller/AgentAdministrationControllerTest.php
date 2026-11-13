@@ -19,10 +19,10 @@ final class AgentAdministrationControllerTest extends ControllerRouteTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertJsonContains([
-            [
+            'items' => [[
                 'email' => ControllerIntegrationFixtures::ADMIN_EMAIL,
                 'nom' => 'Martin',
-            ],
+            ]],
         ]);
     }
 }

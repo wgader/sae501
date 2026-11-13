@@ -72,7 +72,7 @@ export default function EventDeclarationForm({
     if (event.target.files?.length) onFileAdd(event.target.files);
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     onDragStateChange(false);
     if (event.dataTransfer.files.length) onFileAdd(event.dataTransfer.files);
@@ -130,17 +130,28 @@ export default function EventDeclarationForm({
         <fieldset className="space-y-4">
           <legend className="text-sm font-bold uppercase tracking-wider text-primary">Documents utiles</legend>
           <p className="text-xs text-muted">Ajoutez les autorisations, plans, affiches ou autres documents utiles. PDF, PNG, JPG ou JPEG (max. 10 Mo par fichier).</p>
-          <div
+          <label
+            htmlFor="event-file-upload"
             onDragOver={(event) => { event.preventDefault(); onDragStateChange(true); }}
             onDragLeave={() => onDragStateChange(false)}
             onDrop={handleDrop}
-            onClick={() => document.getElementById('event-file-upload')?.click()}
-            className={`cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition ${isDragging ? 'border-primary bg-primary-soft/40' : 'border-primary-soft bg-primary-soft hover:bg-primary-soft'}`}
+            className={`block cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition ${isDragging ? 'border-primary bg-primary-soft/40' : 'border-primary-soft bg-primary-soft hover:bg-primary-soft'}`}
           >
             <input id="event-file-upload" type="file" multiple accept=".pdf,.png,.jpg,.jpeg" className="sr-only" onChange={handleInputChange} />
+            <svg
+              className="mx-auto h-8 w-8 text-primary"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L8 8m4-4 4 4" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+            </svg>
             <p className="text-sm font-bold text-primary">Déposez vos fichiers ici</p>
             <p className="mt-0.5 text-xs text-muted">ou cliquez pour les sélectionner</p>
-          </div>
+          </label>
           {files.length > 0 && <ul className="space-y-2">{files.map((file) => <li key={file.id} className="flex items-center justify-between rounded-control border border-line bg-paper px-4 py-2.5 text-xs"><span className="truncate">{file.name} <span className="text-muted">({formatFileSize(file.size)})</span></span><button type="button" onClick={() => onFileRemove(file.id)} className="ml-3 font-bold text-danger">Retirer</button></li>)}</ul>}
         </fieldset>
 

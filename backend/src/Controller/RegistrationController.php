@@ -60,16 +60,6 @@ class RegistrationController extends AbstractController
         #[Autowire(service: 'limiter.register_association')]
         RateLimiterFactory $limiter,
     ): JsonResponse {
-        // ── Rate limiting ─────────────────────────────────────────────────────
-        // 5 tentatives max par IP sur 15 minutes — protection anti-spam
-        $rateLimiter = $limiter->create($request->getClientIp());
-        if (!$rateLimiter->consume(1)->isAccepted()) {
-            return $this->json(
-                ['message' => 'Trop de tentatives. Réessayez dans 15 minutes.'],
-                Response::HTTP_TOO_MANY_REQUESTS
-            );
-        }
-
         // ── Décodage du payload ───────────────────────────────────────────────
         $data = json_decode($request->getContent(), true);
 
@@ -96,6 +86,15 @@ class RegistrationController extends AbstractController
             return $this->json(
                 ['errors' => ['cguAccepted' => 'Vous devez accepter les CGU.']],
                 Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        // 5 tentatives max par IP sur 15 minutes, après validation du payload.
+        $rateLimiter = $limiter->create($request->getClientIp());
+        if (!$rateLimiter->consume(1)->isAccepted()) {
+            return $this->json(
+                ['message' => 'Trop de tentatives. Réessayez dans 15 minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS
             );
         }
 

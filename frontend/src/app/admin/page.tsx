@@ -45,6 +45,7 @@ export default function AdminLoginPage() {
       const data = (await response.json().catch(() => ({}))) as {
         token?: string;
         message?: string;
+        error?: boolean;
       };
 
       if (!response.ok) {
@@ -52,7 +53,7 @@ export default function AdminLoginPage() {
       }
 
       if (!data.token) {
-        throw new Error('Réponse invalide du serveur.');
+        throw new Error(data.message ?? 'La connexion n’a pas pu être finalisée.');
       }
 
       localStorage.setItem('admin_token', data.token);
@@ -68,7 +69,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="flex min-h-screen w-full flex-col font-sans text-ink lg:flex-row">
-      <aside className="hidden min-h-screen w-72 shrink-0 flex-col justify-between bg-primary p-8 lg:flex lg:p-12 text-white">
+      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-primary p-8 lg:flex lg:p-12 text-white">
         <header className="space-y-8">
           <Link
             href="/"
@@ -102,7 +103,7 @@ export default function AdminLoginPage() {
             Portail municipal
           </span>
 
-          <h2 className="text-3xl font-black leading-tight tracking-display text-white">
+          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-[1.1] tracking-display text-white">
             <span className="block">Espace</span>
             <span className="block text-accent">Administration.</span>
           </h2>
@@ -169,7 +170,7 @@ export default function AdminLoginPage() {
             <p className="text-label font-bold uppercase tracking-kicker text-primary">
               Espace administration
             </p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-ink">
+            <h1 className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink">
               Connexion
             </h1>
             <p className="mt-2 text-body-sm leading-copy text-muted">

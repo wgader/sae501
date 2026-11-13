@@ -222,14 +222,14 @@ export default function RequestDetailPage() {
 
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-328 space-y-8">
         <header className="space-y-4">
           <button type="button" onClick={() => router.push('/historique')} className="text-xs font-bold uppercase tracking-label text-ink hover:text-primary">
             ← Retour à l’historique
           </button>
           <div>
             <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Historique des demandes</p>
-            <h1 className="mt-2 text-3xl font-light tracking-title text-ink">Détail de la demande</h1>
+            <h1 className="mt-2 text-4xl font-black tracking-display text-ink">Détail de la demande</h1>
             <p className="mt-2 text-sm text-muted">Retrouvez les informations transmises et suivez le traitement de votre demande.</p>
           </div>
         </header>

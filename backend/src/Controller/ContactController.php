@@ -27,14 +27,6 @@ final class ContactController extends AbstractController
         #[Autowire(service: 'limiter.contact_message')]
         RateLimiterFactory $limiter,
     ): JsonResponse {
-        $rateLimiter = $limiter->create($request->getClientIp());
-        if (!$rateLimiter->consume(1)->isAccepted()) {
-            return $this->json(
-                ['message' => 'Trop de tentatives. Réessayez dans 15 minutes.'],
-                Response::HTTP_TOO_MANY_REQUESTS
-            );
-        }
-
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return $this->json(
@@ -63,6 +55,14 @@ final class ContactController extends AbstractController
             return $this->json(
                 ['message' => 'Vérifiez les champs du formulaire et réessayez.'],
                 Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $rateLimiter = $limiter->create($request->getClientIp());
+        if (!$rateLimiter->consume(1)->isAccepted()) {
+            return $this->json(
+                ['message' => 'Trop de tentatives. Réessayez dans 15 minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS
             );
         }
 

@@ -1,4 +1,4 @@
-import { accountRequest, API_URL, ApiError, redirectToAssociationLogin, requestBlob } from './client';
+import { accountRequest, API_URL, ApiError, requestBlob } from './client';
 import type { ExternalEventFile } from './evenements';
 import type {
   AccountProfile,

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import EventDetailModal from '@/components/admin/events/EventDetailModal';
 import EventFilters, { type StatusFilter } from '@/components/admin/events/EventFilters';
@@ -16,6 +17,16 @@ import {
 } from '@/lib/api';
 
 export default function AdminEvenementsPage() {
+  return (
+    <AdminLayout>
+      <Suspense fallback={<section className="mx-auto max-w-328" aria-busy="true" />}>
+        <AdminEvenementsContent />
+      </Suspense>
+    </AdminLayout>
+  );
+}
+
+function AdminEvenementsContent() {
   const searchParams = useSearchParams();
   const searchTerm = searchParams.get('search') ?? '';
   const [events, setEvents] = useState<ExternalEvent[]>([]);
@@ -99,11 +110,10 @@ export default function AdminEvenementsPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl">
+    <section className="mx-auto max-w-328 space-y-8">
       <AdminPageHeader
         title="Événements extérieurs"
         description="Consultez les manifestations déclarées par les associations et leurs justificatifs."
-        className="mb-7"
       >
         <EventFilters
           statusFilter={statusFilter}
@@ -112,7 +122,11 @@ export default function AdminEvenementsPage() {
           onDateChange={setDateFilter}
         />
       </AdminPageHeader>
-      {error && <p role="alert" className="mb-6 rounded-control border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold text-danger">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-control border border-danger/30 bg-danger/10 p-4 text-sm font-semibold text-danger">
+          {error}
+        </p>
+      )}
       <EventList events={filteredEvents} loading={loading} onOpen={openEvent} />
       {selectedEvent && (
         <EventDetailModal

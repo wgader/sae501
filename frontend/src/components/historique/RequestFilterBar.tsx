@@ -126,6 +126,7 @@ export default function RequestFilterBar({
             <option value="subvention">Demandes de subvention</option>
             <option value="materiel">Réservations de matériel</option>
             <option value="salle">Réservations de salles</option>
+            <option value="evenement">Événements déclarés</option>
           </select>
         </div>
 

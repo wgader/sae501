@@ -97,14 +97,15 @@ final class RoomReservationController extends AbstractController
         }
 
         $capaciteAttendue = null;
-        if (isset($payload['capaciteAttendue']) && $payload['capaciteAttendue'] !== '' && $payload['capaciteAttendue'] !== null) {
-            $capaciteAttendue = filter_var($payload['capaciteAttendue'], FILTER_VALIDATE_INT);
-            if ($capaciteAttendue === false) {
+        if (isset($payload['capaciteAttendue']) && $payload['capaciteAttendue'] !== '') {
+            $validatedCapacity = filter_var($payload['capaciteAttendue'], FILTER_VALIDATE_INT);
+            if (!is_int($validatedCapacity)) {
                 return $this->json(
                     ['message' => 'L’effectif attendu doit être un nombre entier.'],
                     Response::HTTP_BAD_REQUEST,
                 );
             }
+            $capaciteAttendue = $validatedCapacity;
         }
 
         $justificatif = $request->files->get('justificatif') ?? $request->files->get('document');
@@ -178,4 +179,3 @@ final class RoomReservationController extends AbstractController
         ];
     }
 }
-

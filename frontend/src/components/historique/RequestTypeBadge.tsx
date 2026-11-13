@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { RequestType } from '@/lib/api';
 
 export const requestTypeBadgeVariants = cva(
-  'inline-flex items-center gap-1 font-bold uppercase tracking-label rounded-soft px-2 py-0.5 text-micro transition-colors',
+  'inline-flex items-center gap-1.5 rounded-soft px-2.5 py-1 text-sm font-bold uppercase tracking-label transition-colors',
   {
     variants: {
       type: {
@@ -50,7 +50,7 @@ export default function RequestTypeBadge({
     >
       {requestType === 'subvention' && (
         <svg
-          className="h-2.5 w-2.5 shrink-0"
+          className="h-5 w-5 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -67,7 +67,7 @@ export default function RequestTypeBadge({
 
       {requestType === 'materiel' && (
         <svg
-          className="h-2.5 w-2.5 shrink-0"
+          className="h-5 w-5 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -84,7 +84,7 @@ export default function RequestTypeBadge({
 
       {requestType === 'salle' && (
         <svg
-          className="h-2.5 w-2.5 shrink-0"
+          className="h-5 w-5 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

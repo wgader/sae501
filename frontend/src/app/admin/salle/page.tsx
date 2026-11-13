@@ -11,7 +11,7 @@ export default function AdminSallesPage() {
 
   return (
     <AdminLayout>
-      <section className="space-y-8">
+      <section className="mx-auto max-w-328 space-y-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <AdminPageHeader
             title="GESTION DES SALLES"

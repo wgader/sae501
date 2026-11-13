@@ -16,7 +16,7 @@ export default function HeroSection() {
       <div className="mx-auto w-full max-w-340 px-4 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-10">
           <header className="lg:col-span-6 xl:col-span-6">
-            <p className="text-label font-bold uppercase tracking-eyebrow text-ink/80 sm:text-meta">
+            <p className="text-body-sm font-bold uppercase tracking-eyebrow text-[var(--color-primary)] sm:text-body">
               Espace associations
             </p>
 

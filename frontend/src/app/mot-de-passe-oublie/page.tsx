@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-row font-sans text-ink">
-      <aside className="hidden min-h-screen w-72 shrink-0 flex-col bg-primary px-6 pt-8 text-white lg:flex">
+      <aside className="hidden min-h-screen w-80 shrink-0 flex-col bg-primary px-8 pt-8 text-white lg:flex">
         <BackButton />
 
         <div className="mt-16 flex items-center gap-2.5">
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <h2 className="mt-6 max-w-85 text-5xl font-black leading-tight tracking-display text-white">
+        <h2 className="mt-6 max-w-85 text-4xl font-black leading-tight tracking-display text-white">
           <span className="block">Réinitialiser mon</span>
           <span className="block text-accent">mot de passe.</span>
         </h2>

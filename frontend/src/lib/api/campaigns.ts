@@ -1,4 +1,4 @@
-import { request, accountRequest } from './client';
+import { request, accountRequest, ApiError } from './client';
 import type { Campaign, CampaignCurrentResponse } from './types';
 
 export interface CreateCampaignPayload {
@@ -56,8 +56,10 @@ export async function closeCampaign(id: number): Promise<Campaign> {
 export async function getCurrentCampaign(): Promise<CampaignCurrentResponse> {
   try {
     return await accountRequest<CampaignCurrentResponse>('/api/campaigns/current');
-  } catch {
-    return { active: false, campaign: null };
+  } catch (error: unknown) {
+    if (error instanceof ApiError && error.status === 404) {
+      return { active: false, campaign: null };
+    }
+    throw error;
   }
 }
-

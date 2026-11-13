@@ -181,7 +181,7 @@ final class RoomReservationService
             ));
         }
 
-        if ($endHour > self::CLOSING_HOUR || ($endHour === self::CLOSING_HOUR && $endMin > 0)) {
+        if ($endHour === self::CLOSING_HOUR && $endMin > 0) {
             throw new \InvalidArgumentException(sprintf(
                 'La salle ferme à %02dh00. Veuillez choisir un horaire de fin valide.',
                 self::CLOSING_HOUR,
@@ -228,4 +228,3 @@ final class RoomReservationService
         $this->entityManager->persist($doc);
     }
 }
-

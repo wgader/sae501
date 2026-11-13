@@ -51,7 +51,7 @@ export default function AdminInscriptionsPage() {
 
   return (
     <AdminLayout searchTerm={searchTerm} onSearchChange={handleSearchChange}>
-      <section className="mx-auto max-w-5xl">
+      <section className="mx-auto max-w-328">
         <AdminPageHeader title="Demandes d’inscription" className="mb-6">
           <InscriptionStatusTabs
             activeTab={activeTab}

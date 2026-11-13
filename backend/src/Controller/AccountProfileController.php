@@ -65,7 +65,7 @@ final class AccountProfileController extends AbstractController
             );
         }
 
-        if ($userRepository->findOneBy(['email' => $user->getEmail()])?->getId() !== $user->getId()) {
+        if ($userRepository->emailBelongsToAnotherUser($user->getEmail() ?? '', $user->getId())) {
             return $this->json(
                 ['message' => 'Cette adresse email est déjà utilisée.', 'errors' => ['email' => 'Cette adresse email est déjà utilisée.']],
                 Response::HTTP_CONFLICT,

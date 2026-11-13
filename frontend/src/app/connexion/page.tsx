@@ -6,6 +6,7 @@ import Link from "next/link";
 import FormField from "@/components/ui/FormField";
 import ButtonView from "@/components/ui/ButtonView";
 import BackButton from "@/components/ui/BackButton";
+import { API_URL } from "@/lib/api/client";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -30,41 +31,31 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost"}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: identifier, password }),
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({ email: String(identifier), password }),
+      });
 
-      const data = await response.json().catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as {
+        token?: string;
+        message?: string;
+        error?: boolean;
+      };
 
       if (!response.ok) {
         throw new Error(data.message || "Identifiants incorrects");
       }
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        if (data.user?.nomAssociation) {
-          localStorage.setItem("association_name", data.user.nomAssociation);
-        }
-        if (data.user?.prenom) {
-          localStorage.setItem("user_prenom", data.user.prenom);
-        }
-        if (data.user?.nom) {
-          localStorage.setItem("user_nom", data.user.nom);
-        }
-        if (data.user?.prenom || data.user?.nom) {
-          const fullName = [data.user.prenom, data.user.nom].filter(Boolean).join(" ");
-          if (fullName) localStorage.setItem("user_name", fullName);
-        }
-        window.dispatchEvent(new Event("auth-change"));
+      if (!data.token) {
+        throw new Error(data.message || "La connexion n’a pas pu être finalisée.");
       }
 
+      localStorage.setItem("token", data.token);
+      window.dispatchEvent(new Event("auth-change"));
       router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -79,7 +70,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-row font-sans text-ink">
-      <aside className="hidden min-h-screen w-72 shrink-0 flex-col bg-primary px-6 pt-8 text-white lg:flex">
+      <aside className="hidden min-h-screen w-80 shrink-0 flex-col bg-primary px-8 pt-8 text-white lg:flex">
         <BackButton />
 
         <div className="mt-16 flex items-center gap-2.5">
@@ -92,7 +83,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <h2 className="mt-6 max-w-85 text-5xl font-black leading-tight tracking-display text-white">
+        <h2 className="mt-6 max-w-85 text-4xl font-black leading-tight tracking-display text-white">
           <span className="block">Accéder à mon</span>
           <span className="block text-accent">espace.</span>
         </h2>

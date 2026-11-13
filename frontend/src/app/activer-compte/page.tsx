@@ -63,7 +63,7 @@ function ActivationContent() {
 
   return (
     <main className="flex min-h-screen w-full flex-col font-sans text-ink lg:flex-row">
-      <aside className="hidden min-h-screen w-72 shrink-0 flex-col justify-between bg-primary p-8 text-white lg:flex lg:p-12">
+      <aside className="hidden min-h-screen w-80 shrink-0 flex-col justify-between bg-primary p-8 text-white lg:flex lg:p-10">
         <header className="space-y-8"><Link href="/" className="text-xs font-bold uppercase tracking-label">← Retour à l&apos;accueil</Link><Image src="/assets/logo-feytiat-white.svg" alt="Ville de Feytiat" width={160} height={34} priority className="h-9 w-auto" /><span className="inline-block rounded-full bg-accent px-3.5 py-1 text-label font-bold uppercase text-ink">Espace associations</span><h2 className="text-3xl font-black text-white">Activez votre <span className="text-accent">compte.</span></h2><p className="text-body text-white/90">La demande d&apos;inscription de votre association a été validée par la mairie. Définissez votre mot de passe pour accéder à vos démarches.</p></header>
         <footer className="border-t border-white/15 pt-6 text-meta text-white/70">Mairie de Feytiat · Service Vie associative</footer>
       </aside>

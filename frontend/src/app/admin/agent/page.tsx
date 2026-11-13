@@ -6,6 +6,7 @@ import FilterTag from '@/components/admin/FilterTag';
 import StatusTag, { type AssociationModule } from '@/components/admin/StatusTag';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
+import Switch from '@/components/ui/Switch';
 import AgentConfirmationModal, {
   type AgentConfirmationItem,
   type AgentModuleChange,
@@ -109,19 +110,27 @@ function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) 
     <button
       type="button"
       onClick={onSelect}
-      className="flex w-full items-center justify-between gap-4 rounded-[0.9rem] border border-[#dce3e4] bg-white px-4 py-4 text-left transition hover:border-[var(--Mosaic-Tile)] hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--Mosaic-Tile)]"
+      className="flex w-full items-start justify-between gap-5 rounded-card border border-line bg-white p-5 text-left transition hover:border-primary/40 hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <span className="min-w-0">
-        <span className="block truncate text-sm font-bold uppercase tracking-[0.02em] text-[var(--ink)]">
+        <span className="block truncate text-base font-bold text-ink">
           {agent.prenom} {agent.nom}
         </span>
-        <span className="mt-2 flex flex-wrap gap-2">
+        <span className="mt-1 block truncate text-sm text-muted">{agent.email}</span>
+        <span className="mt-4 flex flex-wrap gap-2">
           {agent.modules.map((module) => (
             <StatusTag key={module} status={module} />
           ))}
         </span>
+        <span className="mt-3 flex flex-wrap gap-2" aria-label="Rôles de l’agent">
+          {agent.roles.map((role) => (
+            <span key={role} className="rounded-pill border border-line bg-paper px-2.5 py-1 text-[0.65rem] font-semibold text-muted">
+              {role.replace(/^ROLE_/, '').replaceAll('_', ' ')}
+            </span>
+          ))}
+        </span>
       </span>
-      <span className="shrink-0 text-[var(--ink)]">
+      <span className="shrink-0 text-muted">
         <ArrowRight />
       </span>
     </button>
@@ -141,29 +150,28 @@ function ModuleSelector({
       <p className="mt-2 text-xs text-[var(--muted)]">
         Sélectionnez un ou plusieurs modules pour définir les droits de l&apos;agent.
       </p>
-      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {MODULES.map((module) => {
           const selected = selectedModules.includes(module.id);
           return (
-            <label
+            <div
               key={module.id}
-              className={`flex min-h-[4.25rem] cursor-pointer items-center gap-3 rounded-[0.9rem] border px-3.5 py-3 transition ${
+              className={`flex min-h-17 items-center gap-3 rounded-card border px-4 py-3 transition ${
                 selected
-                  ? 'border-[var(--Mosaic-Tile)] bg-[var(--Mosaic-Tile)]/[0.03]'
-                  : 'border-[var(--line)] bg-white hover:border-[var(--Mosaic-Tile)]'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-line bg-white hover:border-primary/40'
               }`}
             >
-              <input
-                type="checkbox"
+              <Switch
                 checked={selected}
-                onChange={() => onToggle(module.id)}
-                className="h-5 w-5 accent-[var(--Mosaic-Tile)]"
+                onCheckedChange={() => onToggle(module.id)}
+                ariaLabel={`Activer le module ${module.title}`}
               />
-              <span>
-                <span className="block text-sm font-bold text-[var(--ink)]">{module.title}</span>
-                <span className="mt-1 block text-[0.68rem] text-[var(--muted)]">{module.description}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-ink">{module.title}</span>
+                <span className="mt-1 block text-xs text-muted">{module.description}</span>
               </span>
-            </label>
+            </div>
           );
         })}
       </div>
@@ -420,43 +428,45 @@ export default function AdminAgentsPage() {
 
   if (view !== 'list') {
     return (
-      <section className="mx-auto max-w-5xl">
-        <AgentForm
-          mode={view}
-          form={form}
-          onChange={updateForm}
-          onToggleModule={toggleModule}
-          onSubmit={saveAgent}
-          onCancel={() => setView('list')}
-          onDelete={selectedAgent ? deleteAgent : undefined}
-          isSubmitting={isSubmitting}
-        />
-        {mutationError && (
-          <p role="alert" className="mt-4 rounded-[0.9rem] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-            {mutationError}
-          </p>
-        )}
-        <AgentConfirmationModal
-          isOpen={Boolean(pendingAction)}
-          title={pendingAgent ? 'Supprimer cet agent' : view === 'create' ? 'Confirmer la création' : 'Confirmer les modifications'}
-          description={pendingAgent
-            ? 'Cette action supprimera le compte de cet agent. Voulez-vous continuer ?'
-            : 'Vérifiez les informations avant de confirmer cette opération.'}
-          items={confirmationItems}
-          moduleChanges={moduleChanges}
-          confirmLabel={pendingAgent ? 'Confirmer la suppression' : view === 'create' ? 'Confirmer la création' : 'Confirmer les modifications'}
-          confirmVariant={pendingAgent ? 'danger' : 'primary'}
-          isLoading={isSubmitting}
-          onConfirm={confirmAction}
-          onClose={() => { if (!isSubmitting) setPendingAction(null); }}
-        />
-      </section>
+      <AdminLayout>
+        <section className="mx-auto max-w-328">
+          <AgentForm
+            mode={view}
+            form={form}
+            onChange={updateForm}
+            onToggleModule={toggleModule}
+            onSubmit={saveAgent}
+            onCancel={() => setView('list')}
+            onDelete={selectedAgent ? deleteAgent : undefined}
+            isSubmitting={isSubmitting}
+          />
+          {mutationError && (
+            <p role="alert" className="mt-4 rounded-card border border-danger/30 bg-danger/10 px-5 py-4 text-sm text-danger">
+              {mutationError}
+            </p>
+          )}
+          <AgentConfirmationModal
+            isOpen={Boolean(pendingAction)}
+            title={pendingAgent ? 'Supprimer cet agent' : view === 'create' ? 'Confirmer la création' : 'Confirmer les modifications'}
+            description={pendingAgent
+              ? 'Cette action supprimera le compte de cet agent. Voulez-vous continuer ?'
+              : 'Vérifiez les informations avant de confirmer cette opération.'}
+            items={confirmationItems}
+            moduleChanges={moduleChanges}
+            confirmLabel={pendingAgent ? 'Confirmer la suppression' : view === 'create' ? 'Confirmer la création' : 'Confirmer les modifications'}
+            confirmVariant={pendingAgent ? 'danger' : 'primary'}
+            isLoading={isSubmitting}
+            onConfirm={confirmAction}
+            onClose={() => { if (!isSubmitting) setPendingAction(null); }}
+          />
+        </section>
+      </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
-    <section className="mx-auto max-w-5xl space-y-7">
+    <section className="mx-auto max-w-328 space-y-8">
       <AdminPageHeader
         eyebrow=""
         title="Gestion des agents"

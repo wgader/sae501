@@ -76,7 +76,7 @@ export default function MaterielPage() {
             <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
               S&apos;équiper
             </p>
-            <h1 className="mt-2 text-4xl font-black tracking-display text-ink sm:text-5xl">
+            <h1 className="mt-2 text-4xl font-black tracking-display text-ink">
               Demande de matériel
             </h1>
             <p className="mt-2 max-w-2xl text-body leading-copy text-muted">

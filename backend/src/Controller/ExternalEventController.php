@@ -46,6 +46,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('', name: 'api_events_external_list', methods: ['GET'])]
+    #[Route('/external', name: 'api_events_external_list_legacy', methods: ['GET'])]
     #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or (is_granted('ROLE_MAIRIE') and is_granted('ROLE_GESTION_EVENT'))"))]
     public function list(Request $request): JsonResponse
     {
@@ -64,6 +65,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'api_events_external_show', methods: ['GET'])]
+    #[Route('/external/{id<\d+>}', name: 'api_events_external_show_legacy', methods: ['GET'])]
     #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or (is_granted('ROLE_MAIRIE') and is_granted('ROLE_GESTION_EVENT'))"))]
     public function show(int $id): JsonResponse
     {
@@ -82,6 +84,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('/{id<\d+>}/status', name: 'api_events_external_status', methods: ['PATCH'])]
+    #[Route('/external/{id<\d+>}/status', name: 'api_events_external_status_legacy', methods: ['PATCH'])]
     #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or (is_granted('ROLE_MAIRIE') and is_granted('ROLE_GESTION_EVENT'))"))]
     public function updateStatus(int $id, Request $request): JsonResponse
     {
@@ -107,6 +110,7 @@ final class ExternalEventController extends AbstractController
     }
 
     #[Route('/files/{id<\d+>}', name: 'api_events_external_file_download', methods: ['GET'])]
+    #[Route('/external/files/{id<\d+>}', name: 'api_events_external_file_download_legacy', methods: ['GET'])]
     #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or (is_granted('ROLE_MAIRIE') and is_granted('ROLE_GESTION_EVENT'))"))]
     public function downloadFile(int $id): BinaryFileResponse|JsonResponse
     {
@@ -428,6 +432,7 @@ final class ExternalEventController extends AbstractController
         return $date;
     }
     #[Route('/{id<\d+>}/files', name: 'api_events_file_upload', methods: ['POST'])]
+    #[Route('/external/{id<\d+>}/files', name: 'api_events_file_upload_legacy', methods: ['POST'])]
     #[IsGranted('ROLE_ASSOCIATION')]
     public function uploadFile(int $id, Request $request): JsonResponse
     {
