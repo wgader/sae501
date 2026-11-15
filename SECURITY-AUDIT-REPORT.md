@@ -11,7 +11,7 @@
 
 Ce fichier et `SECURITY-CICD-ROADMAP.md` documentent le plan et les constats du projet. Ils ne sont pas les rapports d’exécution de la CI/CD.
 
-À ce stade, les workflows GitHub Actions ne génèrent pas encore automatiquement de rapport Markdown ni de dossier de preuves téléversé comme artefact. Cette intégration reste à réaliser.
+Depuis le 15/11/2026, le job CI `security` exécute Gitleaks (tout l’historique), Trivy (dépendances et configuration, HIGH et CRITICAL) et Hadolint, génère `SECURITY-REPORT.md` avec `.github/scripts/security_report.py` et le publie avec les sorties brutes dans l’artefact `security-report` (30 jours), même en cas d’échec. Les seuils sont appliqués après la publication : tout nouveau secret, toute vulnérabilité ou configuration CRITICAL et toute erreur Hadolint font échouer le pipeline. Restent à intégrer : Bearer (SAST), SBOM et OWASP ZAP sur la préproduction.
 
 La CI/CD devra générer un `SECURITY-REPORT.md` à partir des résultats réels de Bearer, Composer, npm, Trivy, Gitleaks, Hadolint, SBOM et OWASP ZAP, puis le publier avec `actions/upload-artifact`. Les fichiers bruts devront être joints au même artefact, sans secrets ni données utilisateurs.
 
@@ -31,6 +31,8 @@ Un rapport doit rester disponible même lorsqu’un scan échoue ; le pipeline d
 | 8 | 🟠 HIGH | Cache des téléchargements | `BinaryFileResponse` renvoyait `Cache-Control: public` : un proxy ou un CDN pouvait conserver un justificatif privé | Corrigé (`private, no-store`) pour les justificatifs et les fichiers d’événement |
 | 9 | 🟡 MEDIUM | Téléchargements | Documents supprimés logiquement encore téléchargeables, `Content-Type` repris sans contrôle, erreur 500 sur un nom contenant `\` | Corrigé et testé |
 | 10 | 🔴 CRITICAL | Persistance | `var/uploads` n’était monté sur aucun volume en production : chaque redéploiement aurait effacé les justificatifs et fichiers d’événement | Corrigé (volume `backend_private_uploads`, uploads exclus des images) |
+| 11 | 🟡 MEDIUM | Historique Git | Gitleaks relève une ancienne clé JWT chiffrée (septembre) et un `APP_SECRET` de développement dans l’historique ; aucune n’est en service, la production utilise ses propres clés | Analysé ; empreintes listées dans `.gitleaksignore`, nouvelles fuites bloquantes en CI |
+| 12 | 🟡 MEDIUM | Image backend | L’image FrankenPHP s’exécute en `root` (Trivy DS-0002, HIGH) | À traiter : utilisateur non privilégié avec capacité de liaison aux ports 80/443 |
 
 ## Mesures obligatoires pour les uploads
 

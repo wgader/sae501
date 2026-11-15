@@ -29,6 +29,7 @@ Les derniers correctifs applicatifs réalisés concernent :
 - des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
 - le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
 - l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
+- les scans de sécurité en CI : job `security` avec Gitleaks 8.30.1 (historique complet), Trivy 0.76.2 (vulnérabilités et configuration) et Hadolint 2.15.1, versions figées ; rapport `SECURITY-REPORT.md` publié en artefact et dans le résumé du job, même en cas d’échec, puis application des seuils bloquants ; constats historiques analysés listés dans `.gitleaksignore` ;
 - un worker Messenger en production : service `messenger-worker` (`messenger:consume async`, redémarrage horaire, réseaux `app_network` pour Brevo et `db_network` pour MySQL) et transport `doctrine://default?auto_setup=0` dans `.env.prod.example` ;
 - plus aucun fichier orphelin pour les justificatifs déposés par l’administration et joints aux réservations de salle : le nom est limité à 100 caractères avant l’écriture sur disque, et le fichier est supprimé si l’enregistrement en base échoue ;
 - le CORS de production : `nelmio_cors` lit `CORS_ALLOW_ORIGIN` (expression régulière ancrée : localhost en dev, domaine public en production) ; suppression des en-têtes CORS codés en dur sur `localhost:3000` dans le `Caddyfile`, qui seraient partis tels quels en production ; correction de la valeur non ancrée `http://localhost:3000` des fichiers d’environnement, qui acceptait une origine trompeuse comme `http://localhost:3000.site-malveillant.example` ;
@@ -88,6 +89,9 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   identiques (lignes et `CHECKSUM TABLE`), 2 migrations exécutées, aucune en attente ; révocation
   JWT vérifiée de bout en bout sur MySQL (profil `200`, logout `200`, profil `401`, toujours `401`
   après `cache:clear` et redémarrage du backend).
+- Scans de sécurité (15/11/2026) : étapes rejouées localement — Gitleaks, Trivy et Hadolint conformes
+  (aucune vulnérabilité HIGH ou CRITICAL dans les dépendances, image backend en root signalée en HIGH) ;
+  un faux jeton GitHub commité dans une copie jetable fait bien échouer Gitleaks.
 - Worker Messenger (15/11/2026) : `docker compose config` de production validé ; worker lancé en
   `prod` sur une base MySQL temporaire migrée — consommation de `async` démarrée puis arrêt propre,
   files `async` et `failed` accessibles.
@@ -722,6 +726,8 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
   (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
 - ~~CORS limité à `localhost`~~ — corrigé le 15/11/2026 (`CORS_ALLOW_ORIGIN`).
 - ~~Aucun worker Messenger en production~~ — ajouté le 15/11/2026.
+- Faire tourner l’image backend avec un utilisateur non privilégié (Trivy DS-0002).
+- Compléter les scans : Bearer (SAST), SBOM (Syft) et OWASP ZAP sur la préproduction.
 - En développement, `MESSENGER_TRANSPORT_DSN=in-memory://` (dans `backend/.env`) perd les messages
   asynchrones : les notifications de réservation ne partent jamais vers Mailpit.
 - ~~Fichiers orphelins côté administration et réservation de salle~~ — corrigé le 15/11/2026.
