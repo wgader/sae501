@@ -29,6 +29,7 @@ Les derniers correctifs applicatifs réalisés concernent :
 - des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
 - le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
 - l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
+- les tests d’upload : `PrivateDocumentStorageTest` et `SecureEventFileStorageTest` (formats acceptés, nom stocké aléatoire, extension imposée par le contenu, taille vide / limite / dépassée, HTML, JS, PHP, SVG et ZIP déguisés, image corrompue, noms invalides ou contenant `../`) et `AssociationRequestDocumentUploadTest` (`401`, `403`, `404`, `400`, `422`, dépôt valide sans fuite de chemin) ; corrections : le nom du document est validé avant l’écriture sur disque et le fichier est supprimé si l’enregistrement en base échoue (plus de fichier orphelin), et le stockage des événements refuse désormais les caractères de contrôle dans le nom ;
 - un job CI `migrations` (service MySQL 8.4 éphémère) qui applique toutes les migrations sur une base vide, vérifie `doctrine:schema:validate`, puis annule et réapplique la chaîne ; et des permissions par défaut `contents: read` pour le workflow CI ;
 - la persistance de la blocklist JWT : pool `cache.jwt_blocklist` (adaptateur Doctrine DBAL, table `cache_items` créée par une migration générée) utilisé par Lexik au lieu de `cache.app`, qui vit dans `var/cache` et est vidé à chaque redéploiement ;
 - la réparation des migrations Doctrine : l’ancienne chaîne échouait sur une base vide (`Version20261110085732` recréait `notification`, déjà créée par `Version20261107090553`, de même pour `campaign`), ce qui aurait bloqué tout premier déploiement ; elle est remplacée par une migration de base unique générée par `doctrine:migrations:diff` sur une base vide, sans perte de données de référence (aucune n’était insérée par les migrations) ;
@@ -81,6 +82,10 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   identiques (lignes et `CHECKSUM TABLE`), 2 migrations exécutées, aucune en attente ; révocation
   JWT vérifiée de bout en bout sur MySQL (profil `200`, logout `200`, profil `401`, toujours `401`
   après `cache:clear` et redémarrage du backend).
+- Tests d’upload (15/11/2026) : 51 tests ajoutés, 3 échecs constatés avant correction (fichier
+  orphelin après un nom trop long, caractère nul et retour à la ligne acceptés dans un nom de
+  fichier d’événement) ; suite complète sur l’hôte et dans Docker — 149 tests, 557 assertions,
+  réussie ; PHPStan et PHP CS Fixer — réussis.
 - Job CI `migrations` (15/11/2026) : étapes rejouées localement sur un MySQL 8.4 jetable configuré
   comme le service CI — réussies avec la chaîne actuelle ; échec attendu (code 255,
   `Table 'notification' already exists`) avec l’ancienne chaîne du commit `4bb9202` ; syntaxe
@@ -693,6 +698,12 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
   par module métier une fois la matrice des rôles agents définie.
 - ~~Le volume de production ne couvre pas `var/uploads`~~ — corrigé le 15/11/2026
   (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
+- L’ajout d’un justificatif par l’administration (`AssociationAdministrationController::addDocument`)
+  ne vérifie pas la longueur de `typeDocument` (colonne de 100 caractères) et ne supprime pas le
+  fichier si l’enregistrement échoue ; même constat pour `RoomReservationService`.
+- Un PDF commençant par `%PDF-` est accepté même si la suite est illisible, et une image valide
+  peut contenir des données ajoutées : risque limité (stockage hors racine web, `attachment` et
+  `nosniff`), une analyse antivirus (ClamAV) reste à étudier.
 - ~~Job CI de migrations sur base vide~~ — ajouté le 15/11/2026 ; le rendre obligatoire dans la
   protection des branches `develop` et `main` une fois qu’il a tourné sur GitHub.
 - Chaque membre de l’équipe doit mettre sa base locale à niveau une fois (réinitialisation ou
@@ -718,6 +729,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
+| 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |
 | 15/11/2026 | Job CI de migrations | Migrations appliquées, validées, annulées et réappliquées sur MySQL vide ; échec vérifié sur l’ancienne chaîne ; `permissions: contents: read` |
 | 15/11/2026 | Blocklist JWT persistante | Pool Doctrine DBAL et migration `cache_items` ; révocation conservée après vidage du cache ; 98 tests réussis |
 | 15/11/2026 | Réparation des migrations | Chaîne cassée sur base vide remplacée par une migration de base unique ; vérifiée sur MySQL vide ; procédure d’équipe documentée |

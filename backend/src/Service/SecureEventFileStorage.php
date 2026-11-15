@@ -45,7 +45,7 @@ final class SecureEventFileStorage
         }
 
         $originalName = $file->getClientOriginalName();
-        if ('' === $originalName || mb_strlen($originalName) > 255) {
+        if ('' === $originalName || mb_strlen($originalName) > 255 || preg_match('/[\x00-\x1F\x7F]/', $originalName)) {
             throw new \InvalidArgumentException('Le nom du fichier est invalide.');
         }
 
