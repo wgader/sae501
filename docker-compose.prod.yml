@@ -35,9 +35,9 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      # Public images (rooms, equipment) served by Caddy.
+      # Images publiques (salles, matériel) servies par Caddy.
       - backend_uploads:/app/public/uploads
-      # Private documents and event files, outside the web root; must survive redeployments.
+      # Justificatifs et fichiers d’événement, hors racine web ; doivent survivre aux redéploiements.
       - backend_private_uploads:/app/var/uploads
       - caddy_data:/data
       - caddy_config:/config

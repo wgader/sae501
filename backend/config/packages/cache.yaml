@@ -19,6 +19,6 @@ framework:
             #my.dedicated.cache: null
 
         pools:
-            # Revoked JWTs must survive redeployments, which start from an empty var/cache.
+            # Les JWT révoqués doivent survivre aux redéploiements, qui repartent d’un var/cache vide.
             cache.jwt_blocklist:
                 adapter: cache.adapter.doctrine_dbal

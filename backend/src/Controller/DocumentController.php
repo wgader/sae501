@@ -52,7 +52,7 @@ final class DocumentController extends AbstractController
         $metadata = json_decode($document->getDescription() ?? '', true);
         $metadata = is_array($metadata) ? $metadata : [];
         $originalName = is_string($metadata['originalName'] ?? null) ? $metadata['originalName'] : null;
-        // Only types validated at upload are trusted; anything else is never rendered by the browser.
+        // Seuls les types validés à l’upload sont fiables ; tout autre type n’est jamais interprété par le navigateur.
         $mimeType = is_string($metadata['mimeType'] ?? null) && $this->documentStorage->isAllowedMimeType($metadata['mimeType'])
             ? $metadata['mimeType']
             : 'application/octet-stream';

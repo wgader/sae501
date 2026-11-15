@@ -8,9 +8,9 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
     (new Dotenv())->bootEnv(dirname(__DIR__).'/.env');
 }
 
-// Disposable, unencrypted keys used only by the test suite (see when@test in
-// config/packages/lexik_jwt_authentication.yaml). They live in the test cache,
-// which is ignored by Git and Docker, and are recreated when the cache is cleared.
+// Clés jetables et non chiffrées, réservées aux tests (voir when@test dans
+// config/packages/lexik_jwt_authentication.yaml). Elles sont stockées dans le cache de test,
+// ignoré par Git et Docker, et recréées après un vidage du cache.
 (static function (string $keyDirectory): void {
     $privateKeyPath = $keyDirectory.'/private.pem';
     $publicKeyPath = $keyDirectory.'/public.pem';
@@ -19,7 +19,7 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
     }
 
     if (!is_dir($keyDirectory) && !mkdir($keyDirectory, 0700, true) && !is_dir($keyDirectory)) {
-        throw new RuntimeException('Unable to create the test JWT key directory.');
+        throw new RuntimeException('Impossible de créer le dossier des clés JWT de test.');
     }
 
     $key = openssl_pkey_new([
@@ -28,7 +28,7 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
     ]);
     $details = false === $key ? false : openssl_pkey_get_details($key);
     if (false === $key || false === $details || !openssl_pkey_export($key, $privateKey)) {
-        throw new RuntimeException('Unable to generate the test JWT key pair.');
+        throw new RuntimeException('Impossible de générer la paire de clés JWT de test.');
     }
 
     file_put_contents($privateKeyPath, $privateKey, LOCK_EX);

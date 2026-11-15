@@ -510,7 +510,7 @@ final class ExternalEventController extends AbstractController
     private function createFileResponse(ExternalEventFile $file, string $absolutePath): BinaryFileResponse
     {
         $mimeType = $file->getMimeType();
-        // Only types validated at upload are trusted; anything else is never rendered by the browser.
+        // Seuls les types validés à l’upload sont fiables ; tout autre type n’est jamais interprété par le navigateur.
         if (null === $mimeType || !$this->fileStorage->isAllowedMimeType($mimeType)) {
             $mimeType = 'application/octet-stream';
         }

@@ -1,7 +1,7 @@
 backend/vendor
-# Runtime data (cache, logs, private uploads, test database) is never baked into an image.
+# Les données d’exécution (cache, logs, uploads privés, base de test) ne doivent jamais entrer dans une image.
 backend/var
-# Uploaded public images live in the backend_uploads volume.
+# Les images publiques envoyées vivent dans le volume backend_uploads.
 backend/public/uploads
-# JWT keys are mounted as Docker secrets.
+# Les clés JWT sont fournies par les secrets Docker.
 backend/config/jwt/*.pem

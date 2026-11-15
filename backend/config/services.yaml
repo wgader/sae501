@@ -24,7 +24,7 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
-# Uploaded files written by the test suite never mix with local development data.
+# Les fichiers écrits par les tests ne se mélangent jamais aux données de développement.
 when@test:
     parameters:
         app.event_upload_directory: '%kernel.project_dir%/var/cache/test/uploads/events'

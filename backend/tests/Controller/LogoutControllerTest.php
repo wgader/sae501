@@ -46,7 +46,7 @@ final class LogoutControllerTest extends ControllerRouteTestCase
         $this->client->request('POST', '/api/auth/logout', [], [], $headers);
         $this->assertResponseStatusCodeSame(200);
 
-        // A redeployment starts from an empty var/cache: the revocation must not live there.
+        // Un redéploiement repart d’un var/cache vide : la révocation ne doit pas y être stockée.
         static::getContainer()->get('cache.app')->clear();
 
         $this->client->request('GET', '/api/account/profile', [], [], $headers);
