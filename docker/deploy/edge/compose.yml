@@ -1,0 +1,51 @@
+# Proxy d’entrée unique du VPS : seul service publié sur 80/443, il termine TLS (Let’s Encrypt)
+# pour la préproduction et la production, qui ne peuvent pas écouter toutes deux sur ces ports.
+# Il rejoint un réseau distinct par environnement : la préproduction et la production ne se
+# voient jamais entre elles. Les sites sont générés par deploy.sh dans sites/<projet>.caddy.
+#
+#   docker compose --env-file .env -f compose.yml up -d
+
+name: sae501-edge
+
+services:
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sites:/etc/caddy/sites:ro
+      - edge_data:/data
+      - edge_config:/config
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+    networks:
+      - preprod
+      - prod
+
+networks:
+  preprod:
+    name: sae501-preprod_edge
+    external: true
+  prod:
+    name: sae501-prod_edge
+    external: true
+
+volumes:
+  edge_data:
+    name: sae501-edge_data
+  edge_config:
+    name: sae501-edge_config

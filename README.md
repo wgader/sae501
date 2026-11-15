@@ -114,44 +114,46 @@ SAE501/
 │   │   ├── Dockerfile      # FrankenPHP + PHP 8.5
 │   │   ├── Caddyfile       # Configuration Caddy
 │   │   └── php.ini         # Configuration PHP
-│   └── frontend/
-│       └── Dockerfile      # Node.js 26
+│   ├── frontend/
+│   │   └── Dockerfile      # Node.js 26
+│   └── deploy/             # Mise en service du VPS, déploiement, sauvegardes, proxy d’entrée
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml          # Lint + tests sur chaque PR
-│       └── cd.yml          # Build + deploy sur tag v*.*.*
-├── .env.example            # Template des variables d'environnement
-└── docker-compose.yml      # Orchestration des services
+│       └── cd.yml          # Images GHCR + déploiement SSH (develop → preprod, main → prod)
+├── .env.example            # Template des variables d'environnement (développement)
+├── .env.preprod.example    # Modèle du .env de préproduction (serveur)
+├── .env.prod.example       # Modèle du .env de production (serveur)
+├── DEPLOYMENT.md           # Guide de déploiement et d’exploitation
+├── docker-compose.yml      # Orchestration des services (développement)
+└── docker-compose.prod.yml # Pile d’un environnement de préproduction ou de production
 ```
 
 ## Production
 
-La CD publie les images backend et frontend dans GHCR. Configurez la variable
-de dépôt GitHub `PUBLIC_API_URL` avec l'URL publique de l'API. Sur le serveur,
-copiez
-`.env.prod.example` vers `.env.prod`, renseignez les valeurs et remplacez les
-domaines et secrets d'exemple. Le fichier `.env.prod` ne doit pas être commité.
-Créez également les clés JWT hors du dépôt dans `secrets/jwt/private.pem` et
-`secrets/jwt/public.pem` avant le premier démarrage.
+La préproduction (`develop`) et la production (`main`) sont déployées sur le même VPS par
+`.github/workflows/cd.yml` : images publiées sur GHCR sous le SHA du commit, puis déploiement
+SSH (pull, sauvegarde, migrations Doctrine, `up --wait`, healthchecks, retour arrière
+automatique). La procédure complète — DNS, secrets GitHub, mise en service du serveur avec
+`docker/deploy/bootstrap-server.sh`, sauvegardes, restauration, Brevo et Cloudflare — est dans
+[DEPLOYMENT.md](DEPLOYMENT.md).
 
-```bash
-mkdir -p secrets/jwt
-openssl genrsa -out secrets/jwt/private.pem 4096
-openssl rsa -pubout -in secrets/jwt/private.pem -out secrets/jwt/public.pem
-docker compose --env-file .env.prod -f docker-compose.prod.yml pull
-docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
-```
+En résumé :
 
-Le backend écoute sur les ports 80/443 et Caddy gère automatiquement HTTPS pour
-`API_DOMAIN`. Le frontend écoute sur `FRONTEND_PORT` (3000 par défaut) et doit
-être exposé derrière le reverse proxy de l'hébergeur avec `PUBLIC_API_URL`
-pointant vers le domaine public de l'API.
+- chaque environnement est un projet Compose distinct (`sae501-preprod`, `sae501-prod`) avec son
+  `.env`, ses mots de passe, sa base, ses volumes et ses clés JWT, générés sur le serveur ;
+  modèles : `.env.preprod.example` et `.env.prod.example` (aucune valeur réelle) ;
+- seul le proxy d’entrée `docker/deploy/edge` (Caddy, HTTPS automatique) publie 80/443 ; MySQL,
+  phpMyAdmin et Mailpit ne sont jamais exposés ;
+- l’image backend de production tourne sans root (UID 10001), sans dépendances de
+  développement ni Composer, avec seulement `var/`, `public/uploads`, `/data` et `/config` en
+  écriture ; le développement utilise le stage `dev` (`target: dev` dans `docker-compose.yml`).
 
-Les fichiers envoyés sont conservés dans deux volumes Docker nommés, à inclure
-dans les sauvegardes du serveur :
+Les fichiers envoyés sont conservés dans deux volumes Docker nommés, sauvegardés chaque nuit
+par `docker/deploy/backup.sh` :
 
-- `backend_uploads` (`/app/public/uploads`) : images publiques des salles et du matériel ;
-- `backend_private_uploads` (`/app/var/uploads`) : justificatifs et fichiers
+- `<projet>_backend_uploads` (`/app/public/uploads`) : images publiques des salles et du matériel ;
+- `<projet>_backend_private_uploads` (`/app/var/uploads`) : justificatifs et fichiers
   d'événement, servis uniquement par l'API après contrôle d'accès.
 
 Ces dossiers, `backend/var` et les clés JWT sont exclus du contexte de build
@@ -161,11 +163,11 @@ Ces dossiers, `backend/var` et les clés JWT sont exclus du contexte de build
 
 En local, les e-mails sont capturés par Mailpit (http://localhost:8025). En
 préproduction et en production, ils partent par Brevo grâce au bridge
-`symfony/brevo-mailer` : renseigner dans le `.env.prod` du serveur
+`symfony/brevo-mailer` : renseigner dans le `.env` de l’environnement sur le serveur
 `MAILER_DSN=brevo+api://<clé API>@default` et `MAILER_FROM` (adresse validée dans
 Brevo). Utiliser une clé distincte par environnement et ne jamais la versionner ni
 la partager hors du serveur ; une clé exposée doit être révoquée dans Brevo.
-Configurer aussi SPF, DKIM et DMARC sur le domaine d’envoi.
+Configurer aussi SPF, DKIM et DMARC sur le domaine d’envoi (voir DEPLOYMENT.md).
 
 Les notifications asynchrones (réservations de salle) passent par la file Doctrine
 `MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0`, consommée en production par
@@ -173,7 +175,7 @@ le service `messenger-worker` de `docker-compose.prod.yml`. Les messages en éch
 conservés dans la file `failed` :
 
 ```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml exec messenger-worker php bin/console messenger:failed:show --env=prod
+docker exec sae501-prod-messenger-worker-1 php bin/console messenger:failed:show --env=prod
 ```
 
 ### Tests end-to-end (Playwright)
@@ -189,7 +191,7 @@ npm --prefix frontend run test:e2e -- --project=chromium
 ## Git Flow
 
 ```
-feature/* → develop → main → tag v*.*.* → CD
+feature/* → develop (CD → préproduction) → main (CD → production, après approbation)
 ```
 
 - `main` — production, protégé, PR obligatoire

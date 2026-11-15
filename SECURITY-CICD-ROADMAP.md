@@ -5,8 +5,8 @@
 ## Dernière mise à jour
 
 - Date : 15 novembre 2026
-- Statut : architecture cible F+B choisie ; sécurisation CI/CD à poursuivre
-- Prochaine étape : intégrer la génération de rapports Markdown comme artefacts CI/CD
+- Statut : déploiement SSH préproduction / production préparé (image backend non root, projets Compose séparés, CD, mise en service du VPS, sauvegardes) ; à valider sur le VPS
+- Prochaine étape : créer les environnements et secrets GitHub, lancer `bootstrap-server.sh` sur le VPS, puis un premier déploiement de préproduction
 
 ## Réalisé
 
@@ -42,6 +42,10 @@ Les derniers correctifs applicatifs réalisés concernent :
 - la réparation des migrations Doctrine : l’ancienne chaîne échouait sur une base vide (`Version20261110085732` recréait `notification`, déjà créée par `Version20261107090553`, de même pour `campaign`), ce qui aurait bloqué tout premier déploiement ; elle est remplacée par une migration de base unique générée par `doctrine:migrations:diff` sur une base vide, sans perte de données de référence (aucune n’était insérée par les migrations) ;
 - la persistance des fichiers privés en production : volume nommé `backend_private_uploads` monté sur `/app/var/uploads` dans `docker-compose.prod.yml`, et exclusion de `backend/var`, `backend/public/uploads` et `backend/config/jwt/*.pem` du contexte de build pour qu’aucun document ni clé ne soit intégré à une image (un volume nommé est initialisé avec le contenu de l’image) ;
 - les mêmes protections pour les fichiers d’événement (`/api/events/files/{id}`, `/api/events/external/files/{id}`, `/api/events/association/files/{id}`) : réponse construite par le service partagé `PrivateFileResponseFactory`, également utilisé pour les justificatifs (`private, no-store`, `nosniff`, `attachment`, nom assaini, MIME limité à la liste blanche du stockage).
+- l’image backend de production sans root (Trivy DS-0002 résolu) : Dockerfile multi-stage `base` → `dev` → `vendor` → `prod` ; stage `prod` avec `composer install --no-dev`, autoloader optimisé et `classmap-authoritative`, Composer supprimé, utilisateur `app` (UID/GID 10001), `setcap CAP_NET_BIND_SERVICE` sur `frankenphp` (méthode rootless de la documentation FrankenPHP), sources en lecture seule et écriture limitée à `var/`, `public/uploads`, `/data` et `/config`, cache Symfony préchauffé au build, `HEALTHCHECK` ; `docker-compose.yml` cible le stage `dev` (root, dépendances de dev, `./backend` monté) ; nouveau job CI `backend-image` qui construit le stage `prod` et vérifie l’exécution sans root (`cap_drop: ALL`, `no-new-privileges`) ;
+- la séparation préproduction / production : `docker-compose.prod.yml` paramétré par `COMPOSE_PROJECT_NAME` (`sae501-preprod`, `sae501-prod`), avec des noms de volumes et réseaux explicites préfixés par le projet, aucun port publié, étiquettes d’images imposées (plus de `latest`), variables transmises service par service (le mot de passe root MySQL n’est plus envoyé au backend), `cap_drop: ALL`, `no-new-privileges` et rotation des journaux ; `.env.preprod.example` à côté de `.env.prod.example`, sans valeur réelle ; proxy d’entrée commun `docker/deploy/edge` (Caddy, Let’s Encrypt) sur un réseau distinct par environnement, indispensable car les deux environnements partagent le VPS ; IP client et HTTPS transmis à Symfony par `SYMFONY_TRUSTED_PROXIES=private_ranges` (sinon tous les clients partageaient le quota des limiteurs de débit) ; healthcheck MySQL en TCP (l’ancien ping déclarait prêt le serveur temporaire d’initialisation) ;
+- la CD par SSH (`.github/workflows/cd.yml`) : `develop` → environnement GitHub `preprod`, `main` → `production` (approbation possible), tag ou retour arrière par « Run workflow » ; `permissions: {}` par défaut, actions figées par SHA, images analysées par Trivy (échec sur CRITICAL) puis publiées sous le SHA du commit, empreinte d’hôte imposée (`StrictHostKeyChecking yes`), jeton GHCR transmis sur l’entrée standard et jamais conservé sur le serveur ; `docker/deploy/deploy.sh` : verrou, contrôle du `.env`, pull, sauvegarde, `doctrine:migrations:migrate --all-or-nothing`, `up --wait`, retour automatique aux images précédentes si les healthchecks échouent, commandes `rollback` et `status` ;
+- la mise en service du VPS (`docker/deploy/bootstrap-server.sh`, idempotent) : Docker officiel, utilisateur `deploy` à clé `restrict`, UFW (22, 80, 443), Fail2ban SSH, mises à jour de sécurité automatiques, dossiers préprod/prod, secrets et clé JWT chiffrée générés sur le serveur sans affichage, durcissement SSH optionnel ; sauvegarde quotidienne MySQL et uploads avec rotation et restauration (`docker/deploy/backup.sh`) ; guide `DEPLOYMENT.md`.
 
 Le build frontend passe actuellement. Le lint passe avec des avertissements Tailwind historiques qui devront être traités progressivement.
 
@@ -124,6 +128,29 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   factice hors dépôt ; image backend reconstruite sans `var/`, `public/uploads` ni clé JWT ;
   fichier écrit dans le volume puis relu depuis un nouveau conteneur ; Symfony démarre en `prod`
   sans dossier `var/` dans l’image.
+
+- Déploiement (15/11/2026) : Docker démarré dans le bac à sable ; `apk` (dl-cdn.alpinelinux.org) et
+  les archives GitHub de Composer y sont bloqués par la politique réseau, donc l’image backend
+  complète n’a pas pu être construite : stage `prod` construit avec un `vendor/` sans dev préinstallé
+  et sans les extensions intl/zip/pdo_mysql (pdo_mysql recompilé dans l’image builder officielle
+  FrankenPHP pour les tests) — utilisateur 10001, `cap_net_bind_service`, écoute sur 80 et 443
+  sans root (y compris `cap_drop: ALL` + `NET_BIND_SERVICE` et `no-new-privileges`), écriture
+  refusée sur `/app/src` et `/app/vendor`, Composer absent, healthcheck sain ; Hadolint 2.15.1 sans
+  erreur (backend et frontend) ; Trivy 0.76.2 `config` : 0 constat sur le backend (DS-0002 HIGH et
+  DS-0026 présents avant) ; Trivy `fs` HIGH/CRITICAL : 0 ; Trivy `image` : backend 0, frontend 6 HIGH
+  dans le `npm` de l’image Node (aucun CRITICAL) ; `docker compose config` validé avec les deux
+  fichiers d’exemple ; actionlint 1.7.12 sans erreur sur `cd.yml` ; `bash -n` et ShellCheck 0.11.0
+  sans constat sur les trois scripts ; `bootstrap-server.sh` exécuté deux fois dans un conteneur
+  Ubuntu 24.04 (systemd simulé) — secrets jamais affichés, clé JWT chiffrée, droits attendus, UFW
+  22/80/443, cron, second passage sans aucun changement, `HARDEN_SSH=1` validé par `sshd -T` ;
+  déploiement de bout en bout sur un faux serveur avec registre local : premier déploiement
+  (2 migrations), passage v1 → v2, image cassée refusée puis version précédente redémarrée
+  automatiquement, `rollback`, sauvegarde quotidienne, restauration de la base et des uploads,
+  rotation, refus des `.env` incomplets, d’un projet erroné, d’un domaine injecté et d’une étiquette
+  invalide ; HTTPS, HSTS et blocage de `/uploads/documents/` vérifiés à travers le proxy d’entrée ;
+  limiteur de débit vérifié par IP client derrière le proxy. Non vérifié : connexion SSH réelle,
+  login GHCR, Let’s Encrypt, workflow CD sur GitHub, PHPUnit et PHPStan (code backend inchangé,
+  dépendances de dev non installables ici).
 
 ## À faire
 
@@ -726,7 +753,13 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
   (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
 - ~~CORS limité à `localhost`~~ — corrigé le 15/11/2026 (`CORS_ALLOW_ORIGIN`).
 - ~~Aucun worker Messenger en production~~ — ajouté le 15/11/2026.
-- Faire tourner l’image backend avec un utilisateur non privilégié (Trivy DS-0002).
+- ~~Faire tourner l’image backend avec un utilisateur non privilégié (Trivy DS-0002)~~ — fait le
+  15/11/2026.
+- Déploiement : créer les environnements GitHub `preprod` et `production` (avec relecteurs
+  obligatoires), leurs secrets et variables, lancer `bootstrap-server.sh` sur le VPS et valider un
+  premier déploiement de préproduction ; choisir une copie hors site chiffrée des sauvegardes ;
+  retirer `npm` de l’image frontend finale (6 HIGH Trivy) ; adapter les proxys de confiance si
+  Cloudflare est retenu (voir `DEPLOYMENT.md`).
 - Compléter les scans : Bearer (SAST), SBOM (Syft) et OWASP ZAP sur la préproduction.
 - En développement, `MESSENGER_TRANSPORT_DSN=in-memory://` (dans `backend/.env`) perd les messages
   asynchrones : les notifications de réservation ne partent jamais vers Mailpit.
@@ -758,6 +791,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Audit uploads et fichiers | Risque HIGH confirmé : documents privés exposés sous `public/uploads` ; contrôles path traversal, MIME, taille, SVG et anti-abus ajoutés à la feuille de route |
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
+| 15/11/2026 | Déploiement SSH préprod / prod | Image backend non root (DS-0002 résolu), projets Compose isolés et proxy d’entrée, CD GHCR + SSH avec environnements GitHub, `bootstrap-server.sh`, sauvegardes avec rotation et guide `DEPLOYMENT.md` ; vérifié sur un faux serveur local |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
 | 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
 | 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |

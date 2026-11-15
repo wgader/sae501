@@ -1,0 +1,351 @@
+# Déploiement de SAE501 sur un VPS
+
+Ce guide décrit la mise en service et l’exploitation de la préproduction et de la production sur
+un seul VPS (Pulseheberge, Debian 12 ou Ubuntu 24.04), déployées par GitHub Actions via SSH.
+
+## Vue d’ensemble
+
+```text
+Internet ──80/443──> sae501-edge (Caddy, TLS Let’s Encrypt)
+                       │ réseau sae501-preprod_edge      │ réseau sae501-prod_edge
+                       ▼                                 ▼
+              sae501-preprod (Compose)          sae501-prod (Compose)
+              frontend · backend                frontend · backend
+              messenger-worker · scheduler      messenger-worker · scheduler
+              mysql (réseau interne)            mysql (réseau interne)
+```
+
+| | Préproduction | Production |
+|---|---|---|
+| Branche | `develop` (chaque push) | `main` (chaque push), ou un tag via « Run workflow » |
+| Environnement GitHub | `preprod` | `production` (approbation recommandée) |
+| Dossier serveur | `/srv/sae501/preprod` | `/srv/sae501/prod` |
+| Projet Compose | `sae501-preprod` | `sae501-prod` |
+| Volumes, réseaux | `sae501-preprod_*` | `sae501-prod_*` |
+
+- Les deux environnements ont leurs propres `.env`, mots de passe, base, volumes, clés JWT et clé
+  Brevo. Les noms des volumes et réseaux sont dérivés de `COMPOSE_PROJECT_NAME` et `deploy.sh`
+  refuse un `.env` dont le projet ne correspond pas au dossier.
+- Seul le proxy d’entrée `sae501-edge` publie des ports (80/443). Il est nécessaire parce que les
+  deux environnements partagent la même machine : aucun backend ne peut écouter seul sur 443.
+  La préproduction et la production ne sont jamais sur un même réseau Docker.
+- MySQL est sur un réseau interne sans accès extérieur. phpMyAdmin et Mailpit n’existent que dans
+  `docker-compose.yml` (développement) et ne sont jamais déployés.
+- Les images sont publiées sur GHCR avec le SHA du commit comme étiquette (jamais `latest`) :
+  `ghcr.io/wgader/sae501/backend:<sha>` et `ghcr.io/wgader/sae501/frontend:<sha>-<preprod|prod>`
+  (l’URL de l’API est figée dans le bundle Next.js, d’où une image frontend par environnement).
+
+Fichiers concernés :
+
+| Fichier | Rôle |
+|---|---|
+| `docker-compose.prod.yml` | pile d’un environnement |
+| `.env.preprod.example`, `.env.prod.example` | modèles commentés des `.env` du serveur (sans valeur réelle) |
+| `docker/deploy/bootstrap-server.sh` | mise en service du VPS (root, idempotent) |
+| `docker/deploy/deploy.sh` | déploiement, retour arrière, état (utilisateur `deploy`) |
+| `docker/deploy/backup.sh` | sauvegardes quotidiennes et restaurations |
+| `docker/deploy/edge/` | proxy d’entrée Caddy commun |
+| `.github/workflows/cd.yml` | construction, analyse, publication et déploiement |
+
+## 1. Prérequis
+
+### DNS
+
+Créer quatre enregistrements `A` (et `AAAA` si le VPS a une IPv6) vers l’adresse du VPS, par
+exemple :
+
+| Nom | Usage |
+|---|---|
+| `www.<domaine>` | frontend de production |
+| `api.<domaine>` | API de production |
+| `preprod.<domaine>` | frontend de préproduction |
+| `api.preprod.<domaine>` | API de préproduction |
+
+Les certificats sont obtenus automatiquement par Caddy dès que les noms résolvent vers le VPS et
+que les ports 80/443 sont joignables. Les noms sont modifiables : ils ne sont écrits que dans les
+`.env` du serveur et dans les variables GitHub.
+
+### Clé SSH de déploiement
+
+Sur un poste de confiance, générer une clé dédiée à la CD, sans phrase de passe (elle n’est stockée
+que dans les secrets GitHub) :
+
+```bash
+ssh-keygen -t ed25519 -C github-actions-sae501 -f sae501_deploy -N ''
+```
+
+`sae501_deploy.pub` est donnée au script de mise en service ; `sae501_deploy` (privée) va dans le
+secret `DEPLOY_SSH_KEY`, puis le fichier local est supprimé.
+
+## 2. Première mise en service du serveur
+
+Copier les scripts sur le VPS (depuis une copie du dépôt), puis lancer la mise en service en root :
+
+```bash
+scp -r docker/deploy root@<vps>:/root/sae501-deploy
+```
+
+```bash
+ssh root@<vps>
+```
+
+```bash
+DEPLOY_PUBLIC_KEY="$(cat /root/sae501-deploy/sae501_deploy.pub)" \
+ACME_EMAIL=admin@<domaine> \
+PROD_FRONTEND_DOMAIN=www.<domaine> PROD_API_DOMAIN=api.<domaine> \
+PREPROD_FRONTEND_DOMAIN=preprod.<domaine> PREPROD_API_DOMAIN=api.preprod.<domaine> \
+bash /root/sae501-deploy/bootstrap-server.sh
+```
+
+(Copier la clé publique `sae501_deploy.pub` dans `/root/sae501-deploy/` au préalable, ou passer
+son contenu directement.)
+
+Le script, idempotent, peut être relancé sans risque. Il :
+
+1. installe Docker Engine et le plugin Compose depuis le dépôt officiel Docker, ainsi qu’UFW,
+   Fail2ban, unattended-upgrades et cron ;
+2. crée l’utilisateur `deploy` (sans mot de passe, membre du groupe `docker`) et ajoute la clé
+   publique avec l’option `restrict` (ni redirection de ports, ni agent, ni terminal) ;
+3. ouvre uniquement 22, 80 et 443 en TCP avec UFW ;
+4. active Fail2ban pour SSH (5 échecs en 10 min : 1 h de bannissement) ;
+5. active les mises à jour de sécurité automatiques ;
+6. crée `/srv/sae501/{bin,edge,preprod,prod,backups}` ;
+7. génère sur le serveur, sans jamais les afficher, `APP_SECRET`, les mots de passe MySQL et la
+   passphrase JWT de chaque `.env`, puis une clé JWT RSA 4096 chiffrée par environnement
+   (`secrets/jwt/private.pem`, lisible par le seul groupe 10001 de l’image backend) ;
+8. crée les réseaux `sae501-preprod_edge` et `sae501-prod_edge` ;
+9. installe la sauvegarde quotidienne (`/etc/cron.d/sae501-backup`, 03:17 UTC).
+
+Ensuite, en tant que `deploy`, compléter les valeurs `CHANGE_ME` restantes (le script les liste,
+sans afficher de valeur) :
+
+```bash
+sudo -iu deploy
+```
+
+```bash
+nano /srv/sae501/preprod/.env
+```
+
+- `MAILER_DSN` : `brevo+api://<clé API Brevo de l’environnement>@default`, ou `null://null`
+  tant que Brevo n’est pas configuré ;
+- `MAILER_FROM` : adresse d’expéditeur validée dans Brevo ;
+- les domaines si le script a été lancé sans eux (`FRONTEND_DOMAIN`, `API_DOMAIN`,
+  `FRONTEND_URL`, `CORS_ALLOW_ORIGIN` sous la forme `'^https://www\.<domaine>$'`).
+
+Ne jamais copier ces fichiers hors du serveur ni les coller dans un ticket ou un chat.
+`deploy.sh` refuse de déployer tant qu’une valeur `CHANGE_ME` ou `replace-with` subsiste.
+
+Optionnel, une fois la connexion par clé SSH vérifiée pour l’administrateur :
+
+```bash
+HARDEN_SSH=1 DEPLOY_PUBLIC_KEY="$(cat /root/sae501-deploy/sae501_deploy.pub)" bash /root/sae501-deploy/bootstrap-server.sh
+```
+
+désactive l’authentification SSH par mot de passe (configuration validée par `sshd -t` avant
+rechargement).
+
+### Empreinte SSH du serveur
+
+La CD n’accepte que l’hôte dont la clé est déclarée (`StrictHostKeyChecking yes`). Récupérer la
+clé publique de l’hôte **et vérifier son empreinte** avec celle affichée par la console du VPS (ou
+par `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` sur le serveur) :
+
+```bash
+ssh-keyscan -t ed25519 <vps> > known_hosts_sae501
+```
+
+```bash
+ssh-keygen -lf known_hosts_sae501
+```
+
+Le contenu de `known_hosts_sae501` va dans le secret `DEPLOY_KNOWN_HOSTS`. Si SSH écoute sur un
+autre port, utiliser `ssh-keyscan -p <port>` et définir la variable `DEPLOY_PORT`.
+
+## 3. Configuration GitHub
+
+### Environnements
+
+Dans *Settings → Environments*, créer :
+
+- `preprod` : branche de déploiement autorisée `develop` ;
+- `production` : branches autorisées `main` et tags `v*` ; **Required reviewers** (au moins une
+  personne) pour exiger une approbation avant chaque déploiement de production, et éventuellement
+  *Prevent self-review*.
+
+### Secrets (dans chaque environnement)
+
+| Secret | Contenu |
+|---|---|
+| `DEPLOY_HOST` | nom DNS ou IP du VPS |
+| `DEPLOY_USER` | `deploy` |
+| `DEPLOY_SSH_KEY` | clé privée `sae501_deploy` complète |
+| `DEPLOY_KNOWN_HOSTS` | ligne(s) obtenue(s) par `ssh-keyscan`, après vérification de l’empreinte |
+| `DEPLOY_PATH` | `/srv/sae501` |
+
+Les secrets peuvent être définis au niveau du dépôt s’ils sont identiques pour les deux
+environnements ; les définir par environnement permet de changer de serveur pour un seul.
+Aucun secret applicatif (mots de passe, JWT, Brevo) n’est stocké dans GitHub : ils ne vivent que
+sur le serveur.
+
+### Variables (dans chaque environnement)
+
+| Variable | Exemple production | Rôle |
+|---|---|---|
+| `PUBLIC_API_URL` | `https://api.<domaine>` | figée dans le bundle frontend ; healthcheck final |
+| `PUBLIC_FRONTEND_URL` | `https://www.<domaine>` | lien de l’environnement GitHub ; healthcheck final |
+| `DEPLOY_PORT` | `22` | facultatif |
+
+### Images GHCR
+
+Les paquets `sae501/backend` et `sae501/frontend` sont créés au premier push et restent privés
+(dépôt privé). Le serveur les télécharge avec le jeton éphémère du job, transmis sur l’entrée
+standard de SSH, utilisé dans un dossier Docker temporaire puis supprimé : aucun jeton GHCR n’est
+conservé sur le serveur.
+
+## 4. Déploiement
+
+Le workflow `CD` (`.github/workflows/cd.yml`) :
+
+1. détermine l’environnement (`develop` → preprod, `main` → production) ;
+2. construit l’image backend (stage `prod`, sans dépendances de dev, utilisateur non root),
+   l’analyse avec Trivy (échec sur CRITICAL corrigeable) et la publie ;
+3. dans l’environnement GitHub (approbation éventuelle), construit l’image frontend avec
+   `PUBLIC_API_URL`, l’analyse et la publie ;
+4. envoie `docker-compose.prod.yml`, les scripts et le proxy d’entrée dans
+   `/srv/sae501/.incoming/<env>/`, puis lance `deploy.sh` qui, sous un verrou global :
+   - installe ces fichiers ;
+   - vérifie le `.env` (projet, valeurs à compléter, domaines) et les clés JWT ;
+   - télécharge les images ;
+   - démarre MySQL et attend qu’il soit prêt ;
+   - sauvegarde la base (`backups/<env>/db-pre-deploy-*.sql.gz`) ;
+   - exécute `doctrine:migrations:migrate --all-or-nothing` ;
+   - lance `docker compose up -d --wait` (healthchecks de MySQL, du backend et du frontend) ;
+   - met à jour le routage du proxy d’entrée ;
+5. vérifie depuis Internet `PUBLIC_API_URL/healthcheck.php` et `PUBLIC_FRONTEND_URL`.
+
+Les actions GitHub sont figées par SHA de commit ; le workflow n’a aucune permission par défaut
+et seuls les jobs de publication reçoivent `packages: write`.
+
+Déploiement manuel d’une référence (tag `vX.Y.Z`, branche) : *Actions → CD → Run workflow*,
+choisir la référence et l’environnement, laisser `image_tag` vide.
+
+État d’un environnement sur le serveur :
+
+```bash
+/srv/sae501/bin/deploy.sh status prod
+```
+
+## 5. Retour arrière
+
+**Automatique** : si la nouvelle version ne devient pas saine, `deploy.sh` redémarre aussitôt les
+images précédentes et le job échoue. Les migrations déjà appliquées ne sont **pas** annulées.
+
+**Depuis GitHub** (recommandé) : *Run workflow*, environnement voulu, `image_tag` = SHA complet du
+commit précédemment déployé (visible dans le résumé des exécutions CD ou dans
+`/srv/sae501/<env>/.deploy/history`). Le compose et les scripts de ce commit sont réutilisés et
+aucune image n’est reconstruite.
+
+**Sur le serveur, sans GitHub** : revient à la version précédente, dont les images sont encore
+présentes localement :
+
+```bash
+/srv/sae501/bin/deploy.sh rollback prod
+```
+
+**Base de données** : si la version annulée avait appliqué une migration incompatible avec
+l’ancienne version, restaurer la sauvegarde prise juste avant le déploiement (voir ci-dessous),
+après avoir revérifié qu’aucune donnée saisie depuis ne doit être conservée. Pour éviter ce cas,
+écrire des migrations rétrocompatibles (ajouter avant de supprimer, en deux livraisons).
+
+## 6. Sauvegardes et restauration
+
+Chaque nuit, `backup.sh all` sauvegarde pour chaque environnement :
+
+- la base MySQL : `backups/<env>/db-daily-<date>.sql.gz` (`mysqldump --single-transaction`) ;
+- les volumes d’uploads publics et privés : `backups/<env>/uploads-daily-<date>.tar.gz`.
+
+Les fichiers sont en `0600` dans `/srv/sae501/backups` (`0700`) et conservés 14 jours
+(`BACKUP_RETENTION_DAYS`). Le journal est dans `/srv/sae501/backups/backup.log`.
+
+Sauvegarde ponctuelle :
+
+```bash
+/srv/sae501/bin/backup.sh db prod avant-maintenance
+```
+
+```bash
+/srv/sae501/bin/backup.sh uploads prod avant-maintenance
+```
+
+Restauration (destructive, confirmation `--yes` obligatoire) :
+
+```bash
+/srv/sae501/bin/backup.sh restore-db prod /srv/sae501/backups/prod/db-daily-20261115T031700Z.sql.gz --yes
+```
+
+```bash
+/srv/sae501/bin/backup.sh restore-uploads prod /srv/sae501/backups/prod/uploads-daily-20261115T031700Z.tar.gz --yes
+```
+
+Le dump contient `DROP DATABASE` puis `CREATE DATABASE` : la base est entièrement remplacée.
+Restaurer de préférence pendant une maintenance (`docker compose stop backend messenger-worker
+campaign-scheduler` dans le dossier de l’environnement), puis relancer `deploy.sh` ou
+`docker compose up -d`.
+
+**À compléter** : les sauvegardes restent sur le VPS. Elles contiennent des données personnelles
+(RGPD) ; une copie hors site chiffrée (par exemple `restic` vers un stockage objet, ou les
+instantanés de l’hébergeur) doit être choisie avec la mairie. Tester une restauration sur la
+préproduction au moins une fois par trimestre.
+
+## 7. E-mails Brevo : SPF, DKIM et DMARC
+
+1. Dans Brevo, *Senders, Domains & Dedicated IPs → Domains*, ajouter le domaine d’envoi
+   (celui de `MAILER_FROM`).
+2. Publier dans la zone DNS les enregistrements fournis par Brevo :
+   - **code Brevo** (`TXT brevo-code:…`) qui prouve la propriété du domaine ;
+   - **DKIM** : les enregistrements `CNAME` ou `TXT` indiqués (sélecteurs propres à Brevo) ;
+   - **SPF** : ajouter `include:spf.brevo.com` à l’enregistrement SPF existant ; un domaine ne
+     doit avoir qu’**un seul** enregistrement `TXT v=spf1`, par exemple
+     `v=spf1 include:spf.brevo.com ~all` ;
+   - **DMARC** : `TXT` sur `_dmarc.<domaine>`, en commençant par une politique d’observation
+     `v=DMARC1; p=none; rua=mailto:dmarc@<domaine>`, puis `p=quarantine` une fois les rapports
+     propres.
+3. Attendre l’authentification du domaine dans Brevo, puis créer **une clé API par environnement**
+   (*SMTP & API → API Keys*) et la placer dans `MAILER_DSN` du `.env` correspondant.
+4. Une clé exposée doit être révoquée dans Brevo puis remplacée dans le `.env`, suivi d’un
+   redéploiement (ou `docker compose up -d` dans le dossier de l’environnement).
+
+Utiliser une adresse d’expéditeur distincte pour la préproduction (par exemple
+`noreply-preprod@…`) évite toute confusion avec les messages réels.
+
+## 8. Cloudflare (optionnel)
+
+Cloudflare peut se placer devant le VPS (WAF, limitation de débit, masquage de l’IP) :
+
+- enregistrements DNS en mode *Proxied* ; SSL/TLS en mode **Full (strict)** (Caddy conserve
+  des certificats valides) ;
+- pendant l’émission initiale des certificats, Let’s Encrypt doit joindre le port 80 : laisser les
+  enregistrements en *DNS only* le temps du premier déploiement, ou garder *Always Use HTTPS*
+  désactivé tant que le certificat n’est pas émis ;
+- n’autoriser ensuite les ports 80/443 que depuis les plages IP de Cloudflare dans UFW, sinon le
+  WAF peut être contourné en visant directement l’IP du VPS ;
+- l’IP réelle des visiteurs arrive dans `CF-Connecting-IP` : sans configuration supplémentaire
+  du proxy d’entrée (`trusted_proxies` Caddy limité aux plages Cloudflare), les limiteurs de
+  débit de l’API compteraient les requêtes par nœud Cloudflare. Cette adaptation est à faire si
+  Cloudflare est retenu.
+- la préproduction peut être réservée à l’équipe avec *Cloudflare Access*.
+
+## 9. Points d’attention
+
+- Le groupe `docker` donne un accès équivalent à root : la clé `deploy` ne sert qu’à la CD et ne
+  doit pas être réutilisée ailleurs.
+- Les ports publiés par Docker contournent UFW : ne jamais ajouter de `ports:` à
+  `docker-compose.prod.yml` (MySQL, phpMyAdmin, Mailpit, etc.). L’administration de la base se
+  fait par `docker compose exec mysql mysql …` ou un tunnel SSH.
+- Les volumes créés par une ancienne image (backend root) appartiennent à root : sur un serveur
+  déjà en service, donner les uploads à l’utilisateur 10001 avant le premier déploiement non root
+  (`docker run --rm -v sae501-prod_backend_uploads:/v alpine:3.22 chown -R 10001:10001 /v`, de
+  même pour `backend_private_uploads`). Un serveur neuf n’est pas concerné.
+- Les migrations doivent être rétrocompatibles avec la version précédente pour que le retour
+  arrière automatique reste sûr.

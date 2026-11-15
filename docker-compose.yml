@@ -21,6 +21,8 @@ services:
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
+      # Stage de développement (root, dépendances de dev) ; le stage final est l’image de production.
+      target: dev
     command: sh -c "while true; do php bin/console app:campaigns:synchronize --no-interaction; sleep 60; done"
     env_file: .env
     environment:
@@ -38,6 +40,8 @@ services:
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
+      # Stage de développement (root, dépendances de dev) ; le stage final est l’image de production.
+      target: dev
     ports:
       - "80:80"
     env_file: .env
