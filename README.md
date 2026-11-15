@@ -157,6 +157,26 @@ dans les sauvegardes du serveur :
 Ces dossiers, `backend/var` et les clés JWT sont exclus du contexte de build
 (`.dockerignore`) et ne sont jamais intégrés à une image.
 
+### E-mails (Brevo)
+
+En local, les e-mails sont capturés par Mailpit (http://localhost:8025). En
+préproduction et en production, ils partent par Brevo grâce au bridge
+`symfony/brevo-mailer` : renseigner dans le `.env.prod` du serveur
+`MAILER_DSN=brevo+api://<clé API>@default` et `MAILER_FROM` (adresse validée dans
+Brevo). Utiliser une clé distincte par environnement et ne jamais la versionner ni
+la partager hors du serveur ; une clé exposée doit être révoquée dans Brevo.
+Configurer aussi SPF, DKIM et DMARC sur le domaine d’envoi.
+
+### Tests end-to-end (Playwright)
+
+La CI démarre une pile complète (MySQL, migrations, fixtures, API Symfony et
+frontend compilé) puis exécute les parcours sur Chromium avec les comptes de
+démonstration des fixtures. En local, avec l’API et le frontend lancés :
+
+```bash
+npm --prefix frontend run test:e2e -- --project=chromium
+```
+
 ## Git Flow
 
 ```

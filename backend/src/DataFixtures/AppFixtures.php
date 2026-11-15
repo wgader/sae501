@@ -112,8 +112,27 @@ final class AppFixtures extends Fixture
         $firstAssociation->addUser($representative);
         $representative->setPassword($this->passwordHasher->hashPassword($representative, self::DEMO_PASSWORD));
 
+        // Demande d’inscription en attente : permet de tester la validation par la mairie.
+        $pendingAssociation = (new Association())
+            ->setNom('Les Jardins partagés de Feytiat')
+            ->setNombreMembres(12)
+            ->setStatut('PENDING_VALIDATION');
+        $pendingRepresentative = (new User())
+            ->setEmail('jardins.partages@feytiat.test')
+            ->setRoles(['ROLE_ASSOCIATION'])
+            ->setPassword(null)
+            ->setNom('Martin')
+            ->setPrenom('Claire')
+            ->setTypeCompte('association')
+            ->setIsVerified(true)
+            ->setCguValidateAt($validatedAt);
+        $pendingAssociation->addUser($pendingRepresentative);
+        $pendingRepresentative->setPassword($this->passwordHasher->hashPassword($pendingRepresentative, self::DEMO_PASSWORD));
+
+        $manager->persist($pendingAssociation);
         $manager->persist($admin);
         $manager->persist($representative);
+        $manager->persist($pendingRepresentative);
 
         $manager->flush();
     }
