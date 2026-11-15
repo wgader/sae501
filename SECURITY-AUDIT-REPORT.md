@@ -28,6 +28,8 @@ Un rapport doit rester disponible même lorsqu’un scan échoue ; le pipeline d
 | 5 | 🟡 MEDIUM | SVG/HTML/JS | Ces formats peuvent contenir du contenu actif et ne doivent pas être servis inline | À interdire ou sanitiser |
 | 6 | 🟡 MEDIUM | Déni de service applicatif | Les tailles, nombres de fichiers, temps et quotas doivent être limités par endpoint | À ajouter |
 | 7 | 🟡 MEDIUM | JWT navigateur | Le stockage `localStorage` reste exposé à une compromission XSS | Migration cookies sécurisés à planifier |
+| 8 | 🟠 HIGH | Cache des téléchargements | `BinaryFileResponse` renvoyait `Cache-Control: public` : un proxy ou un CDN pouvait conserver un justificatif privé | Corrigé (`private, no-store`) pour les justificatifs ; fichiers d’événement à corriger |
+| 9 | 🟡 MEDIUM | Téléchargements | Documents supprimés logiquement encore téléchargeables, `Content-Type` repris sans contrôle, erreur 500 sur un nom contenant `\` | Corrigé et testé |
 
 ## Mesures obligatoires pour les uploads
 
@@ -69,6 +71,10 @@ Les tests PHPUnit devront couvrir :
 - compte suspendu, supprimé ou non vérifié.
 
 Les tests doivent utiliser de petits fichiers synthétiques. Aucun test de DDoS réel ne doit être lancé.
+
+### Tests réalisés (15/11/2026)
+
+`backend/tests/Controller/DocumentControllerTest.php` couvre le téléchargement : authentification, propriétaire, autre association, mairie, document inconnu ou supprimé, fichier absent, path traversal (`../`, `..\`, `%2e%2e`, chemin absolu, lien symbolique), absence de fuite du chemin réel, en-têtes sûrs et nom de fichier assaini. Les tests d’upload (taille, MIME falsifié, signatures, HTML/JS/PHP/SVG) restent à écrire.
 
 ## Outils proposés
 

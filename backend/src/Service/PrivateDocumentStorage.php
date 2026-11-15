@@ -35,7 +35,7 @@ final class PrivateDocumentStorage
         }
 
         $size = $file->getSize();
-        if ($size === false || $size <= 0 || $size > self::MAX_FILE_SIZE) {
+        if (false === $size || $size <= 0 || $size > self::MAX_FILE_SIZE) {
             throw new \InvalidArgumentException('La taille du fichier doit être comprise entre 1 octet et 10 Mo.');
         }
 
@@ -45,34 +45,34 @@ final class PrivateDocumentStorage
         }
 
         $originalName = $file->getClientOriginalName();
-        if ($originalName === '' || mb_strlen($originalName) > 255 || preg_match('/[\x00-\x1F\x7F]/', $originalName)) {
+        if ('' === $originalName || mb_strlen($originalName) > 255 || preg_match('/[\x00-\x1F\x7F]/', $originalName)) {
             throw new \InvalidArgumentException('Le nom du fichier est invalide.');
         }
 
         $path = $file->getPathname();
-        if ($mimeType === 'application/pdf') {
+        if ('application/pdf' === $mimeType) {
             $signature = file_get_contents($path, false, null, 0, 5);
-            if ($signature !== '%PDF-') {
+            if ('%PDF-' !== $signature) {
                 throw new \InvalidArgumentException('Le fichier PDF est invalide.');
             }
-        } elseif (@getimagesize($path) === false) {
+        } elseif (false === @getimagesize($path)) {
             throw new \InvalidArgumentException('Le fichier image est invalide.');
         }
 
         $year = date('Y');
         $month = date('m');
-        $relativeDirectory = $year . DIRECTORY_SEPARATOR . $month;
-        $directory = $this->uploadDirectory . DIRECTORY_SEPARATOR . $relativeDirectory;
+        $relativeDirectory = $year.DIRECTORY_SEPARATOR.$month;
+        $directory = $this->uploadDirectory.DIRECTORY_SEPARATOR.$relativeDirectory;
         if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
             throw new \RuntimeException('Le répertoire de stockage ne peut pas être créé.');
         }
 
         $extension = self::ALLOWED_TYPES[$mimeType];
-        $storedName = bin2hex(random_bytes(24)) . '.' . $extension;
+        $storedName = bin2hex(random_bytes(24)).'.'.$extension;
         $file->move($directory, $storedName);
 
         return [
-            'path' => $relativeDirectory . '/' . $storedName,
+            'path' => $relativeDirectory.'/'.$storedName,
             'mimeType' => $mimeType,
             'extension' => $extension,
             'size' => $size,
@@ -80,10 +80,15 @@ final class PrivateDocumentStorage
         ];
     }
 
+    public function isAllowedMimeType(string $mimeType): bool
+    {
+        return isset(self::ALLOWED_TYPES[$mimeType]);
+    }
+
     public function resolve(string $relativePath): ?string
     {
         $baseDirectory = realpath($this->uploadDirectory);
-        if ($baseDirectory === false || $relativePath === '') {
+        if (false === $baseDirectory || '' === $relativePath) {
             return null;
         }
 
@@ -91,10 +96,10 @@ final class PrivateDocumentStorage
         if (str_starts_with($relativePath, 'uploads/documents/')) {
             $relativePath = substr($relativePath, strlen('uploads/documents/'));
         }
-        $absolutePath = realpath($this->uploadDirectory . DIRECTORY_SEPARATOR . $relativePath);
+        $absolutePath = realpath($this->uploadDirectory.DIRECTORY_SEPARATOR.$relativePath);
         if (
-            $absolutePath === false
-            || !str_starts_with($absolutePath, $baseDirectory . DIRECTORY_SEPARATOR)
+            false === $absolutePath
+            || !str_starts_with($absolutePath, $baseDirectory.DIRECTORY_SEPARATOR)
             || !is_file($absolutePath)
             || !is_readable($absolutePath)
         ) {
@@ -107,7 +112,7 @@ final class PrivateDocumentStorage
     public function delete(string $relativePath): void
     {
         $absolutePath = $this->resolve($relativePath);
-        if ($absolutePath !== null && !unlink($absolutePath)) {
+        if (null !== $absolutePath && !unlink($absolutePath)) {
             throw new \RuntimeException('Impossible de supprimer le document.');
         }
     }

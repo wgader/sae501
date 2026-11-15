@@ -27,6 +27,8 @@ Les derniers correctifs applicatifs réalisés concernent :
 - le téléchargement authentifié des justificatifs via `/api/documents/{id}/download`, avec contrôle propriétaire/mairie et en-têtes `attachment`/`nosniff` ;
 - le blocage Caddy des anciens chemins publics `/uploads/documents/*` et la migration des fichiers locaux existants hors de `public/`.
 - des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
+- le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
+- l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
 
 Le build frontend passe actuellement. Le lint passe avec des avertissements Tailwind historiques qui devront être traités progressivement.
 
@@ -55,6 +57,10 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   cache de test vidé) — 64 tests, 300 assertions, réussie après mise à jour du
   volume `vendor` du conteneur (`composer install --no-scripts`).
 - PHPStan, `lint:container` (env `test`) et `git diff --check` — réussis.
+- `DocumentControllerTest` (15/11/2026) : 21 tests, 61 assertions — réussis ; 4 échecs
+  constatés avant correction (cache public, document supprimé, MIME non filtré, nom avec `\`).
+- Suite PHPUnit complète sur l’hôte et dans le conteneur `backend` — 84 tests,
+  360 assertions, réussie ; PHPStan et PHP CS Fixer — réussis.
 
 ## À faire
 
@@ -641,6 +647,21 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - `AdminAuthControllerTest` vérifie qu’un compte mairie supprimé ne peut pas se connecter.
 - `AdminAuthControllerTest` vérifie qu’un compte mairie non vérifié ne peut pas se connecter.
 - Chaque cas vérifie le statut HTTP `403` et l’absence de token dans la réponse.
+- `DocumentControllerTest` couvre le téléchargement privé : `401` sans token, propriétaire `200`,
+  autre association et utilisateur sans association `404`, administrateur mairie `200`,
+  document inconnu, identifiant non numérique, fichier absent et document supprimé `404`,
+  path traversal (`../`, `..\`, `%2e%2e`, chemin absolu, lien symbolique) `404`, ancien
+  chemin `/uploads/documents/` résolu dans le stockage privé, en-têtes `attachment`,
+  `nosniff`, `private, no-store`, absence de fuite du chemin réel et nom de fichier assaini.
+
+### Reste à traiter après les tests de téléchargement
+
+- Les téléchargements de fichiers d’événement (`ExternalEventController`) utilisent encore
+  `BinaryFileResponse` en `Cache-Control: public` : appliquer `private, no-store` et tester.
+- Tout rôle mairie (`User::ROLES_MAIRIE`) peut télécharger tous les justificatifs : restreindre
+  par module métier une fois la matrice des rôles agents définie.
+- Le volume de production ne couvre pas `var/uploads` : les justificatifs seraient perdus au
+  redéploiement.
 
 ## Historique des tâches
 
@@ -659,3 +680,4 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
+| 15/11/2026 | Tests du téléchargement privé | 20 tests ajoutés ; cache public, documents supprimés, MIME et noms avec `\` corrigés ; 84 tests réussis |
