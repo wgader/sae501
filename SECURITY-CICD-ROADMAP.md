@@ -794,6 +794,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 15/11/2026 | Déploiement SSH préprod / prod | Image backend non root (DS-0002 résolu), projets Compose isolés et proxy d’entrée, CD GHCR + SSH avec environnements GitHub, `bootstrap-server.sh`, sauvegardes avec rotation et guide `DEPLOYMENT.md` ; vérifié sur un faux serveur local |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
 | 15/11/2026 | Interrupteur de déploiement | Variable de dépôt `DEPLOY_ENABLED` : la CD saute le déploiement tant que le serveur n’est pas configuré, au lieu d’échouer |
+| 16/11/2026 | Droits du proxy d’entrée | Premier déploiement préproduction : Caddy (root sans `CAP_DAC_OVERRIDE`) ne pouvait pas lire `Caddyfile` (0640) ni `edge/sites` (0750) et redémarrait en boucle ; ces fichiers sans secret passent en lecture pour tous |
 | 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
 | 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
 | 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |
