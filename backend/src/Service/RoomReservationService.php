@@ -44,110 +44,122 @@ final class RoomReservationService
         ?int $capaciteAttendue = null,
         ?UploadedFile $justificatif = null,
     ): ReservationSalle {
-        $reservation = $this->entityManager->wrapInTransaction(function () use (
-            $association,
-            $user,
-            $salleId,
-            $motif,
-            $dateDebut,
-            $dateFin,
-            $capaciteAttendue,
-            $justificatif,
-        ): ReservationSalle {
-            // 1. Verrouillage pessimiste de la salle pour sérialiser les réservations concurrentes
-            /** @var Salle|null $salle */
-            $salle = $this->entityManager->find(Salle::class, $salleId, LockMode::PESSIMISTIC_WRITE);
-            if ($salle === null) {
-                throw new \InvalidArgumentException('La salle demandée est introuvable.');
-            }
+        $storedJustificatifPath = null;
 
-            if (!$salle->isActive() || $salle->getDeletedAt() !== null) {
-                throw new \InvalidArgumentException('La salle sélectionnée n’est pas disponible à la réservation.');
-            }
-
-            // 2. Validation des contraintes temporelles
-            $now = new \DateTimeImmutable();
-            if ($dateDebut < $now) {
-                throw new \InvalidArgumentException('La réservation ne peut pas être effectuée dans le passé.');
-            }
-
-            if ($dateFin <= $dateDebut) {
-                throw new \InvalidArgumentException('L’heure de fin doit être strictement postérieure à l’heure de début.');
-            }
-
-            $this->validateOpeningHours($dateDebut, $dateFin);
-
-            // 3. Validation du motif
-            $cleanMotif = trim($motif);
-            if ($cleanMotif === '') {
-                throw new \InvalidArgumentException('Le motif de l’événement est obligatoire.');
-            }
-
-            // 4. Validation de la capacité
-            if ($capaciteAttendue !== null) {
-                if ($capaciteAttendue <= 0) {
-                    throw new \InvalidArgumentException('L’effectif attendu doit être strictement supérieur à zéro.');
+        try {
+            $reservation = $this->entityManager->wrapInTransaction(function () use (
+                $association,
+                $user,
+                $salleId,
+                $motif,
+                $dateDebut,
+                $dateFin,
+                $capaciteAttendue,
+                $justificatif,
+                &$storedJustificatifPath,
+            ): ReservationSalle {
+                // 1. Verrouillage pessimiste de la salle pour sérialiser les réservations concurrentes
+                /** @var Salle|null $salle */
+                $salle = $this->entityManager->find(Salle::class, $salleId, LockMode::PESSIMISTIC_WRITE);
+                if ($salle === null) {
+                    throw new \InvalidArgumentException('La salle demandée est introuvable.');
                 }
 
-                if ($capaciteAttendue > $salle->getCapaciteMax()) {
-                    throw new \InvalidArgumentException(sprintf(
-                        'L’effectif attendu (%d personnes) dépasse la capacité maximale déclarée de la salle (%d personnes).',
-                        $capaciteAttendue,
-                        $salle->getCapaciteMax(),
-                    ));
+                if (!$salle->isActive() || $salle->getDeletedAt() !== null) {
+                    throw new \InvalidArgumentException('La salle sélectionnée n’est pas disponible à la réservation.');
                 }
-            }
 
-            // 5. Contrôle strict de non-chevauchement (Overlap Prevention)
-            $conflicts = $this->reservationSalleRepository->findOverlappingReservations($salle, $dateDebut, $dateFin);
-            if ($conflicts !== []) {
-                $conflictDetails = array_map(static fn (ReservationSalle $r): array => [
-                    'id' => $r->getId(),
-                    'start' => $r->getDateDebut()?->format(\DateTimeInterface::ATOM),
-                    'end' => $r->getDateFin()?->format(\DateTimeInterface::ATOM),
-                    'statut' => $r->getStatut(),
-                ], $conflicts);
+                // 2. Validation des contraintes temporelles
+                $now = new \DateTimeImmutable();
+                if ($dateDebut < $now) {
+                    throw new \InvalidArgumentException('La réservation ne peut pas être effectuée dans le passé.');
+                }
 
-                throw new RoomReservationConflictException(
-                    "Ce créneau horaire vient d'être réservé par un autre usager ou chevauche une réservation existante. Veuillez actualiser le calendrier et choisir un autre créneau.",
-                    $conflictDetails,
+                if ($dateFin <= $dateDebut) {
+                    throw new \InvalidArgumentException('L’heure de fin doit être strictement postérieure à l’heure de début.');
+                }
+
+                $this->validateOpeningHours($dateDebut, $dateFin);
+
+                // 3. Validation du motif
+                $cleanMotif = trim($motif);
+                if ($cleanMotif === '') {
+                    throw new \InvalidArgumentException('Le motif de l’événement est obligatoire.');
+                }
+
+                // 4. Validation de la capacité
+                if ($capaciteAttendue !== null) {
+                    if ($capaciteAttendue <= 0) {
+                        throw new \InvalidArgumentException('L’effectif attendu doit être strictement supérieur à zéro.');
+                    }
+
+                    if ($capaciteAttendue > $salle->getCapaciteMax()) {
+                        throw new \InvalidArgumentException(sprintf(
+                            'L’effectif attendu (%d personnes) dépasse la capacité maximale déclarée de la salle (%d personnes).',
+                            $capaciteAttendue,
+                            $salle->getCapaciteMax(),
+                        ));
+                    }
+                }
+
+                // 5. Contrôle strict de non-chevauchement (Overlap Prevention)
+                $conflicts = $this->reservationSalleRepository->findOverlappingReservations($salle, $dateDebut, $dateFin);
+                if ($conflicts !== []) {
+                    $conflictDetails = array_map(static fn (ReservationSalle $r): array => [
+                        'id' => $r->getId(),
+                        'start' => $r->getDateDebut()?->format(\DateTimeInterface::ATOM),
+                        'end' => $r->getDateFin()?->format(\DateTimeInterface::ATOM),
+                        'statut' => $r->getStatut(),
+                    ], $conflicts);
+
+                    throw new RoomReservationConflictException(
+                        "Ce créneau horaire vient d'être réservé par un autre usager ou chevauche une réservation existante. Veuillez actualiser le calendrier et choisir un autre créneau.",
+                        $conflictDetails,
+                    );
+                }
+
+                // 6. Enregistrement de la réservation
+                $reservation = new ReservationSalle();
+                $reservation->setAssociation($association);
+                $reservation->setSalle($salle);
+                $reservation->setMotifEvenement($cleanMotif);
+                $reservation->setDateDebut($dateDebut);
+                $reservation->setDateFin($dateFin);
+                $reservation->setCapaciteAttendue($capaciteAttendue);
+                $reservation->setStatut('En attente de validation par la mairie');
+                $reservation->setCreatedAt(new \DateTimeImmutable());
+
+                $this->entityManager->persist($reservation);
+                $this->entityManager->flush();
+
+                // 7. Journalisation dans l'historique des démarches
+                $history = new DemandeStatusHistory(
+                    'salle',
+                    $reservation->getId() ?? 0,
+                    'En attente de validation par la mairie',
+                    'Demande de réservation déposée',
+                    'Demande enregistrée en attente de validation par la mairie.',
+                    trim($user->getPrenom() . ' ' . $user->getNom()),
                 );
+                $this->entityManager->persist($history);
+
+                // 8. Gestion de la pièce justificative optionnelle
+                if ($justificatif instanceof UploadedFile) {
+                    $storedJustificatifPath = $this->storeJustificatif($justificatif, $association, $reservation->getId() ?? 0);
+                }
+
+                $this->entityManager->flush();
+
+                return $reservation;
+            });
+        } catch (\Throwable $exception) {
+            // Sans réservation enregistrée, la pièce stockée ne serait jamais rattachée ni supprimée.
+            if (null !== $storedJustificatifPath) {
+                $this->documentStorage->delete($storedJustificatifPath);
             }
 
-            // 6. Enregistrement de la réservation
-            $reservation = new ReservationSalle();
-            $reservation->setAssociation($association);
-            $reservation->setSalle($salle);
-            $reservation->setMotifEvenement($cleanMotif);
-            $reservation->setDateDebut($dateDebut);
-            $reservation->setDateFin($dateFin);
-            $reservation->setCapaciteAttendue($capaciteAttendue);
-            $reservation->setStatut('En attente de validation par la mairie');
-            $reservation->setCreatedAt(new \DateTimeImmutable());
-
-            $this->entityManager->persist($reservation);
-            $this->entityManager->flush();
-
-            // 7. Journalisation dans l'historique des démarches
-            $history = new DemandeStatusHistory(
-                'salle',
-                $reservation->getId() ?? 0,
-                'En attente de validation par la mairie',
-                'Demande de réservation déposée',
-                'Demande enregistrée en attente de validation par la mairie.',
-                trim($user->getPrenom() . ' ' . $user->getNom()),
-            );
-            $this->entityManager->persist($history);
-
-            // 8. Gestion de la pièce justificative optionnelle
-            if ($justificatif instanceof UploadedFile) {
-                $this->storeJustificatif($justificatif, $association, $reservation->getId() ?? 0);
-            }
-
-            $this->entityManager->flush();
-
-            return $reservation;
-        });
+            throw $exception;
+        }
 
         // 9. Déclenchement du traitement asynchrone des emails
         try {
@@ -187,7 +199,7 @@ final class RoomReservationService
         }
     }
 
-    private function storeJustificatif(UploadedFile $file, Association $association, int $reservationId): void
+    private function storeJustificatif(UploadedFile $file, Association $association, int $reservationId): string
     {
         $storedFile = $this->documentStorage->store($file);
 
@@ -205,5 +217,7 @@ final class RoomReservationService
         ], JSON_THROW_ON_ERROR));
 
         $this->entityManager->persist($doc);
+
+        return $storedFile['path'];
     }
 }
