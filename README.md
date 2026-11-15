@@ -75,9 +75,18 @@ Pour une base locale créée avant ce regroupement, une seule fois :
   docker compose exec backend php bin/console doctrine:fixtures:load --no-interaction
   ```
 
-- base à conserver, uniquement si `doctrine:schema:validate` indique un schéma
-  synchronisé : `doctrine:migrations:rollup --no-interaction` remplace l’historique
-  par la migration de base sans toucher aux tables.
+- base à conserver : relire d’abord le SQL proposé, qui ne doit contenir aucun
+  `DROP` ni suppression de colonne, puis appliquer ce rattrapage unique et recaler
+  l’historique des migrations. C’est la seule exception admise à l’interdiction de
+  `doctrine:schema:update` (testée sur une copie : aucune ligne modifiée).
+
+  ```bash
+  docker compose exec backend php bin/console doctrine:schema:update --dump-sql
+  docker compose exec backend php bin/console doctrine:schema:update --force
+  docker compose exec backend php bin/console doctrine:migrations:version --delete --all --no-interaction
+  docker compose exec backend php bin/console doctrine:migrations:version --add --all --no-interaction
+  docker compose exec backend php bin/console doctrine:schema:validate
+  ```
 
 | Service    | URL                         |
 |------------|-----------------------------|

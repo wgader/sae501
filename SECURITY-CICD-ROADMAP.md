@@ -72,6 +72,14 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   (16 tables), `doctrine:schema:validate` synchronisé, relance sans effet, retour à `first` puis
   réapplication, chargement des fixtures, et `doctrine:migrations:rollup` vérifié avec
   d’anciennes versions enregistrées ; base de développement locale non modifiée.
+- Mise à niveau sans perte (15/11/2026), sur une copie de la base de développement : SQL
+  uniquement additif (tables `notification` et `cache_items`, une clé étrangère, valeurs par
+  défaut), historique recalé avec `doctrine:migrations:version`, schéma synchronisé ; nombre de
+  lignes et `CHECKSUM TABLE` identiques pour toutes les tables de données.
+- Base de développement locale mise à niveau par la même procédure après sauvegarde : données
+  identiques (lignes et `CHECKSUM TABLE`), 2 migrations exécutées, aucune en attente ; révocation
+  JWT vérifiée de bout en bout sur MySQL (profil `200`, logout `200`, profil `401`, toujours `401`
+  après `cache:clear` et redémarrage du backend).
 - Blocklist JWT (15/11/2026) : nouveau test de `LogoutControllerTest` (token révoqué toujours
   refusé après vidage de `cache.app`), en échec avant correction ; migration `cache_items`
   appliquée et annulée sur MySQL vide, schéma synchronisé ; suite complète sur l’hôte et dans
@@ -682,8 +690,8 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
   (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
 - Ajouter à la CI un job MySQL qui exécute `doctrine:migrations:migrate` sur une base vide puis
   `doctrine:schema:validate`, pour détecter une chaîne de migrations cassée avant le merge.
-- Chaque membre de l’équipe doit réinitialiser sa base locale (ou utiliser `rollup` si son schéma
-  est synchronisé) : procédure dans le README.
+- Chaque membre de l’équipe doit mettre sa base locale à niveau une fois (réinitialisation ou
+  rattrapage sans perte) : procédure dans le README.
 - ~~Blocklist JWT non persistée~~ — corrigé le 15/11/2026 (pool Doctrine DBAL).
 - Purger périodiquement les révocations expirées (`php bin/console cache:pool:prune`), par
   exemple depuis le service `campaign-scheduler`.
