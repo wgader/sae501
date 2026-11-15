@@ -4,7 +4,7 @@
 
 ## Dernière mise à jour
 
-- Date : 13 novembre 2026
+- Date : 15 novembre 2026
 - Statut : architecture cible F+B choisie ; sécurisation CI/CD à poursuivre
 - Prochaine étape : intégrer la génération de rapports Markdown comme artefacts CI/CD
 
@@ -26,6 +26,17 @@ Les derniers correctifs applicatifs réalisés concernent :
 - le stockage privé centralisé des justificatifs dans `var/uploads/documents`, avec validation de taille, MIME, signature et nom ;
 - le téléchargement authentifié des justificatifs via `/api/documents/{id}/download`, avec contrôle propriétaire/mairie et en-têtes `attachment`/`nosniff` ;
 - le blocage Caddy des anciens chemins publics `/uploads/documents/*` et la migration des fichiers locaux existants hors de `public/`.
+- des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
+- le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
+- l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
+- la CI des tests end-to-end : nouveau job `e2e` qui démarre MySQL, applique les migrations, charge les fixtures, lance l’API (`php -S`) et le frontend compilé, puis exécute Playwright sur Chromium (1 relance, délai global de 15 min, rapport en artefact en cas d’échec) ; ces tests tournaient auparavant sans backend ni comptes de test, échouaient tous et bloquaient la CI environ 48 min ; correction de `MAILER_DSN` manquant dans `.env.test` (17 tests PHPUnit en échec sur la CI) ; association en attente ajoutée aux fixtures et test de création de salle mis à jour ;
+- la préparation de l’envoi d’e-mails par Brevo : bridge `symfony/brevo-mailer`, `MAILER_DSN=brevo+api://…` documenté dans `.env.prod.example` avec `FRONTEND_URL` et `MESSENGER_TRANSPORT_DSN=sync://`, qui manquaient ;
+- les tests d’upload : `PrivateDocumentStorageTest` et `SecureEventFileStorageTest` (formats acceptés, nom stocké aléatoire, extension imposée par le contenu, taille vide / limite / dépassée, HTML, JS, PHP, SVG et ZIP déguisés, image corrompue, noms invalides ou contenant `../`) et `AssociationRequestDocumentUploadTest` (`401`, `403`, `404`, `400`, `422`, dépôt valide sans fuite de chemin) ; corrections : le nom du document est validé avant l’écriture sur disque et le fichier est supprimé si l’enregistrement en base échoue (plus de fichier orphelin), et le stockage des événements refuse désormais les caractères de contrôle dans le nom ;
+- un job CI `migrations` (service MySQL 8.4 éphémère) qui applique toutes les migrations sur une base vide, vérifie `doctrine:schema:validate`, puis annule et réapplique la chaîne ; et des permissions par défaut `contents: read` pour le workflow CI ;
+- la persistance de la blocklist JWT : pool `cache.jwt_blocklist` (adaptateur Doctrine DBAL, table `cache_items` créée par une migration générée) utilisé par Lexik au lieu de `cache.app`, qui vit dans `var/cache` et est vidé à chaque redéploiement ;
+- la réparation des migrations Doctrine : l’ancienne chaîne échouait sur une base vide (`Version20261110085732` recréait `notification`, déjà créée par `Version20261107090553`, de même pour `campaign`), ce qui aurait bloqué tout premier déploiement ; elle est remplacée par une migration de base unique générée par `doctrine:migrations:diff` sur une base vide, sans perte de données de référence (aucune n’était insérée par les migrations) ;
+- la persistance des fichiers privés en production : volume nommé `backend_private_uploads` monté sur `/app/var/uploads` dans `docker-compose.prod.yml`, et exclusion de `backend/var`, `backend/public/uploads` et `backend/config/jwt/*.pem` du contexte de build pour qu’aucun document ni clé ne soit intégré à une image (un volume nommé est initialisé avec le contenu de l’image) ;
+- les mêmes protections pour les fichiers d’événement (`/api/events/files/{id}`, `/api/events/external/files/{id}`, `/api/events/association/files/{id}`) : réponse construite par le service partagé `PrivateFileResponseFactory`, également utilisé pour les justificatifs (`private, no-store`, `nosniff`, `attachment`, nom assaini, MIME limité à la liste blanche du stockage).
 
 Le build frontend passe actuellement. Le lint passe avec des avertissements Tailwind historiques qui devront être traités progressivement.
 
@@ -46,9 +57,53 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
 - Vérification de l’architecture Docker actuelle réalisée et écarts avec le schéma du cours documentés ci-dessous.
 - `git diff --check` — réussi.
 - Migration locale des deux documents existants vers `backend/var/uploads/documents` — réussie.
-- La relance des tests JWT a révélé une clé privée de test locale chiffrée avec
-  une passphrase incorrecte (`bad decrypt`) ; la correction de la configuration
-  des clés de test reste nécessaire avant de déclarer la suite complète verte.
+- Erreur `bad decrypt` des tests JWT corrigée (15/11/2026) : suite PHPUnit
+  complète sur l’hôte, cache de test vidé — 64 tests, 300 assertions, réussie.
+- Tests JWT relancés avec des variables `JWT_*` volontairement invalides dans
+  l’environnement (cas Docker/CI) — 7 tests, 30 assertions, réussis.
+- Suite PHPUnit dans le conteneur `backend` (variables `JWT_*` de dev injectées,
+  cache de test vidé) — 64 tests, 300 assertions, réussie après mise à jour du
+  volume `vendor` du conteneur (`composer install --no-scripts`).
+- PHPStan, `lint:container` (env `test`) et `git diff --check` — réussis.
+- `DocumentControllerTest` (15/11/2026) : 21 tests, 61 assertions — réussis ; 4 échecs
+  constatés avant correction (cache public, document supprimé, MIME non filtré, nom avec `\`).
+- Suite PHPUnit complète sur l’hôte et dans le conteneur `backend` — 84 tests,
+  360 assertions, réussie ; PHPStan et PHP CS Fixer — réussis.
+- `ExternalEventControllerTest` (15/11/2026) : 13 tests de téléchargement ajoutés, 4 échecs
+  constatés avant correction (cache public sur les deux routes, MIME non filtré, nom avec `/`
+  en erreur 500) ; suite complète sur l’hôte et dans Docker — 97 tests, 409 assertions, réussie.
+- Migrations (15/11/2026), sur une base MySQL temporaire vide : migration de base appliquée
+  (16 tables), `doctrine:schema:validate` synchronisé, relance sans effet, retour à `first` puis
+  réapplication, chargement des fixtures, et `doctrine:migrations:rollup` vérifié avec
+  d’anciennes versions enregistrées ; base de développement locale non modifiée.
+- Mise à niveau sans perte (15/11/2026), sur une copie de la base de développement : SQL
+  uniquement additif (tables `notification` et `cache_items`, une clé étrangère, valeurs par
+  défaut), historique recalé avec `doctrine:migrations:version`, schéma synchronisé ; nombre de
+  lignes et `CHECKSUM TABLE` identiques pour toutes les tables de données.
+- Base de développement locale mise à niveau par la même procédure après sauvegarde : données
+  identiques (lignes et `CHECKSUM TABLE`), 2 migrations exécutées, aucune en attente ; révocation
+  JWT vérifiée de bout en bout sur MySQL (profil `200`, logout `200`, profil `401`, toujours `401`
+  après `cache:clear` et redémarrage du backend).
+- CI e2e (15/11/2026) : pile reproduite localement (MySQL jetable, API dans un worktree isolé,
+  frontend compilé) — 10 tests Playwright Chromium réussis en 9,3 s, contre 48 min d’échecs ;
+  reproduction exacte du job PHPUnit de la CI — 149 tests réussis après ajout de `MAILER_DSN` ;
+  DSN Brevo résolu en `BrevoApiTransport` avec une clé factice ; lint frontend sans erreur.
+- Tests d’upload (15/11/2026) : 51 tests ajoutés, 3 échecs constatés avant correction (fichier
+  orphelin après un nom trop long, caractère nul et retour à la ligne acceptés dans un nom de
+  fichier d’événement) ; suite complète sur l’hôte et dans Docker — 149 tests, 557 assertions,
+  réussie ; PHPStan et PHP CS Fixer — réussis.
+- Job CI `migrations` (15/11/2026) : étapes rejouées localement sur un MySQL 8.4 jetable configuré
+  comme le service CI — réussies avec la chaîne actuelle ; échec attendu (code 255,
+  `Table 'notification' already exists`) avec l’ancienne chaîne du commit `4bb9202` ; syntaxe
+  validée par `lint:yaml`. Le job n’a pas encore tourné sur GitHub Actions.
+- Blocklist JWT (15/11/2026) : nouveau test de `LogoutControllerTest` (token révoqué toujours
+  refusé après vidage de `cache.app`), en échec avant correction ; migration `cache_items`
+  appliquée et annulée sur MySQL vide, schéma synchronisé ; suite complète sur l’hôte et dans
+  Docker — 98 tests, 411 assertions, réussie.
+- Volume privé (15/11/2026) : `docker compose config` de production validé avec un `.env.prod`
+  factice hors dépôt ; image backend reconstruite sans `var/`, `public/uploads` ni clé JWT ;
+  fichier écrit dans le volume puis relu depuis un nouveau conteneur ; Symfony démarre en `prod`
+  sans dossier `var/` dans l’image.
 
 ## À faire
 
@@ -60,7 +115,7 @@ L’application doit fonctionner avec deux environnements séparés :
 
 | Environnement | Branche | Usage |
 |---|---|---|
-| Préproduction | `dev` | Tests, validation et recette avant mise en production |
+| Préproduction | `develop` | Tests, validation et recette avant mise en production |
 | Production | `main` | Version stable déployée sur Pulseheberge |
 
 La branche `main` devra être protégée avec une Pull Request obligatoire, les vérifications CI obligatoires et aucun déploiement direct non validé.
@@ -93,9 +148,9 @@ permissions:
 
 Une permission d’écriture ne devra être ajoutée que pour une étape qui en a réellement besoin, par exemple la publication contrôlée d’une image.
 
-### Déploiement `dev`
+### Déploiement `develop`
 
-Après validation de la CI sur `dev`, le pipeline pourra :
+Après validation de la CI sur `develop`, le pipeline pourra :
 
 1. construire les images ;
 2. scanner les images ;
@@ -575,13 +630,13 @@ Cette permission `actions: write` devra être vérifiée selon la version de `up
 ### Ordre recommandé
 
 1. Vérifier les tests actuels et stabiliser la CI existante.
-2. Protéger les branches `dev` et `main`.
+2. Protéger les branches `develop` et `main`.
 3. Ajouter les contrôles Composer, PHPStan, PHPUnit, lint, TypeScript et build.
 4. Ajouter Bearer, Gitleaks et Trivy.
 5. Construire une image de production minimale.
 6. Mettre le registre d’images en privé.
 7. Configurer les secrets par fichiers sur Pulseheberge.
-8. Déployer la préproduction depuis `dev`.
+8. Déployer la préproduction depuis `develop`.
 9. Ajouter OWASP ZAP après démarrage de la préproduction.
 10. Valider le déploiement production depuis `main`.
 11. Configurer Cloudflare WAF, Fail2ban, sauvegardes et retour arrière.
@@ -609,7 +664,7 @@ Cette permission `actions: write` devra être vérifiée selon la version de `up
 - intégrer les scans dans GitHub Actions ;
 - démarrer l’application dans le pipeline avant le DAST ;
 - configurer les seuils de blocage ;
-- tester un déploiement complet sur `dev` ;
+- tester un déploiement complet sur `develop` ;
 - réaliser ensuite le déploiement contrôlé sur `main` ;
 - effectuer un audit final avant ouverture publique.
 
@@ -635,6 +690,37 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - `AdminAuthControllerTest` vérifie qu’un compte mairie supprimé ne peut pas se connecter.
 - `AdminAuthControllerTest` vérifie qu’un compte mairie non vérifié ne peut pas se connecter.
 - Chaque cas vérifie le statut HTTP `403` et l’absence de token dans la réponse.
+- `DocumentControllerTest` couvre le téléchargement privé : `401` sans token, propriétaire `200`,
+  autre association et utilisateur sans association `404`, administrateur mairie `200`,
+  document inconnu, identifiant non numérique, fichier absent et document supprimé `404`,
+  path traversal (`../`, `..\`, `%2e%2e`, chemin absolu, lien symbolique) `404`, ancien
+  chemin `/uploads/documents/` résolu dans le stockage privé, en-têtes `attachment`,
+  `nosniff`, `private, no-store`, absence de fuite du chemin réel et nom de fichier assaini.
+
+### Reste à traiter après les tests de téléchargement
+
+- ~~Fichiers d’événement en `Cache-Control: public`~~ — corrigé et testé le 15/11/2026.
+- Tout rôle mairie (`User::ROLES_MAIRIE`) peut télécharger tous les justificatifs : restreindre
+  par module métier une fois la matrice des rôles agents définie.
+- ~~Le volume de production ne couvre pas `var/uploads`~~ — corrigé le 15/11/2026
+  (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
+- La configuration CORS (`nelmio_cors.yaml`) n’autorise que `localhost` et ignore `CORS_ALLOW_ORIGIN` :
+  le frontend de préproduction et de production serait bloqué.
+- Aucun worker Messenger n’est déployé en production : `MESSENGER_TRANSPORT_DSN=sync://` traite
+  les messages immédiatement en attendant un service `messenger:consume`.
+- L’ajout d’un justificatif par l’administration (`AssociationAdministrationController::addDocument`)
+  ne vérifie pas la longueur de `typeDocument` (colonne de 100 caractères) et ne supprime pas le
+  fichier si l’enregistrement échoue ; même constat pour `RoomReservationService`.
+- Un PDF commençant par `%PDF-` est accepté même si la suite est illisible, et une image valide
+  peut contenir des données ajoutées : risque limité (stockage hors racine web, `attachment` et
+  `nosniff`), une analyse antivirus (ClamAV) reste à étudier.
+- ~~Job CI de migrations sur base vide~~ — ajouté le 15/11/2026 ; le rendre obligatoire dans la
+  protection des branches `develop` et `main` une fois qu’il a tourné sur GitHub.
+- Chaque membre de l’équipe doit mettre sa base locale à niveau une fois (réinitialisation ou
+  rattrapage sans perte) : procédure dans le README.
+- ~~Blocklist JWT non persistée~~ — corrigé le 15/11/2026 (pool Doctrine DBAL).
+- Purger périodiquement les révocations expirées (`php bin/console cache:pool:prune`), par
+  exemple depuis le service `campaign-scheduler`.
 
 ## Historique des tâches
 
@@ -652,3 +738,12 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Audit uploads et fichiers | Risque HIGH confirmé : documents privés exposés sous `public/uploads` ; contrôles path traversal, MIME, taille, SVG et anti-abus ajoutés à la feuille de route |
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
+| 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
+| 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
+| 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |
+| 15/11/2026 | Job CI de migrations | Migrations appliquées, validées, annulées et réappliquées sur MySQL vide ; échec vérifié sur l’ancienne chaîne ; `permissions: contents: read` |
+| 15/11/2026 | Blocklist JWT persistante | Pool Doctrine DBAL et migration `cache_items` ; révocation conservée après vidage du cache ; 98 tests réussis |
+| 15/11/2026 | Réparation des migrations | Chaîne cassée sur base vide remplacée par une migration de base unique ; vérifiée sur MySQL vide ; procédure d’équipe documentée |
+| 15/11/2026 | Persistance des fichiers privés | Volume `backend_private_uploads` ajouté en production ; uploads, `var/` et clés JWT exclus des images ; persistance vérifiée |
+| 15/11/2026 | Téléchargement des fichiers d’événement | Service `PrivateFileResponseFactory` partagé ; cache privé, MIME et noms corrigés ; accès admin, agent événement, autre agent `403`, association propriétaire/autre testés ; 97 tests réussis |
+| 15/11/2026 | Tests du téléchargement privé | 20 tests ajoutés ; cache public, documents supprimés, MIME et noms avec `\` corrigés ; 84 tests réussis |

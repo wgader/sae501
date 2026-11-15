@@ -17,9 +17,7 @@ test('Création d\'une nouvelle salle municipale', async ({ page }) => {
 
     await page.getByRole('button', { name: /créer la salle/i }).click();
 
-    // Confirmation de création
-    await expect(page.getByText('La salle a été créée avec succès.')).toBeVisible();
-
-    // Correctif : cibler le premier titre de salle correspondant
+    // Le formulaire n’affiche plus de message : la salle créée doit apparaître dans le catalogue.
     await expect(page.getByRole('heading', { name: 'Salle Polyvalente Nord' }).first()).toBeVisible();
+    await expect(page.getByText('12 Rue de la Mairie, 87220 Feytiat').first()).toBeVisible();
 });

@@ -47,6 +47,47 @@ compris lorsque le conteneur Docker utilise `APP_ENV=dev` pour l’application :
 docker compose exec backend php bin/phpunit
 ```
 
+Les clés JWT de test ne nécessitent aucune configuration : `tests/bootstrap.php`
+génère une paire jetable dans `backend/var/cache/test/jwt/` au premier lancement
+(ou après un vidage du cache), et l’environnement `test` l’utilise toujours, même
+si des variables `JWT_*` sont définies par Docker ou la CI.
+
+### Migrations Doctrine
+
+Depuis le 15/11/2026, l’historique des migrations est regroupé dans une seule
+migration de base, générée par Symfony depuis le mapping (l’ancienne chaîne ne
+pouvait plus construire une base vide : `notification` et `campaign` y étaient
+créées deux fois). Une base neuve se construit avec :
+
+```bash
+docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+```
+
+Pour une base locale créée avant ce regroupement, une seule fois :
+
+- base jetable (cas habituel en développement) — les données locales sont perdues
+  puis recréées par les fixtures :
+
+  ```bash
+  docker compose exec backend php bin/console doctrine:database:drop --force
+  docker compose exec backend php bin/console doctrine:database:create
+  docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+  docker compose exec backend php bin/console doctrine:fixtures:load --no-interaction
+  ```
+
+- base à conserver : relire d’abord le SQL proposé, qui ne doit contenir aucun
+  `DROP` ni suppression de colonne, puis appliquer ce rattrapage unique et recaler
+  l’historique des migrations. C’est la seule exception admise à l’interdiction de
+  `doctrine:schema:update` (testée sur une copie : aucune ligne modifiée).
+
+  ```bash
+  docker compose exec backend php bin/console doctrine:schema:update --dump-sql
+  docker compose exec backend php bin/console doctrine:schema:update --force
+  docker compose exec backend php bin/console doctrine:migrations:version --delete --all --no-interaction
+  docker compose exec backend php bin/console doctrine:migrations:version --add --all --no-interaction
+  docker compose exec backend php bin/console doctrine:schema:validate
+  ```
+
 | Service    | URL                         |
 |------------|-----------------------------|
 | Frontend   | http://localhost:3000       |
@@ -105,6 +146,36 @@ Le backend écoute sur les ports 80/443 et Caddy gère automatiquement HTTPS pou
 `API_DOMAIN`. Le frontend écoute sur `FRONTEND_PORT` (3000 par défaut) et doit
 être exposé derrière le reverse proxy de l'hébergeur avec `PUBLIC_API_URL`
 pointant vers le domaine public de l'API.
+
+Les fichiers envoyés sont conservés dans deux volumes Docker nommés, à inclure
+dans les sauvegardes du serveur :
+
+- `backend_uploads` (`/app/public/uploads`) : images publiques des salles et du matériel ;
+- `backend_private_uploads` (`/app/var/uploads`) : justificatifs et fichiers
+  d'événement, servis uniquement par l'API après contrôle d'accès.
+
+Ces dossiers, `backend/var` et les clés JWT sont exclus du contexte de build
+(`.dockerignore`) et ne sont jamais intégrés à une image.
+
+### E-mails (Brevo)
+
+En local, les e-mails sont capturés par Mailpit (http://localhost:8025). En
+préproduction et en production, ils partent par Brevo grâce au bridge
+`symfony/brevo-mailer` : renseigner dans le `.env.prod` du serveur
+`MAILER_DSN=brevo+api://<clé API>@default` et `MAILER_FROM` (adresse validée dans
+Brevo). Utiliser une clé distincte par environnement et ne jamais la versionner ni
+la partager hors du serveur ; une clé exposée doit être révoquée dans Brevo.
+Configurer aussi SPF, DKIM et DMARC sur le domaine d’envoi.
+
+### Tests end-to-end (Playwright)
+
+La CI démarre une pile complète (MySQL, migrations, fixtures, API Symfony et
+frontend compilé) puis exécute les parcours sur Chromium avec les comptes de
+démonstration des fixtures. En local, avec l’API et le frontend lancés :
+
+```bash
+npm --prefix frontend run test:e2e -- --project=chromium
+```
 
 ## Git Flow
 

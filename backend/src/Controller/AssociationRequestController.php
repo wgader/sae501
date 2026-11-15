@@ -35,7 +35,7 @@ final class AssociationRequestController extends AbstractController
     #[Route('', name: 'app_association_requests_list', methods: ['GET'])]
     public function list(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
+        if (null === $user) {
             return $this->json(
                 ['message' => 'Authentification requise pour accéder aux démarches.'],
                 Response::HTTP_UNAUTHORIZED,
@@ -43,7 +43,7 @@ final class AssociationRequestController extends AbstractController
         }
 
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => "Votre compte n'est rattaché à aucune association."],
                 Response::HTTP_FORBIDDEN,
@@ -67,7 +67,7 @@ final class AssociationRequestController extends AbstractController
     #[Route('/{id}', name: 'app_association_requests_show', methods: ['GET'])]
     public function show(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
+        if (null === $user) {
             return $this->json(
                 ['message' => 'Authentification requise pour accéder à cette démarche.'],
                 Response::HTTP_UNAUTHORIZED,
@@ -75,7 +75,7 @@ final class AssociationRequestController extends AbstractController
         }
 
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => "Votre compte n'est rattaché à aucune association."],
                 Response::HTTP_FORBIDDEN,
@@ -86,7 +86,7 @@ final class AssociationRequestController extends AbstractController
             $type = $request->query->get('type');
             $detail = $this->aggregationService->getRequestDetail($association, $id, is_string($type) ? $type : null);
 
-            if ($detail === null) {
+            if (null === $detail) {
                 return $this->json(
                     ['message' => 'Dossier introuvable.'],
                     Response::HTTP_NOT_FOUND,
@@ -105,7 +105,7 @@ final class AssociationRequestController extends AbstractController
     #[Route('/{id}/documents', name: 'app_association_request_document_create', methods: ['POST'])]
     public function addDocument(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
+        if (null === $user) {
             return $this->json(
                 ['message' => 'Authentification requise pour déposer une pièce.'],
                 Response::HTTP_UNAUTHORIZED,
@@ -113,7 +113,7 @@ final class AssociationRequestController extends AbstractController
         }
 
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => "Votre compte n'est rattaché à aucune association."],
                 Response::HTTP_FORBIDDEN,
@@ -129,11 +129,11 @@ final class AssociationRequestController extends AbstractController
         }
 
         $requestId = (int) preg_replace('/\D/', '', $id);
-        $reservation = $type === AssociationRequestAggregationService::TYPE_MATERIEL
+        $reservation = AssociationRequestAggregationService::TYPE_MATERIEL === $type
             ? $this->materielRepository->find($requestId)
             : $this->salleRepository->find($requestId);
 
-        if ($reservation === null || $reservation->getAssociation()?->getId() !== $association->getId()) {
+        if (null === $reservation || $reservation->getAssociation()?->getId() !== $association->getId()) {
             return $this->json(['message' => 'Dossier introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
@@ -142,8 +142,20 @@ final class AssociationRequestController extends AbstractController
             return $this->json(['message' => 'Fichier invalide ou manquant.'], Response::HTTP_BAD_REQUEST);
         }
 
-        if ($file->getSize() === false || $file->getSize() > 10 * 1024 * 1024) {
+        if (false === $file->getSize() || $file->getSize() > 10 * 1024 * 1024) {
             return $this->json(['message' => 'Le fichier ne doit pas dépasser 10 Mo.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Le nom est validé avant l’écriture sur disque pour ne jamais laisser de fichier orphelin.
+        $typeDocument = trim((string) $request->request->get('typeDocument', $file->getClientOriginalName()));
+        if ('' === $typeDocument) {
+            $typeDocument = $file->getClientOriginalName();
+        }
+        if (mb_strlen($typeDocument) > 100) {
+            return $this->json(
+                ['message' => 'Le nom du document ne peut pas dépasser 100 caractères.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         try {
@@ -154,19 +166,6 @@ final class AssociationRequestController extends AbstractController
             return $this->json(['message' => $exception->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $originalName = $storedFile['originalName'];
-        $fileSize = $storedFile['size'];
-        $mimeType = $storedFile['mimeType'];
-        $typeDocument = trim((string) $request->request->get('typeDocument', $originalName));
-        if ($typeDocument === '') {
-            $typeDocument = $originalName;
-        }
-        if (mb_strlen($typeDocument) > 100) {
-            return $this->json(
-                ['message' => 'Le nom du document ne peut pas dépasser 100 caractères.'],
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-            );
-        }
         $document = new DocumentJustificatif();
         $document
             ->setAssociation($association)
@@ -176,13 +175,20 @@ final class AssociationRequestController extends AbstractController
             ->setLieAId($requestId)
             ->setDescription(json_encode([
                 'verified' => false,
-                'size' => $fileSize,
-                'originalName' => $originalName,
-                'mimeType' => $mimeType,
+                'size' => $storedFile['size'],
+                'originalName' => $storedFile['originalName'],
+                'mimeType' => $storedFile['mimeType'],
             ], JSON_THROW_ON_ERROR));
 
-        $this->entityManager->persist($document);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->persist($document);
+            $this->entityManager->flush();
+        } catch (\Throwable $exception) {
+            // Sans enregistrement en base, le fichier ne serait plus jamais accessible ni supprimé.
+            $this->documentStorage->delete($storedFile['path']);
+
+            throw $exception;
+        }
 
         return $this->json($this->serializeDocument($document), Response::HTTP_CREATED);
     }
@@ -190,7 +196,7 @@ final class AssociationRequestController extends AbstractController
     #[Route('/{id}/cancel', name: 'app_association_requests_cancel', methods: ['POST'])]
     public function cancel(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
+        if (null === $user) {
             return $this->json(
                 ['message' => 'Authentification requise pour annuler une réservation.'],
                 Response::HTTP_UNAUTHORIZED,
@@ -198,7 +204,7 @@ final class AssociationRequestController extends AbstractController
         }
 
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => "Votre compte n'est rattaché à aucune association."],
                 Response::HTTP_FORBIDDEN,
@@ -253,7 +259,7 @@ final class AssociationRequestController extends AbstractController
         return [
             'id' => $document->getId(),
             'typeDocument' => $document->getTypeDocument(),
-            'fichierUrl' => $document->getId() !== null ? '/api/documents/' . $document->getId() . '/download' : null,
+            'fichierUrl' => null !== $document->getId() ? '/api/documents/'.$document->getId().'/download' : null,
             'isVerified' => (bool) ($metadata['verified'] ?? false),
             'size' => (int) ($metadata['size'] ?? 0),
             'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),

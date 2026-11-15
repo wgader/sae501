@@ -1,3 +1,7 @@
 backend/vendor
-backend/var/cache
-backend/var/log
+# Les données d’exécution (cache, logs, uploads privés, base de test) ne doivent jamais entrer dans une image.
+backend/var
+# Les images publiques envoyées vivent dans le volume backend_uploads.
+backend/public/uploads
+# Les clés JWT sont fournies par les secrets Docker.
+backend/config/jwt/*.pem
