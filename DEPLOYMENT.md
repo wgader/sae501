@@ -196,6 +196,13 @@ sur le serveur.
 | `PUBLIC_FRONTEND_URL` | `https://www.<domaine>` | lien de l’environnement GitHub ; healthcheck final |
 | `DEPLOY_PORT` | `22` | facultatif |
 
+### Activation du déploiement automatique
+
+Tant que la variable de **dépôt** `DEPLOY_ENABLED` (*Settings → Secrets and variables → Actions →
+Variables*) ne vaut pas `true`, un push sur `develop` ou `main` construit, analyse et publie les
+images mais saute le déploiement, sans échec. La définir à `true` une fois le serveur mis en
+service et les secrets créés. « Run workflow » déploie dans tous les cas.
+
 ### Images GHCR
 
 Les paquets `sae501/backend` et `sae501/frontend` sont créés au premier push et restent privés
