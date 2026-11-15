@@ -3,13 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Salle;
+use App\Service\PublicImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -17,10 +17,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted(new \Symfony\Component\ExpressionLanguage\Expression("is_granted('ROLE_ADMIN') or (is_granted('ROLE_MAIRIE') and is_granted('ROLE_GESTION_SALLE'))"))]
 final class SalleAdministrationController extends AbstractController
 {
+    private const IMAGE_FOLDER = 'salles';
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private readonly PublicImageStorage $imageStorage,
     ) {
     }
 
@@ -66,7 +67,7 @@ final class SalleAdministrationController extends AbstractController
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->validateImage($image, $errors))) {
+        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
         }
 
         if ($errors !== []) {
@@ -89,14 +90,14 @@ final class SalleAdministrationController extends AbstractController
         $salle->setIsActive(true);
         $salle->setDeletedAt(null);
 
-        $imagePath = $image instanceof UploadedFile ? $this->storeImage($image) : null;
+        $imagePath = $image instanceof UploadedFile ? $this->imageStorage->store($image, self::IMAGE_FOLDER) : null;
         $salle->setImagePath($imagePath);
         $this->entityManager->persist($salle);
         try {
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
             if ($imagePath !== null) {
-                $this->deleteStoredImage($imagePath);
+                $this->imageStorage->delete($imagePath, self::IMAGE_FOLDER);
             }
             throw $exception;
         }
@@ -151,7 +152,7 @@ final class SalleAdministrationController extends AbstractController
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->validateImage($image, $errors))) {
+        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
         }
 
         if ($errors !== []) {
@@ -183,7 +184,7 @@ final class SalleAdministrationController extends AbstractController
         $oldImagePath = $salle->getImagePath();
         $newImagePath = null;
         if ($image instanceof UploadedFile) {
-            $newImagePath = $this->storeImage($image);
+            $newImagePath = $this->imageStorage->store($image, self::IMAGE_FOLDER);
             $salle->setImagePath($newImagePath);
         }
         $salle->setUpdatedAt(new \DateTimeImmutable());
@@ -191,12 +192,12 @@ final class SalleAdministrationController extends AbstractController
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
             if ($newImagePath !== null) {
-                $this->deleteStoredImage($newImagePath);
+                $this->imageStorage->delete($newImagePath, self::IMAGE_FOLDER);
             }
             throw $exception;
         }
         if ($newImagePath !== null && $oldImagePath !== null) {
-            $this->deleteStoredImage($oldImagePath);
+            $this->imageStorage->delete($oldImagePath, self::IMAGE_FOLDER);
         }
 
         return $this->json(self::serializeSalle($salle));
@@ -310,78 +311,20 @@ final class SalleAdministrationController extends AbstractController
     /**
      * @param array<string, string> $errors
      */
-    private function validateImage(UploadedFile $image, array &$errors): bool
+    /**
+     * @param array<string, string> $errors
+     */
+    private function isValidImage(UploadedFile $image, array &$errors): bool
     {
-        if (!$image->isValid()) {
-            $errors['image'] = 'Le transfert de l’image a échoué.';
-
-            return false;
-        }
-        if ($image->getSize() === false || $image->getSize() > 5 * 1024 * 1024) {
-            $errors['image'] = 'L’image ne doit pas dépasser 5 Mo.';
-
-            return false;
-        }
-
-        $mimeType = $image->getMimeType();
-        $allowedMimeTypes = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-        ];
-        if (!isset($allowedMimeTypes[$mimeType])) {
-            $errors['image'] = 'Le fichier doit être une image JPEG, PNG ou WebP.';
-
-            return false;
-        }
-        $dimensions = @getimagesize($image->getPathname());
-        if (
-            $dimensions === false
-            || $dimensions[0] < 1
-            || $dimensions[1] < 1
-            || $dimensions[0] > 8000
-            || $dimensions[1] > 8000
-        ) {
-            $errors['image'] = 'Le contenu du fichier image est invalide.';
+        try {
+            $this->imageStorage->validate($image);
+        } catch (\InvalidArgumentException $exception) {
+            $errors['image'] = $exception->getMessage();
 
             return false;
         }
 
         return true;
-    }
-
-    private function storeImage(UploadedFile $image): string
-    {
-        $directory = $this->projectDir . '/public/uploads/salles';
-        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-            throw new \RuntimeException('Le répertoire de stockage des images est indisponible.');
-        }
-
-        $mimeType = $image->getMimeType();
-        $extension = match ($mimeType) {
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            default => throw new \RuntimeException('Type d’image non autorisé.'),
-        };
-        $filename = bin2hex(random_bytes(24)) . '.' . $extension;
-        $image->move($directory, $filename);
-
-        return '/uploads/salles/' . $filename;
-    }
-
-    private function deleteStoredImage(string $imagePath): void
-    {
-        $prefix = '/uploads/salles/';
-        if (!str_starts_with($imagePath, $prefix)) {
-            return;
-        }
-
-        $filename = basename($imagePath);
-        $fullPath = $this->projectDir . '/public' . $prefix . $filename;
-        if (is_file($fullPath) && !unlink($fullPath)) {
-            throw new \RuntimeException('Impossible de supprimer l’ancienne image de salle.');
-        }
     }
 
     /**

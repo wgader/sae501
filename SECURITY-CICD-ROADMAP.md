@@ -29,6 +29,7 @@ Les derniers correctifs applicatifs réalisés concernent :
 - des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
 - le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
 - l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
+- la validation des images publiques : service partagé `PublicImageStorage` (type réel détecté sur le contenu, `getimagesize`, 5 Mo et 8000 px maximum, extension imposée par le contenu, suppression limitée à son dossier) utilisé par les salles et le matériel ; le matériel acceptait auparavant tout fichier dont le navigateur annonçait un type image, et l’enregistrait publiquement en `.jpg` ; en test, les images sont écrites dans `var/cache/test/uploads/public` ;
 - la CI des tests end-to-end : nouveau job `e2e` qui démarre MySQL, applique les migrations, charge les fixtures, lance l’API (`php -S`) et le frontend compilé, puis exécute Playwright sur Chromium (1 relance, délai global de 15 min, rapport en artefact en cas d’échec) ; ces tests tournaient auparavant sans backend ni comptes de test, échouaient tous et bloquaient la CI environ 48 min ; correction de `MAILER_DSN` manquant dans `.env.test` (17 tests PHPUnit en échec sur la CI) ; association en attente ajoutée aux fixtures et test de création de salle mis à jour ;
 - la préparation de l’envoi d’e-mails par Brevo : bridge `symfony/brevo-mailer`, `MAILER_DSN=brevo+api://…` documenté dans `.env.prod.example` avec `FRONTEND_URL` et `MESSENGER_TRANSPORT_DSN=sync://`, qui manquaient ;
 - les tests d’upload : `PrivateDocumentStorageTest` et `SecureEventFileStorageTest` (formats acceptés, nom stocké aléatoire, extension imposée par le contenu, taille vide / limite / dépassée, HTML, JS, PHP, SVG et ZIP déguisés, image corrompue, noms invalides ou contenant `../`) et `AssociationRequestDocumentUploadTest` (`401`, `403`, `404`, `400`, `422`, dépôt valide sans fuite de chemin) ; corrections : le nom du document est validé avant l’écriture sur disque et le fichier est supprimé si l’enregistrement en base échoue (plus de fichier orphelin), et le stockage des événements refuse désormais les caractères de contrôle dans le nom ;
@@ -84,6 +85,9 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   identiques (lignes et `CHECKSUM TABLE`), 2 migrations exécutées, aucune en attente ; révocation
   JWT vérifiée de bout en bout sur MySQL (profil `200`, logout `200`, profil `401`, toujours `401`
   après `cache:clear` et redémarrage du backend).
+- Images publiques (15/11/2026) : 17 tests ajoutés (13 unitaires, 4 HTTP) ; avant correction, un
+  fichier HTML annoncé comme PNG était accepté (`201`) et stocké en `.jpg` dans `public/uploads/equipment` ;
+  suite complète sur l’hôte et dans Docker — 166 tests, réussie ; PHPStan — réussi.
 - CI e2e (15/11/2026) : pile reproduite localement (MySQL jetable, API dans un worktree isolé,
   frontend compilé) — 10 tests Playwright Chromium réussis en 9,3 s, contre 48 min d’échecs ;
   reproduction exacte du job PHPUnit de la CI — 149 tests réussis après ajout de `MAILER_DSN` ;
@@ -739,6 +743,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
+| 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
 | 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
 | 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |
 | 15/11/2026 | Job CI de migrations | Migrations appliquées, validées, annulées et réappliquées sur MySQL vide ; échec vérifié sur l’ancienne chaîne ; `permissions: contents: read` |

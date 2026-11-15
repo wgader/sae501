@@ -3,6 +3,9 @@
 namespace App\Tests\Controller;
 
 use App\DataFixtures\ControllerIntegrationFixtures;
+use App\Entity\Salle;
+use App\Tests\Fixtures\UploadFixtures;
+use Symfony\Component\Filesystem\Filesystem;
 
 final class SalleAdministrationControllerTest extends ControllerRouteTestCase
 {
@@ -85,5 +88,59 @@ final class SalleAdministrationControllerTest extends ControllerRouteTestCase
         $this->assertJsonContains([
             'errors' => ['isActive' => 'Le champ isActive doit être un booléen.'],
         ]);
+    }
+
+    public function testRoomImageIsStoredWhenItIsARealImage(): void
+    {
+        $fixtures = new UploadFixtures();
+        (new Filesystem())->remove($this->publicUploadDirectory());
+        $this->authenticateAsAdmin();
+
+        try {
+            $this->client->request('POST', '/api/admin/salles', $this->roomForm(), ['image' => $fixtures->jpeg('salle.jpg')]);
+        } finally {
+            $fixtures->remove();
+        }
+
+        $this->assertResponseStatusCodeSame(201);
+        $room = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertMatchesRegularExpression('#^/uploads/salles/[a-f0-9]{48}\.jpg$#', $room['imageUrl']);
+        self::assertFileExists($this->publicUploadDirectory().'/salles/'.basename($room['imageUrl']));
+    }
+
+    public function testRoomImageIsRejectedWhenTheBrowserLiesAboutItsType(): void
+    {
+        $fixtures = new UploadFixtures();
+        (new Filesystem())->remove($this->publicUploadDirectory());
+        $this->authenticateAsAdmin();
+
+        try {
+            $this->client->request('POST', '/api/admin/salles', $this->roomForm(), [
+                'image' => $fixtures->file('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'salle.png', 'image/png'),
+            ]);
+        } finally {
+            $fixtures->remove();
+        }
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains(['errors' => ['image' => 'Le fichier doit être une image JPEG, PNG ou WebP.']]);
+        self::assertSame(0, $this->em->getRepository(Salle::class)->count(['nom' => 'Salle du Mas Cerise']));
+        self::assertDirectoryDoesNotExist($this->publicUploadDirectory().'/salles');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function roomForm(): array
+    {
+        return ['nom' => 'Salle du Mas Cerise', 'adresse' => '5 rue du Mas Cerise, 87220 Feytiat', 'capaciteMax' => '60', 'accesPmr' => 'true'];
+    }
+
+    private function publicUploadDirectory(): string
+    {
+        $directory = static::getContainer()->getParameter('app.public_upload_directory');
+        self::assertIsString($directory);
+
+        return $directory;
     }
 }
