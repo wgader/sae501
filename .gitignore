@@ -40,3 +40,6 @@ caddy_config/
 *.swp
 *.swo
 Thumbs.db
+
+# Rapports générés par le job CI security
+security-reports/

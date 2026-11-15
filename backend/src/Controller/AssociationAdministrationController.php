@@ -364,35 +364,49 @@ final class AssociationAdministrationController extends AbstractController
             return $this->json(['message' => 'Fichier invalide ou manquant.'], Response::HTTP_BAD_REQUEST);
         }
 
+        // Le nom est validé avant l’écriture sur disque pour ne jamais laisser de fichier orphelin.
+        $typeDocument = trim((string) $request->request->get('typeDocument', $file->getClientOriginalName()));
+        if ('' === $typeDocument) {
+            $typeDocument = $file->getClientOriginalName();
+        }
+        if (mb_strlen($typeDocument) > 100) {
+            return $this->json(
+                ['message' => 'Le nom du document ne peut pas dépasser 100 caractères.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
         try {
             $storedFile = $this->documentStorage->store($file);
-
-            $typeDocument = (string) $request->request->get('typeDocument', $storedFile['originalName']);
-            if (trim($typeDocument) === '') {
-                $typeDocument = $storedFile['originalName'];
-            }
-            $isVerified = filter_var($request->request->get('isVerified', false), FILTER_VALIDATE_BOOLEAN);
-
-            $doc = new DocumentJustificatif();
-            $doc->setAssociation($association);
-            $doc->setTypeDocument($typeDocument);
-            $doc->setFichierUrl($storedFile['path']);
-            $doc->setDescription(json_encode([
-                'verified' => $isVerified,
-                'size' => $storedFile['size'],
-                'originalName' => $storedFile['originalName'],
-                'mimeType' => $storedFile['mimeType'],
-            ], JSON_THROW_ON_ERROR));
-
-            $this->entityManager->persist($doc);
-            $this->entityManager->flush();
-
-            return $this->json(self::serializeDocument($doc), Response::HTTP_CREATED);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
-        } catch (\Throwable $e) {
+        } catch (\RuntimeException) {
             return $this->json(['message' => 'Erreur lors de l’enregistrement du document.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+
+        $isVerified = filter_var($request->request->get('isVerified', false), FILTER_VALIDATE_BOOLEAN);
+        $doc = new DocumentJustificatif();
+        $doc->setAssociation($association);
+        $doc->setTypeDocument($typeDocument);
+        $doc->setFichierUrl($storedFile['path']);
+        $doc->setDescription(json_encode([
+            'verified' => $isVerified,
+            'size' => $storedFile['size'],
+            'originalName' => $storedFile['originalName'],
+            'mimeType' => $storedFile['mimeType'],
+        ], JSON_THROW_ON_ERROR));
+
+        try {
+            $this->entityManager->persist($doc);
+            $this->entityManager->flush();
+        } catch (\Throwable) {
+            // Sans enregistrement en base, le fichier ne serait plus jamais accessible ni supprimé.
+            $this->documentStorage->delete($storedFile['path']);
+
+            return $this->json(['message' => 'Erreur lors de l’enregistrement du document.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return $this->json(self::serializeDocument($doc), Response::HTTP_CREATED);
     }
 
     #[Route('/{id<\d+>}/documents/{docId<\d+>}', name: 'admin_association_document_update', methods: ['PATCH'])]

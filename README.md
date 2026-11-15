@@ -167,6 +167,15 @@ Brevo). Utiliser une clé distincte par environnement et ne jamais la versionner
 la partager hors du serveur ; une clé exposée doit être révoquée dans Brevo.
 Configurer aussi SPF, DKIM et DMARC sur le domaine d’envoi.
 
+Les notifications asynchrones (réservations de salle) passent par la file Doctrine
+`MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0`, consommée en production par
+le service `messenger-worker` de `docker-compose.prod.yml`. Les messages en échec sont
+conservés dans la file `failed` :
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec messenger-worker php bin/console messenger:failed:show --env=prod
+```
+
 ### Tests end-to-end (Playwright)
 
 La CI démarre une pile complète (MySQL, migrations, fixtures, API Symfony et

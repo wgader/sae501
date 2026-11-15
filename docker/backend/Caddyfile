@@ -10,16 +10,7 @@
     @private_documents path /uploads/documents/*
     respond @private_documents 404
 
-    @cors_preflight {
-        method OPTIONS
-        header Origin http://localhost:3000
-    }
-    header {
-        Access-Control-Allow-Origin http://localhost:3000
-        Access-Control-Allow-Methods "GET, OPTIONS, POST, PUT, PATCH, DELETE"
-        Access-Control-Allow-Headers "Content-Type, Authorization"
-    }
-    respond @cors_preflight 204
+    # Le CORS est géré par Symfony (nelmio_cors, variable CORS_ALLOW_ORIGIN).
 
     php_server {
         worker /app/public/index.php
