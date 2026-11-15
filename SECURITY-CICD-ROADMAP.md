@@ -4,7 +4,7 @@
 
 ## Dernière mise à jour
 
-- Date : 13 novembre 2026
+- Date : 15 novembre 2026
 - Statut : architecture cible F+B choisie ; sécurisation CI/CD à poursuivre
 - Prochaine étape : intégrer la génération de rapports Markdown comme artefacts CI/CD
 
@@ -26,6 +26,7 @@ Les derniers correctifs applicatifs réalisés concernent :
 - le stockage privé centralisé des justificatifs dans `var/uploads/documents`, avec validation de taille, MIME, signature et nom ;
 - le téléchargement authentifié des justificatifs via `/api/documents/{id}/download`, avec contrôle propriétaire/mairie et en-têtes `attachment`/`nosniff` ;
 - le blocage Caddy des anciens chemins publics `/uploads/documents/*` et la migration des fichiers locaux existants hors de `public/`.
+- des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
 
 Le build frontend passe actuellement. Le lint passe avec des avertissements Tailwind historiques qui devront être traités progressivement.
 
@@ -46,9 +47,14 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
 - Vérification de l’architecture Docker actuelle réalisée et écarts avec le schéma du cours documentés ci-dessous.
 - `git diff --check` — réussi.
 - Migration locale des deux documents existants vers `backend/var/uploads/documents` — réussie.
-- La relance des tests JWT a révélé une clé privée de test locale chiffrée avec
-  une passphrase incorrecte (`bad decrypt`) ; la correction de la configuration
-  des clés de test reste nécessaire avant de déclarer la suite complète verte.
+- Erreur `bad decrypt` des tests JWT corrigée (15/11/2026) : suite PHPUnit
+  complète sur l’hôte, cache de test vidé — 64 tests, 300 assertions, réussie.
+- Tests JWT relancés avec des variables `JWT_*` volontairement invalides dans
+  l’environnement (cas Docker/CI) — 7 tests, 30 assertions, réussis.
+- Suite PHPUnit dans le conteneur `backend` (variables `JWT_*` de dev injectées,
+  cache de test vidé) — 64 tests, 300 assertions, réussie après mise à jour du
+  volume `vendor` du conteneur (`composer install --no-scripts`).
+- PHPStan, `lint:container` (env `test`) et `git diff --check` — réussis.
 
 ## À faire
 
@@ -60,7 +66,7 @@ L’application doit fonctionner avec deux environnements séparés :
 
 | Environnement | Branche | Usage |
 |---|---|---|
-| Préproduction | `dev` | Tests, validation et recette avant mise en production |
+| Préproduction | `develop` | Tests, validation et recette avant mise en production |
 | Production | `main` | Version stable déployée sur Pulseheberge |
 
 La branche `main` devra être protégée avec une Pull Request obligatoire, les vérifications CI obligatoires et aucun déploiement direct non validé.
@@ -93,9 +99,9 @@ permissions:
 
 Une permission d’écriture ne devra être ajoutée que pour une étape qui en a réellement besoin, par exemple la publication contrôlée d’une image.
 
-### Déploiement `dev`
+### Déploiement `develop`
 
-Après validation de la CI sur `dev`, le pipeline pourra :
+Après validation de la CI sur `develop`, le pipeline pourra :
 
 1. construire les images ;
 2. scanner les images ;
@@ -575,13 +581,13 @@ Cette permission `actions: write` devra être vérifiée selon la version de `up
 ### Ordre recommandé
 
 1. Vérifier les tests actuels et stabiliser la CI existante.
-2. Protéger les branches `dev` et `main`.
+2. Protéger les branches `develop` et `main`.
 3. Ajouter les contrôles Composer, PHPStan, PHPUnit, lint, TypeScript et build.
 4. Ajouter Bearer, Gitleaks et Trivy.
 5. Construire une image de production minimale.
 6. Mettre le registre d’images en privé.
 7. Configurer les secrets par fichiers sur Pulseheberge.
-8. Déployer la préproduction depuis `dev`.
+8. Déployer la préproduction depuis `develop`.
 9. Ajouter OWASP ZAP après démarrage de la préproduction.
 10. Valider le déploiement production depuis `main`.
 11. Configurer Cloudflare WAF, Fail2ban, sauvegardes et retour arrière.
@@ -609,7 +615,7 @@ Cette permission `actions: write` devra être vérifiée selon la version de `up
 - intégrer les scans dans GitHub Actions ;
 - démarrer l’application dans le pipeline avant le DAST ;
 - configurer les seuils de blocage ;
-- tester un déploiement complet sur `dev` ;
+- tester un déploiement complet sur `develop` ;
 - réaliser ensuite le déploiement contrôlé sur `main` ;
 - effectuer un audit final avant ouverture publique.
 
@@ -652,3 +658,4 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Audit uploads et fichiers | Risque HIGH confirmé : documents privés exposés sous `public/uploads` ; contrôles path traversal, MIME, taille, SVG et anti-abus ajoutés à la feuille de route |
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
+| 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |

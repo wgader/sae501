@@ -47,6 +47,11 @@ compris lorsque le conteneur Docker utilise `APP_ENV=dev` pour l’application :
 docker compose exec backend php bin/phpunit
 ```
 
+Les clés JWT de test ne nécessitent aucune configuration : `tests/bootstrap.php`
+génère une paire jetable dans `backend/var/cache/test/jwt/` au premier lancement
+(ou après un vidage du cache), et l’environnement `test` l’utilise toujours, même
+si des variables `JWT_*` sont définies par Docker ou la CI.
+
 | Service    | URL                         |
 |------------|-----------------------------|
 | Frontend   | http://localhost:3000       |
