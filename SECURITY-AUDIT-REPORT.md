@@ -24,7 +24,7 @@ Un rapport doit rester disponible même lorsqu’un scan échoue ; le pipeline d
 | 1 | 🔴 CRITICAL | Documents uploadés | Des documents privés étaient stockés sous `public/uploads` et pouvaient être servis directement sans contrôle d’accès | Corrigé pour les nouveaux fichiers et fichiers locaux migrés |
 | 2 | 🟠 HIGH | Téléchargements | Le téléchargement doit vérifier le propriétaire ou le rôle municipal autorisé | Corrigé via `/api/documents/{id}/download` |
 | 3 | 🟠 HIGH | Path traversal | La stratégie de nommage et de résolution doit rester protégée contre `..`, chemins absolus et encodages | Résolution canonique et noms aléatoires ajoutés |
-| 4 | 🟠 HIGH | Fichiers dangereux | Les règles d’extension, MIME réel, signature et contenu doivent être uniformisées sur tous les uploads | Corrigé pour les justificatifs classiques ; images publiques à renforcer |
+| 4 | 🟠 HIGH | Fichiers dangereux | Les règles d’extension, MIME réel, signature et contenu doivent être uniformisées sur tous les uploads | Corrigé pour les justificatifs, les fichiers d’événement et les images publiques (salles, matériel) |
 | 5 | 🟡 MEDIUM | SVG/HTML/JS | Ces formats peuvent contenir du contenu actif et ne doivent pas être servis inline | À interdire ou sanitiser |
 | 6 | 🟡 MEDIUM | Déni de service applicatif | Les tailles, nombres de fichiers, temps et quotas doivent être limités par endpoint | À ajouter |
 | 7 | 🟡 MEDIUM | JWT navigateur | Le stockage `localStorage` reste exposé à une compromission XSS | Migration cookies sécurisés à planifier |

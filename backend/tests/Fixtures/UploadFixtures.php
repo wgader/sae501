@@ -64,12 +64,15 @@ final class UploadFixtures
         return $this->file("\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00".str_repeat("\x00", 64), $clientName);
     }
 
-    public function file(string $content, string $clientName): UploadedFile
+    /**
+     * @param string|null $clientMimeType type annoncé par le navigateur, qui peut mentir
+     */
+    public function file(string $content, string $clientName, ?string $clientMimeType = null): UploadedFile
     {
         $path = $this->directory.'/'.bin2hex(random_bytes(8));
         file_put_contents($path, $content);
 
-        return new UploadedFile($path, $clientName, null, null, true);
+        return new UploadedFile($path, $clientName, $clientMimeType, null, true);
     }
 
     public function sized(int $bytes, string $clientName): UploadedFile

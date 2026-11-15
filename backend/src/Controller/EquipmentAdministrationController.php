@@ -9,9 +9,9 @@ use App\Exception\StockConflictException;
 use App\Repository\MaterielRepository;
 use App\Repository\StockAdjustmentRepository;
 use App\Service\EquipmentStockService;
+use App\Service\PublicImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,13 +25,14 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_MATERIEL')"))]
 final class EquipmentAdministrationController extends AbstractController
 {
+    private const IMAGE_FOLDER = 'equipment';
+
     public function __construct(
         private readonly MaterielRepository $materielRepository,
         private readonly StockAdjustmentRepository $stockAdjustmentRepository,
         private readonly EquipmentStockService $stockService,
         private readonly EntityManagerInterface $entityManager,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private readonly PublicImageStorage $imageStorage,
     ) {
     }
 
@@ -90,7 +91,7 @@ final class EquipmentAdministrationController extends AbstractController
             }
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->validateImage($image, $errors))) {
+        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
             // Error populated in $errors
         }
 
@@ -108,7 +109,7 @@ final class EquipmentAdministrationController extends AbstractController
         $materiel->setIsArchived(false);
         $materiel->setCreatedAt(new \DateTimeImmutable());
 
-        $imagePath = $image instanceof UploadedFile ? $this->storeImage($image) : null;
+        $imagePath = $image instanceof UploadedFile ? $this->imageStorage->store($image, self::IMAGE_FOLDER) : null;
         $materiel->setImagePath($imagePath);
 
         $this->entityManager->persist($materiel);
@@ -116,7 +117,7 @@ final class EquipmentAdministrationController extends AbstractController
             $this->entityManager->flush();
         } catch (\Throwable $e) {
             if ($imagePath !== null) {
-                $this->deleteStoredImage($imagePath);
+                $this->imageStorage->delete($imagePath, self::IMAGE_FOLDER);
             }
             throw $e;
         }
@@ -164,7 +165,7 @@ final class EquipmentAdministrationController extends AbstractController
             $materiel->setConsignesUtilisation(is_string($payload['consignesUtilisation']) ? trim($payload['consignesUtilisation']) : null);
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->validateImage($image, $errors))) {
+        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
             // Error populated in $errors
         }
 
@@ -197,10 +198,10 @@ final class EquipmentAdministrationController extends AbstractController
 
         if ($image instanceof UploadedFile) {
             $oldImage = $materiel->getImagePath();
-            $newImage = $this->storeImage($image);
+            $newImage = $this->imageStorage->store($image, self::IMAGE_FOLDER);
             $materiel->setImagePath($newImage);
             if ($oldImage !== null) {
-                $this->deleteStoredImage($oldImage);
+                $this->imageStorage->delete($oldImage, self::IMAGE_FOLDER);
             }
         }
 
@@ -305,67 +306,22 @@ final class EquipmentAdministrationController extends AbstractController
     /**
      * @param array<string, string> $errors
      */
-    private function validateImage(UploadedFile $image, array &$errors): bool
+    /**
+     * @param array<string, string> $errors
+     */
+    private function isValidImage(UploadedFile $image, array &$errors): bool
     {
-        if (!$image->isValid()) {
-            $errors['image'] = 'Le transfert de l’image a échoué.';
-            $errors['photo'] = 'Le transfert de l’image a échoué.';
-
-            return false;
-        }
-        if ($image->getSize() === false || $image->getSize() > 5 * 1024 * 1024) {
-            $errors['image'] = 'L’image ne doit pas dépasser 5 Mo.';
-            $errors['photo'] = 'L’image ne doit pas dépasser 5 Mo.';
-
-            return false;
-        }
-
-        $allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/x-png', 'image/webp'];
-        $mime = $image->getMimeType();
-        $clientMime = $image->getClientMimeType();
-
-        if (!in_array($mime, $allowedMimeTypes, true) && !in_array($clientMime, $allowedMimeTypes, true)) {
-            $errors['image'] = 'Le fichier doit être une image JPEG, PNG ou WebP.';
-            $errors['photo'] = 'Le fichier doit être une image JPEG, PNG ou WebP.';
+        try {
+            $this->imageStorage->validate($image);
+        } catch (\InvalidArgumentException $exception) {
+            // Le formulaire envoie le fichier sous « photo », l’API historique sous « image ».
+            $errors['image'] = $exception->getMessage();
+            $errors['photo'] = $exception->getMessage();
 
             return false;
         }
 
         return true;
-    }
-
-    private function storeImage(UploadedFile $image): string
-    {
-        $directory = $this->projectDir . '/public/uploads/equipment';
-        if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-            throw new \RuntimeException('Le répertoire de stockage des images est indisponible.');
-        }
-
-        $mime = $image->getMimeType() ?: $image->getClientMimeType();
-        $extension = match ($mime) {
-            'image/jpeg', 'image/jpg', 'image/pjpeg' => 'jpg',
-            'image/png', 'image/x-png' => 'png',
-            'image/webp' => 'webp',
-            default => 'jpg',
-        };
-        $filename = bin2hex(random_bytes(24)) . '.' . $extension;
-        $image->move($directory, $filename);
-
-        return '/uploads/equipment/' . $filename;
-    }
-
-    private function deleteStoredImage(string $imagePath): void
-    {
-        $prefix = '/uploads/equipment/';
-        if (!str_starts_with($imagePath, $prefix)) {
-            return;
-        }
-
-        $filename = basename($imagePath);
-        $fullPath = $this->projectDir . '/public' . $prefix . $filename;
-        if (is_file($fullPath)) {
-            @unlink($fullPath);
-        }
     }
 
     /**
