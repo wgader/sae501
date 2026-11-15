@@ -6,11 +6,11 @@ use App\Entity\DocumentJustificatif;
 use App\Entity\User;
 use App\Repository\DocumentJustificatifRepository;
 use App\Service\PrivateDocumentStorage;
+use App\Service\PrivateFileResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/documents')]
@@ -19,6 +19,7 @@ final class DocumentController extends AbstractController
     public function __construct(
         private readonly DocumentJustificatifRepository $documentRepository,
         private readonly PrivateDocumentStorage $documentStorage,
+        private readonly PrivateFileResponseFactory $responseFactory,
     ) {
     }
 
@@ -50,25 +51,12 @@ final class DocumentController extends AbstractController
 
         $metadata = json_decode($document->getDescription() ?? '', true);
         $metadata = is_array($metadata) ? $metadata : [];
-        // Separators are replaced because Content-Disposition rejects them (HTTP 500).
-        $originalName = is_string($metadata['originalName'] ?? null)
-            ? trim(str_replace(['/', '\\'], '_', $metadata['originalName']))
-            : '';
-        if ('' === $originalName) {
-            $originalName = 'document';
-        }
+        $originalName = is_string($metadata['originalName'] ?? null) ? $metadata['originalName'] : null;
         // Only types validated at upload are trusted; anything else is never rendered by the browser.
         $mimeType = is_string($metadata['mimeType'] ?? null) && $this->documentStorage->isAllowedMimeType($metadata['mimeType'])
             ? $metadata['mimeType']
             : 'application/octet-stream';
 
-        $response = new BinaryFileResponse($filePath, Response::HTTP_OK, [], false);
-        // Private documents must never be kept by shared caches (proxy, CDN, WAF).
-        $response->setCache(['private' => true, 'no_store' => true]);
-        $response->headers->set('Content-Type', $mimeType);
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $originalName);
-
-        return $response;
+        return $this->responseFactory->attachment($filePath, $mimeType, $originalName, 'document');
     }
 }

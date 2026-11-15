@@ -28,7 +28,7 @@ Un rapport doit rester disponible même lorsqu’un scan échoue ; le pipeline d
 | 5 | 🟡 MEDIUM | SVG/HTML/JS | Ces formats peuvent contenir du contenu actif et ne doivent pas être servis inline | À interdire ou sanitiser |
 | 6 | 🟡 MEDIUM | Déni de service applicatif | Les tailles, nombres de fichiers, temps et quotas doivent être limités par endpoint | À ajouter |
 | 7 | 🟡 MEDIUM | JWT navigateur | Le stockage `localStorage` reste exposé à une compromission XSS | Migration cookies sécurisés à planifier |
-| 8 | 🟠 HIGH | Cache des téléchargements | `BinaryFileResponse` renvoyait `Cache-Control: public` : un proxy ou un CDN pouvait conserver un justificatif privé | Corrigé (`private, no-store`) pour les justificatifs ; fichiers d’événement à corriger |
+| 8 | 🟠 HIGH | Cache des téléchargements | `BinaryFileResponse` renvoyait `Cache-Control: public` : un proxy ou un CDN pouvait conserver un justificatif privé | Corrigé (`private, no-store`) pour les justificatifs et les fichiers d’événement |
 | 9 | 🟡 MEDIUM | Téléchargements | Documents supprimés logiquement encore téléchargeables, `Content-Type` repris sans contrôle, erreur 500 sur un nom contenant `\` | Corrigé et testé |
 
 ## Mesures obligatoires pour les uploads
@@ -74,7 +74,7 @@ Les tests doivent utiliser de petits fichiers synthétiques. Aucun test de DDoS 
 
 ### Tests réalisés (15/11/2026)
 
-`backend/tests/Controller/DocumentControllerTest.php` couvre le téléchargement : authentification, propriétaire, autre association, mairie, document inconnu ou supprimé, fichier absent, path traversal (`../`, `..\`, `%2e%2e`, chemin absolu, lien symbolique), absence de fuite du chemin réel, en-têtes sûrs et nom de fichier assaini. Les tests d’upload (taille, MIME falsifié, signatures, HTML/JS/PHP/SVG) restent à écrire.
+`backend/tests/Controller/DocumentControllerTest.php` couvre le téléchargement : authentification, propriétaire, autre association, mairie, document inconnu ou supprimé, fichier absent, path traversal (`../`, `..\`, `%2e%2e`, chemin absolu, lien symbolique), absence de fuite du chemin réel, en-têtes sûrs et nom de fichier assaini. `backend/tests/Controller/ExternalEventControllerTest.php` couvre les fichiers d’événement : authentification sur les trois routes, administrateur et agent événement autorisés, agent d’un autre module et association refusés en `403` sur la route mairie, association propriétaire autorisée, autre association `404`, fichier absent, path traversal, MIME et nom assainis, cache privé. Les tests d’upload (taille, MIME falsifié, signatures, HTML/JS/PHP/SVG) restent à écrire.
 
 ## Outils proposés
 
