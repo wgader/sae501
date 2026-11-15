@@ -52,6 +52,33 @@ génère une paire jetable dans `backend/var/cache/test/jwt/` au premier lanceme
 (ou après un vidage du cache), et l’environnement `test` l’utilise toujours, même
 si des variables `JWT_*` sont définies par Docker ou la CI.
 
+### Migrations Doctrine
+
+Depuis le 15/11/2026, l’historique des migrations est regroupé dans une seule
+migration de base, générée par Symfony depuis le mapping (l’ancienne chaîne ne
+pouvait plus construire une base vide : `notification` et `campaign` y étaient
+créées deux fois). Une base neuve se construit avec :
+
+```bash
+docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+```
+
+Pour une base locale créée avant ce regroupement, une seule fois :
+
+- base jetable (cas habituel en développement) — les données locales sont perdues
+  puis recréées par les fixtures :
+
+  ```bash
+  docker compose exec backend php bin/console doctrine:database:drop --force
+  docker compose exec backend php bin/console doctrine:database:create
+  docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+  docker compose exec backend php bin/console doctrine:fixtures:load --no-interaction
+  ```
+
+- base à conserver, uniquement si `doctrine:schema:validate` indique un schéma
+  synchronisé : `doctrine:migrations:rollup --no-interaction` remplace l’historique
+  par la migration de base sans toucher aux tables.
+
 | Service    | URL                         |
 |------------|-----------------------------|
 | Frontend   | http://localhost:3000       |
