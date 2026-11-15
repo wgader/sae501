@@ -113,6 +113,32 @@ jobs:
       - run: npm run lint --prefix frontend
       - run: npm run build --prefix frontend
 
+  # L’image de production (dépendances sans dev, utilisateur non privilégié) est construite et
+  # démarrée avant la fusion : la CD publie ensuite ce même Dockerfile.
+  backend-image:
+    name: Image backend — build prod + exécution non-root
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the production stage
+        run: docker build --file docker/backend/Dockerfile --target prod --tag sae501-backend:ci .
+
+      - name: Run without root and answer the healthcheck
+        run: |
+          docker run --detach --name backend-ci --cap-drop ALL --cap-add NET_BIND_SERVICE \
+            --security-opt no-new-privileges:true sae501-backend:ci
+          test "$(docker exec backend-ci id -u)" != "0"
+          docker exec backend-ci sh -c 'test ! -w /app/src && test ! -w /app/vendor && test -w /app/var && test -w /app/public/uploads'
+          docker exec backend-ci sh -c '! command -v composer'
+          for _ in $(seq 1 30); do
+            docker exec backend-ci curl --fail --silent --output /dev/null http://localhost/healthcheck.php && exit 0
+            sleep 2
+          done
+          docker logs backend-ci
+          exit 1
+
   e2e:
     name: Playwright — parcours complets (Chromium)
     runs-on: ubuntu-latest
