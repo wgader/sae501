@@ -96,10 +96,14 @@ flock -w 900 9 || die "un autre déploiement est en cours"
 # environnement n’est jamais modifié sous ses pieds.
 if [[ -n "$FROM_DIR" ]]; then
   [[ -d "$FROM_DIR" ]] || die "$FROM_DIR absent"
-  install -d -m 0750 "$BASE_DIR/bin" "$BASE_DIR/edge" "$BASE_DIR/edge/sites"
+  install -d -m 0750 "$BASE_DIR/bin" "$BASE_DIR/edge"
+  # Caddy tourne en root sans CAP_DAC_OVERRIDE (cap_drop: ALL) : il ne lit que des fichiers
+  # lisibles par tous. Le Caddyfile et les sites ne contiennent aucun secret.
+  install -d -m 0755 "$BASE_DIR/edge/sites"
   install -m 0640 "$FROM_DIR/docker-compose.prod.yml" "$ENV_DIR/docker-compose.prod.yml"
   install -m 0750 "$FROM_DIR/docker/deploy/deploy.sh" "$FROM_DIR/docker/deploy/backup.sh" "$BASE_DIR/bin/"
-  install -m 0640 "$FROM_DIR/docker/deploy/edge/compose.yml" "$FROM_DIR/docker/deploy/edge/Caddyfile" "$BASE_DIR/edge/"
+  install -m 0640 "$FROM_DIR/docker/deploy/edge/compose.yml" "$BASE_DIR/edge/"
+  install -m 0644 "$FROM_DIR/docker/deploy/edge/Caddyfile" "$BASE_DIR/edge/"
   log "fichiers de déploiement installés depuis $FROM_DIR"
 fi
 
@@ -179,7 +183,7 @@ pull_images() {
 # Le proxy d’entrée route les deux domaines de l’environnement vers ses conteneurs.
 update_edge() {
   local site_file="$BASE_DIR/edge/sites/$PROJECT.caddy"
-  install -d -m 0750 "$BASE_DIR/edge/sites"
+  install -d -m 0755 "$BASE_DIR/edge/sites"
   cat > "$site_file.tmp" <<EOF
 # Généré par deploy.sh pour $PROJECT à partir de $ENV_FILE : ne pas modifier à la main.
 $FRONTEND_DOMAIN {
