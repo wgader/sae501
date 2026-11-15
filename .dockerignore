@@ -1,3 +1,7 @@
 backend/vendor
-backend/var/cache
-backend/var/log
+# Runtime data (cache, logs, private uploads, test database) is never baked into an image.
+backend/var
+# Uploaded public images live in the backend_uploads volume.
+backend/public/uploads
+# JWT keys are mounted as Docker secrets.
+backend/config/jwt/*.pem

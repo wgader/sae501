@@ -111,6 +111,16 @@ Le backend écoute sur les ports 80/443 et Caddy gère automatiquement HTTPS pou
 être exposé derrière le reverse proxy de l'hébergeur avec `PUBLIC_API_URL`
 pointant vers le domaine public de l'API.
 
+Les fichiers envoyés sont conservés dans deux volumes Docker nommés, à inclure
+dans les sauvegardes du serveur :
+
+- `backend_uploads` (`/app/public/uploads`) : images publiques des salles et du matériel ;
+- `backend_private_uploads` (`/app/var/uploads`) : justificatifs et fichiers
+  d'événement, servis uniquement par l'API après contrôle d'accès.
+
+Ces dossiers, `backend/var` et les clés JWT sont exclus du contexte de build
+(`.dockerignore`) et ne sont jamais intégrés à une image.
+
 ## Git Flow
 
 ```

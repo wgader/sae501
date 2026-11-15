@@ -29,6 +29,7 @@ Les derniers correctifs applicatifs réalisés concernent :
 - des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
 - le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
 - l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
+- la persistance des fichiers privés en production : volume nommé `backend_private_uploads` monté sur `/app/var/uploads` dans `docker-compose.prod.yml`, et exclusion de `backend/var`, `backend/public/uploads` et `backend/config/jwt/*.pem` du contexte de build pour qu’aucun document ni clé ne soit intégré à une image (un volume nommé est initialisé avec le contenu de l’image) ;
 - les mêmes protections pour les fichiers d’événement (`/api/events/files/{id}`, `/api/events/external/files/{id}`, `/api/events/association/files/{id}`) : réponse construite par le service partagé `PrivateFileResponseFactory`, également utilisé pour les justificatifs (`private, no-store`, `nosniff`, `attachment`, nom assaini, MIME limité à la liste blanche du stockage).
 
 Le build frontend passe actuellement. Le lint passe avec des avertissements Tailwind historiques qui devront être traités progressivement.
@@ -65,6 +66,10 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
 - `ExternalEventControllerTest` (15/11/2026) : 13 tests de téléchargement ajoutés, 4 échecs
   constatés avant correction (cache public sur les deux routes, MIME non filtré, nom avec `/`
   en erreur 500) ; suite complète sur l’hôte et dans Docker — 97 tests, 409 assertions, réussie.
+- Volume privé (15/11/2026) : `docker compose config` de production validé avec un `.env.prod`
+  factice hors dépôt ; image backend reconstruite sans `var/`, `public/uploads` ni clé JWT ;
+  fichier écrit dans le volume puis relu depuis un nouveau conteneur ; Symfony démarre en `prod`
+  sans dossier `var/` dans l’image.
 
 ## À faire
 
@@ -663,8 +668,11 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - ~~Fichiers d’événement en `Cache-Control: public`~~ — corrigé et testé le 15/11/2026.
 - Tout rôle mairie (`User::ROLES_MAIRIE`) peut télécharger tous les justificatifs : restreindre
   par module métier une fois la matrice des rôles agents définie.
-- Le volume de production ne couvre pas `var/uploads` : les justificatifs seraient perdus au
-  redéploiement.
+- ~~Le volume de production ne couvre pas `var/uploads`~~ — corrigé le 15/11/2026
+  (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
+- La blocklist JWT (`cache.app`, dans `var/cache`) n’est pas persistée : après un redéploiement,
+  un token révoqué redevient valide jusqu’à son expiration (24 h). Envisager un pool de cache
+  persistant (base de données ou Redis).
 
 ## Historique des tâches
 
@@ -683,5 +691,6 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
+| 15/11/2026 | Persistance des fichiers privés | Volume `backend_private_uploads` ajouté en production ; uploads, `var/` et clés JWT exclus des images ; persistance vérifiée |
 | 15/11/2026 | Téléchargement des fichiers d’événement | Service `PrivateFileResponseFactory` partagé ; cache privé, MIME et noms corrigés ; accès admin, agent événement, autre agent `403`, association propriétaire/autre testés ; 97 tests réussis |
 | 15/11/2026 | Tests du téléchargement privé | 20 tests ajoutés ; cache public, documents supprimés, MIME et noms avec `\` corrigés ; 84 tests réussis |

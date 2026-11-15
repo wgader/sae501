@@ -30,6 +30,7 @@ Un rapport doit rester disponible même lorsqu’un scan échoue ; le pipeline d
 | 7 | 🟡 MEDIUM | JWT navigateur | Le stockage `localStorage` reste exposé à une compromission XSS | Migration cookies sécurisés à planifier |
 | 8 | 🟠 HIGH | Cache des téléchargements | `BinaryFileResponse` renvoyait `Cache-Control: public` : un proxy ou un CDN pouvait conserver un justificatif privé | Corrigé (`private, no-store`) pour les justificatifs et les fichiers d’événement |
 | 9 | 🟡 MEDIUM | Téléchargements | Documents supprimés logiquement encore téléchargeables, `Content-Type` repris sans contrôle, erreur 500 sur un nom contenant `\` | Corrigé et testé |
+| 10 | 🔴 CRITICAL | Persistance | `var/uploads` n’était monté sur aucun volume en production : chaque redéploiement aurait effacé les justificatifs et fichiers d’événement | Corrigé (volume `backend_private_uploads`, uploads exclus des images) |
 
 ## Mesures obligatoires pour les uploads
 
