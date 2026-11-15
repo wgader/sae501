@@ -29,6 +29,7 @@ Les derniers correctifs applicatifs réalisés concernent :
 - des clés JWT dédiées aux tests : `tests/bootstrap.php` génère une paire RSA jetable non chiffrée dans `var/cache/test/jwt/` (ignoré par Git et Docker), et `when@test` dans `lexik_jwt_authentication.yaml` l’impose quelles que soient les variables injectées par Docker ou la CI ; la passphrase a été retirée de `backend/.env.test` et l’étape de génération de clés supprimée de la CI.
 - le durcissement du téléchargement des justificatifs : `Cache-Control: private, no-store` (au lieu de `public` par défaut, qui permettait la mise en cache par un proxy ou un CDN), refus des documents supprimés logiquement, `Content-Type` limité aux types validés à l’upload (sinon `application/octet-stream`) et neutralisation des séparateurs `/` et `\` dans le nom téléchargé (qui provoquaient une erreur 500) ;
 - l’isolation des fichiers écrits par les tests dans `var/cache/test/uploads/` (`when@test` dans `config/services.yaml`).
+- la persistance de la blocklist JWT : pool `cache.jwt_blocklist` (adaptateur Doctrine DBAL, table `cache_items` créée par une migration générée) utilisé par Lexik au lieu de `cache.app`, qui vit dans `var/cache` et est vidé à chaque redéploiement ;
 - la réparation des migrations Doctrine : l’ancienne chaîne échouait sur une base vide (`Version20261110085732` recréait `notification`, déjà créée par `Version20261107090553`, de même pour `campaign`), ce qui aurait bloqué tout premier déploiement ; elle est remplacée par une migration de base unique générée par `doctrine:migrations:diff` sur une base vide, sans perte de données de référence (aucune n’était insérée par les migrations) ;
 - la persistance des fichiers privés en production : volume nommé `backend_private_uploads` monté sur `/app/var/uploads` dans `docker-compose.prod.yml`, et exclusion de `backend/var`, `backend/public/uploads` et `backend/config/jwt/*.pem` du contexte de build pour qu’aucun document ni clé ne soit intégré à une image (un volume nommé est initialisé avec le contenu de l’image) ;
 - les mêmes protections pour les fichiers d’événement (`/api/events/files/{id}`, `/api/events/external/files/{id}`, `/api/events/association/files/{id}`) : réponse construite par le service partagé `PrivateFileResponseFactory`, également utilisé pour les justificatifs (`private, no-store`, `nosniff`, `attachment`, nom assaini, MIME limité à la liste blanche du stockage).
@@ -71,6 +72,10 @@ La commande `php bin/phpunit` force désormais l’environnement Symfony `test`,
   (16 tables), `doctrine:schema:validate` synchronisé, relance sans effet, retour à `first` puis
   réapplication, chargement des fixtures, et `doctrine:migrations:rollup` vérifié avec
   d’anciennes versions enregistrées ; base de développement locale non modifiée.
+- Blocklist JWT (15/11/2026) : nouveau test de `LogoutControllerTest` (token révoqué toujours
+  refusé après vidage de `cache.app`), en échec avant correction ; migration `cache_items`
+  appliquée et annulée sur MySQL vide, schéma synchronisé ; suite complète sur l’hôte et dans
+  Docker — 98 tests, 411 assertions, réussie.
 - Volume privé (15/11/2026) : `docker compose config` de production validé avec un `.env.prod`
   factice hors dépôt ; image backend reconstruite sans `var/`, `public/uploads` ni clé JWT ;
   fichier écrit dans le volume puis relu depuis un nouveau conteneur ; Symfony démarre en `prod`
@@ -679,9 +684,9 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
   `doctrine:schema:validate`, pour détecter une chaîne de migrations cassée avant le merge.
 - Chaque membre de l’équipe doit réinitialiser sa base locale (ou utiliser `rollup` si son schéma
   est synchronisé) : procédure dans le README.
-- La blocklist JWT (`cache.app`, dans `var/cache`) n’est pas persistée : après un redéploiement,
-  un token révoqué redevient valide jusqu’à son expiration (24 h). Envisager un pool de cache
-  persistant (base de données ou Redis).
+- ~~Blocklist JWT non persistée~~ — corrigé le 15/11/2026 (pool Doctrine DBAL).
+- Purger périodiquement les révocations expirées (`php bin/console cache:pool:prune`), par
+  exemple depuis le service `campaign-scheduler`.
 
 ## Historique des tâches
 
@@ -700,6 +705,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 13/11/2026 | Clarification des rapports CI/CD | Les Markdown du dépôt documentent le plan ; `SECURITY-REPORT.md` et les sorties brutes devront être générés puis téléversés comme artefacts de chaque pipeline |
 | 13/11/2026 | Mise à jour du suivi | Sections Réalisé / À faire et validations ajoutées à ce document |
 | 15/11/2026 | Clés JWT de test dédiées | `bad decrypt` corrigé ; clés jetables générées au bootstrap PHPUnit ; 64 tests réussis |
+| 15/11/2026 | Blocklist JWT persistante | Pool Doctrine DBAL et migration `cache_items` ; révocation conservée après vidage du cache ; 98 tests réussis |
 | 15/11/2026 | Réparation des migrations | Chaîne cassée sur base vide remplacée par une migration de base unique ; vérifiée sur MySQL vide ; procédure d’équipe documentée |
 | 15/11/2026 | Persistance des fichiers privés | Volume `backend_private_uploads` ajouté en production ; uploads, `var/` et clés JWT exclus des images ; persistance vérifiée |
 | 15/11/2026 | Téléchargement des fichiers d’événement | Service `PrivateFileResponseFactory` partagé ; cache privé, MIME et noms corrigés ; accès admin, agent événement, autre agent `403`, association propriétaire/autre testés ; 97 tests réussis |

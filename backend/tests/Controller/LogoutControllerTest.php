@@ -17,7 +17,7 @@ final class LogoutControllerTest extends ControllerRouteTestCase
         $token = $this->jwtManager->create($user);
 
         $this->client->request('POST', '/api/auth/logout', [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
             'HTTP_ACCEPT' => 'application/json',
         ]);
 
@@ -27,9 +27,29 @@ final class LogoutControllerTest extends ControllerRouteTestCase
         ]);
 
         $this->client->request('GET', '/api/account/profile', [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
             'HTTP_ACCEPT' => 'application/json',
         ]);
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testRevokedJwtStaysRejectedAfterApplicationCacheIsCleared(): void
+    {
+        $user = $this->authenticateAsAdmin();
+        $token = $this->jwtManager->create($user);
+        $headers = [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+            'HTTP_ACCEPT' => 'application/json',
+        ];
+
+        $this->client->request('POST', '/api/auth/logout', [], [], $headers);
+        $this->assertResponseStatusCodeSame(200);
+
+        // A redeployment starts from an empty var/cache: the revocation must not live there.
+        static::getContainer()->get('cache.app')->clear();
+
+        $this->client->request('GET', '/api/account/profile', [], [], $headers);
 
         $this->assertResponseStatusCodeSame(401);
     }
