@@ -141,9 +141,13 @@ jobs:
     name: Déploiement ${{ needs.context.outputs.environment }}
     needs: [context, backend-image]
     # backend-image est ignoré lors d’un retour arrière : le déploiement continue quand même.
+    # Sur un push, le déploiement n’a lieu que si la variable de dépôt DEPLOY_ENABLED vaut « true » :
+    # tant que le serveur n’est pas prêt, la CD construit et analyse les images sans échouer.
+    # « Run workflow » déploie toujours, puisqu’il est lancé volontairement.
     if: >-
       always() && needs.context.result == 'success' &&
-      (needs.backend-image.result == 'success' || needs.backend-image.result == 'skipped')
+      (needs.backend-image.result == 'success' || needs.backend-image.result == 'skipped') &&
+      (github.event_name == 'workflow_dispatch' || vars.DEPLOY_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment:
