@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ActivationForm, { type StrengthLevel } from '@/components/activation/ActivationForm';
+import { storeAssociationSession } from '@/lib/session';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 const CRITERIA = [
@@ -59,7 +60,7 @@ function ActivationContent() {
       const response = await fetch(`${API_URL}/api/auth/activate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, email, password }) });
       const data = await response.json().catch(() => ({})) as { token?: string; message?: string; user?: { nomAssociation?: string } };
       if (!response.ok) throw new Error(data.message ?? 'Une erreur est survenue lors de l’activation.');
-      if (data.token) { localStorage.setItem('token', data.token); if (data.user?.nomAssociation) localStorage.setItem('association_name', data.user.nomAssociation); window.dispatchEvent(new Event('auth-change')); }
+      if (data.token) { storeAssociationSession(data.token, data.user?.nomAssociation); }
       setActivated(true);
       window.setTimeout(() => router.push('/'), 2500);
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Une erreur est survenue lors de l’activation du compte.'); }

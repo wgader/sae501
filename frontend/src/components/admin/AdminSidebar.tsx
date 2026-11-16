@@ -15,6 +15,7 @@ import {
   IconCampagne,
 } from '@/components/ui/NavigationBar/NavigationIcon';
 import { API_URL } from '@/lib/api/client';
+import { clearSessions } from '@/lib/session';
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
@@ -42,7 +43,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     }).finally(() => {
-      localStorage.removeItem('admin_token');
+      clearSessions();
       router.replace('/admin');
     });
   };

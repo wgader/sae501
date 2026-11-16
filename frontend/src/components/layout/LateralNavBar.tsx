@@ -100,11 +100,9 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
     rawName.replace(/^Association\s+/i, '').trim() || rawName;
   const initials = getAssociationInitials(associationName);
 
+  // La page de déconnexion révoque le jeton côté serveur puis vide toutes les sessions.
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('association_name');
-    window.dispatchEvent(new Event('auth-change'));
-    router.push('/');
+    router.push('/deconnexion');
   };
 
   return (

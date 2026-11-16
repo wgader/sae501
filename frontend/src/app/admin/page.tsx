@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { storeAdminSession } from '@/lib/session';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
@@ -56,7 +57,7 @@ export default function AdminLoginPage() {
         throw new Error(data.message ?? 'La connexion n’a pas pu être finalisée.');
       }
 
-      localStorage.setItem('admin_token', data.token);
+      storeAdminSession(data.token);
       router.push('/admin/dashboard');
     } catch (err: unknown) {
       setSubmitError(
