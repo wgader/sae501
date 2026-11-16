@@ -784,7 +784,11 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - ~~JWT en cookie `HttpOnly`~~ — fait le 16/11/2026 (cookie `SameSite=Strict`, en-tête
   `X-Requested-With` exigé contre le CSRF, profil d’affichage seul dans `localStorage`).
 - ~~Jetons d’activation stockés en clair~~ — empreinte SHA-256 depuis le 16/11/2026.
-- Reste : analyse antivirus des uploads, CSP complète du site Next.js, copie hors site des sauvegardes.
+- ~~Analyse antivirus des uploads~~ — ClamAV facultatif depuis le 16/11/2026 (profil `antivirus`).
+- ~~CSP du site Next.js~~ — fait le 16/11/2026 (sans nonce : `script-src 'unsafe-inline'` reste
+  nécessaire tant que les pages sont pré-rendues ; passer aux nonces imposerait un rendu dynamique).
+- ~~Copie hors site des sauvegardes~~ — prête le 16/11/2026 (restic chiffré) ; reste à choisir le
+  stockage et créer `backups/offsite.env`.
 
 ## Historique des tâches
 
@@ -823,3 +827,6 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | Session par cookie HttpOnly | JWT illisible par JavaScript, CSRF bloqué sans `X-Requested-With`, comptes suspendus refusés à chaque appel (`AccountStatusChecker`), endpoint `/api/auth/session` ; 5 tests |
 | 16/11/2026 | Liens d’activation | Stockés en empreinte SHA-256, liens déjà envoyés valables jusqu’à expiration |
 | 16/11/2026 | Photo de profil association | Image vérifiée par son contenu (JPEG, PNG, WebP, 5 Mo), nom aléatoire, ancienne image supprimée ; 4 tests |
+| 16/11/2026 | CSP du site | Scripts, styles et polices du seul site, connexions et images limitées au site et à l’API ; vérifiée sur un build de production ; le proxy conserve la CSP de l’application |
+| 16/11/2026 | Antivirus facultatif | `AntivirusScanner` (INSTREAM clamd) avant tout enregistrement, refus si infecté ou si ClamAV ne répond pas ; service `clamav` derrière le profil `antivirus` ; 4 tests |
+| 16/11/2026 | Sauvegardes hors site | `backup.sh offsite` (restic chiffré, rétention 14/8/12), `offsite.env` exclu ; envoi, absence de clair et restauration vérifiés |
