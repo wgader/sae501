@@ -17,10 +17,31 @@ services:
     networks:
       - app_network
 
+  campaign-scheduler:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+      # Stage de développement (root, dépendances de dev) ; le stage final est l’image de production.
+      target: dev
+    command: sh -c "while true; do php bin/console app:campaigns:synchronize --no-interaction; sleep 60; done"
+    env_file: .env
+    environment:
+      APP_ENV: dev
+    volumes:
+      - ./backend:/app
+      - /app/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app_network
+
   backend:
     build:
       context: .
       dockerfile: docker/backend/Dockerfile
+      # Stage de développement (root, dépendances de dev) ; le stage final est l’image de production.
+      target: dev
     ports:
       - "80:80"
     env_file: .env
@@ -29,6 +50,7 @@ services:
       SERVER_ROOT: "/app/public"
     volumes:
       - ./backend:/app
+      - /app/vendor
       - caddy_data:/data
       - caddy_config:/config
     healthcheck:

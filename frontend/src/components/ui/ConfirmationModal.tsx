@@ -23,7 +23,7 @@ export const confirmationModalOverlayVariants = cva(
 );
 
 export const confirmationModalCardVariants = cva(
-  'relative w-full max-w-[34rem] rounded-card border border-line bg-white p-6 sm:p-8 shadow-2xl transition-all',
+  'relative w-full max-w-xl rounded-card border border-line bg-white p-6 sm:p-8 shadow-2xl transition-all',
 );
 
 export const confirmationModalConfirmButtonVariants = cva(

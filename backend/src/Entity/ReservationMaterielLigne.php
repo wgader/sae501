@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ReservationMaterielLigneRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -11,6 +12,11 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[ORM\Entity(repositoryClass: ReservationMaterielLigneRepository::class)]
 #[ORM\Table(name: 'reservation_materiel_ligne')]
+#[ApiResource(
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class ReservationMaterielLigne
 {
     #[ORM\Id]
@@ -72,4 +78,3 @@ class ReservationMaterielLigne
         return $this;
     }
 }
-

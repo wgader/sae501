@@ -6,6 +6,7 @@ import {
   IconSubvention,
   IconSalle,
   IconMateriel,
+  IconEvenement,
 } from '@/components/ui/icons';
 
 interface AssociationModulesCardProps {
@@ -39,6 +40,12 @@ const MODULE_DEFINITIONS: ModuleItem[] = [
     label: 'Prêt de matériel',
     description: 'Réservation d’équipements et logistique communale.',
     icon: IconMateriel,
+  },
+  {
+    id: 'evenements',
+    label: 'Événements',
+    description: 'Déclaration et suivi des événements organisés par l’association.',
+    icon: IconEvenement,
   },
 ];
 

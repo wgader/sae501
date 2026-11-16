@@ -76,7 +76,7 @@ export default function AdminLayout({
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative flex h-full w-68 max-w-[85vw] flex-col shadow-2xl">
+          <aside className="relative flex h-full w-68 max-w-full flex-col shadow-2xl">
             <AdminSidebar onNavigate={() => setMobileMenuOpen(false)} />
           </aside>
         </div>

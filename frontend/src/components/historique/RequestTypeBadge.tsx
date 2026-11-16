@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils';
 import type { RequestType } from '@/lib/api';
 
 export const requestTypeBadgeVariants = cva(
-  'inline-flex items-center gap-1.5 font-bold uppercase tracking-label rounded-soft px-2.5 py-1 text-caption transition-colors',
+  'inline-flex items-center gap-1.5 rounded-soft px-2.5 py-1 text-sm font-bold uppercase tracking-label transition-colors',
   {
     variants: {
       type: {
         subvention: 'bg-rose-100 text-rose-900 border border-rose-200',
         materiel: 'bg-indigo/10 text-indigo border border-indigo/20',
         salle: 'bg-accent text-ink border border-accent/40',
-        evenement: 'bg-sky-100 text-sky-900 border border-sky-200',
+        evenement: 'bg-slate-100 text-slate-700 border border-slate-200',
       },
     },
     defaultVariants: {
@@ -39,7 +39,9 @@ export default function RequestTypeBadge({
       ? 'Subvention'
       : requestType === 'materiel'
         ? 'Matériel'
-        : requestType === 'salle' ? 'Salle municipale' : 'Événement');
+        : requestType === 'salle'
+          ? 'Salle municipale'
+          : 'Événement');
 
   return (
     <span
@@ -48,7 +50,7 @@ export default function RequestTypeBadge({
     >
       {requestType === 'subvention' && (
         <svg
-          className="h-3 w-3 shrink-0"
+          className="h-5 w-5 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -65,7 +67,7 @@ export default function RequestTypeBadge({
 
       {requestType === 'materiel' && (
         <svg
-          className="h-3 w-3 shrink-0"
+          className="h-5 w-5 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -82,7 +84,7 @@ export default function RequestTypeBadge({
 
       {requestType === 'salle' && (
         <svg
-          className="h-3 w-3 shrink-0"
+          className="h-5 w-5 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"

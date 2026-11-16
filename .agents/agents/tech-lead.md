@@ -1,5 +1,6 @@
+---
 name: tech-lead
-description: Relit une modification de code avec une exigence de niveau Senior. Signale le code mort, les problèmes d'architecture et l'absence de tests.
+description: "Relit une modification de code avec une exigence de niveau Senior. Signale le code mort, les problèmes d'architecture et l'absence de tests."
 model: pro
 subagent: true
 mainAgent: false

@@ -23,7 +23,7 @@ export default function CtaSection() {
 
               <h2
                 id="cta-heading"
-                className="mt-2 text-[clamp(2.125rem,4vw,3.25rem)] font-black leading-[1.05] tracking-heading text-ink"
+                className="mt-2 text-5xl font-black leading-tight tracking-heading text-ink"
               >
                 Vos projets font<br />
                 vivre Feytiat.

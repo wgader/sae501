@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\DemandeSubventionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,6 +13,11 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[ORM\Entity(repositoryClass: DemandeSubventionRepository::class)]
 #[ORM\Table(name: 'demande_subvention')]
+#[ApiResource(
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class DemandeSubvention
 {
     public const STATUTS = [
@@ -209,4 +215,3 @@ class DemandeSubvention
         return $this;
     }
 }
-

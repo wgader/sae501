@@ -1,0 +1,19 @@
+# Constats Gitleaks de l’historique Git, analysés le 15/11/2026 (aucun secret actif) :
+# - clé JWT chiffrée de septembre, retirée et différente de toute clé en service ;
+# - APP_SECRET de développement d’un ancien backend/.env.dev supprimé ;
+# - clé de site reCAPTCHA (NEXT_PUBLIC_*), publique par conception ;
+# - faux positif dans un fichier .next compilé du dossier « sprint 2 ».
+# Toute nouvelle fuite reste bloquante en CI. Format : commit:fichier:règle:ligne.
+03bdb850ec72d329f57f961685795e6266acce0b:backend/config/jwt/private.pem:private-key:1
+1513ee07c08d0e6e3bf8b49802dcc5d7b64ed4b3:backend/.env.dev:generic-api-key:3
+316afe44cec84df4543f28209434557e45b7ac2c:backend/.env.dev:generic-api-key:3
+316afe44cec84df4543f28209434557e45b7ac2c:frontend/src/app/signup/step4/page.tsx:generic-api-key:184
+32290e1f1efa529591c87dafc1badc58e82ae989:backend/.env.dev:generic-api-key:3
+32290e1f1efa529591c87dafc1badc58e82ae989:frontend/src/app/signup/step4/page.tsx:generic-api-key:184
+3410789cca428d5601b7ef08633defa50c967a4b:frontend/src/app/signup/step4/page.tsx:generic-api-key:184
+36d27ce279bfd8099526aefdfeffc36d2c1000db:rendu.txt:generic-api-key:184
+43eaa1f0f5bf558026b920027351f24587ad6f6f:backend/.env.dev:generic-api-key:3
+9b5231af66fb93fe45e7c66711e6ccdb586e6e39:backend/.env.dev:generic-api-key:3
+a0f6ce9364f713318e2e805bc04c0eb98687f312:frontend/src/app/signup/step4/page.tsx:generic-api-key:184
+e6b5002b63b9a279143c9915e8f1480a16c71df3:frontend/src/app/signup/step4/page.tsx:generic-api-key:184
+f4f9ea0496122e80c12d2ace5db4861dcff65478:frontend/sprint 2/sae501-feature-us2-1-login copy/frontend/.next/dev/static/chunks/node_modules_07svs75._.js.map:sourcegraph-access-token:7

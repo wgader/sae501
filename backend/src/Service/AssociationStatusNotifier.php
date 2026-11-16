@@ -81,7 +81,7 @@ final class AssociationStatusNotifier
                     'nom'            => $user->getNom(),
                     'nomAssociation' => $association->getNom(),
                     'modules'        => $modules,
-                    'activationUrl'  => $this->frontendUrl . '/activer-compte?token=' . $token . '&ref=' . base64_encode((string) $user->getEmail()),
+                    'activationUrl'  => $this->frontendUrl . '/activer-compte#token=' . rawurlencode($token) . '&ref=' . rawurlencode(base64_encode((string) $user->getEmail())),
                 ]),
         );
     }
@@ -122,6 +122,9 @@ final class AssociationStatusNotifier
         }
         if ($association->isModuleSalleActif()) {
             $modules[] = 'Réservation de salles';
+        }
+        if ($association->isModuleEvenementActif()) {
+            $modules[] = 'Événements';
         }
         return $modules;
     }

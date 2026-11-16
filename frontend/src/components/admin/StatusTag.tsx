@@ -6,17 +6,18 @@ import type { AssociationStatus, AssociationModule } from '@/lib/api';
 export type { AssociationModule } from '@/lib/api';
 
 export const statusTagVariants = cva(
-  'inline-flex w-fit items-center rounded-pill px-3 py-1 text-caption font-bold uppercase leading-normal tracking-label',
+  'inline-flex w-fit items-center rounded-full px-[0.81rem] py-[0.44rem] text-[0.63rem] font-bold uppercase leading-normal tracking-[0.11rem]',
   {
     variants: {
       status: {
-        PENDING_VALIDATION: 'bg-amber-700 text-white',
-        VALIDATED: 'bg-primary text-white',
-        REFUSED: 'bg-danger text-white',
-        SUSPENDED: 'bg-amber-600 text-white',
-        salles: 'bg-primary text-white',
+        PENDING_VALIDATION: 'bg-[#9c7a19] text-white',
+        VALIDATED: 'bg-Mosaic-Tile text-white',
+        REFUSED: 'bg-Flush-Mahogany text-white',
+        SUSPENDED: 'bg-Flush-Mahogany text-white',
+        evenements: 'bg-[#d9c2a7] text-ink',
+        salles: 'bg-Mosaic-Tile text-white',
         subventions: 'bg-Misty-Rose text-ink',
-        materiel: 'bg-indigo text-white',
+        materiel: 'bg-Indigo-Bloom text-white',
       },
     },
   },
@@ -29,6 +30,7 @@ export const TAG_LABELS: Record<StatusTagType, string> = {
   VALIDATED: 'Accepté',
   REFUSED: 'Refusé',
   SUSPENDED: 'Suspendu',
+  evenements: 'Événement',
   salles: 'Salle',
   subventions: 'Subvention',
   materiel: 'Matériel',

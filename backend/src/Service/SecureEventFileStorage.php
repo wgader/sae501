@@ -35,7 +35,7 @@ final class SecureEventFileStorage
         }
 
         $size = $file->getSize();
-        if ($size === false || $size <= 0 || $size > self::MAX_FILE_SIZE) {
+        if (false === $size || $size <= 0 || $size > self::MAX_FILE_SIZE) {
             throw new \InvalidArgumentException('La taille du fichier doit être comprise entre 1 octet et 10 Mo.');
         }
 
@@ -45,43 +45,43 @@ final class SecureEventFileStorage
         }
 
         $originalName = $file->getClientOriginalName();
-        if ($originalName === '' || mb_strlen($originalName) > 255) {
+        if ('' === $originalName || mb_strlen($originalName) > 255 || preg_match('/[\x00-\x1F\x7F]/', $originalName)) {
             throw new \InvalidArgumentException('Le nom du fichier est invalide.');
         }
 
         $mimeType = $file->getMimeType();
-        if ($mimeType === null || !in_array($mimeType, self::ALLOWED_FILES[$extension], true)) {
+        if (null === $mimeType || !in_array($mimeType, self::ALLOWED_FILES[$extension], true)) {
             throw new \InvalidArgumentException('L’extension et le type MIME du fichier ne correspondent pas.');
         }
 
         $path = $file->getPathname();
-        if ($extension === 'pdf' && !str_starts_with((string) file_get_contents($path, false, null, 0, 5), '%PDF-')) {
+        if ('pdf' === $extension && !str_starts_with((string) file_get_contents($path, false, null, 0, 5), '%PDF-')) {
             throw new \InvalidArgumentException('Le fichier PDF est invalide.');
         }
 
-        if (in_array($extension, ['png', 'jpg', 'jpeg'], true) && @getimagesize($path) === false) {
+        if (in_array($extension, ['png', 'jpg', 'jpeg'], true) && false === @getimagesize($path)) {
             throw new \InvalidArgumentException('Le fichier image est invalide.');
         }
 
         $sha256 = hash_file('sha256', $path);
-        if ($sha256 === false) {
+        if (false === $sha256) {
             throw new \RuntimeException('Impossible de calculer l’intégrité du fichier.');
         }
 
         $year = date('Y');
         $month = date('m');
-        $relativeDirectory = $year . DIRECTORY_SEPARATOR . $month;
-        $directory = $this->uploadDirectory . DIRECTORY_SEPARATOR . $relativeDirectory;
+        $relativeDirectory = $year.DIRECTORY_SEPARATOR.$month;
+        $directory = $this->uploadDirectory.DIRECTORY_SEPARATOR.$relativeDirectory;
 
         if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
             throw new \RuntimeException('Le répertoire de stockage ne peut pas être créé.');
         }
 
-        $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
+        $storedName = bin2hex(random_bytes(16)).'.'.$extension;
         $file->move($directory, $storedName);
 
         return [
-            'path' => $relativeDirectory . '/' . $storedName,
+            'path' => $relativeDirectory.'/'.$storedName,
             'extension' => $extension,
             'mimeType' => $mimeType,
             'size' => $size,
@@ -90,20 +90,31 @@ final class SecureEventFileStorage
         ];
     }
 
+    public function isAllowedMimeType(string $mimeType): bool
+    {
+        foreach (self::ALLOWED_FILES as $mimeTypes) {
+            if (in_array($mimeType, $mimeTypes, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function resolve(string $relativePath): ?string
     {
         $baseDirectory = realpath($this->uploadDirectory);
-        if ($baseDirectory === false) {
+        if (false === $baseDirectory) {
             return null;
         }
 
         $absolutePath = realpath(
-            $this->uploadDirectory . DIRECTORY_SEPARATOR . $relativePath
+            $this->uploadDirectory.DIRECTORY_SEPARATOR.$relativePath
         );
 
         if (
-            $absolutePath === false
-            || !str_starts_with($absolutePath, $baseDirectory . DIRECTORY_SEPARATOR)
+            false === $absolutePath
+            || !str_starts_with($absolutePath, $baseDirectory.DIRECTORY_SEPARATOR)
             || !is_file($absolutePath)
             || !is_readable($absolutePath)
         ) {

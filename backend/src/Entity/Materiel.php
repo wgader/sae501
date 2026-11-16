@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\MaterielRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -14,6 +15,11 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[ORM\Entity(repositoryClass: MaterielRepository::class)]
 #[ORM\Table(name: 'materiel')]
+#[ApiResource(
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class Materiel
 {
     #[ORM\Id]
@@ -210,4 +216,3 @@ class Materiel
         return $this;
     }
 }
-

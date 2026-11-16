@@ -7,7 +7,11 @@ use App\Repository\ExternalEventFileRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ExternalEventFileRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class ExternalEventFile
 {
     #[ORM\Id]

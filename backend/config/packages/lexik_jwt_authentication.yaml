@@ -1,4 +1,16 @@
 lexik_jwt_authentication:
+    token_ttl: 86400
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
+    blocklist_token:
+        enabled: true
+        cache: cache.jwt_blocklist
+
+# Les clés de test sont générées par tests/bootstrap.php : la suite ne dépend ni de la
+# clé chiffrée du développeur, ni des variables JWT injectées par Docker ou la CI.
+when@test:
+    lexik_jwt_authentication:
+        secret_key: '%kernel.project_dir%/var/cache/test/jwt/private.pem'
+        public_key: '%kernel.project_dir%/var/cache/test/jwt/public.pem'
+        pass_phrase: ''

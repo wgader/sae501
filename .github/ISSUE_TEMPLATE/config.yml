@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation du projet
+    url: https://github.com/wgader/sae501
+    about: Consultez le dépôt avant de créer une issue.

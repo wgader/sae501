@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ReservationSalleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,14 +13,22 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[ORM\Entity(repositoryClass: ReservationSalleRepository::class)]
 #[ORM\Table(name: 'reservation_salle')]
+#[ApiResource(
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class ReservationSalle
 {
     public const STATUTS = [
+        'En attente de validation par la mairie',
+        'En attente',
         'En cours de traitement',
         'Complément requis',
         'Validée',
         'Refusée',
         'Clôturée',
+        'Annulée',
     ];
 
     #[ORM\Id]
@@ -52,7 +61,7 @@ class ReservationSalle
 
     #[ORM\Column(length: 50)]
     #[Assert\Choice(choices: self::STATUTS)]
-    private string $statut = 'En cours de traitement';
+    private string $statut = 'En attente de validation par la mairie';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observations = null;
@@ -66,7 +75,7 @@ class ReservationSalle
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->statut = 'En cours de traitement';
+        $this->statut = 'En attente de validation par la mairie';
     }
 
     public function getId(): ?int
@@ -194,4 +203,3 @@ class ReservationSalle
         return $this;
     }
 }
-

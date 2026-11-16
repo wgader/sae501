@@ -12,7 +12,9 @@ import {
   IconSubvention,
   IconAssociation,
   IconAgent,
+  IconCampagne,
 } from '@/components/ui/NavigationBar/NavigationIcon';
+import { API_URL } from '@/lib/api/client';
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
@@ -25,8 +27,9 @@ const navItems = [
   { label: 'Salle', href: '/admin/salle', icon: IconSalle },
   { label: 'Matériel', href: '/admin/materiel', icon: IconMateriel },
   { label: 'Subvention', href: '/admin/subvention', icon: IconSubvention },
+  { label: 'Campagnes', href: '/admin/campagnes', icon: IconCampagne },
   { label: 'Agent', href: '/admin/agent', icon: IconAgent },
-  { label: 'Historique', href: '/admin/historique', icon: IconHistorique },
+  { label: 'Événements', href: '/admin/evenements', icon: IconHistorique },
 ];
 
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
@@ -34,8 +37,14 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    router.replace('/admin');
+    const token = localStorage.getItem('admin_token');
+    void fetch(`${API_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    }).finally(() => {
+      localStorage.removeItem('admin_token');
+      router.replace('/admin');
+    });
   };
 
   return (

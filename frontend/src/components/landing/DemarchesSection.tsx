@@ -126,7 +126,7 @@ export default function DemarchesSection() {
             </p>
             <h2
               id="demarches-heading"
-              className="mt-3 text-[clamp(1.875rem,3.75vw,2.75rem)] font-black leading-tight tracking-display text-ink"
+              className="mt-3 text-4xl font-black leading-tight tracking-display text-ink"
             >
               Les démarches de votre association, simplement.
             </h2>
@@ -146,10 +146,10 @@ export default function DemarchesSection() {
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className={`text-label font-bold uppercase tracking-[0.16em] ${card.tagColor}`}>
+                    <span className={`text-label font-bold uppercase tracking-widest ${card.tagColor}`}>
                       {card.tag}
                     </span>
-                    <span className={`text-label font-bold uppercase tracking-[0.16em] ${card.tagColor}`}>
+                    <span className={`text-label font-bold uppercase tracking-widest ${card.tagColor}`}>
                       {card.number}
                     </span>
                   </div>
@@ -158,7 +158,7 @@ export default function DemarchesSection() {
                     <div className={card.textColor}>{card.icon}</div>
                   </div>
 
-                  <h3 className={`mt-5 text-xl font-black leading-[1.15] tracking-subheading ${card.textColor}`}>
+                  <h3 className={`mt-5 text-xl font-black leading-tight tracking-subheading ${card.textColor}`}>
                     {card.title}
                   </h3>
 
@@ -168,7 +168,7 @@ export default function DemarchesSection() {
                 </div>
 
                 <footer className="mt-6 flex items-center justify-between border-t border-current/15 pt-4">
-                  <span className={`text-label font-bold uppercase tracking-[0.16em] ${card.textColor}`}>
+                  <span className={`text-label font-bold uppercase tracking-widest ${card.textColor}`}>
                     Disponible en ligne
                   </span>
 

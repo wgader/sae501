@@ -6,7 +6,7 @@ export default function ConfirmationPage() {
   return (
     <div className="flex min-h-full items-center justify-center bg-white px-6 pt-10 sm:px-10 lg:px-16 lg:pt-12">
       <div className="w-full max-w-155 text-center">
-        <h1 className="text-[clamp(2rem,3vw,4rem)] font-black leading-[0.95] tracking-[-0.08em] text-ink">
+        <h1 className="text-5xl font-black leading-tight tracking-tight text-ink">
           Demande envoyée
         </h1>
 

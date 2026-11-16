@@ -8,6 +8,8 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     app.event_upload_directory: '%kernel.project_dir%/var/uploads/events'
+    app.private_document_directory: '%kernel.project_dir%/var/uploads/documents'
+    app.public_upload_directory: '%kernel.project_dir%/public/uploads'
 
 services:
     # default configuration for services in *this* file
@@ -22,3 +24,10 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+# Les fichiers écrits par les tests ne se mélangent jamais aux données de développement.
+when@test:
+    parameters:
+        app.event_upload_directory: '%kernel.project_dir%/var/cache/test/uploads/events'
+        app.private_document_directory: '%kernel.project_dir%/var/cache/test/uploads/documents'
+        app.public_upload_directory: '%kernel.project_dir%/var/cache/test/uploads/public'

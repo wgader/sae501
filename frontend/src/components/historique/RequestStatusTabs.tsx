@@ -1,21 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-
-export const requestTabVariants = cva(
-  'inline-flex items-center gap-2 rounded-control px-4 py-2.5 text-xs font-bold uppercase tracking-label transition-colors cursor-pointer',
-  {
-    variants: {
-      isSelected: {
-        true: 'bg-primary text-white shadow-xs',
-        false: 'bg-white text-ink border border-line hover:bg-paper',
-      },
-    },
-    defaultVariants: {
-      isSelected: false,
-    },
-  },
-);
+import Button from '@/components/ui/Button';
 
 export const requestTabBadgeVariants = cva(
   'inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-pill px-1.5 text-caption font-black transition-colors',
@@ -64,22 +50,23 @@ export default function RequestStatusTabs({
       {tabs.map((tab) => {
         const isSelected = activeTab === tab.id;
         return (
-          <button
+          <Button
             key={tab.id}
             type="button"
+            variant={isSelected ? 'primary' : 'secondary'}
+            size="sm"
             role="tab"
             aria-selected={isSelected}
             onClick={() => onTabChange(tab.id)}
-            className={requestTabVariants({ isSelected })}
+            className="gap-2 py-2.5 text-xs tracking-label"
           >
             <span>{tab.label}</span>
             <span className={requestTabBadgeVariants({ isSelected })}>
               {tab.count}
             </span>
-          </button>
+          </Button>
         );
       })}
     </nav>
   );
 }
-

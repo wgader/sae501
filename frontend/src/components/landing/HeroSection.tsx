@@ -6,7 +6,7 @@ export default function HeroSection() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative flex min-h-[calc(100vh-4.75rem)] items-center overflow-hidden bg-linear-to-b from-paper via-paper/50 to-white py-10 lg:py-16"
+      className="relative flex min-h-screen items-center overflow-hidden bg-linear-to-b from-paper via-paper/50 to-white py-10 lg:py-16"
     >
       <span
         className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full border-ring border-white/70 sm:h-80 sm:w-80 lg:border-white/80"
@@ -16,13 +16,13 @@ export default function HeroSection() {
       <div className="mx-auto w-full max-w-340 px-4 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-10">
           <header className="lg:col-span-6 xl:col-span-6">
-            <p className="text-label font-bold uppercase tracking-eyebrow text-ink/80 sm:text-meta">
+            <p className="text-body-sm font-bold uppercase tracking-eyebrow text-[var(--color-primary)] sm:text-body">
               Espace associations
             </p>
 
             <h1
               id="hero-title"
-              className="mt-4 text-[clamp(2.75rem,5.2vw,4.5rem)] font-black leading-none tracking-heading text-ink"
+              className="mt-4 text-6xl font-black leading-none tracking-heading text-ink"
             >
               Vos démarches,<br />
               en un seul endroit.

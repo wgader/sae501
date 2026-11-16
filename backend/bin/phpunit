@@ -1,4 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+putenv('APP_ENV=test');
+$_ENV['APP_ENV'] = 'test';
+$_SERVER['APP_ENV'] = 'test';
+
 require dirname(__DIR__).'/vendor/phpunit/phpunit/phpunit';

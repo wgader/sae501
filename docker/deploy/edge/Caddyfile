@@ -1,0 +1,19 @@
+{
+	# Adresse de contact Let’s Encrypt (expiration de certificat, incident).
+	email {$ACME_EMAIL}
+}
+
+# En-têtes communs à tous les sites publics.
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	log
+}
+
+# Un fichier par environnement, écrit par deploy.sh à partir de son .env.
+import sites/*.caddy

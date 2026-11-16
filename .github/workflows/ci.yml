@@ -6,6 +6,10 @@ on:
   push:
     branches: [develop]
 
+# Les jobs ne font que lire le dépôt ; toute permission d’écriture doit être accordée job par job.
+permissions:
+  contents: read
+
 jobs:
   backend:
     name: Symfony — lint + tests
@@ -33,21 +37,63 @@ jobs:
       - name: Install deps
         run: composer install --working-dir=backend --prefer-dist --no-progress --no-scripts
 
+      - name: Composer audit
+        run: composer audit --working-dir=backend
+
       - name: PHPStan
         run: cd backend && vendor/bin/phpstan analyse --no-progress
 
-      - name: Generate JWT test keys
-        run: |
-          mkdir -p backend/config/jwt
-          openssl genpkey -out backend/config/jwt/private.pem -pass pass:test_passphrase -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
-          openssl pkey -in backend/config/jwt/private.pem -passin pass:test_passphrase -pubout -out backend/config/jwt/public.pem
-
+      # Les clés JWT jetables des tests sont générées par backend/tests/bootstrap.php.
       - name: PHPUnit
-        run: cd backend && vendor/bin/phpunit
+        run: cd backend && php bin/phpunit
+
+  migrations:
+    name: Doctrine — migrations on an empty MySQL
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
         env:
-          JWT_SECRET_KEY: '%kernel.project_dir%/config/jwt/private.pem'
-          JWT_PUBLIC_KEY: '%kernel.project_dir%/config/jwt/public.pem'
-          JWT_PASSPHRASE: 'test_passphrase'
+          MYSQL_DATABASE: sae501_ci
+          MYSQL_USER: ci
+          # Identifiants factices, valables uniquement pour la base éphémère de la CI.
+          MYSQL_PASSWORD: ci_password
+          MYSQL_ROOT_PASSWORD: ci_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: dev
+      DATABASE_URL: mysql://ci:ci_password@127.0.0.1:3306/sae501_ci?serverVersion=8.4&charset=utf8mb4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql, intl, zip
+          coverage: none
+
+      - name: Install deps
+        run: composer install --working-dir=backend --prefer-dist --no-progress --no-scripts
+
+      # Une chaîne cassée (par exemple une table créée deux fois) doit échouer ici, pas pendant un déploiement.
+      - name: Apply all migrations
+        run: cd backend && php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
+
+      - name: Schema matches the mapping
+        run: cd backend && php bin/console doctrine:schema:validate --no-interaction
+
+      - name: Migrations can be rolled back and reapplied
+        run: |
+          cd backend
+          php bin/console doctrine:migrations:migrate first --no-interaction
+          php bin/console doctrine:migrations:migrate --no-interaction
+          php bin/console doctrine:schema:validate --no-interaction
 
   frontend:
     name: Next.js — lint + build
@@ -62,5 +108,212 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci --prefix frontend
+      - name: NPM audit
+        run: npm audit --prefix frontend
       - run: npm run lint --prefix frontend
       - run: npm run build --prefix frontend
+
+  # L’image de production (dépendances sans dev, utilisateur non privilégié) est construite et
+  # démarrée avant la fusion : la CD publie ensuite ce même Dockerfile.
+  backend-image:
+    name: Image backend — build prod + exécution non-root
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the production stage
+        run: docker build --file docker/backend/Dockerfile --target prod --tag sae501-backend:ci .
+
+      - name: Run without root and answer the healthcheck
+        run: |
+          docker run --detach --name backend-ci --cap-drop ALL --cap-add NET_BIND_SERVICE \
+            --security-opt no-new-privileges:true sae501-backend:ci
+          test "$(docker exec backend-ci id -u)" != "0"
+          docker exec backend-ci sh -c 'test ! -w /app/src && test ! -w /app/vendor && test -w /app/var && test -w /app/public/uploads'
+          docker exec backend-ci sh -c '! command -v composer'
+          for _ in $(seq 1 30); do
+            docker exec backend-ci curl --fail --silent --output /dev/null http://localhost/healthcheck.php && exit 0
+            sleep 2
+          done
+          docker logs backend-ci
+          exit 1
+
+  e2e:
+    name: Playwright — parcours complets (Chromium)
+    runs-on: ubuntu-latest
+    # Garde-fou : une API indisponible ne doit plus bloquer la CI pendant des dizaines de minutes.
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: sae501_e2e
+          MYSQL_USER: ci
+          # Identifiants factices, valables uniquement pour la base éphémère de la CI.
+          MYSQL_PASSWORD: ci_password
+          MYSQL_ROOT_PASSWORD: ci_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: dev
+      DATABASE_URL: mysql://ci:ci_password@127.0.0.1:3306/sae501_e2e?serverVersion=8.4&charset=utf8mb4
+      # Aucun e-mail réel n’est envoyé et les messages asynchrones sont traités immédiatement.
+      MAILER_DSN: null://null
+      MAILER_FROM: no-reply@example.test
+      MESSENGER_TRANSPORT_DSN: sync://
+      FRONTEND_URL: http://localhost:3000
+      JWT_PASSPHRASE: ''
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      # Comptes de démonstration créés par backend/src/DataFixtures/AppFixtures.php.
+      TEST_ADMIN_EMAIL: admin@feytiat.test
+      TEST_USER_EMAIL: antonio.alves@feytiat.test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql, intl, zip
+          coverage: none
+
+      - name: Install backend deps
+        run: composer install --working-dir=backend --prefer-dist --no-progress --no-scripts
+
+      - name: Generate disposable JWT keys
+        run: |
+          mkdir -p backend/config/jwt
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out backend/config/jwt/private.pem
+          openssl pkey -in backend/config/jwt/private.pem -pubout -out backend/config/jwt/public.pem
+
+      - name: Prepare the database
+        run: |
+          cd backend
+          php bin/console doctrine:migrations:migrate --no-interaction
+          php bin/console doctrine:fixtures:load --no-interaction
+
+      # Le serveur intégré de PHP n’expose les variables d’environnement qu’avec variables_order=EGPCS.
+      - name: Start the API
+        run: |
+          cd backend
+          nohup php -d variables_order=EGPCS -S 127.0.0.1:8000 -t public > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8000/api/docs && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
+      # Le mot de passe de démonstration est lu dans les fixtures et masqué dans les journaux.
+      - name: Expose demo credentials to Playwright
+        run: |
+          cd backend
+          password=$(php -r 'require "vendor/autoload.php"; echo (new ReflectionClassConstant(App\DataFixtures\AppFixtures::class, "DEMO_PASSWORD"))->getValue();')
+          echo "::add-mask::$password"
+          echo "TEST_ADMIN_PASSWORD=$password" >> "$GITHUB_ENV"
+          echo "TEST_USER_PASSWORD=$password" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --prefix frontend
+      - run: npm run build --prefix frontend
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test --project=chromium
+        working-directory: frontend
+
+      - name: Keep the Playwright report and API log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            ${{ runner.temp }}/api.log
+          retention-days: 7
+
+  security:
+    name: Sécurité — secrets, dépendances, Dockerfiles
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Gitleaks analyse tout l’historique, pas seulement le dernier commit.
+          fetch-depth: 0
+
+      - name: Prepare report folder
+        run: mkdir -p security-reports
+
+      # Les constats déjà analysés sont listés par empreinte dans .gitleaksignore.
+      - name: Gitleaks (secrets)
+        id: gitleaks
+        continue-on-error: true
+        run: >-
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1
+          git /repo --redact --no-banner
+          --gitleaks-ignore-path /repo/.gitleaksignore
+          --report-format json --report-path /repo/security-reports/gitleaks.json
+
+      - name: Trivy (dépendances et configuration)
+        id: trivy
+        continue-on-error: true
+        run: |
+          trivy() {
+            docker run --rm -v "$PWD:/repo" -v trivy-cache:/root/.cache aquasec/trivy:0.76.2 \
+              fs --quiet --scanners vuln,misconfig --skip-dirs "/repo/frontend/sprint 2" "$@" /repo
+          }
+          # Rapport complet HIGH et CRITICAL, puis échec uniquement sur CRITICAL.
+          trivy --severity HIGH,CRITICAL --format json --output /repo/security-reports/trivy.json
+          trivy --severity CRITICAL --exit-code 1
+
+      - name: Hadolint (Dockerfiles)
+        id: hadolint
+        continue-on-error: true
+        run: |
+          status=0
+          for name in backend frontend; do
+            docker run --rm -i hadolint/hadolint:v2.15.1-alpine hadolint --no-color --failure-threshold error - \
+              < "docker/$name/Dockerfile" > "security-reports/hadolint-$name.txt" 2>&1 || status=1
+          done
+          exit $status
+
+      - name: Build SECURITY-REPORT.md
+        if: always()
+        run: |
+          python3 -I .github/scripts/security_report.py security-reports \
+            "${{ steps.gitleaks.outcome }}" "${{ steps.trivy.outcome }}" "${{ steps.hadolint.outcome }}" \
+            > security-reports/SECURITY-REPORT.md
+          cat security-reports/SECURITY-REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-reports
+          retention-days: 30
+
+      # Le rapport est toujours publié avant d’appliquer les seuils bloquants.
+      - name: Apply blocking thresholds
+        if: always()
+        run: |
+          failed=0
+          for outcome in "${{ steps.gitleaks.outcome }}" "${{ steps.trivy.outcome }}" "${{ steps.hadolint.outcome }}"; do
+            [ "$outcome" = "success" ] || failed=1
+          done
+          exit $failed

@@ -1,8 +1,14 @@
 .env
 .env.local
 .env.*.local
+.env.prod
+.env.preprod
+!backend/.env
+/secrets/
+.copilot-handoff.md
 
 # ── Next.js ────────────────────────────────────
+node_modules/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
@@ -28,11 +34,13 @@ caddy_config/
 .docker/
 
 # ── IDE & OS ───────────────────────────────────
+/node_modules/
 .DS_Store
 .idea/
 .vscode/
 *.swp
 *.swo
 Thumbs.db
-CLAUDE.md
 
+# Rapports générés par le job CI security
+security-reports/

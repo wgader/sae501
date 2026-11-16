@@ -72,7 +72,7 @@ export default function HomeCard({
       </div>
 
       <div className="mt-4.5 flex flex-1 flex-col justify-end">
-        <h3 className="max-w-80 text-[clamp(2.1rem,2.5vw,3.4rem)] font-black leading-none tracking-tight">
+        <h3 className="max-w-80 text-5xl font-black leading-none tracking-tight">
           {name}
         </h3>
 

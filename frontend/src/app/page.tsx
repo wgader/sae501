@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore, useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import LandingPage from '@/components/landing/LandingPage';
 import ConnectedDashboard from '@/components/dashboard/ConnectedDashboard';
 
@@ -13,11 +13,11 @@ function subscribeAuth(callback: () => void) {
   };
 }
 
-function getAuthSnapshot(): boolean {
+function getAuthSnapshot() {
   return Boolean(localStorage.getItem('token'));
 }
 
-function getServerAuthSnapshot(): boolean {
+function getServerAuthSnapshot() {
   return false;
 }
 
@@ -25,7 +25,7 @@ export default function Home() {
   const isConnected = useSyncExternalStore(
     subscribeAuth,
     getAuthSnapshot,
-    getServerAuthSnapshot
+    getServerAuthSnapshot,
   );
 
   useEffect(() => {

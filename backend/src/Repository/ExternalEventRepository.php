@@ -38,6 +38,20 @@ class ExternalEventRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @return list<ExternalEvent>
+     */
+    public function findByAssociation(int $associationId): array
+    {
+        return $this->createQueryBuilder('e')
+            ->andWhere('e.asso_id = :associationId')
+            ->setParameter('associationId', $associationId)
+            ->orderBy('e.start_date', 'ASC')
+            ->addOrderBy('e.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return ExternalEvent[] Returns an array of ExternalEvent objects
 //     */

@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await fetch(`${API_URL}/api/auth/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: identifier, password }),
@@ -45,6 +45,7 @@ export default function AdminLoginPage() {
       const data = (await response.json().catch(() => ({}))) as {
         token?: string;
         message?: string;
+        error?: boolean;
       };
 
       if (!response.ok) {
@@ -52,7 +53,7 @@ export default function AdminLoginPage() {
       }
 
       if (!data.token) {
-        throw new Error('Réponse invalide du serveur.');
+        throw new Error(data.message ?? 'La connexion n’a pas pu être finalisée.');
       }
 
       localStorage.setItem('admin_token', data.token);

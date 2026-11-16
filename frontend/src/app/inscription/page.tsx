@@ -77,7 +77,7 @@ export default function SignupPage() {
         </div>
 
         <header>
-          <h1 className="text-[clamp(1.75rem,2.8vw,2.5rem)] font-black leading-[1.08] tracking-display text-ink">
+          <h1 className="text-3xl font-black leading-tight tracking-display text-ink">
             Parlez-nous de votre
             <span className="block text-primary">association</span>
           </h1>

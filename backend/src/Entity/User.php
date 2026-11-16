@@ -2,12 +2,14 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Attribute\Ignore;
 
 /**
  * Représente un utilisateur de la plateforme.
@@ -18,8 +20,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  *
  * Rôles disponibles :
  *   - ROLE_ASSOCIATION         → accès espace association
+ *   - ROLE_MAIRIE              → accès à l'espace d'administration mairie
  *   - ROLE_ADMIN               → accès total (admin mairie)
- *   - ROLE_ADMIN_GESTION_EVENT → gestion des événements externes
+ *   - ROLE_GESTION_EVENT       → gestion des événements externes
  *   - ROLE_GESTION_SUBVENTION  → accès module subventions
  *   - ROLE_GESTION_MATERIEL    → accès module matériel
  *   - ROLE_GESTION_SALLE       → accès module salles
@@ -30,6 +33,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[ApiResource(
+    security: "is_granted('ROLE_ADMIN')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 #[UniqueEntity(
     fields: ['email'],
     message: 'Un compte existe déjà avec cette adresse email.'
@@ -41,6 +49,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * Utilisé pour valider les rôles assignés par l'admin.
      */
     public const ROLES_MAIRIE = [
+        'ROLE_MAIRIE',
         'ROLE_ADMIN',
         'ROLE_ADMIN_GESTION_EVENT',
         'ROLE_GESTION_EVENT',
@@ -74,6 +83,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * Null jusqu'à l'activation du compte par le lien envoyé par la mairie.
      */
     #[ORM\Column(nullable: true)]
+    #[Ignore]
     private ?string $password = null;
 
     #[ORM\Column(length: 100)]
@@ -130,6 +140,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * Nettoyé après activation.
      */
     #[ORM\Column(length: 100, nullable: true)]
+    #[Ignore]
     private ?string $activationToken = null;
 
     #[ORM\Column(nullable: true)]
@@ -184,6 +195,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
+        if ($this->typeCompte === 'mairie') {
+            $roles[] = 'ROLE_MAIRIE';
+        }
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }

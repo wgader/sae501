@@ -2,6 +2,9 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use App\Repository\DemandeStatusHistoryRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,6 +16,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: DemandeStatusHistoryRepository::class)]
 #[ORM\Table(name: 'demande_status_history')]
 #[ORM\Index(name: 'idx_demande_lookup', columns: ['demande_type', 'demande_id'])]
+#[ApiResource(
+    operations: [
+        new Get(),
+        new GetCollection(),
+    ],
+    security: "is_granted('ROLE_USER')",
+    paginationItemsPerPage: 20,
+    paginationMaximumItemsPerPage: 100,
+)]
 class DemandeStatusHistory
 {
     #[ORM\Id]
@@ -149,4 +161,3 @@ class DemandeStatusHistory
         return $this;
     }
 }
-

@@ -3,13 +3,13 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export const validatedInputVariants = cva(
-  'w-full rounded-md border border-[#d9ded9] bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-[#0b644d] focus:ring-1 focus:ring-[#0b644d] sm:px-4 sm:py-3',
+  'w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary sm:px-4 sm:py-3',
   {
     variants: {
       state: {
         default: '',
-        valid: 'border-[#4CAF50] focus:border-[#4CAF50] focus:ring-[#4CAF50]',
-        invalid: 'border-[#b54b4b] focus:border-[#b54b4b] focus:ring-[#b54b4b]',
+        valid: 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500',
+        invalid: 'border-danger focus:border-danger focus:ring-danger',
       },
     },
     defaultVariants: {
@@ -45,7 +45,7 @@ export const ValidatedInput = forwardRef<HTMLInputElement, ValidatedInputDataPro
   ) => {
     return (
       <div className={cn('flex flex-col gap-2', containerClassName)}>
-        <label className="text-xs font-bold text-[#1e2420]">{label}</label>
+        <label className="text-xs font-bold text-ink">{label}</label>
         <div className="relative">
           <input
             ref={ref}
@@ -53,7 +53,7 @@ export const ValidatedInput = forwardRef<HTMLInputElement, ValidatedInputDataPro
             {...props}
           />
           {isValid && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4CAF50]">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"

@@ -17,3 +17,8 @@ framework:
         # Namespaced pools use the above "app" backend by default
         #pools:
             #my.dedicated.cache: null
+
+        pools:
+            # Les JWT révoqués doivent survivre aux redéploiements, qui repartent d’un var/cache vide.
+            cache.jwt_blocklist:
+                adapter: cache.adapter.doctrine_dbal

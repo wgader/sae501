@@ -1,0 +1,17 @@
+backend/vendor
+# Les données d’exécution (cache, logs, uploads privés, base de test) ne doivent jamais entrer dans une image.
+backend/var
+# Les images publiques envoyées vivent dans le volume backend_uploads.
+backend/public/uploads
+# Les clés JWT sont fournies par les secrets Docker.
+backend/config/jwt/*.pem
+# Dépendances et builds locaux du frontend : l’image les recrée (sinon des modules natifs macOS
+# écrasent ceux installés pour Linux et le build échoue).
+frontend/node_modules
+frontend/.next
+frontend/test-results
+frontend/playwright-report
+# Fichiers locaux pouvant contenir des secrets.
+**/.env.local
+**/.env.*.local
+.git

@@ -3,11 +3,16 @@
     order php_server before file_server
 }
 
-http://localhost {
+{$SERVER_NAME} {
     root * /app/public
     encode zstd br gzip
+
+    @private_documents path /uploads/documents/*
+    respond @private_documents 404
+
+    # Le CORS est géré par Symfony (nelmio_cors, variable CORS_ALLOW_ORIGIN).
+
     php_server {
         worker /app/public/index.php
     }
 }
-

@@ -66,7 +66,7 @@ export default function FaqSection() {
 
             <h2
               id="faq-heading"
-              className="mt-3 text-[clamp(2rem,3.75vw,2.75rem)] font-black leading-tight tracking-display text-ink"
+              className="mt-3 text-4xl font-black leading-tight tracking-display text-ink"
             >
               Avant de créer<br />
               votre espace.
@@ -124,7 +124,7 @@ export default function FaqSection() {
                         id={`faq-answer-${item.id}`}
                         className="pb-6 pl-8 pr-4 sm:pl-11"
                       >
-                        <p className="text-body leading-[1.65] text-muted">
+                        <p className="text-body leading-relaxed text-muted">
                           {item.answer}
                         </p>
                       </dd>

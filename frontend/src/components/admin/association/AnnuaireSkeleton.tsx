@@ -1,7 +1,7 @@
 export default function AnnuaireSkeleton() {
   return (
     <ul
-      className="grid grid-cols-1 gap-5 p-0 list-none sm:grid-cols-2 min-[1200px]:grid-cols-3"
+      className="grid grid-cols-1 gap-5 p-0 list-none sm:grid-cols-2 xl:grid-cols-3"
       aria-label="Chargement des associations"
       aria-busy="true"
     >

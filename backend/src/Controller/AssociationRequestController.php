@@ -2,9 +2,16 @@
 
 namespace App\Controller;
 
+use App\Entity\DocumentJustificatif;
 use App\Entity\User;
+use App\Repository\ReservationMaterielRepository;
+use App\Repository\ReservationSalleRepository;
 use App\Service\AssociationRequestAggregationService;
+use App\Service\AssociationRequestCancellationService;
+use App\Service\PrivateDocumentStorage;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,13 +24,18 @@ final class AssociationRequestController extends AbstractController
 {
     public function __construct(
         private readonly AssociationRequestAggregationService $aggregationService,
+        private readonly AssociationRequestCancellationService $cancellationService,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly ReservationMaterielRepository $materielRepository,
+        private readonly ReservationSalleRepository $salleRepository,
+        private readonly PrivateDocumentStorage $documentStorage,
     ) {
     }
 
     #[Route('', name: 'app_association_requests_list', methods: ['GET'])]
     public function list(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
+        if (null === $user) {
             return $this->json(
                 ['message' => 'Authentification requise pour accéder aux démarches.'],
                 Response::HTTP_UNAUTHORIZED,
@@ -31,7 +43,7 @@ final class AssociationRequestController extends AbstractController
         }
 
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => "Votre compte n'est rattaché à aucune association."],
                 Response::HTTP_FORBIDDEN,
@@ -55,7 +67,7 @@ final class AssociationRequestController extends AbstractController
     #[Route('/{id}', name: 'app_association_requests_show', methods: ['GET'])]
     public function show(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
+        if (null === $user) {
             return $this->json(
                 ['message' => 'Authentification requise pour accéder à cette démarche.'],
                 Response::HTTP_UNAUTHORIZED,
@@ -63,7 +75,7 @@ final class AssociationRequestController extends AbstractController
         }
 
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => "Votre compte n'est rattaché à aucune association."],
                 Response::HTTP_FORBIDDEN,
@@ -74,7 +86,7 @@ final class AssociationRequestController extends AbstractController
             $type = $request->query->get('type');
             $detail = $this->aggregationService->getRequestDetail($association, $id, is_string($type) ? $type : null);
 
-            if ($detail === null) {
+            if (null === $detail) {
                 return $this->json(
                     ['message' => 'Dossier introuvable.'],
                     Response::HTTP_NOT_FOUND,
@@ -89,5 +101,170 @@ final class AssociationRequestController extends AbstractController
             );
         }
     }
-}
 
+    #[Route('/{id}/documents', name: 'app_association_request_document_create', methods: ['POST'])]
+    public function addDocument(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (null === $user) {
+            return $this->json(
+                ['message' => 'Authentification requise pour déposer une pièce.'],
+                Response::HTTP_UNAUTHORIZED,
+            );
+        }
+
+        $association = $user->getAssociation();
+        if (null === $association) {
+            return $this->json(
+                ['message' => "Votre compte n'est rattaché à aucune association."],
+                Response::HTTP_FORBIDDEN,
+            );
+        }
+
+        $type = $request->request->get('type');
+        if (!is_string($type) || !in_array($type, [
+            AssociationRequestAggregationService::TYPE_MATERIEL,
+            AssociationRequestAggregationService::TYPE_SALLE,
+        ], true)) {
+            return $this->json(['message' => 'Le type de réservation est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $requestId = (int) preg_replace('/\D/', '', $id);
+        $reservation = AssociationRequestAggregationService::TYPE_MATERIEL === $type
+            ? $this->materielRepository->find($requestId)
+            : $this->salleRepository->find($requestId);
+
+        if (null === $reservation || $reservation->getAssociation()?->getId() !== $association->getId()) {
+            return $this->json(['message' => 'Dossier introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile || !$file->isValid()) {
+            return $this->json(['message' => 'Fichier invalide ou manquant.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (false === $file->getSize() || $file->getSize() > 10 * 1024 * 1024) {
+            return $this->json(['message' => 'Le fichier ne doit pas dépasser 10 Mo.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Le nom est validé avant l’écriture sur disque pour ne jamais laisser de fichier orphelin.
+        $typeDocument = trim((string) $request->request->get('typeDocument', $file->getClientOriginalName()));
+        if ('' === $typeDocument) {
+            $typeDocument = $file->getClientOriginalName();
+        }
+        if (mb_strlen($typeDocument) > 100) {
+            return $this->json(
+                ['message' => 'Le nom du document ne peut pas dépasser 100 caractères.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        try {
+            $storedFile = $this->documentStorage->store($file);
+        } catch (\InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (\RuntimeException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        $document = new DocumentJustificatif();
+        $document
+            ->setAssociation($association)
+            ->setTypeDocument($typeDocument)
+            ->setFichierUrl($storedFile['path'])
+            ->setLieAType($type)
+            ->setLieAId($requestId)
+            ->setDescription(json_encode([
+                'verified' => false,
+                'size' => $storedFile['size'],
+                'originalName' => $storedFile['originalName'],
+                'mimeType' => $storedFile['mimeType'],
+            ], JSON_THROW_ON_ERROR));
+
+        try {
+            $this->entityManager->persist($document);
+            $this->entityManager->flush();
+        } catch (\Throwable $exception) {
+            // Sans enregistrement en base, le fichier ne serait plus jamais accessible ni supprimé.
+            $this->documentStorage->delete($storedFile['path']);
+
+            throw $exception;
+        }
+
+        return $this->json($this->serializeDocument($document), Response::HTTP_CREATED);
+    }
+
+    #[Route('/{id}/cancel', name: 'app_association_requests_cancel', methods: ['POST'])]
+    public function cancel(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (null === $user) {
+            return $this->json(
+                ['message' => 'Authentification requise pour annuler une réservation.'],
+                Response::HTTP_UNAUTHORIZED,
+            );
+        }
+
+        $association = $user->getAssociation();
+        if (null === $association) {
+            return $this->json(
+                ['message' => "Votre compte n'est rattaché à aucune association."],
+                Response::HTTP_FORBIDDEN,
+            );
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $type = is_array($payload) && is_string($payload['type'] ?? null)
+            ? $payload['type']
+            : $request->query->get('type');
+
+        if (!is_string($type) || !in_array($type, [
+            AssociationRequestAggregationService::TYPE_MATERIEL,
+            AssociationRequestAggregationService::TYPE_SALLE,
+        ], true)) {
+            return $this->json(
+                ['message' => 'Le type de réservation est invalide.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        try {
+            $reservation = $this->cancellationService->cancel(
+                $association,
+                $type,
+                (int) preg_replace('/\D/', '', $id),
+            );
+
+            return $this->json([
+                'id' => $id,
+                'type' => $type,
+                'statut' => $reservation->getStatut(),
+                'updatedAt' => $reservation->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
+            ]);
+        } catch (\OutOfBoundsException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_NOT_FOUND);
+        } catch (\DomainException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (\LogicException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_FORBIDDEN);
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function serializeDocument(DocumentJustificatif $document): array
+    {
+        $metadata = json_decode($document->getDescription() ?? '', true);
+        $metadata = is_array($metadata) ? $metadata : [];
+
+        return [
+            'id' => $document->getId(),
+            'typeDocument' => $document->getTypeDocument(),
+            'fichierUrl' => null !== $document->getId() ? '/api/documents/'.$document->getId().'/download' : null,
+            'isVerified' => (bool) ($metadata['verified'] ?? false),
+            'size' => (int) ($metadata['size'] ?? 0),
+            'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),
+            'mimeType' => $metadata['mimeType'] ?? 'application/pdf',
+            'createdAt' => $document->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+        ];
+    }
+}

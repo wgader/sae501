@@ -5,8 +5,8 @@
             "hooks": [
                 {
                     "type": "command",
-                    "command": "npm run lint",
-                    "timeout": 10
+                    "command": "node -e \"const { execSync } = require('node:child_process'); if (execSync('git status --porcelain -- frontend', { encoding: 'utf8' }).trim()) execSync('npm --prefix frontend run lint', { stdio: 'inherit' });\"",
+                    "timeout": 30
                 }
             ]
         }

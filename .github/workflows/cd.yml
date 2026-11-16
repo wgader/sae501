@@ -1,71 +1,300 @@
 name: CD
 
+# Préproduction : chaque push sur develop (environnement GitHub « preprod »).
+# Production : chaque push sur main (environnement GitHub « production », qui peut exiger une
+# approbation). « Run workflow » permet aussi de déployer un tag vX.Y.Z (choisir le tag comme
+# référence) ou de revenir à une version déjà publiée (champ image_tag). Voir DEPLOYMENT.md.
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environnement cible
+        type: choice
+        options: [preprod, production]
+        required: true
+      image_tag:
+        description: SHA complet d’un commit déjà publié à redéployer (retour arrière) ; vide pour construire la référence choisie
+        type: string
+        required: false
+        default: ''
 
-env:
-  REGISTRY: ghcr.io
-  BACKEND_IMAGE:  ghcr.io/${{ github.repository_owner }}/sae501/backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/sae501/frontend
+# Aucune permission par défaut : chaque job déclare uniquement ce dont il a besoin.
+permissions: {}
+
+# Un seul déploiement à la fois par environnement, sans annuler celui en cours.
+concurrency:
+  group: cd-${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref_name == 'main' && 'production' || 'preprod') }}
+  cancel-in-progress: false
 
 jobs:
-
-  build-push:
-    name: Build + push images
+  context:
+    name: Contexte du déploiement
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      server_environment: ${{ steps.resolve.outputs.server_environment }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      build: ${{ steps.resolve.outputs.build }}
+      backend_image: ${{ steps.resolve.outputs.backend_image }}
+      frontend_image: ${{ steps.resolve.outputs.frontend_image }}
+    steps:
+      - name: Resolve environment and image tag
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            environment=$INPUT_ENVIRONMENT
+          elif [ "$REF_NAME" = main ]; then
+            environment=production
+          else
+            environment=preprod
+          fi
+          case $environment in
+            preprod) server_environment=preprod ;;
+            production) server_environment=prod ;;
+            *) echo "::error::Environnement inconnu : $environment"; exit 1 ;;
+          esac
+
+          # Une image déjà publiée est redéployée telle quelle (retour arrière), sans reconstruction.
+          if [ -n "$INPUT_IMAGE_TAG" ]; then
+            if ! printf '%s' "$INPUT_IMAGE_TAG" | grep -Eq '^[0-9a-f]{40}$'; then
+              echo "::error::image_tag doit être le SHA complet (40 caractères hexadécimaux) d’un commit publié"
+              exit 1
+            fi
+            sha=$INPUT_IMAGE_TAG; build=false
+          else
+            sha=$GITHUB_SHA; build=true
+          fi
+
+          # GHCR impose des noms en minuscules.
+          owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          {
+            echo "environment=$environment"
+            echo "server_environment=$server_environment"
+            echo "sha=$sha"
+            echo "build=$build"
+            echo "backend_image=ghcr.io/$owner/sae501/backend"
+            echo "frontend_image=ghcr.io/$owner/sae501/frontend"
+          } >> "$GITHUB_OUTPUT"
+          echo "Déploiement $environment du commit $sha (construction : $build)" >> "$GITHUB_STEP_SUMMARY"
+
+  # L’image backend ne dépend d’aucune variable d’environnement : elle est construite une fois
+  # par commit, analysée par Trivy, puis publiée sous le SHA du commit (étiquette immuable).
+  backend-image:
+    name: Image backend
+    needs: context
+    if: needs.context.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
+    env:
+      IMAGE: ${{ needs.context.outputs.backend_image }}:${{ needs.context.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@v3
-
-      - name: Build + push backend
-        uses: docker/build-push-action@v6
+      - name: Build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: docker/backend/Dockerfile
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: |
-            ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }}
-            ${{ env.BACKEND_IMAGE }}:latest
+          target: prod
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
 
-      - name: Build + push frontend
-        uses: docker/build-push-action@v6
+      # Une vulnérabilité CRITICAL corrigeable bloque la publication ; HIGH est rapporté.
+      - name: Trivy (image)
+        run: |
+          trivy() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+              aquasec/trivy:0.76.2 image --quiet --ignore-unfixed "$@" "$IMAGE"
+          }
+          trivy --severity HIGH,CRITICAL --format table > trivy-backend.txt
+          { echo '### Trivy — image backend'; echo '```'; cat trivy-backend.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          trivy --severity CRITICAL --exit-code 1
+
+      - name: Push
+        run: docker push "$IMAGE"
+
+  deploy:
+    name: Déploiement ${{ needs.context.outputs.environment }}
+    needs: [context, backend-image]
+    # backend-image est ignoré lors d’un retour arrière : le déploiement continue quand même.
+    # Sur un push, le déploiement n’a lieu que si la variable de dépôt DEPLOY_ENABLED vaut « true » :
+    # tant que le serveur n’est pas prêt, la CD construit et analyse les images sans échouer.
+    # « Run workflow » déploie toujours, puisqu’il est lancé volontairement.
+    if: >-
+      always() && needs.context.result == 'success' &&
+      (needs.backend-image.result == 'success' || needs.backend-image.result == 'skipped') &&
+      (github.event_name == 'workflow_dispatch' || vars.DEPLOY_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: ${{ needs.context.outputs.environment }}
+      url: ${{ vars.PUBLIC_FRONTEND_URL }}
+    permissions:
+      contents: read
+      # Publication de l’image frontend, puis pull des images par le serveur avec le jeton du job
+      # (valable uniquement pendant le job).
+      packages: write
+    env:
+      SERVER_ENV: ${{ needs.context.outputs.server_environment }}
+      SHA: ${{ needs.context.outputs.sha }}
+      BUILD: ${{ needs.context.outputs.build }}
+      FRONTEND_IMAGE: ${{ needs.context.outputs.frontend_image }}:${{ needs.context.outputs.sha }}-${{ needs.context.outputs.server_environment }}
+      PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
+      PUBLIC_FRONTEND_URL: ${{ vars.PUBLIC_FRONTEND_URL }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+    steps:
+      # Le compose et les scripts du commit déployé accompagnent ses images (y compris en retour arrière).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.context.outputs.sha }}
+          persist-credentials: false
+
+      # Seuls les noms des valeurs manquantes sont affichés.
+      - name: Check deployment configuration
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS DEPLOY_PATH PUBLIC_API_URL; do
+            [ -n "$(printenv "$name")" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets ou variables manquants pour l’environnement :$missing"
+            exit 1
+          fi
+          # Ces valeurs sont recopiées dans des commandes SSH : seuls des caractères sûrs sont acceptés.
+          printf '%s' "$DEPLOY_PATH" | grep -Eq '^/[A-Za-z0-9._/-]+$' || { echo "::error::DEPLOY_PATH doit être un chemin absolu simple"; exit 1; }
+          printf '%s' "$DEPLOY_USER" | grep -Eq '^[a-z_][a-z0-9_-]*$' || { echo "::error::DEPLOY_USER invalide"; exit 1; }
+          printf '%s' "$DEPLOY_PORT" | grep -Eq '^[0-9]+$' || { echo "::error::DEPLOY_PORT invalide"; exit 1; }
+          printf '%s' "$PUBLIC_API_URL" | grep -Eq '^https://[a-z0-9.-]+$' || { echo "::error::PUBLIC_API_URL doit être https://<domaine> sans chemin"; exit 1; }
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        if: env.BUILD == 'true'
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        if: env.BUILD == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # L’URL publique de l’API est figée dans le bundle Next.js : une image par environnement.
+      - name: Build frontend
+        if: env.BUILD == 'true'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: docker/frontend/Dockerfile
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: |
-            ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }}
-            ${{ env.FRONTEND_IMAGE }}:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL }}
+          load: true
+          push: false
+          tags: ${{ env.FRONTEND_IMAGE }}
+          cache-from: type=gha,scope=frontend-${{ env.SERVER_ENV }}
+          cache-to: type=gha,scope=frontend-${{ env.SERVER_ENV }},mode=max
 
-  # Deploy — à activer quand le serveur sera prêt
-  # deploy:
-  #   name: Deploy via SSH
-  #   needs: build-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: appleboy/ssh-action@v1
-  #       with:
-  #         host:     ${{ secrets.SERVER_HOST }}
-  #         username: ${{ secrets.SERVER_USER }}
-  #         key:      ${{ secrets.SSH_PRIVATE_KEY }}
-  #         script: |
-  #           cd /srv/sae501
-  #           docker compose -f docker-compose.prod.yml pull
-  #           docker compose -f docker-compose.prod.yml up -d --remove-orphans
-  #           docker image prune -f
+      - name: Trivy (image frontend)
+        if: env.BUILD == 'true'
+        run: |
+          trivy() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+              aquasec/trivy:0.76.2 image --quiet --ignore-unfixed "$@" "$FRONTEND_IMAGE"
+          }
+          trivy --severity HIGH,CRITICAL --format table > trivy-frontend.txt
+          { echo '### Trivy — image frontend'; echo '```'; cat trivy-frontend.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          trivy --severity CRITICAL --exit-code 1
+
+      - name: Push frontend
+        if: env.BUILD == 'true'
+        run: docker push "$FRONTEND_IMAGE"
+
+      # L’hôte n’est accepté que si sa clé figure dans DEPLOY_KNOWN_HOSTS (jamais de
+      # StrictHostKeyChecking=no) ; la clé privée n’existe que le temps du job.
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 0700 ~/.ssh
+          (umask 077; printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key)
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName $DEPLOY_HOST
+            Port $DEPLOY_PORT
+            User $DEPLOY_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            UserKnownHostsFile ~/.ssh/deploy_known_hosts
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ServerAliveInterval 30
+          EOF
+          chmod 0600 ~/.ssh/config
+
+      - name: Upload deployment files
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          incoming="$DEPLOY_PATH/.incoming/$SERVER_ENV"
+          # shellcheck disable=SC2029 # chemins validés plus haut, développés volontairement ici.
+          tar -czf - docker-compose.prod.yml docker/deploy/deploy.sh docker/deploy/backup.sh \
+              docker/deploy/edge/compose.yml docker/deploy/edge/Caddyfile \
+            | ssh deploy-target "rm -rf '$incoming' && mkdir -p '$incoming' && tar -xzf - -C '$incoming'"
+
+      # Pull, sauvegarde, migrations Doctrine, up --wait (healthchecks), puis proxy d’entrée.
+      # Le jeton GitHub est transmis sur l’entrée standard, jamais en argument.
+      - name: Deploy on the server
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          incoming="$DEPLOY_PATH/.incoming/$SERVER_ENV"
+          # shellcheck disable=SC2029 # chemins et étiquettes validés, développés volontairement ici.
+          printf '%s\n%s\n' "$GITHUB_ACTOR" "$REGISTRY_TOKEN" \
+            | ssh deploy-target "bash '$incoming/docker/deploy/deploy.sh' deploy '$SERVER_ENV' '$SHA' '$SHA-$SERVER_ENV' \
+                --base-dir '$DEPLOY_PATH' --from '$incoming' --registry-login"
+
+      - name: Public healthcheck
+        run: |
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_API_URL/healthcheck.php"
+          if [ -n "$PUBLIC_FRONTEND_URL" ]; then
+            curl --fail --silent --show-error --output /dev/null \
+              --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_FRONTEND_URL"
+          fi
+          echo "Version $SHA en ligne sur $SERVER_ENV" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove SSH material
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config ~/.ssh/deploy_known_hosts

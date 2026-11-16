@@ -2,7 +2,6 @@
 
 import { type FormEvent, useState } from 'react';
 import { createSalle } from '@/lib/api';
-import AdminPanel from '@/components/admin/AdminPanel';
 
 const EQUIPMENT_OPTIONS = [
   { value: 'CUISINE', label: 'Cuisine' },
@@ -30,7 +29,6 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
   const [equipementsInclus, setEquipementsInclus] = useState<string[]>([]);
   const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function toggleEquipment(value: string) {
@@ -44,7 +42,6 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
-    setSuccess('');
 
     const capacity = Number(capaciteMax);
     if (!nom.trim() || !adresse.trim() || !Number.isInteger(capacity) || capacity <= 0) {
@@ -81,7 +78,7 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
       setImage(null);
       const imageInput = document.getElementById('salle-image') as HTMLInputElement | null;
       if (imageInput) imageInput.value = '';
-      setSuccess('La salle a été créée avec succès.');
+      setIsOpen(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Impossible de créer la salle.');
     } finally {
@@ -90,30 +87,46 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
   }
 
   return (
-    <AdminPanel className="mb-8 overflow-hidden">
+    <>
       <button
         type="button"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-expanded={isOpen}
-        aria-controls="salle-create-form"
-        className="flex w-full items-center justify-between gap-4 bg-paper px-6 py-5 text-left transition hover:bg-primary-soft/40 cursor-pointer"
+        onClick={() => {
+          setError('');
+          setIsOpen(true);
+        }}
+        className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white"
       >
-        <span>
-          <span className="block text-caption font-black uppercase tracking-section text-primary">Nouveau lieu</span>
-          <span className="mt-1 block text-xl font-black tracking-display text-ink">Ajouter une salle</span>
-          <span className="mt-1 block text-sm font-normal text-muted">La salle sera active immédiatement après sa création.</span>
-        </span>
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-line text-primary transition ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true">
-          <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5">
-            <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
+        Ajouter une salle
       </button>
-      <div id="salle-create-form" hidden={!isOpen} className="p-6">
-        {error && <p className="mb-5 rounded-control border border-danger/30 bg-rose-50/70 p-3 text-sm font-semibold text-danger" role="alert">{error}</p>}
-        {success && <p className="mb-5 rounded-control border border-primary/30 bg-primary-soft/40 p-3 text-sm font-semibold text-primary" role="status">{success}</p>}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="salle-create-title"
+            className="max-h-screen w-full max-w-2xl overflow-y-auto rounded-panel bg-white p-6 shadow-panel"
+          >
+            <header className="flex items-center justify-between border-b border-line pb-4">
+              <div>
+                <h2 id="salle-create-title" className="text-lg font-bold text-ink">
+                  Ajouter une salle
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  La salle sera active après sa création.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Fermer le formulaire"
+                className="rounded-control p-1 text-muted hover:bg-paper"
+              >
+                ✕
+              </button>
+            </header>
+            {error && <p className="mt-5 rounded-control border border-danger/30 bg-rose-50/70 p-3 text-sm font-semibold text-danger" role="alert">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="grid gap-5 md:grid-cols-2">
+            <form onSubmit={handleSubmit} className="mt-5 grid gap-5 md:grid-cols-2">
           <label className="text-sm font-bold text-ink">
             Nom de la salle *
             <input value={nom} onChange={(event) => setNom(event.target.value)} className="mt-2 w-full rounded-control border border-line bg-white px-3 py-2.5 text-sm font-normal text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" />
@@ -166,8 +179,10 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
               {isSubmitting ? 'Création en cours…' : 'Créer la salle'}
             </button>
           </div>
-        </form>
-      </div>
-    </AdminPanel>
+            </form>
+          </section>
+        </div>
+      )}
+    </>
   );
 }

@@ -45,7 +45,7 @@ export default function DashboardActionCard({
             <span className={tagColor}>{step}</span>
           </div>
 
-          <h3 className="mt-6 text-[1.4rem] font-black leading-tight tracking-subheading">
+          <h3 className="mt-6 text-2xl font-black leading-tight tracking-subheading">
             {title}
           </h3>
 

@@ -268,6 +268,85 @@ class AssociationRequestControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testAssociationCanCancelOwnPendingEquipmentReservation(): void
+    {
+        [$userAsso, $asso] = $this->createAssociationAndUser('Asso Matériel');
+
+        $equipment = new Materiel();
+        $equipment->setDesignation('Barnum');
+        $equipment->setCategorie('Équipement');
+        $equipment->setStockTotal(2);
+        $this->em->persist($equipment);
+
+        $reservation = new ReservationMateriel();
+        $reservation->setAssociation($asso);
+        $reservation->setMotifEvenement('Forum');
+        $reservation->setDateRetrait(new \DateTimeImmutable('2026-06-10 09:00:00'));
+        $reservation->setDateRestitution(new \DateTimeImmutable('2026-06-10 18:00:00'));
+        $this->em->persist($reservation);
+        $this->em->flush();
+
+        $token = $this->jwtManager->create($userAsso);
+        $this->client->request(
+            'POST',
+            '/api/association/requests/mat-' . $reservation->getId() . '/cancel',
+            [],
+            [],
+            [
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            json_encode(['type' => 'materiel'], JSON_THROW_ON_ERROR),
+        );
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('Annulée', json_decode((string) $this->client->getResponse()->getContent(), true)['statut']);
+        $this->em->refresh($reservation);
+        $this->assertSame('Annulée', $reservation->getStatut());
+    }
+
+    public function testAssociationCannotCancelAnotherAssociationsReservation(): void
+    {
+        [$userAsso, $asso] = $this->createAssociationAndUser('Asso 1', 'asso1@feytiat.fr');
+        [, $otherAssociation] = $this->createAssociationAndUser('Asso 2', 'asso2@feytiat.fr');
+
+        $salle = new Salle();
+        $salle->setNom('Salle test');
+        $salle->setAdresse('Place de la Mairie');
+        $salle->setCapaciteMax(20);
+        $salle->setAccesPmr(true);
+        $salle->setCreatedAt(new \DateTimeImmutable());
+        $salle->setUpdatedAt(new \DateTimeImmutable());
+        $salle->setIsActive(true);
+        $this->em->persist($salle);
+
+        $reservation = new ReservationSalle();
+        $reservation->setAssociation($otherAssociation);
+        $reservation->setSalle($salle);
+        $reservation->setMotifEvenement('Réunion');
+        $reservation->setDateDebut(new \DateTimeImmutable('2026-06-10 09:00:00'));
+        $reservation->setDateFin(new \DateTimeImmutable('2026-06-10 12:00:00'));
+        $this->em->persist($reservation);
+        $this->em->flush();
+
+        $token = $this->jwtManager->create($userAsso);
+        $this->client->request(
+            'POST',
+            '/api/association/requests/sal-' . $reservation->getId() . '/cancel',
+            [],
+            [],
+            [
+                'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            json_encode(['type' => 'salle'], JSON_THROW_ON_ERROR),
+        );
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
     /**
      * @return array{0: User, 1: Association}
      */
