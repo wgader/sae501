@@ -6,10 +6,12 @@ use App\Entity\User;
 use App\Repository\UserRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -40,6 +42,10 @@ final class AdminAuthController extends AbstractController
         UserRepository $userRepository,
         UserPasswordHasherInterface $passwordHasher,
         JWTTokenManagerInterface $jwtManager,
+        #[Autowire(service: 'limiter.admin_login_account')]
+        RateLimiterFactory $accountLimiter,
+        #[Autowire(service: 'limiter.admin_login_ip')]
+        RateLimiterFactory $ipLimiter,
     ): JsonResponse {
         $data     = json_decode($request->getContent(), true);
         $email    = trim((string) ($data['email'] ?? ''));
@@ -53,12 +59,29 @@ final class AdminAuthController extends AbstractController
             );
         }
 
+        // ── Limitation des tentatives (par compte + IP, et par IP) ────────────
+        $clientIp = (string) $request->getClientIp();
+        $accountLimit = $accountLimiter->create(mb_strtolower($email).'|'.$clientIp);
+        $ipLimit = $ipLimiter->create($clientIp);
+        // consume(0) lit l’état sans rien décompter : bloqué dès qu’il ne reste plus d’essai.
+        if ($accountLimit->consume(0)->getRemainingTokens() <= 0 || $ipLimit->consume(0)->getRemainingTokens() <= 0) {
+            return $this->json(
+                ['message' => 'Trop de tentatives de connexion. Réessayez dans 15 minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS,
+                ['Retry-After' => '900'],
+            );
+        }
+
         // ── Vérification des identifiants ─────────────────────────────────────
         // Message identique si user inexistant ou mauvais mot de passe
         // → évite l'énumération d'emails (user enumeration attack)
         $user = $userRepository->findOneBy(['email' => $email]);
 
         if ($user === null || !$passwordHasher->isPasswordValid($user, $password)) {
+            // Seuls les échecs sont comptés.
+            $accountLimit->consume();
+            $ipLimit->consume();
+
             return $this->json(
                 ['message' => 'Identifiants incorrects.'],
                 Response::HTTP_UNAUTHORIZED
@@ -77,6 +100,8 @@ final class AdminAuthController extends AbstractController
                 Response::HTTP_FORBIDDEN
             );
         }
+
+        $accountLimit->reset();
 
         // ── Génération du JWT ─────────────────────────────────────────────────
         return $this->json(['token' => $jwtManager->create($user)]);
