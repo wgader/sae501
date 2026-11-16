@@ -271,7 +271,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCguValidateAt(?\DateTimeImmutable $cguValidateAt): static { $this->cguValidateAt = $cguValidateAt; return $this; }
 
     public function getActivationToken(): ?string { return $this->activationToken; }
-    public function setActivationToken(?string $activationToken): static { $this->activationToken = $activationToken; return $this; }
+    /**
+     * Seule l’empreinte SHA-256 du jeton envoyé par e-mail est conservée, comme pour la
+     * réinitialisation du mot de passe : une fuite de la base ne donne aucun lien utilisable.
+     */
+    public function setActivationToken(?string $activationToken): static
+    {
+        $this->activationToken = null === $activationToken ? null : hash('sha256', $activationToken);
+
+        return $this;
+    }
 
     public function getActivationTokenExpiresAt(): ?\DateTimeImmutable { return $this->activationTokenExpiresAt; }
     public function setActivationTokenExpiresAt(?\DateTimeImmutable $v): static { $this->activationTokenExpiresAt = $v; return $this; }

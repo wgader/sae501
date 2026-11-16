@@ -75,7 +75,9 @@ final class AccountActivationController extends AbstractController
         }
 
         // ── Recherche du user par token ───────────────────────────────────────
-        $user = $this->userRepository->findOneBy(['activationToken' => $token]);
+        // Les liens émis avant le stockage en empreinte restent valables jusqu’à leur expiration (72 h).
+        $user = $this->userRepository->findOneBy(['activationToken' => hash('sha256', $token)])
+            ?? $this->userRepository->findOneBy(['activationToken' => $token]);
 
         // ── Compte déjà activé : cas distinct pour un message clair ───────────
         if ($user !== null && $user->isVerified()) {
