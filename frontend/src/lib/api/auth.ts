@@ -145,3 +145,31 @@ export async function registerAssociation(payload: {
     );
   }
 }
+
+/** Appel public (sans session) : renvoie le JSON ou lève une ApiError avec le message du serveur. */
+async function publicAuthRequest<T>(path: string, payload: Record<string, string>, fallbackMessage: string): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const errors = Array.isArray(data?.errors) ? (data.errors as string[]).join(' ') : null;
+    throw new ApiError(errors ?? (typeof data?.message === 'string' ? data.message : fallbackMessage), response.status, data);
+  }
+  return data as T;
+}
+
+/** Demande un lien de réinitialisation ; la réponse est la même que le compte existe ou non. */
+export function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return publicAuthRequest('/api/auth/password-reset/request', { email }, 'La demande n’a pas pu être envoyée.');
+}
+
+export function confirmPasswordReset(token: string, password: string): Promise<{ message: string; loginPath: string }> {
+  return publicAuthRequest(
+    '/api/auth/password-reset/confirm',
+    { token, password },
+    'Le mot de passe n’a pas pu être modifié.',
+  );
+}

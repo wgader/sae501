@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Security\PasswordPolicy;
 use App\Service\AssociationStatusNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -17,8 +18,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Gère l'activation de compte et le renvoi du lien d'activation.
@@ -58,7 +57,7 @@ final class AccountActivationController extends AbstractController
     public function activate(
         Request $request,
         JWTTokenManagerInterface $jwtManager,
-        ValidatorInterface $validator,
+        PasswordPolicy $passwordPolicy,
     ): JsonResponse {
         // ── Décodage du payload ───────────────────────────────────────────────
         $data = json_decode($request->getContent(), true);
@@ -97,34 +96,15 @@ final class AccountActivationController extends AbstractController
         }
 
         // ── Validation du mot de passe ────────────────────────────────────────
-        $violations = $validator->validate($password, [
-            new Assert\NotBlank(),
-            new Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.'),
-            new Assert\Regex(
-                pattern: '/[A-Z]/',
-                message: 'Le mot de passe doit contenir au moins une majuscule.'
-            ),
-            new Assert\Regex(
-                pattern: '/[a-z]/',
-                message: 'Le mot de passe doit contenir au moins une minuscule.'
-            ),
-            new Assert\Regex(
-                pattern: '/[0-9]/',
-                message: 'Le mot de passe doit contenir au moins un chiffre.'
-            ),
-        ]);
-
-        if (count($violations) > 0) {
-            $errors = [];
-            foreach ($violations as $violation) {
-                $errors[] = $violation->getMessage();
-            }
+        $errors = $passwordPolicy->violations($password);
+        if ($errors !== []) {
             return $this->json(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         // ── Activation du compte ──────────────────────────────────────────────
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
         $user->setIsVerified(true);
+        $user->setCredentialsChangedAt(new \DateTimeImmutable());
         $user->setActivationToken(null);
         $user->setActivationTokenExpiresAt(null);
 

@@ -147,6 +147,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeImmutable $activationTokenExpiresAt = null;
 
     /**
+     * Empreinte SHA-256 du lien de réinitialisation du mot de passe : le jeton lui-même n’est
+     * jamais stocké, une fuite de la base ne permet donc pas de s’en servir.
+     */
+    #[ORM\Column(length: 64, nullable: true)]
+    #[Ignore]
+    private ?string $passwordResetTokenHash = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Ignore]
+    private ?\DateTimeImmutable $passwordResetExpiresAt = null;
+
+    /**
+     * Dernier changement de mot de passe : les JWT émis avant sont refusés.
+     */
+    #[ORM\Column(nullable: true)]
+    #[Ignore]
+    private ?\DateTimeImmutable $credentialsChangedAt = null;
+
+    /**
      * Rempli si le compte est suspendu temporairement par l'admin.
      * Null = compte actif.
      */
@@ -256,6 +275,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getActivationTokenExpiresAt(): ?\DateTimeImmutable { return $this->activationTokenExpiresAt; }
     public function setActivationTokenExpiresAt(?\DateTimeImmutable $v): static { $this->activationTokenExpiresAt = $v; return $this; }
+
+    public function getPasswordResetTokenHash(): ?string { return $this->passwordResetTokenHash; }
+    public function getPasswordResetExpiresAt(): ?\DateTimeImmutable { return $this->passwordResetExpiresAt; }
+
+    public function startPasswordReset(string $tokenHash, \DateTimeImmutable $expiresAt): static
+    {
+        $this->passwordResetTokenHash = $tokenHash;
+        $this->passwordResetExpiresAt = $expiresAt;
+
+        return $this;
+    }
+
+    public function clearPasswordReset(): static
+    {
+        $this->passwordResetTokenHash = null;
+        $this->passwordResetExpiresAt = null;
+
+        return $this;
+    }
+
+    public function getCredentialsChangedAt(): ?\DateTimeImmutable { return $this->credentialsChangedAt; }
+    public function setCredentialsChangedAt(?\DateTimeImmutable $credentialsChangedAt): static { $this->credentialsChangedAt = $credentialsChangedAt; return $this; }
 
     public function getInactivatedAt(): ?\DateTimeImmutable { return $this->inactivatedAt; }
     public function setInactivatedAt(?\DateTimeImmutable $inactivatedAt): static { $this->inactivatedAt = $inactivatedAt; return $this; }

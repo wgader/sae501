@@ -43,6 +43,7 @@ security:
         - { path: ^/api/auth/activate, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/resend-activation, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/password-reset/(request|confirm)$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }

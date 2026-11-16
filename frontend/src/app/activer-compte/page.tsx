@@ -9,7 +9,7 @@ import { storeAssociationSession } from '@/lib/session';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 const CRITERIA = [
-  { id: 'length', label: '8 caractères minimum', test: (password: string) => password.length >= 8 },
+  { id: 'length', label: '10 caractères minimum', test: (password: string) => password.length >= 10 },
   { id: 'upper', label: 'Une majuscule (A-Z)', test: (password: string) => /[A-Z]/.test(password) },
   { id: 'lower', label: 'Une minuscule (a-z)', test: (password: string) => /[a-z]/.test(password) },
   { id: 'number', label: 'Un chiffre (0-9)', test: (password: string) => /[0-9]/.test(password) },

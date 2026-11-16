@@ -239,7 +239,7 @@ export default function AdminLoginPage() {
 
             {submitError && (
               <p
-                className="rounded-lg border-l-4 border-danger bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-danger"
+                className="rounded-soft bg-danger/10 p-3.5 text-xs font-semibold leading-5 text-danger"
                 role="alert"
               >
                 {submitError}
@@ -263,6 +263,14 @@ export default function AdminLoginPage() {
                 <span>Se connecter</span>
               )}
             </button>
+            <p className="text-center">
+              <Link
+                href="/mot-de-passe-oublie"
+                className="text-xs font-semibold text-ink underline underline-offset-4 hover:text-primary"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </p>
           </form>
 
           <footer className="mt-8 border-t border-line pt-6 text-center text-xs text-muted">

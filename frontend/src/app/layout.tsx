@@ -46,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     currentPage === '/connexion' ||
     currentPage === '/inscription' ||
     currentPage === '/mot-de-passe-oublie' ||
+    currentPage === '/reinitialiser-mot-de-passe' ||
     currentPage === '/deconnexion' ||
     currentPage.startsWith('/connexion/') ||
     currentPage.startsWith('/inscription/') ||
