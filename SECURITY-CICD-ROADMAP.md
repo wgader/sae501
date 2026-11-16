@@ -5,7 +5,7 @@
 ## Dernière mise à jour
 
 - Date : 16 novembre 2026
-- Statut : préproduction en ligne sur le VPS (`dev-feytiat.wahelgader.fr`, HTTPS, déploiement automatique depuis `develop`) ; premier administrateur créé avec `app:create-admin`
+- Statut : préproduction en ligne sur le VPS (`dev-feytiat.wahelgader.fr`, HTTPS, déploiement automatique depuis `develop`) ; premier administrateur créé avec `app:create-admin` ; durcissement du 16/11 (Cloudflare prêt, mot de passe oublié, audit, SAST/SBOM/DAST)
 - Prochaine étape : valider la préproduction, puis premier déploiement de production depuis `main` (PR `develop` → `main`, approbation)
 
 ## Réalisé
@@ -722,10 +722,12 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - remplacer le stockage des JWT dans `localStorage` par des cookies `HttpOnly`, `Secure` et `SameSite` ;
 - activer une protection CSRF adaptée si l’authentification passe par cookie ;
 - ajouter une rotation de refresh tokens si les sessions longues sont nécessaires ;
-- ~~limiter les tentatives de connexion~~ (fait le 16/11/2026) ; reste la réinitialisation de mot de passe ;
+- ~~limiter les tentatives de connexion~~ (fait le 16/11/2026) ; ~~réinitialisation de mot de passe~~ (fait le 16/11/2026) ;
 - rendre les tokens d’activation strictement mono-usage et plus courts ;
-- ajouter une politique CSP stricte et vérifier les en-têtes de sécurité ;
-- journaliser les connexions, déconnexions, échecs et changements de privilèges sans enregistrer de secrets ;
+- ajouter une politique CSP stricte et vérifier les en-têtes de sécurité : ~~API en `default-src 'none'`~~
+  (fait le 16/11/2026) ; reste une CSP complète du site Next.js (nonces pour les scripts inline) ;
+- ~~journaliser les connexions, déconnexions, échecs et changements de privilèges sans enregistrer de secrets~~
+  (fait le 16/11/2026, canal `audit`) ;
 - ajouter des tests d’accès pour les comptes suspendus, supprimés et les tokens révoqués ;
 - configurer une durée de conservation et une protection des logs conformes au besoin RGPD.
 
@@ -747,8 +749,8 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 ### Reste à traiter après les tests de téléchargement
 
 - ~~Fichiers d’événement en `Cache-Control: public`~~ — corrigé et testé le 15/11/2026.
-- Tout rôle mairie (`User::ROLES_MAIRIE`) peut télécharger tous les justificatifs : restreindre
-  par module métier une fois la matrice des rôles agents définie.
+- ~~Tout rôle mairie (`User::ROLES_MAIRIE`) peut télécharger tous les justificatifs~~ — restreint
+  par module le 16/11/2026 (`DocumentVoter`).
 - ~~Le volume de production ne couvre pas `var/uploads`~~ — corrigé le 15/11/2026
   (`backend_private_uploads`) ; prévoir sa sauvegarde sur le VPS.
 - ~~CORS limité à `localhost`~~ — corrigé le 15/11/2026 (`CORS_ALLOW_ORIGIN`).
@@ -756,11 +758,13 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - ~~Faire tourner l’image backend avec un utilisateur non privilégié (Trivy DS-0002)~~ — fait le
   15/11/2026.
 - ~~Déploiement : environnements GitHub, secrets, `bootstrap-server.sh` et premier déploiement de
-  préproduction~~ — fait le 16/11/2026. Reste : premier déploiement de production, copie hors site
-  chiffrée des sauvegardes, proxys de confiance si Cloudflare est retenu (voir `DEPLOYMENT.md`).
+  préproduction~~ — fait le 16/11/2026. Reste : premier déploiement de production et copie hors site
+  chiffrée des sauvegardes. ~~Proxys de confiance si Cloudflare est retenu~~ — prêt le 16/11/2026
+  (`EDGE_CLOUDFLARE=1`, voir `DEPLOYMENT.md`) ; reste la bascule DNS chez Cloudflare.
 - ~~Retirer `npm` de l’image frontend finale (6 HIGH Trivy)~~ — fait le 16/11/2026 (npm, npx,
   corepack et yarn supprimés, paquets Alpine mis à jour : 0 HIGH/CRITICAL).
-- Compléter les scans : Bearer (SAST), SBOM (Syft) et OWASP ZAP sur la préproduction.
+- ~~Compléter les scans : Bearer (SAST), SBOM (Syft) et OWASP ZAP sur la préproduction~~ — fait le
+  16/11/2026. Reste : passer ZAP en bloquant une fois les alertes de la préproduction traitées.
 - ~~En développement, `MESSENGER_TRANSPORT_DSN=in-memory://` perdait les messages asynchrones~~ —
   corrigé le 16/11/2026 (`sync://` en développement, notifications reçues dans Mailpit).
 - ~~Fichiers orphelins côté administration et réservation de salle~~ — corrigé le 15/11/2026.
@@ -772,8 +776,13 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - Chaque membre de l’équipe doit mettre sa base locale à niveau une fois (réinitialisation ou
   rattrapage sans perte) : procédure dans le README.
 - ~~Blocklist JWT non persistée~~ — corrigé le 15/11/2026 (pool Doctrine DBAL).
-- Purger périodiquement les révocations expirées (`php bin/console cache:pool:prune`), par
-  exemple depuis le service `campaign-scheduler`.
+- ~~Purger périodiquement les révocations expirées~~ — fait le 16/11/2026 (`cache:pool:prune`
+  toutes les heures dans `campaign-scheduler`).
+- Mots de passe de démonstration : ~~versionnés dans les fixtures et le seed SQL~~ — retirés le
+  16/11/2026 (`FIXTURES_PASSWORD`, mot de passe aléatoire en CI). Changer le mot de passe des comptes
+  créés avec l’ancien mot de passe public sur toute base partagée.
+- Reste : JWT en cookie `HttpOnly` (le jeton est encore dans `localStorage`, exposé en cas de XSS),
+  jetons d’activation stockés en empreinte comme ceux de réinitialisation, analyse antivirus des uploads.
 
 ## Historique des tâches
 
@@ -802,12 +811,10 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | Ressource `reservation_salles` fermée | L’entité `ReservationSalle` était exposée par API Platform avec lecture, modification et suppression pour tout utilisateur connecté : exposition retirée (accès via les contrôleurs dédiés), subscriber mort supprimé |
 | 16/11/2026 | Limitation des connexions | `login_throttling` sur la connexion association, limiteurs dédiés sur la connexion mairie : 5 échecs par compte et par IP, 25 par IP, sur 15 minutes ; réponse 429 en français avec `Retry-After` |
 | 16/11/2026 | En-têtes du proxy d’entrée | `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` |
-| 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
-| 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
-| 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |
-| 15/11/2026 | Job CI de migrations | Migrations appliquées, validées, annulées et réappliquées sur MySQL vide ; échec vérifié sur l’ancienne chaîne ; `permissions: contents: read` |
-| 15/11/2026 | Blocklist JWT persistante | Pool Doctrine DBAL et migration `cache_items` ; révocation conservée après vidage du cache ; 98 tests réussis |
-| 15/11/2026 | Réparation des migrations | Chaîne cassée sur base vide remplacée par une migration de base unique ; vérifiée sur MySQL vide ; procédure d’équipe documentée |
-| 15/11/2026 | Persistance des fichiers privés | Volume `backend_private_uploads` ajouté en production ; uploads, `var/` et clés JWT exclus des images ; persistance vérifiée |
-| 15/11/2026 | Téléchargement des fichiers d’événement | Service `PrivateFileResponseFactory` partagé ; cache privé, MIME et noms corrigés ; accès admin, agent événement, autre agent `403`, association propriétaire/autre testés ; 97 tests réussis |
-| 15/11/2026 | Tests du téléchargement privé | 20 tests ajoutés ; cache public, documents supprimés, MIME et noms avec `\` corrigés ; 84 tests réussis |
+| 16/11/2026 | Préparation Cloudflare | `EDGE_CLOUDFLARE=1` : IP réelle lue dans `CF-Connecting-IP` depuis les seules plages Cloudflare, connexions directes au VPS refusées ; IP client transmise à l’API par le proxy dans tous les cas ; testé avec Caddy 2.11.9 dans les deux modes |
+| 16/11/2026 | Mot de passe oublié | Lien unique valable 1 h (empreinte SHA-256 en base), réponse identique que le compte existe ou non, limitation par IP, JWT antérieurs refusés après le changement ; politique commune 10 caractères ; 5 tests |
+| 16/11/2026 | Fixtures sans mot de passe | `FIXTURES_PASSWORD` hors dépôt, mot de passe aléatoire masqué en CI, seed SQL public supprimé |
+| 16/11/2026 | Pièces par module | `DocumentVoter` : un agent ne télécharge que les pièces de son module et les pièces générales ; refus en `404` |
+| 16/11/2026 | En-têtes et documentation API | CSP `default-src 'none'` sur l’API, `form-action 'self'` sur le site, `X-Powered-By` retiré, OpenAPI non publiée en production, optimiseur d’images limité à l’API |
+| 16/11/2026 | Journal d’audit | Canal `audit` (JSON sur stderr) : connexions, échecs, limitations, déconnexions, mots de passe, rôles ; identifiants en empreinte HMAC ; paramètres SQL exclus des journaux d’erreur |
+| 16/11/2026 | SAST, SBOM, DAST | Bearer bloquant sur HIGH/CRITICAL (0 constat), SBOM CycloneDX (Syft), ZAP baseline sur la préproduction après chaque déploiement (0 FAIL, 7 avertissements) |
