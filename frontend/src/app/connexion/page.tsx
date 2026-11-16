@@ -7,6 +7,7 @@ import FormField from "@/components/ui/FormField";
 import ButtonView from "@/components/ui/ButtonView";
 import BackButton from "@/components/ui/BackButton";
 import { API_URL } from "@/lib/api/client";
+import { storeAssociationSession } from "@/lib/session";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -54,8 +55,7 @@ export default function LoginPage() {
         throw new Error(data.message || "La connexion n’a pas pu être finalisée.");
       }
 
-      localStorage.setItem("token", data.token);
-      window.dispatchEvent(new Event("auth-change"));
+      storeAssociationSession(data.token);
       router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) {

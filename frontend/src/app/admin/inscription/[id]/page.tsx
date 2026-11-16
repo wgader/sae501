@@ -62,7 +62,7 @@ export default function AssociationDetailPage() {
 
     try {
       // Attribution automatique de tous les modules à la validation
-      const defaultModules: AssociationModule[] = ['subventions', 'salles', 'materiel'];
+      const defaultModules: AssociationModule[] = ['subventions', 'salles', 'materiel', 'evenements'];
       const permissions = nextStatus === 'VALIDATED' ? defaultModules : undefined;
 
       const updated = await updateAssociationStatus(association.id, nextStatus, permissions);

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_URL } from '@/lib/api/client';
+import { clearSessions } from '@/lib/session';
 
 export default function LogoutPage() {
   const router = useRouter();
@@ -13,10 +14,7 @@ export default function LogoutPage() {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     }).finally(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('association_name');
-      window.dispatchEvent(new Event('auth-change'));
+      clearSessions();
       router.replace('/');
     });
   }, [router]);
