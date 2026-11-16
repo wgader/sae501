@@ -19,7 +19,8 @@ class AssociationStatusProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
-        $statusChanged = false;
+        // Association à notifier : définie uniquement si son statut change.
+        $associationToNotify = null;
         $previousStatus = null;
         $newStatus = null;
 
@@ -29,7 +30,7 @@ class AssociationStatusProcessor implements ProcessorInterface
                 $previousStatus = $previousData->getStatut();
                 $newStatus = $data->getStatut();
                 if ($previousStatus !== $newStatus) {
-                    $statusChanged = true;
+                    $associationToNotify = $data;
                 }
             }
         }
@@ -38,8 +39,8 @@ class AssociationStatusProcessor implements ProcessorInterface
         $result = $this->persistProcessor->process($data, $operation, $uriVariables, $context);
 
         // Send email if status changed to VALIDATED or REFUSED
-        if ($statusChanged && $data instanceof Association && $newStatus !== null) {
-            $this->statusNotifier->notify($data, $newStatus);
+        if ($associationToNotify !== null && $newStatus !== null) {
+            $this->statusNotifier->notify($associationToNotify, $newStatus);
         }
 
         return $result;
