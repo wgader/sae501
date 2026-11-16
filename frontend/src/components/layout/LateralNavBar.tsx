@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import NavItem from '../ui/NavigationBar/NavItem';
 import {
   IconAccueil,
+  IconCampagne,
   IconEvenement,
   IconHistorique,
   IconMateriel,
@@ -21,12 +22,15 @@ import {
 import {
   isAssociationModuleEnabled,
   useAssociationModules,
+  type AssociationModules,
 } from '@/hooks/useAssociationModules';
 
 interface NavItemData {
   root: string;
   name: string;
   icon: ReactNode;
+  /** Module à activer pour afficher le lien. */
+  module?: keyof AssociationModules;
 }
 
 const moduleItems: NavItemData[] = [
@@ -37,21 +41,31 @@ const moduleItems: NavItemData[] = [
   },
   {
     root: 'subventions',
+    module: 'subventions',
     name: 'Subventions',
     icon: <IconSubvention className="h-6 w-6 shrink-0" />,
   },
   {
     root: 'salles',
+    module: 'salles',
     name: 'Salles',
     icon: <IconSalle className="h-6 w-6 shrink-0" />,
   },
   {
+    root: 'campagne',
+    module: 'salles',
+    name: 'Campagne',
+    icon: <IconCampagne className="h-6 w-6 shrink-0" />,
+  },
+  {
     root: 'materiel',
+    module: 'materiel',
     name: 'Matériel',
     icon: <IconMateriel className="h-6 w-6 shrink-0" />,
   },
   {
     root: 'evenements',
+    module: 'evenements',
     name: 'Événements',
     icon: <IconEvenement className="h-6 w-6 shrink-0" />,
   },
@@ -224,17 +238,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
                 aria-label="Menu mobile dashboard"
                 className="mt-4 flex flex-col gap-1.5"
               >
-                {moduleItems.filter((item) =>
-                  item.root === 'subventions'
-                    ? isAssociationModuleEnabled(modules, 'subventions')
-                    : item.root === 'salles'
-                      ? isAssociationModuleEnabled(modules, 'salles')
-                      : item.root === 'materiel'
-                        ? isAssociationModuleEnabled(modules, 'materiel')
-                        : item.root === 'evenements'
-                          ? isAssociationModuleEnabled(modules, 'evenements')
-                          : true
-                ).map((item) => {
+                {moduleItems.filter((item) => !item.module || isAssociationModuleEnabled(modules, item.module)).map((item) => {
                   const href = item.root ? `/${item.root}` : '/';
                   const isSelected =
                     href === '/'
@@ -322,17 +326,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
           </Link>
 
           <section className="flex flex-col gap-1.5 px-3 md:px-4">
-            {moduleItems.filter((item) =>
-              item.root === 'subventions'
-                ? isAssociationModuleEnabled(modules, 'subventions')
-                : item.root === 'salles'
-                  ? isAssociationModuleEnabled(modules, 'salles')
-                  : item.root === 'materiel'
-                    ? isAssociationModuleEnabled(modules, 'materiel')
-                    : item.root === 'evenements'
-                      ? isAssociationModuleEnabled(modules, 'evenements')
-                      : true
-            ).map((item) => {
+            {moduleItems.filter((item) => !item.module || isAssociationModuleEnabled(modules, item.module)).map((item) => {
               const href = item.root ? `/${item.root}` : '/';
               const isSelected =
                 href === '/'

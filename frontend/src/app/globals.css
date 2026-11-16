@@ -39,6 +39,9 @@
     --spacing-accent-line: 1.875rem;
     --spacing-sidebar: 16rem;
     --spacing-sidebar-wide: 17.5rem;
+    --spacing-planning-slot: 1.75rem;
+    --spacing-planning-gutter: 3.5rem;
+    --spacing-planning-viewport: 36rem;
 
     /* Reusable shape tokens */
     --radius-control: 0.625rem;
@@ -2877,4 +2880,33 @@ a {
     .profile-modal {
         width: min(100%, 380px);
     }
+}
+
+/* Planning des salles : grille hebdomadaire (une colonne par jour, une ligne par demi-heure).
+   Les positions sont transmises en variables CSS par le composant. */
+@utility planning-week {
+    display: grid;
+    /* Une journée chargée (demandes côte à côte) s'élargit au détriment des journées vides. */
+    grid-template-columns: var(--spacing-planning-gutter) var(--planning-columns, repeat(7, minmax(0, 1fr)));
+
+    @media (width < 64rem) {
+        grid-template-columns: var(--spacing-planning-gutter) minmax(0, 1fr);
+    }
+}
+
+@utility planning-day {
+    display: grid;
+    grid-template-rows: repeat(var(--planning-slots), var(--spacing-planning-slot));
+    grid-template-columns: repeat(var(--planning-lanes, 1), minmax(0, 1fr));
+}
+
+/* Une ligne par heure pleine, pour lire l'horaire d'un coup d'œil. */
+@utility planning-lines {
+    background-image: linear-gradient(var(--color-line) 1px, transparent 1px);
+    background-size: 100% calc(var(--spacing-planning-slot) * 2);
+}
+
+@utility planning-event {
+    grid-row: var(--event-start) / span var(--event-span);
+    grid-column: var(--event-lane);
 }

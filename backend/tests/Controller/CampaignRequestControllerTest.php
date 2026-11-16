@@ -302,7 +302,7 @@ final class CampaignRequestControllerTest extends ControllerRouteTestCase
         $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$this->jwtManager->create($this->member));
         $day = $this->day()->format('Y-m-d');
 
-        $this->client->request('POST', '/api/rooms/reservations', [
+        $this->client->request('POST', '/api/campaigns/current/requests', [
             'salleId' => (string) $this->grandeSalle->getId(),
             'motifEvenement' => 'Assemblée générale',
             'dateDebut' => $day.'T10:00:00+01:00',

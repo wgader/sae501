@@ -29,12 +29,27 @@ final class RoomReservationController extends AbstractController
     ) {
     }
 
+    /**
+     * Réservation ponctuelle : possible hors campagne ouverte, premier arrivé premier servi.
+     */
     #[Route('/api/rooms/reservations', name: 'app_room_reservation_create_rooms', methods: ['POST'])]
     #[Route('/api/salles/reservations', name: 'app_room_reservation_create_salles', methods: ['POST'])]
-    public function create(
-        Request $request,
-        #[CurrentUser] User $user,
-    ): JsonResponse {
+    public function create(Request $request, #[CurrentUser] User $user): JsonResponse
+    {
+        return $this->submit($request, $user, false);
+    }
+
+    /**
+     * Demande déposée pendant la campagne annuelle, arbitrée ensuite par la mairie.
+     */
+    #[Route('/api/campaigns/current/requests', name: 'app_room_campaign_request_create', methods: ['POST'])]
+    public function createCampaignRequest(Request $request, #[CurrentUser] User $user): JsonResponse
+    {
+        return $this->submit($request, $user, true);
+    }
+
+    private function submit(Request $request, User $user, bool $forCampaign): JsonResponse
+    {
         $association = $user->getAssociation();
         if ($association === null) {
             // Permet à un compte agent/admin de tester ou réserver pour une association
@@ -127,6 +142,7 @@ final class RoomReservationController extends AbstractController
                 $dateFin,
                 $capaciteAttendue,
                 $justificatif,
+                $forCampaign,
             );
 
             return $this->json(
@@ -135,7 +151,7 @@ final class RoomReservationController extends AbstractController
             );
         } catch (RoomBookingClosedException $exception) {
             return $this->json([
-                'code' => 'ROOM_CAMPAIGN_CLOSED',
+                'code' => $exception->getReason(),
                 'message' => $exception->getMessage(),
             ], Response::HTTP_FORBIDDEN);
         } catch (RoomReservationConflictException $exception) {
@@ -180,6 +196,7 @@ final class RoomReservationController extends AbstractController
             'dateFin' => $reservation->getDateFin()?->format(\DateTimeInterface::ATOM),
             'capaciteAttendue' => $reservation->getCapaciteAttendue(),
             'createdAt' => $reservation->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            'campaignId' => $reservation->getCampaign()?->getId(),
             'salle' => $salle !== null ? RoomCatalogController::serializeRoom($salle) : null,
             'message' => 'Votre demande de réservation a bien été enregistrée et est en attente de validation par la mairie.',
         ];

@@ -34,7 +34,7 @@ export function createRoomReservation(
     body.append('capaciteAttendue', String(input.capaciteAttendue));
   }
   if (input.justificatif) body.append('justificatif', input.justificatif);
-  return request<RoomReservationResponse>('/api/rooms/reservations', {
+  return request<RoomReservationResponse>(input.forCampaign ? '/api/campaigns/current/requests' : '/api/rooms/reservations', {
     method: 'POST',
     body,
   });

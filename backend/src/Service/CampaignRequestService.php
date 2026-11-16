@@ -25,6 +25,8 @@ final class CampaignRequestService
     public const STATUS_ACCEPTED = 'Validée';
     public const STATUS_REFUSED = 'Refusée';
 
+    private const SLOT_FORMAT = 'Y-m-d\\TH:i:s';
+
     /** Statuts sur lesquels la mairie ne revient plus depuis la campagne. */
     private const FINAL_STATUSES = ['Annulée', 'Clôturée'];
 
@@ -270,5 +272,36 @@ final class CampaignRequestService
         }
 
         return $ids;
+    }
+
+    /**
+     * Représentation d’une demande de salle pour la mairie et l’association. Les créneaux sont des
+     * heures locales sans décalage horaire.
+     *
+     * @param list<ReservationSalle> $siblings demandes voisines, pour signaler les chevauchements
+     *
+     * @return array<string, mixed>
+     */
+    public static function serialize(ReservationSalle $reservation, array $siblings = []): array
+    {
+        $association = $reservation->getAssociation();
+        $salle = $reservation->getSalle();
+
+        return [
+            'id' => $reservation->getId(),
+            'status' => self::statusKey($reservation->getStatut()),
+            'statusLabel' => $reservation->getStatut(),
+            'campaignId' => $reservation->getCampaign()?->getId(),
+            'association' => ['id' => $association?->getId(), 'nom' => $association?->getNom()],
+            'salle' => ['id' => $salle?->getId(), 'nom' => $salle?->getNom(), 'capaciteMax' => $salle?->getCapaciteMax()],
+            'motifEvenement' => $reservation->getMotifEvenement(),
+            'capaciteAttendue' => $reservation->getCapaciteAttendue(),
+            'dateDebut' => $reservation->getDateDebut()?->format(self::SLOT_FORMAT),
+            'dateFin' => $reservation->getDateFin()?->format(self::SLOT_FORMAT),
+            'decisionComment' => $reservation->getDecisionComment(),
+            'createdAt' => $reservation->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            'updatedAt' => $reservation->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
+            'conflictsWith' => self::overlappingIds($reservation, $siblings),
+        ];
     }
 }

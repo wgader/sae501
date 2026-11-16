@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { PublicRoom, getMediaUrl } from '@/lib/api';
+import { IconLocation } from '@/components/ui/icons';
 
 interface RoomCatalogCardProps {
   room: PublicRoom;
@@ -21,7 +22,7 @@ export default function RoomCatalogCard({
   const imageUrl = getMediaUrl(room.imageUrl);
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-white shadow-xs transition-all duration-200 hover:shadow-md">
+    <article className="group flex w-full flex-col overflow-hidden rounded-card border border-line bg-white shadow-xs transition-shadow duration-200 hover:shadow-card">
       {/* Photo */}
       <div className="relative h-48 w-full bg-paper overflow-hidden">
         {imageUrl && !hasBrokenImage ? (
@@ -55,7 +56,7 @@ export default function RoomCatalogCard({
         {/* Badges */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
           {!isAvailable && (
-            <span className="rounded-md bg-amber-500/90 px-2.5 py-0.5 text-caption font-bold uppercase text-white shadow-xs backdrop-blur-xs">
+            <span className="rounded-md bg-ink/80 px-2.5 py-0.5 text-caption font-bold uppercase text-white shadow-xs backdrop-blur-xs">
               Indisponible
             </span>
           )}
@@ -72,7 +73,7 @@ export default function RoomCatalogCard({
             {room.nom}
           </h3>
           <p className="mt-1 text-xs text-muted flex items-center gap-1">
-            <span>📍</span> {room.adresse}
+            <IconLocation className="h-3.5 w-3.5 shrink-0 text-primary" /> {room.adresse}
           </p>
         </div>
 
@@ -83,7 +84,7 @@ export default function RoomCatalogCard({
               onClick={() => onReserve(room)}
               className="w-full rounded-lg bg-primary py-2.5 text-center text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-primary-hover cursor-pointer"
             >
-              Réserver →
+              Choisir cette salle
             </button>
           ) : (
             <button

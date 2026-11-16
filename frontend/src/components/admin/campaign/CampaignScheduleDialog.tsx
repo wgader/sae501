@@ -4,16 +4,18 @@ import { useId, useState, type FormEvent } from 'react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import { fieldControlVariants, fieldHintVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
+import CampaignPeriodFields from '@/components/admin/campaign/CampaignPeriodFields';
 import { fromDateTimeInput, toDateTimeInput } from '@/lib/campaignDates';
+import type { CampaignSchedulePayload } from '@/lib/api/campaigns';
 import type { Campaign } from '@/lib/api/types';
 
 interface CampaignScheduleDialogProps {
   campaign: Campaign | null;
   onClose: () => void;
-  onSubmit: (campaign: Campaign, openingAt: string, closingAt: string) => Promise<void>;
+  onSubmit: (campaign: Campaign, payload: CampaignSchedulePayload) => Promise<void>;
 }
 
-/** Avancer ou repousser l'ouverture et la clôture ; le statut suit les nouvelles dates. */
+/** Dates de dépôt et jours réservables ; le statut suit les nouvelles dates. */
 export default function CampaignScheduleDialog(props: CampaignScheduleDialogProps) {
   return <CampaignScheduleDialogContent key={props.campaign?.id ?? 'closed'} {...props} />;
 }
@@ -22,6 +24,8 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
   const ids = { form: useId(), opening: useId(), closing: useId() };
   const [opening, setOpening] = useState(() => (campaign ? toDateTimeInput(campaign.openingAt) : ''));
   const [closing, setClosing] = useState(() => (campaign ? toDateTimeInput(campaign.closingAt) : ''));
+  const [periodStart, setPeriodStart] = useState(() => campaign?.periodStart?.slice(0, 10) ?? '');
+  const [periodEnd, setPeriodEnd] = useState(() => campaign?.periodEnd?.slice(0, 10) ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,10 +36,19 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
       setError('La clôture doit être postérieure à l’ouverture.');
       return;
     }
+    if (periodStart && periodEnd && periodEnd < periodStart) {
+      setError('Les jours réservables doivent être dans l’ordre.');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
-      await onSubmit(campaign, fromDateTimeInput(opening), fromDateTimeInput(closing));
+      await onSubmit(campaign, {
+        openingAt: fromDateTimeInput(opening),
+        closingAt: fromDateTimeInput(closing),
+        periodStart: periodStart || null,
+        periodEnd: periodEnd || null,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Les dates n’ont pas pu être modifiées.');
     } finally {
@@ -47,7 +60,7 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
     <Dialog
       open={campaign !== null}
       size="sm"
-      title="Modifier les dates"
+      title="Dates de la campagne"
       description="Repousser la clôture d’une campagne clôturée la rouvre ; repousser l’ouverture la reprogramme."
       onClose={onClose}
       footer={
@@ -64,7 +77,7 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
       <form id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4">
         <div>
           <label htmlFor={ids.opening} className={fieldLabelVariants()}>
-            Ouverture
+            Ouverture des demandes
           </label>
           <input
             id={ids.opening}
@@ -77,7 +90,7 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
         </div>
         <div>
           <label htmlFor={ids.closing} className={fieldLabelVariants()}>
-            Clôture
+            Clôture des demandes
           </label>
           <input
             id={ids.closing}
@@ -88,6 +101,7 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
             className={fieldControlVariants({ invalid: Boolean(error) })}
           />
         </div>
+        <CampaignPeriodFields start={periodStart} end={periodEnd} onStartChange={setPeriodStart} onEndChange={setPeriodEnd} />
         {error && (
           <p role="alert" className={fieldHintVariants({ tone: 'danger' })}>
             {error}

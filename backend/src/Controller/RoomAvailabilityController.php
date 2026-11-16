@@ -102,6 +102,8 @@ final class RoomAvailabilityController extends AbstractController
                 'end' => $res->getDateFin()?->format(\DateTimeInterface::ATOM),
                 'statut' => $statut,
                 'isPreReserved' => $isPreReserved,
+                // Une demande de campagne en attente n’empêche pas une autre association de viser le même créneau.
+                'campaignId' => $res->getCampaign()?->getId(),
             ];
         }, $reservations);
 

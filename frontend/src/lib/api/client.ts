@@ -77,14 +77,18 @@ export async function accountRequest<T>(
     return redirectToAssociationLogin();
   }
 
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+  // Un envoi de fichier laisse le navigateur poser le multipart et sa frontière.
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
+    headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
   });
   const data = await response.json().catch(() => null);
 

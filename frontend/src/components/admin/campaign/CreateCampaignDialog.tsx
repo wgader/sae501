@@ -4,6 +4,7 @@ import { useId, useState, type FormEvent } from 'react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
 import { fieldControlVariants, fieldHintVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
+import CampaignPeriodFields from '@/components/admin/campaign/CampaignPeriodFields';
 import { fromDateTimeInput } from '@/lib/campaignDates';
 import type { CreateCampaignPayload } from '@/lib/api/campaigns';
 
@@ -13,7 +14,10 @@ interface CreateCampaignDialogProps {
   onSubmit: (payload: CreateCampaignPayload) => Promise<void>;
 }
 
-/** Création d'une campagne annuelle (par défaut du 1er juin au 30 septembre de l'année suivante). */
+/**
+ * Création d'une campagne annuelle : fenêtre de dépôt des demandes (par défaut juin à septembre)
+ * et jours réservables (par défaut de septembre à juin suivant).
+ */
 export default function CreateCampaignDialog(props: CreateCampaignDialogProps) {
   return <CreateCampaignDialogContent key={props.open ? 'open' : 'closed'} {...props} />;
 }
@@ -23,7 +27,9 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
   const ids = { form: useId(), label: useId(), opening: useId(), closing: useId() };
   const [label, setLabel] = useState(`Campagne des salles ${year}-${year + 1}`);
   const [opening, setOpening] = useState(`${year}-06-01T00:00`);
-  const [closing, setClosing] = useState(`${year}-09-30T23:59`);
+  const [closing, setClosing] = useState(`${year}-07-15T23:59`);
+  const [periodStart, setPeriodStart] = useState(`${year}-09-01`);
+  const [periodEnd, setPeriodEnd] = useState(`${year + 1}-06-30`);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,6 +43,10 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
       setError('La clôture doit être postérieure à l’ouverture.');
       return;
     }
+    if (!periodStart || !periodEnd || periodEnd < periodStart) {
+      setError('Indiquez les jours réservables, dans l’ordre.');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
@@ -44,6 +54,8 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
         seasonLabel: label.trim(),
         openingAt: fromDateTimeInput(opening),
         closingAt: fromDateTimeInput(closing),
+        periodStart,
+        periodEnd,
         resourceTypes: ['salle'],
       });
     } catch (err) {
@@ -58,7 +70,7 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
       open={open}
       size="sm"
       title="Nouvelle campagne"
-      description="Elle s’ouvre automatiquement à la date d’ouverture et se clôture à la date de fin."
+      description="Elle s’ouvre et se clôture automatiquement aux dates choisies."
       onClose={onClose}
       footer={
         <>
@@ -88,7 +100,7 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
         </div>
         <div>
           <label htmlFor={ids.opening} className={fieldLabelVariants()}>
-            Ouverture
+            Ouverture des demandes
           </label>
           <input
             id={ids.opening}
@@ -101,7 +113,7 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
         </div>
         <div>
           <label htmlFor={ids.closing} className={fieldLabelVariants()}>
-            Clôture
+            Clôture des demandes
           </label>
           <input
             id={ids.closing}
@@ -112,6 +124,7 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
             className={fieldControlVariants()}
           />
         </div>
+        <CampaignPeriodFields start={periodStart} end={periodEnd} onStartChange={setPeriodStart} onEndChange={setPeriodEnd} />
         {error && (
           <p role="alert" className={fieldHintVariants({ tone: 'danger' })}>
             {error}

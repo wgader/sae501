@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   acceptCampaignRequest,
   addCampaignSlot,
+  cancelCampaignRequest,
   getCampaignRequests,
   refuseCampaignRequest,
   rescheduleCampaignRequest,
@@ -17,6 +18,7 @@ export interface CampaignRequestActions {
   refuse: (request: CampaignRequest, reason: string) => Promise<CampaignRequest>;
   reschedule: (request: CampaignRequest, slot: CampaignSlotPayload, reason: string) => Promise<CampaignRequest>;
   addSlot: (payload: AddCampaignSlotPayload) => Promise<CampaignRequest>;
+  cancel: (request: CampaignRequest, reason: string) => Promise<CampaignRequest>;
 }
 
 /**
@@ -71,6 +73,7 @@ export function useCampaignRequests(campaignId: number | null) {
     reschedule: (request, slot, reason) =>
       withReload(() => rescheduleCampaignRequest(requireCampaign(), request.id, { ...slot, reason })),
     addSlot: (payload) => withReload(() => addCampaignSlot(requireCampaign(), payload)),
+    cancel: (request, reason) => withReload(() => cancelCampaignRequest(requireCampaign(), request.id, reason)),
   };
 
   return { requests, isLoading, error, reload, actions };

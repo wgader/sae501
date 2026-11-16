@@ -8,14 +8,33 @@ import type { CampaignRequest } from '@/lib/api/types';
 
 const MAX_LENGTH = 1000;
 
+export type ReasonIntent = 'refuse' | 'cancel';
+
+const COPY: Record<ReasonIntent, { title: string; confirm: string; placeholder: string; fallbackError: string }> = {
+  refuse: {
+    title: 'Refuser la demande',
+    confirm: 'Confirmer le refus',
+    placeholder: 'Par exemple : la salle est réservée pour une manifestation municipale.',
+    fallbackError: 'Le refus n’a pas pu être enregistré.',
+  },
+  cancel: {
+    title: 'Annuler la réservation',
+    confirm: 'Confirmer l’annulation',
+    placeholder: 'Par exemple : la salle est fermée pour travaux ce jour-là.',
+    fallbackError: 'L’annulation n’a pas pu être enregistrée.',
+  },
+};
+
 interface RefuseRequestDialogProps {
   request: CampaignRequest | null;
+  intent?: ReasonIntent;
   onClose: () => void;
   onConfirm: (request: CampaignRequest, reason: string) => Promise<void>;
 }
 
-/** Refus d'une demande, avec un motif facultatif transmis à l'association. */
-export default function RefuseRequestDialog({ request, onClose, onConfirm }: RefuseRequestDialogProps) {
+/** Refus ou annulation d'une demande, avec un motif facultatif transmis à l'association. */
+export default function RefuseRequestDialog({ request, intent = 'refuse', onClose, onConfirm }: RefuseRequestDialogProps) {
+  const copy = COPY[intent];
   const reasonId = useId();
   const hintId = useId();
   const formId = useId();
@@ -38,7 +57,7 @@ export default function RefuseRequestDialog({ request, onClose, onConfirm }: Ref
       await onConfirm(request, reason);
       setReason('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Le refus n’a pas pu être enregistré.');
+      setError(err instanceof Error ? err.message : copy.fallbackError);
     } finally {
       setIsSubmitting(false);
     }
@@ -48,16 +67,16 @@ export default function RefuseRequestDialog({ request, onClose, onConfirm }: Ref
     <Dialog
       open={request !== null}
       size="sm"
-      title="Refuser la demande"
+      title={copy.title}
       description={request ? `${request.association.nom} · ${request.salle.nom}` : undefined}
       onClose={close}
       footer={
         <>
           <Button variant="secondary" size="sm" onClick={close}>
-            Annuler
+            Retour
           </Button>
           <Button type="submit" form={formId} variant="danger" size="sm" isLoading={isSubmitting}>
-            Confirmer le refus
+            {copy.confirm}
           </Button>
         </>
       }
@@ -73,7 +92,7 @@ export default function RefuseRequestDialog({ request, onClose, onConfirm }: Ref
           value={reason}
           aria-describedby={hintId}
           onChange={(event) => setReason(event.target.value)}
-          placeholder="Par exemple : la salle est réservée pour une manifestation municipale."
+          placeholder={copy.placeholder}
           className={fieldControlVariants()}
         />
         <p id={hintId} className={fieldHintVariants()}>

@@ -1,5 +1,6 @@
 import CampaignRequestCard from '@/components/admin/campaign/CampaignRequestCard';
 import { formatDayLabel, slotDate } from '@/lib/campaignDates';
+import { competitorNames } from '@/lib/roomRequestFilters';
 import type { CampaignRequest } from '@/lib/api/types';
 
 interface CampaignRequestListProps {
@@ -7,8 +8,10 @@ interface CampaignRequestListProps {
   /** Toutes les demandes de la campagne, pour nommer les associations en concurrence. */
   allRequests: CampaignRequest[];
   onAccept: (request: CampaignRequest) => void;
-  onReschedule: (request: CampaignRequest) => void;
+  /** Absent pour une réservation ponctuelle, que la mairie accepte ou refuse telle quelle. */
+  onReschedule?: (request: CampaignRequest) => void;
   onRefuse: (request: CampaignRequest) => void;
+  onCancel: (request: CampaignRequest) => void;
 }
 
 interface DayGroup {
@@ -38,6 +41,7 @@ export default function CampaignRequestList({
   onAccept,
   onReschedule,
   onRefuse,
+  onCancel,
 }: CampaignRequestListProps) {
   const associationNames = new Map(allRequests.map((request) => [request.id, request.association.nom ?? '']));
   const days = groupByDay(requests);
@@ -54,10 +58,11 @@ export default function CampaignRequestList({
               <li key={request.id}>
                 <CampaignRequestCard
                   request={request}
-                  competitors={request.conflictsWith.map((id) => associationNames.get(id) ?? '').filter(Boolean)}
+                  competitors={competitorNames(request, associationNames)}
                   onAccept={onAccept}
                   onReschedule={onReschedule}
                   onRefuse={onRefuse}
+                  onCancel={onCancel}
                 />
               </li>
             ))}
