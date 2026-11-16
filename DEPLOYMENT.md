@@ -262,6 +262,36 @@ masqué : il n’apparaît ni dans l’historique du shell, ni dans les logs. La
 adresse déjà utilisée et le mode non interactif. Les autres comptes (agents, associations) se
 créent ensuite depuis l’application.
 
+### Mémoire : préproduction et production sur le même VPS
+
+Les deux environnements tournent en parallèle sur le même serveur. Pour qu’ils tiennent ensemble,
+`docker-compose.prod.yml` borne la mémoire de chaque service (valeurs par défaut, modifiables dans
+le `.env` de l’environnement, voir `.env.prod.example`) :
+
+| Service | Limite | Réglage |
+|---|---|---|
+| MySQL | 512 Mo | `performance_schema` désactivé, cache InnoDB 128 Mo, 40 connexions |
+| Backend (FrankenPHP) | 512 Mo | 2 workers PHP (`FRANKENPHP_WORKERS`) |
+| Frontend (Next.js) | 320 Mo | tas Node 192 Mo |
+| Worker Messenger | 256 Mo | redémarre au-delà de 160 Mo |
+| Planificateur de campagnes | 192 Mo | |
+
+Soit environ 1,8 Go au maximum par environnement ; l’usage réel est nettement inférieur. Le job de
+déploiement utilise un groupe de concurrence commun (`deploy-vps`) : préproduction et production ne
+se déploient jamais en même temps. Ne pas fusionner plusieurs PR dans `main` à la suite : chacune
+déclenche un déploiement de production.
+
+Un fichier d’échange évite qu’un pic de mémoire (premier démarrage de MySQL, téléchargement
+d’images) ne bloque le serveur. À créer une fois, en root, s’il n’existe pas (`swapon --show` vide) :
+
+```bash
+fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+sysctl -w vm.swappiness=10 && echo 'vm.swappiness=10' > /etc/sysctl.d/99-swappiness.conf
+```
+
+Suivre la consommation : `docker stats --no-stream` et `free -h`.
+
 ## 5. Retour arrière
 
 **Automatique** : si la nouvelle version ne devient pas saine, `deploy.sh` redémarre aussitôt les
