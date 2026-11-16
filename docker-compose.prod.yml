@@ -43,6 +43,7 @@ x-backend-environment: &backend-environment
   JWT_SECRET_KEY: /run/secrets/jwt_private_key
   JWT_PUBLIC_KEY: /run/secrets/jwt_public_key
   JWT_PASSPHRASE: ${JWT_PASSPHRASE:?}
+  JWT_COOKIE_SECURE: "1"
   # Le proxy d’entrée est sur un réseau Docker privé : Symfony lit l’IP du client et le schéma
   # HTTPS dans X-Forwarded-*, indispensable aux limiteurs de débit par IP.
   SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES:-private_ranges}

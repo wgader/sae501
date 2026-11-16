@@ -5,9 +5,9 @@ namespace App\Controller;
 use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
 use App\Security\SecurityAuditLogger;
+use App\Security\SessionCookie;
 use App\Service\AssociationStatusNotifier;
 use Doctrine\ORM\EntityManagerInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -48,7 +48,7 @@ final class AccountActivationController extends AbstractController
      * { "token": "...", "password": "<password>" }
      *
      * Réponses :
-     *   200 → compte activé, JWT retourné (auto-login)
+     *   200 → compte activé, session ouverte par cookie HttpOnly (auto-login)
      *   400 → payload invalide
      *   401 → token invalide ou expiré
      *   409 → compte déjà activé
@@ -57,7 +57,7 @@ final class AccountActivationController extends AbstractController
     #[Route('/activate', name: 'api_activate_account', methods: ['POST'])]
     public function activate(
         Request $request,
-        JWTTokenManagerInterface $jwtManager,
+        SessionCookie $sessionCookie,
         PasswordPolicy $passwordPolicy,
         SecurityAuditLogger $audit,
     ): JsonResponse {
@@ -137,13 +137,11 @@ final class AccountActivationController extends AbstractController
             ]);
         }
 
-        // ── Auto-login : génération du JWT ────────────────────────────────────
-        $jwt = $jwtManager->create($user);
-
-        return $this->json([
+        // ── Auto-login : session ouverte par cookie HttpOnly ──────────────────
+        return $sessionCookie->open($this->json([
             'message' => 'Votre compte a été activé avec succès.',
-            'token'   => $jwt,
-        ]);
+            'user'    => SessionCookie::profile($user),
+        ]), $user);
     }
 
     /**

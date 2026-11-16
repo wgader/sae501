@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Security\SecurityAuditLogger;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use App\Security\SessionCookie;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,7 +32,7 @@ final class AdminAuthController extends AbstractController
      * { "email": "admin@mairie.fr", "password": "monMotDePasse" }
      *
      * Réponses :
-     *   200 → { "token": "<JWT>" }
+     *   200 → { "user": {…} } et cookie de session HttpOnly
      *   400 → champs manquants
      *   401 → identifiants incorrects
      *   403 → compte valide mais sans rôle mairie autorisé
@@ -42,7 +42,7 @@ final class AdminAuthController extends AbstractController
         Request $request,
         UserRepository $userRepository,
         UserPasswordHasherInterface $passwordHasher,
-        JWTTokenManagerInterface $jwtManager,
+        SessionCookie $sessionCookie,
         #[Autowire(service: 'limiter.admin_login_account')]
         RateLimiterFactory $accountLimiter,
         #[Autowire(service: 'limiter.admin_login_ip')]
@@ -111,7 +111,7 @@ final class AdminAuthController extends AbstractController
         $accountLimit->reset();
         $audit->loginSucceeded($user, 'mairie');
 
-        // ── Génération du JWT ─────────────────────────────────────────────────
-        return $this->json(['token' => $jwtManager->create($user)]);
+        // ── Session : JWT dans un cookie HttpOnly, profil dans le corps ──────
+        return $sessionCookie->open($this->json(['user' => SessionCookie::profile($user)]), $user);
     }
 }

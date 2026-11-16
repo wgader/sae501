@@ -41,9 +41,11 @@ abstract class ControllerRouteTestCase extends WebTestCase
 
     protected function requestJson(string $method, string $uri, array $payload = []): void
     {
+        // Comme le frontend, les requêtes portent l’en-tête exigé par la protection CSRF.
         $this->client->request($method, $uri, [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_ACCEPT' => 'application/json',
+            'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
         ], $payload === [] ? null : json_encode($payload, JSON_THROW_ON_ERROR));
     }
 

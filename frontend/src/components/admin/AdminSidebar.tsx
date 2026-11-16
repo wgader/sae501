@@ -14,8 +14,7 @@ import {
   IconAgent,
   IconCampagne,
 } from '@/components/ui/NavigationBar/NavigationIcon';
-import { API_URL } from '@/lib/api/client';
-import { clearSessions } from '@/lib/session';
+import { signOut } from '@/lib/api/auth';
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
@@ -38,14 +37,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    const token = localStorage.getItem('admin_token');
-    void fetch(`${API_URL}/api/auth/logout`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    }).finally(() => {
-      clearSessions();
-      router.replace('/admin');
-    });
+    void signOut().finally(() => router.replace('/admin'));
   };
 
   return (

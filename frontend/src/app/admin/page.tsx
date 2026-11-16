@@ -4,9 +4,9 @@ import { type FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { storeAdminSession } from '@/lib/session';
+import { hasSession } from '@/lib/session';
+import { signIn } from '@/lib/api/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
@@ -17,8 +17,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     document.title = 'Administration · Connexion | Ville de Feytiat';
-    const token = localStorage.getItem('admin_token');
-    if (token) {
+    if (hasSession('admin')) {
       router.replace('/admin/dashboard');
     }
   }, [router]);
@@ -37,27 +36,7 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: identifier, password }),
-      });
-
-      const data = (await response.json().catch(() => ({}))) as {
-        token?: string;
-        message?: string;
-        error?: boolean;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.message ?? 'Identifiants incorrects.');
-      }
-
-      if (!data.token) {
-        throw new Error(data.message ?? 'La connexion n’a pas pu être finalisée.');
-      }
-
-      storeAdminSession(data.token);
+      await signIn('admin', identifier, password);
       router.push('/admin/dashboard');
     } catch (err: unknown) {
       setSubmitError(

@@ -5,9 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ActivationForm, { type StrengthLevel } from '@/components/activation/ActivationForm';
-import { storeAssociationSession } from '@/lib/session';
+import { activateAccount } from '@/lib/api/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 const CRITERIA = [
   { id: 'length', label: '10 caractères minimum', test: (password: string) => password.length >= 10 },
   { id: 'upper', label: 'Une majuscule (A-Z)', test: (password: string) => /[A-Z]/.test(password) },
@@ -57,10 +56,7 @@ function ActivationContent() {
     if (!confirmMatch) { setError('Les deux mots de passe saisis ne correspondent pas.'); return; }
     setError(''); setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/auth/activate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, email, password }) });
-      const data = await response.json().catch(() => ({})) as { token?: string; message?: string; user?: { nomAssociation?: string } };
-      if (!response.ok) throw new Error(data.message ?? 'Une erreur est survenue lors de l’activation.');
-      if (data.token) { storeAssociationSession(data.token, data.user?.nomAssociation); }
+      await activateAccount(token, email, password);
       setActivated(true);
       window.setTimeout(() => router.push('/'), 2500);
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Une erreur est survenue lors de l’activation du compte.'); }

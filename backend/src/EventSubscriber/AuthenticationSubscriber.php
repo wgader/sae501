@@ -3,6 +3,7 @@
 namespace App\EventSubscriber;
 
 use App\Entity\User;
+use App\Security\SessionCookie;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
@@ -10,6 +11,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthenticationException;
 
 /**
@@ -33,8 +35,8 @@ class AuthenticationSubscriber implements EventSubscriberInterface
     /**
      * Déclenché après un login réussi.
      *
-     * Vérifie que le compte est bien vérifié avant de retourner le token.
-     * Enrichit la réponse avec les infos du user (id, email, rôles, typeCompte).
+     * Enrichit la réponse avec les infos du user (id, email, rôles, typeCompte) ; le JWT lui-même
+     * part dans le cookie HttpOnly et n’apparaît pas dans le corps.
      */
     public function onAuthenticationSuccess(AuthenticationSuccessEvent $event): void
     {
@@ -44,36 +46,8 @@ class AuthenticationSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // Compte non activé (pas encore de mot de passe défini)
-        if (!$user->isVerified()) {
-            $event->setData([
-                'error' => true,
-                'message' => 'Votre compte n\'est pas encore activé.',
-            ]);
-            return;
-        }
-
-        // Compte suspendu
-        if ($user->getInactivatedAt() !== null) {
-            $event->setData([
-                'error' => true,
-                'message' => 'Votre compte a été suspendu. Contactez la mairie.',
-            ]);
-            return;
-        }
-
-        $event->setData(array_merge($event->getData(), [
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'nom' => $user->getNom(),
-                'prenom' => $user->getPrenom(),
-                'nomAssociation' => $user->getAssociation()?->getNom() ?? null,
-                'roles' => $user->getRoles(),
-                'typeCompte' => $user->getTypeCompte(),
-                'isVerified' => $user->isVerified(),
-            ],
-        ]));
+        // Comptes non activés, suspendus ou supprimés : refusés avant ce point par AccountStatusChecker.
+        $event->setData(array_merge($event->getData(), ['user' => SessionCookie::profile($user)]));
     }
 
     /**
@@ -111,6 +85,14 @@ class AuthenticationSubscriber implements EventSubscriberInterface
                 Response::HTTP_TOO_MANY_REQUESTS,
                 ['Retry-After' => '900'],
             ));
+
+            return;
+        }
+
+        // Mot de passe correct mais compte non activé ou suspendu : le motif peut être donné.
+        $exception = $event->getException();
+        if ($exception instanceof CustomUserMessageAccountStatusException) {
+            $event->setResponse(new JsonResponse(['message' => $exception->getMessageKey()], Response::HTTP_FORBIDDEN));
 
             return;
         }

@@ -6,6 +6,21 @@ lexik_jwt_authentication:
     blocklist_token:
         enabled: true
         cache: cache.jwt_blocklist
+    # Le navigateur reçoit le JWT dans un cookie HttpOnly, illisible par JavaScript : une faille
+    # XSS ne permet plus de voler la session. L’en-tête Authorization reste accepté (tests, outils).
+    token_extractors:
+        authorization_header:
+            enabled: true
+        cookie:
+            enabled: true
+            name: sae501_session
+    set_cookies:
+        sae501_session:
+            samesite: strict
+            path: /
+            secure: '%env(bool:JWT_COOKIE_SECURE)%'
+            httpOnly: true
+    remove_token_from_body_when_cookies_used: true
 
 # Les clés de test sont générées par tests/bootstrap.php : la suite ne dépend ni de la
 # clé chiffrée du développeur, ni des variables JWT injectées par Docker ou la CI.

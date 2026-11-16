@@ -1,4 +1,4 @@
-import { accountRequest, request, ApiError, API_URL } from './client';
+import { accountRequest, apiFetch, request, ApiError } from './client';
 import type {
   AdminEquipmentReservation,
   AdminEquipmentReservationPage,
@@ -98,21 +98,8 @@ export function deleteAdminEquipment(id: number): Promise<{ message: string; equ
   });
 }
 export async function getPublicEquipment(): Promise<Equipment[]> {
-  const token = typeof window !== 'undefined'
-    ? (localStorage.getItem('token') || localStorage.getItem('admin_token'))
-    : null;
-
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_URL}/api/equipment`, {
-    headers,
-  });
+  // Catalogue public : la session (cookie) n'est envoyée que si elle existe.
+  const response = await apiFetch('/api/equipment');
   if (!response.ok) {
     throw new ApiError('Impossible de charger le catalogue de matériel.', response.status);
   }

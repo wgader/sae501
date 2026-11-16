@@ -1,4 +1,5 @@
-import { ApiError, redirectToAdminLogin, API_URL, request } from './client';
+import { ApiError, apiFetch, redirectToAdminLogin, request } from './client';
+import { readSession } from '@/lib/session';
 
 export type ExternalEventFile = {
   id: number;
@@ -61,17 +62,15 @@ export type CreateExternalEventPayload = {
 };
 
 export async function createExternalEvent(payload: CreateExternalEventPayload): Promise<ExternalEvent> {
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (readSession()?.kind !== 'association') {
     throw new ApiError('Vous devez être connecté avec un compte association.', 401);
   }
 
-  const response = await fetch(`${API_URL}/api/events/external`, {
+  const response = await apiFetch(`/api/events/external`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
@@ -92,19 +91,17 @@ export async function createExternalEvent(payload: CreateExternalEventPayload): 
 }
 
 export async function uploadExternalEventFile(eventId: number, file: File): Promise<ExternalEventFile> {
-  const token = localStorage.getItem('token');
-  if (!token) {
+  if (readSession()?.kind !== 'association') {
     throw new ApiError('Vous devez être connecté avec un compte association.', 401);
   }
 
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_URL}/api/events/external/${eventId}/files`, {
+  const response = await apiFetch(`/api/events/external/${eventId}/files`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: formData,
   });
@@ -122,8 +119,7 @@ export async function uploadExternalEventFile(eventId: number, file: File): Prom
 }
 
 export async function getExternalEvents(page = 1, itemsPerPage = 10): Promise<ExternalEventListPage> {
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-  if (!token) {
+  if (!readSession()) {
     redirectToAdminLogin();
   }
 
@@ -132,10 +128,9 @@ export async function getExternalEvents(page = 1, itemsPerPage = 10): Promise<Ex
     itemsPerPage: String(itemsPerPage),
   });
 
-  const response = await fetch(`${API_URL}/api/events/external?${params.toString()}`, {
+  const response = await apiFetch(`/api/events/external?${params.toString()}`, {
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -152,15 +147,13 @@ export async function getExternalEvents(page = 1, itemsPerPage = 10): Promise<Ex
 }
 
 export async function getExternalEvent(id: number): Promise<ExternalEvent> {
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-  if (!token) {
+  if (!readSession()) {
     redirectToAdminLogin();
   }
 
-  const response = await fetch(`${API_URL}/api/events/external/${id}`, {
+  const response = await apiFetch(`/api/events/external/${id}`, {
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -180,17 +173,15 @@ export async function updateExternalEventStatus(
   id: number,
   status: 'VALIDATED',
 ): Promise<ExternalEvent> {
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-  if (!token) {
+  if (!readSession()) {
     redirectToAdminLogin();
   }
 
-  const response = await fetch(`${API_URL}/api/events/external/${id}/status`, {
+  const response = await apiFetch(`/api/events/external/${id}/status`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ status }),
   });
@@ -208,16 +199,11 @@ export async function updateExternalEventStatus(
 }
 
 export async function downloadExternalEventFile(fileId: number, originalName: string): Promise<void> {
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-  if (!token) {
+  if (!readSession()) {
     redirectToAdminLogin();
   }
 
-  const response = await fetch(`${API_URL}/api/events/external/files/${fileId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await apiFetch(`/api/events/external/files/${fileId}`);
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
