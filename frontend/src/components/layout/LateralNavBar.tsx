@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ReactNode, useState, useSyncExternalStore } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import NavItem from '../ui/NavigationBar/NavItem';
+import AssociationAvatar from '@/components/layout/AssociationAvatar';
 import {
   IconAccueil,
   IconCampagne,
@@ -177,9 +178,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
           />
         </Link>
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-pill bg-accent text-xs font-black text-ink">
-          {initials}
-        </div>
+        <AssociationAvatar initials={initials} size="md" />
       </header>
 
       {mobileMenuOpen && (
@@ -266,9 +265,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
             <div className="border-t border-line pt-4">
               <div className="flex items-center justify-between rounded-soft border border-line bg-white p-2.5">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-accent text-caption font-black text-ink">
-                    {initials}
-                  </span>
+                  <AssociationAvatar initials={initials} />
                   <span className="truncate text-xs font-semibold text-ink">
                     {associationName}
                   </span>
@@ -349,9 +346,7 @@ export default function LateralNavBar({ className = '' }: LateralNavBarProps) {
         <div className="border-t border-line p-3 md:p-4">
           <div className="group relative flex items-center justify-between rounded-soft border border-line bg-white p-2 shadow-xs transition-colors hover:border-muted/40">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-accent text-caption font-black text-ink">
-                {initials}
-              </span>
+              <AssociationAvatar initials={initials} />
               <span className="truncate text-xs font-semibold text-ink">
                 {associationName}
               </span>

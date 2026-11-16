@@ -1,5 +1,5 @@
 import { accountRequest, apiFetch, API_URL, ApiError, requestBlob } from './client';
-import { clearSessions, storeSession, type SessionKind, type SessionUser } from '@/lib/session';
+import { clearSessions, storeSession, updateSessionLogo, type SessionKind, type SessionUser } from '@/lib/session';
 import type { ExternalEventFile } from './evenements';
 import type {
   AccountProfile,
@@ -216,4 +216,19 @@ export async function signOut(): Promise<void> {
   } finally {
     clearSessions();
   }
+}
+
+/** Photo de profil de l'association ; le profil de session est mis à jour pour l'affichage. */
+export async function uploadAssociationPhoto(file: File): Promise<AccountProfile> {
+  const body = new FormData();
+  body.append('photo', file);
+  const profile = await accountRequest<AccountProfile>('/api/account/profile/photo', { method: 'POST', body }, 'La photo n’a pas pu être envoyée.');
+  updateSessionLogo(profile.logoUrl ?? null);
+  return profile;
+}
+
+export async function deleteAssociationPhoto(): Promise<AccountProfile> {
+  const profile = await accountRequest<AccountProfile>('/api/account/profile/photo', { method: 'DELETE' }, 'La photo n’a pas pu être retirée.');
+  updateSessionLogo(null);
+  return profile;
 }

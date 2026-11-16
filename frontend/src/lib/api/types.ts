@@ -183,6 +183,8 @@ export type AccountProfile = {
   nom: string | null;
   prenom: string | null;
   nomAssociation?: string | null;
+  /** Photo de profil de l'association (chemin public), ou null. */
+  logoUrl?: string | null;
   typeCompte?: string | null;
   moduleSubventionActif?: boolean | null;
   moduleMaterielActif?: boolean | null;

@@ -73,6 +73,7 @@ final class SessionCookie
             'typeCompte' => $user->getTypeCompte(),
             'isVerified' => $user->isVerified(),
             'nomAssociation' => $association?->getNom(),
+            'logoUrl' => $association?->getLogoUrl(),
             'modules' => null === $association ? null : [
                 'subventions' => $association->isModuleSubventionActif(),
                 'materiel' => $association->isModuleMaterielActif(),

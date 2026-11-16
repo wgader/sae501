@@ -24,6 +24,7 @@ export interface SessionUser {
   roles: string[];
   typeCompte: string;
   nomAssociation: string | null;
+  logoUrl?: string | null;
   modules: AssociationModulesFlags | null;
 }
 
@@ -69,6 +70,12 @@ export function subscribeSession(callback: () => void): () => void {
 export function storeSession(kind: SessionKind, user: SessionUser): void {
   localStorage.setItem(SESSION_KEY, JSON.stringify({ kind, user } satisfies StoredSession));
   notifyAuthChange();
+}
+
+/** Photo changée depuis le profil : la navigation l'affiche sans reconnexion. */
+export function updateSessionLogo(logoUrl: string | null): void {
+  const session = readSession();
+  if (session) storeSession(session.kind, { ...session.user, logoUrl });
 }
 
 export function clearSessions(): void {
