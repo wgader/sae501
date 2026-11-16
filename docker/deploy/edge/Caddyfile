@@ -18,7 +18,8 @@ import /etc/caddy/proxy/guard.caddy
 		Referrer-Policy "strict-origin-when-cross-origin"
 		# Le site ne doit jamais être affiché dans un cadre (clickjacking) ni charger de plugin.
 		X-Frame-Options "DENY"
-		Content-Security-Policy "{args[0]}"
+		# Valeur par défaut : la politique plus complète du site Next.js, si présente, est conservée.
+		?Content-Security-Policy "{args[0]}"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		-Server
