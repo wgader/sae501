@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
+use App\Security\SecurityAuditLogger;
 use App\Service\AssociationStatusNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -58,6 +59,7 @@ final class AccountActivationController extends AbstractController
         Request $request,
         JWTTokenManagerInterface $jwtManager,
         PasswordPolicy $passwordPolicy,
+        SecurityAuditLogger $audit,
     ): JsonResponse {
         // ── Décodage du payload ───────────────────────────────────────────────
         $data = json_decode($request->getContent(), true);
@@ -109,6 +111,7 @@ final class AccountActivationController extends AbstractController
         $user->setActivationTokenExpiresAt(null);
 
         $this->entityManager->flush();
+        $audit->passwordChanged($user, 'activation');
 
         // ── Email de confirmation ─────────────────────────────────────────────
         try {

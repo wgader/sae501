@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Security\PasswordPolicy;
+use App\Security\SecurityAuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -37,6 +38,7 @@ final class PasswordResetController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly MailerInterface $mailer,
         private readonly LoggerInterface $logger,
+        private readonly SecurityAuditLogger $audit,
         #[Autowire(service: 'limiter.password_reset')]
         private readonly RateLimiterFactory $limiter,
         #[Autowire(env: 'MAILER_FROM')] private readonly string $mailerFrom,
@@ -61,6 +63,7 @@ final class PasswordResetController extends AbstractController
         }
 
         $user = $this->userRepository->findOneBy(['email' => trim($email)]);
+        $this->audit->passwordResetRequested($user, $email);
         if (!$this->canReset($user)) {
             return $genericResponse;
         }
@@ -122,6 +125,7 @@ final class PasswordResetController extends AbstractController
             ->clearPasswordReset()
             ->setCredentialsChangedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
+        $this->audit->passwordChanged($user, 'reset');
 
         return $this->json([
             'message' => 'Votre mot de passe a été modifié. Vous pouvez vous connecter.',

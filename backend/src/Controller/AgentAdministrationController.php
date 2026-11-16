@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Security\SecurityAuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,6 +23,7 @@ final class AgentAdministrationController extends AbstractController
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly SecurityAuditLogger $audit,
     ) {
     }
 
@@ -103,6 +105,7 @@ final class AgentAdministrationController extends AbstractController
         if (!$agent instanceof User) {
             return $this->json(['message' => 'Agent introuvable.'], Response::HTTP_NOT_FOUND);
         }
+        $rolesBefore = $agent->getRoles();
 
         $payload = $this->decodePayload($request);
         if ($payload instanceof JsonResponse) {
@@ -144,6 +147,10 @@ final class AgentAdministrationController extends AbstractController
         }
 
         $this->entityManager->flush();
+        if ($rolesBefore !== $agent->getRoles()) {
+            $actor = $this->getUser();
+            $this->audit->rolesChanged($agent, $actor instanceof User ? $actor : null, $rolesBefore, $agent->getRoles());
+        }
 
         return $this->json(self::serializeAgent($agent));
     }

@@ -217,7 +217,7 @@ $FRONTEND_DOMAIN {
 }
 
 $API_DOMAIN {
-	import common
+	import api
 	# L’API (limiteurs de connexion) lit l’IP du visiteur dans X-Forwarded-For.
 	reverse_proxy $PROJECT-backend:80 {
 		header_up X-Forwarded-For {client_ip}
