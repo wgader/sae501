@@ -81,7 +81,7 @@ export default function RefuseRequestDialog({ request, intent = 'refuse', onClos
         </>
       }
     >
-      <form id={formId} onSubmit={handleSubmit} noValidate>
+      <form method="post" id={formId} onSubmit={handleSubmit} noValidate>
         <label htmlFor={reasonId} className={fieldLabelVariants()}>
           Motif <span className="font-normal normal-case tracking-normal text-muted">(facultatif)</span>
         </label>

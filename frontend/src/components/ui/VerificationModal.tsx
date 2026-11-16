@@ -55,7 +55,7 @@ export default function VerificationModal({
           Un code de vérification a été envoyé au <strong className="text-ink">{recipient}</strong>. Veuillez le saisir ci-dessous pour continuer.
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-ink">Code à 6 chiffres *</label>
             <input

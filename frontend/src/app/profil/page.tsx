@@ -127,7 +127,7 @@ export default function ProfilPage() {
               {isLoading ? (
                 <p className="mt-8 text-sm text-muted" role="status">Chargement de votre profil…</p>
               ) : (
-                <form className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
+                <form method="post" className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
                   <FormField
                     label="Numéro de téléphone"
                     name="telephone"

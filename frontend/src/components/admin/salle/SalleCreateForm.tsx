@@ -126,7 +126,7 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
             </header>
             {error && <p className="mt-5 rounded-control border border-danger/30 bg-rose-50/70 p-3 text-sm font-semibold text-danger" role="alert">{error}</p>}
 
-            <form onSubmit={handleSubmit} className="mt-5 grid gap-5 md:grid-cols-2">
+            <form method="post" onSubmit={handleSubmit} className="mt-5 grid gap-5 md:grid-cols-2">
           <label className="text-sm font-bold text-ink">
             Nom de la salle *
             <input value={nom} onChange={(event) => setNom(event.target.value)} className="mt-2 w-full rounded-control border border-line bg-white px-3 py-2.5 text-sm font-normal text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" />

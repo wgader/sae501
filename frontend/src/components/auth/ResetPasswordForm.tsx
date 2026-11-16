@@ -61,7 +61,7 @@ export default function ResetPasswordForm() {
   };
 
   return (
-    <form className="flex flex-col gap-5" noValidate onSubmit={handleSubmit}>
+    <form method="post" className="flex flex-col gap-5" noValidate onSubmit={handleSubmit}>
       <div>
         <FormField
           label="Nouveau mot de passe"

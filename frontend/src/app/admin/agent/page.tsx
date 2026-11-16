@@ -201,7 +201,7 @@ function AgentForm({
   const isEdit = mode === 'edit';
 
   return (
-    <form
+    <form method="post"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();

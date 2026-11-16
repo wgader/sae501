@@ -155,7 +155,7 @@ export default function EquipmentStockModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form method="post" onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div className="flex items-center justify-between rounded-control bg-paper p-3 text-xs">
             <span className="font-semibold text-muted">Stock actuel de référence :</span>
             <span className="text-base font-black text-ink">{equipment.stockTotal} unités</span>

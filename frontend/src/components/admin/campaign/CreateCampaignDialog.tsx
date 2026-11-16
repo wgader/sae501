@@ -86,7 +86,7 @@ function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaign
         </>
       }
     >
-      <form id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4">
+      <form method="post" id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4">
         <div>
           <label htmlFor={ids.label} className={fieldLabelVariants()}>
             Nom

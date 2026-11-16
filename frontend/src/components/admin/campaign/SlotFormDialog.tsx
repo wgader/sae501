@@ -124,7 +124,7 @@ function SlotFormDialogContent({ open, request, salles, associations, onClose, o
         </>
       }
     >
-      <form id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
+      <form method="post" id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
         {isAdd && (
           <div className="sm:col-span-2">
             <label htmlFor={ids.association} className={fieldLabelVariants()}>

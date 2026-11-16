@@ -85,7 +85,7 @@ export default function EventDeclarationForm({
         <p className="mt-1 text-xs text-muted">Les champs marqués d&apos;un * sont obligatoires.</p>
       </header>
       {error && <p role="alert" className="mt-6 rounded-soft border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold text-danger">{error}</p>}
-      <form className="mt-8 space-y-8" onSubmit={onSubmit}>
+      <form method="post" className="mt-8 space-y-8" onSubmit={onSubmit}>
         <fieldset className="space-y-4">
           <legend className="text-sm font-bold uppercase tracking-wider text-primary">Informations générales</legend>
           <div>

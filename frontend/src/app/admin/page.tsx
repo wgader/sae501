@@ -158,7 +158,7 @@ export default function AdminLoginPage() {
             </p>
           </header>
 
-          <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+          <form method="post" className="space-y-5" noValidate onSubmit={handleSubmit}>
             <label className="block">
               <span className="mb-2 block text-meta font-bold uppercase tracking-label text-ink">
                 Adresse électronique

@@ -74,7 +74,7 @@ function CampaignScheduleDialogContent({ campaign, onClose, onSubmit }: Campaign
         </>
       }
     >
-      <form id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4">
+      <form method="post" id={ids.form} onSubmit={handleSubmit} noValidate className="grid gap-4">
         <div>
           <label htmlFor={ids.opening} className={fieldLabelVariants()}>
             Ouverture des demandes

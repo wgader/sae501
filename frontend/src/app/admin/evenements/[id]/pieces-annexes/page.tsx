@@ -180,7 +180,7 @@ export default function AdminEventAnnexesPage() {
                   {missingFiles.map((file) => <li key={file}>{file}</li>)}
                 </ul>
               )}
-              <form onSubmit={handleRequestFiles} className="mt-5 space-y-4">
+              <form method="post" onSubmit={handleRequestFiles} className="mt-5 space-y-4">
                 <div>
                   <label htmlFor="missing-file" className="text-label font-bold uppercase tracking-label text-muted">Pièce attendue</label>
                   <input id="missing-file" value={missingFile} onChange={(inputEvent) => setMissingFile(inputEvent.target.value)} maxLength={255} placeholder="Ex. attestation d’assurance" className="mt-2 w-full rounded-control border border-line bg-white px-3 py-3 text-sm text-ink focus:border-primary focus:outline-none" />

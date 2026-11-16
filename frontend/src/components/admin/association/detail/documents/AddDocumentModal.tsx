@@ -93,7 +93,7 @@ export default function AddDocumentModal({
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <form method="post" onSubmit={handleSubmit} className="mt-6 space-y-5">
           {error && (
             <p className="rounded-control border border-danger/30 bg-rose-50/70 p-3 text-xs font-semibold text-danger">
               {error}
