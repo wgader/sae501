@@ -22,8 +22,10 @@ function subscribeAuth(callback: () => void) {
   };
 }
 
+// La barre latérale est celle de l'espace associations : seul le jeton association l'affiche.
+// Un compte mairie (admin_token) a sa propre navigation sous /admin.
 function getAuthSnapshot(): boolean {
-  return Boolean(localStorage.getItem('token') || localStorage.getItem('admin_token'));
+  return Boolean(localStorage.getItem('token'));
 }
 
 function getServerAuthSnapshot(): boolean {

@@ -18,6 +18,11 @@ updates:
         update-types: [minor, patch]
       backend-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # API Platform 5 est une migration à part entière (opérations, état, sérialisation) :
+      # à planifier et tester volontairement, pas à fusionner depuis une PR automatique.
+      - dependency-name: api-platform/*
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /frontend
@@ -37,6 +42,9 @@ updates:
     ignore:
       # typescript-eslint ne prend pas encore en charge TypeScript 7 : rester en 5.x jusque-là.
       - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # ESLint 10 : attendre que eslint-config-next le prenne en charge.
+      - dependency-name: eslint
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
