@@ -1,6 +1,7 @@
 'use client';
 
 import AdminSearchBar from '@/components/admin/search/AdminSearchBar';
+import AdminNotificationBell from '@/components/notifications/AdminNotificationBell';
 import { getStoredUserName, getUserInitials } from '@/lib/authUtils';
 
 interface AdminHeaderProps {
@@ -71,7 +72,8 @@ export default function AdminHeader({
         />
       </div>
 
-      <div className="flex items-center pl-4">
+      <div className="flex items-center gap-3 pl-4">
+        <AdminNotificationBell />
         <div className="flex items-center gap-2.5 rounded-pill bg-white px-3 py-1.5 shadow-xs">
           <span className="flex size-7 items-center justify-center rounded-pill bg-accent text-label font-black text-ink">
             {initials}

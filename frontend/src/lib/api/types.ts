@@ -355,6 +355,8 @@ export type OccupiedSlot = {
   end: string;
   statut: string;
   isPreReserved: boolean;
+  /** Campagne de la demande ; null pour une réservation ponctuelle. */
+  campaignId: number | null;
 };
 
 export type RoomAvailabilityResponse = {
@@ -371,6 +373,8 @@ export type CreateRoomReservationInput = {
   dateFin: string;
   capaciteAttendue?: number | null;
   justificatif?: File | null;
+  /** Demande de campagne (arbitrée par la mairie) plutôt que réservation ponctuelle. */
+  forCampaign?: boolean;
 };
 
 export type RoomReservationResponse = {
@@ -409,6 +413,9 @@ export type Campaign = {
   seasonLabel: string;
   openingAt: string;
   closingAt: string;
+  /** Premier et dernier jour réservables (AAAA-MM-JJ, parfois suivis d'une heure), ou null. */
+  periodStart?: string | null;
+  periodEnd?: string | null;
   resourceTypes: string[];
   status: CampaignStatus;
   statusLabel?: string;
@@ -423,6 +430,8 @@ export type CampaignRequest = {
   id: number;
   status: CampaignRequestStatus;
   statusLabel: string;
+  /** Campagne de rattachement ; null pour une réservation ponctuelle. */
+  campaignId: number | null;
   association: { id: number | null; nom: string | null };
   salle: { id: number | null; nom: string | null; capaciteMax: number | null };
   motifEvenement: string | null;
@@ -439,6 +448,15 @@ export type CampaignRequest = {
 
 export type CampaignRequestsResponse = {
   campaign: Campaign;
+  requests: CampaignRequest[];
+};
+
+export type MyCampaignRequestsResponse = {
+  campaign: Campaign | null;
+  requests: CampaignRequest[];
+};
+
+export type RoomRequestsResponse = {
   requests: CampaignRequest[];
 };
 

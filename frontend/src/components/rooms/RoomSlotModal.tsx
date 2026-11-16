@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { IconChevronLeft, IconChevronRight, IconClose } from '@/components/ui/icons';
 
 interface RoomSlotModalProps {
   isOpen: boolean;
@@ -10,6 +11,13 @@ interface RoomSlotModalProps {
   initialEndHour: string;
   initialAttendees?: number | '';
   onValidateSlot: (date: Date, startHour: string, endHour: string, attendees?: number | '') => void;
+  /** Jours sélectionnables (AAAA-MM-JJ), par exemple la période réservable d'une campagne. */
+  minDay?: string | null;
+  maxDay?: string | null;
+}
+
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 const MONTH_NAMES = [
@@ -49,7 +57,10 @@ export default function RoomSlotModal({
   initialEndHour,
   initialAttendees = '',
   onValidateSlot,
+  minDay = null,
+  maxDay = null,
 }: RoomSlotModalProps) {
+  const isOutsidePeriod = (d: Date) => (minDay !== null && dayKey(d) < minDay) || (maxDay !== null && dayKey(d) > maxDay);
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date(initialDate));
   const [viewDate, setViewDate] = useState<Date>(() => new Date(initialDate));
@@ -108,6 +119,11 @@ export default function RoomSlotModal({
       return;
     }
 
+    if (isOutsidePeriod(selectedDate)) {
+      setError('Ce jour est en dehors de la période réservable de la campagne.');
+      return;
+    }
+
     onValidateSlot(selectedDate, startHour, endHour, attendees);
     onClose();
   };
@@ -130,7 +146,7 @@ export default function RoomSlotModal({
             className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-paper hover:text-ink cursor-pointer"
             aria-label="Fermer la fenêtre"
           >
-            ✕
+            <IconClose />
           </button>
         </header>
 
@@ -145,7 +161,7 @@ export default function RoomSlotModal({
                 className="p-1 text-muted transition-colors hover:text-ink cursor-pointer"
                 aria-label="Mois précédent"
               >
-                ←
+                <IconChevronLeft />
               </button>
               <span className="text-sm font-bold uppercase tracking-wider text-ink">
                 {MONTH_NAMES[viewDate.getMonth()]} {viewDate.getFullYear()}
@@ -156,7 +172,7 @@ export default function RoomSlotModal({
                 className="p-1 text-muted transition-colors hover:text-ink cursor-pointer"
                 aria-label="Mois suivant"
               >
-                →
+                <IconChevronRight />
               </button>
             </div>
 
@@ -176,7 +192,7 @@ export default function RoomSlotModal({
                 const isToday = isSameDay(dateObj, today);
                 const dateObjEnd = new Date(dateObj);
                 dateObjEnd.setHours(23, 59, 59, 999);
-                const isPast = dateObjEnd.getTime() < today.getTime();
+                const isPast = dateObjEnd.getTime() < today.getTime() || isOutsidePeriod(dateObj);
 
                 return (
                   <button
@@ -208,7 +224,7 @@ export default function RoomSlotModal({
             <div className="space-y-4">
               {/* DÉBUT */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-muted">
+                <label className="block text-label font-bold uppercase tracking-wider text-muted">
                   Début
                 </label>
                 <div className="mt-1 flex items-center gap-2">
@@ -234,7 +250,7 @@ export default function RoomSlotModal({
 
               {/* FIN */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-muted">
+                <label className="block text-label font-bold uppercase tracking-wider text-muted">
                   Fin
                 </label>
                 <div className="mt-1 flex items-center gap-2">
@@ -260,7 +276,7 @@ export default function RoomSlotModal({
 
               {/* NOMBRE DE PERSONNES */}
               <div>
-                <label htmlFor="modal-attendees" className="block text-[11px] font-bold uppercase tracking-wider text-muted">
+                <label htmlFor="modal-attendees" className="block text-label font-bold uppercase tracking-wider text-muted">
                   Nombre de personnes
                 </label>
                 <input
@@ -275,7 +291,7 @@ export default function RoomSlotModal({
               </div>
 
               {error && (
-                <p role="alert" className="rounded-md bg-red-50 p-2 text-caption font-semibold text-red-700">
+                <p role="alert" className="rounded-soft bg-danger/10 p-2 text-caption font-semibold text-danger">
                   {error}
                 </p>
               )}
@@ -287,7 +303,7 @@ export default function RoomSlotModal({
                 onClick={handleValidate}
                 className="w-full rounded-lg bg-primary py-3 text-center text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-primary-hover cursor-pointer"
               >
-                Valider le créneau →
+                Valider le créneau
               </button>
             </div>
           </div>

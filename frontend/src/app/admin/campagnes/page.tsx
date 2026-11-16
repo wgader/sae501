@@ -19,7 +19,9 @@ import {
   downloadCampaignPlanning,
   getAdminCampaigns,
   openCampaign,
+  reopenCampaign,
   rescheduleCampaign,
+  type CampaignSchedulePayload,
   type CampaignPlanningExportOptions,
   type CreateCampaignPayload,
 } from '@/lib/api/campaigns';
@@ -48,6 +50,18 @@ function requestedRange(requests: CampaignRequest[]): { from: string; to: string
   const days = requests.map((request) => slotDate(request.dateDebut)).filter(Boolean).sort();
   return days.length > 0 ? { from: days[0], to: days[days.length - 1] } : null;
 }
+
+const STATE_ACTIONS: Record<CampaignStateAction, (campaign: Campaign, closingAt: string) => Promise<Campaign>> = {
+  open: (campaign) => openCampaign(campaign.id),
+  close: (campaign) => closeCampaign(campaign.id),
+  reopen: (campaign, closingAt) => reopenCampaign(campaign.id, closingAt),
+};
+
+const STATE_FEEDBACK: Record<CampaignStateAction, string> = {
+  open: 'La campagne est ouverte.',
+  close: 'La campagne est clôturée : les associations ne peuvent plus modifier leurs demandes.',
+  reopen: 'La campagne est rouverte avec toutes ses demandes.',
+};
 
 function countRequests(requests: CampaignRequest[]): CampaignRequestCounts {
   return requests.reduce(
@@ -111,15 +125,15 @@ export default function AdminCampaignsPage() {
     await loadCampaigns(created.id);
   };
 
-  const handleStateChange = async (campaign: Campaign, action: CampaignStateAction) => {
-    const updated = action === 'open' ? await openCampaign(campaign.id) : await closeCampaign(campaign.id);
+  const handleStateChange = async (campaign: Campaign, action: CampaignStateAction, closingAt?: string) => {
+    const updated = await STATE_ACTIONS[action](campaign, closingAt ?? '');
     replaceCampaign(updated);
     setStateAction(null);
-    setFeedback(action === 'open' ? 'La campagne est ouverte.' : 'La campagne est clôturée.');
+    setFeedback(STATE_FEEDBACK[action]);
   };
 
-  const handleSchedule = async (campaign: Campaign, openingAt: string, closingAt: string) => {
-    const updated = await rescheduleCampaign(campaign.id, openingAt, closingAt);
+  const handleSchedule = async (campaign: Campaign, payload: CampaignSchedulePayload) => {
+    const updated = await rescheduleCampaign(campaign.id, payload);
     replaceCampaign(updated);
     setEditingDates(null);
     setFeedback('Les dates de la campagne ont été mises à jour.');
@@ -206,6 +220,7 @@ export default function AdminCampaignsPage() {
               counts={countRequests(requests)}
               onOpen={() => setStateAction('open')}
               onClose={() => setStateAction('close')}
+              onReopen={() => setStateAction('reopen')}
               onEditDates={() => setEditingDates(selectedCampaign)}
               onExport={() => setExporting(selectedCampaign)}
             />

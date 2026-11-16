@@ -1,18 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import Dialog from '@/components/ui/Dialog';
 import Button from '@/components/ui/Button';
-import { fieldHintVariants } from '@/components/admin/campaign/fieldStyles';
+import { fieldControlVariants, fieldHintVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
+import { fromDateTimeInput, toDateTimeInput } from '@/lib/campaignDates';
 import type { Campaign } from '@/lib/api/types';
 
-export type CampaignStateAction = 'open' | 'close';
+export type CampaignStateAction = 'open' | 'close' | 'reopen';
+
+/** Clôture proposée à la réouverture : celle prévue si elle n'est pas passée, sinon dans une semaine. */
+function defaultReopenClosing(campaign: Campaign | null): string {
+  const planned = campaign ? new Date(campaign.closingAt) : null;
+  const closing = planned && planned.getTime() > Date.now() ? planned : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  return toDateTimeInput(closing.toISOString());
+}
 
 interface CampaignStateDialogProps {
   campaign: Campaign | null;
   action: CampaignStateAction | null;
   onClose: () => void;
-  onConfirm: (campaign: Campaign, action: CampaignStateAction) => Promise<void>;
+  /** closingAt : nouvelle clôture (ISO) en cas de réouverture. */
+  onConfirm: (campaign: Campaign, action: CampaignStateAction, closingAt?: string) => Promise<void>;
 }
 
 const COPY: Record<CampaignStateAction, { title: string; description: string; confirm: string }> = {
@@ -24,22 +33,38 @@ const COPY: Record<CampaignStateAction, { title: string; description: string; co
   close: {
     title: 'Clôturer la campagne ?',
     description:
-      'Les nouvelles demandes ne seront plus rattachées à la campagne. Vous pourrez toujours traiter les demandes reçues ou la rouvrir en repoussant sa date de clôture.',
+      'Les associations ne pourront plus déposer, modifier ni annuler leurs demandes. Vous gardez la main pour les traiter, et pourrez rouvrir la campagne si besoin.',
     confirm: 'Clôturer',
+  },
+  reopen: {
+    title: 'Rouvrir la campagne ?',
+    description:
+      'Les associations retrouvent leurs demandes telles qu’elles étaient et peuvent à nouveau en déposer jusqu’à la nouvelle clôture.',
+    confirm: 'Rouvrir',
   },
 };
 
-export default function CampaignStateDialog({ campaign, action, onClose, onConfirm }: CampaignStateDialogProps) {
+export default function CampaignStateDialog(props: CampaignStateDialogProps) {
+  return <CampaignStateDialogContent key={`${props.campaign?.id}-${props.action}`} {...props} />;
+}
+
+function CampaignStateDialogContent({ campaign, action, onClose, onConfirm }: CampaignStateDialogProps) {
+  const closingId = useId();
+  const [closing, setClosing] = useState(() => defaultReopenClosing(campaign));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const copy = action ? COPY[action] : COPY.open;
 
   const confirm = async () => {
     if (!campaign || !action) return;
+    if (action === 'reopen' && !closing) {
+      setError('Indiquez la nouvelle date de clôture.');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
-      await onConfirm(campaign, action);
+      await onConfirm(campaign, action, action === 'reopen' ? fromDateTimeInput(closing) : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'L’opération a échoué.');
     } finally {
@@ -71,6 +96,20 @@ export default function CampaignStateDialog({ campaign, action, onClose, onConfi
       }
     >
       <p className="text-body-sm text-ink">{copy.description}</p>
+      {action === 'reopen' && (
+        <div className="mt-4">
+          <label htmlFor={closingId} className={fieldLabelVariants()}>
+            Nouvelle clôture des demandes
+          </label>
+          <input
+            id={closingId}
+            type="datetime-local"
+            value={closing}
+            onChange={(event) => setClosing(event.target.value)}
+            className={fieldControlVariants()}
+          />
+        </div>
+      )}
       {error && (
         <p role="alert" className={fieldHintVariants({ tone: 'danger' })}>
           {error}

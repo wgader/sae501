@@ -1,7 +1,7 @@
 import Button from '@/components/ui/Button';
-import { IconClock, IconDownload, IconEdit } from '@/components/ui/icons';
+import { IconCampagne, IconClock, IconDownload, IconEdit } from '@/components/ui/icons';
 import CampaignStatusBadge from '@/components/admin/campaign/CampaignStatusBadge';
-import { formatInstant } from '@/lib/campaignDates';
+import { formatDayLabel, formatInstant } from '@/lib/campaignDates';
 import type { Campaign, CampaignRequestStatus } from '@/lib/api/types';
 
 export type CampaignRequestCounts = Record<CampaignRequestStatus, number>;
@@ -11,6 +11,7 @@ interface CampaignSummaryProps {
   counts: CampaignRequestCounts;
   onOpen: () => void;
   onClose: () => void;
+  onReopen: () => void;
   onEditDates: () => void;
   onExport: () => void;
 }
@@ -22,9 +23,12 @@ const COUNTERS: { key: CampaignRequestStatus; label: string }[] = [
 ];
 
 /** En-tête de la campagne sélectionnée : statut, période, compteurs et actions. */
-export default function CampaignSummary({ campaign, counts, onOpen, onClose, onEditDates, onExport }: CampaignSummaryProps) {
+export default function CampaignSummary({ campaign, counts, onOpen, onClose, onReopen, onEditDates, onExport }: CampaignSummaryProps) {
   const isOpen = campaign.status === 'ACTIVE';
   const isProgrammed = campaign.status === 'PROGRAMMED';
+  const isClosed = campaign.status === 'CLOSED';
+  const periodStart = campaign.periodStart?.slice(0, 10);
+  const periodEnd = campaign.periodEnd?.slice(0, 10);
 
   return (
     <section
@@ -37,13 +41,30 @@ export default function CampaignSummary({ campaign, counts, onOpen, onClose, onE
           <h2 id="campaign-summary-title" className="mt-3 text-xl font-black text-ink sm:text-2xl">
             {campaign.seasonLabel}
           </h2>
-          <p className="mt-2 flex items-start gap-2 text-body-sm text-muted">
-            <IconClock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <span>
-              Du <time dateTime={campaign.openingAt}>{formatInstant(campaign.openingAt)}</time> au{' '}
-              <time dateTime={campaign.closingAt}>{formatInstant(campaign.closingAt)}</time>
-            </span>
-          </p>
+          <dl className="mt-3 grid gap-2 text-body-sm">
+            <div className="flex items-start gap-2">
+              <IconClock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <dt className="sr-only">Dépôt des demandes</dt>
+              <dd className="text-muted">
+                Demandes du <time dateTime={campaign.openingAt}>{formatInstant(campaign.openingAt)}</time> au{' '}
+                <time dateTime={campaign.closingAt}>{formatInstant(campaign.closingAt)}</time>
+              </dd>
+            </div>
+            <div className="flex items-start gap-2">
+              <IconCampagne className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <dt className="sr-only">Créneaux réservables</dt>
+              <dd className="text-muted">
+                {periodStart && periodEnd ? (
+                  <>
+                    Créneaux du <time dateTime={periodStart}>{formatDayLabel(periodStart)}</time> au{' '}
+                    <time dateTime={periodEnd}>{formatDayLabel(periodEnd)}</time>
+                  </>
+                ) : (
+                  'Créneaux réservables non définis : tous les jours sont acceptés.'
+                )}
+              </dd>
+            </div>
+          </dl>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:shrink-0">
@@ -53,6 +74,11 @@ export default function CampaignSummary({ campaign, counts, onOpen, onClose, onE
           <Button variant="secondary" size="sm" leftIcon={<IconEdit className="h-4 w-4" />} onClick={onEditDates}>
             Modifier les dates
           </Button>
+          {isClosed && (
+            <Button size="sm" onClick={onReopen}>
+              Rouvrir
+            </Button>
+          )}
           {isProgrammed && (
             <Button size="sm" onClick={onOpen}>
               Ouvrir maintenant

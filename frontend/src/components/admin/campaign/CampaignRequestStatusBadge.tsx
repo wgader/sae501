@@ -26,15 +26,22 @@ export const CAMPAIGN_REQUEST_STATUS_LABELS: Record<CampaignRequestStatus, strin
   closed: 'Annulée',
 };
 
+/** Libellés vus par l'association, pour qui une demande « à traiter » est « en attente ». */
+export const ASSOCIATION_REQUEST_STATUS_LABELS: Record<CampaignRequestStatus, string> = {
+  ...CAMPAIGN_REQUEST_STATUS_LABELS,
+  pending: 'En attente',
+};
+
 interface CampaignRequestStatusBadgeProps {
   status: CampaignRequestStatus;
+  labels?: Record<CampaignRequestStatus, string>;
   className?: string;
 }
 
-export default function CampaignRequestStatusBadge({ status, className }: CampaignRequestStatusBadgeProps) {
-  return (
-    <span className={cn(campaignRequestStatusVariants({ status }), className)}>
-      {CAMPAIGN_REQUEST_STATUS_LABELS[status]}
-    </span>
-  );
+export default function CampaignRequestStatusBadge({
+  status,
+  labels = CAMPAIGN_REQUEST_STATUS_LABELS,
+  className,
+}: CampaignRequestStatusBadgeProps) {
+  return <span className={cn(campaignRequestStatusVariants({ status }), className)}>{labels[status]}</span>;
 }

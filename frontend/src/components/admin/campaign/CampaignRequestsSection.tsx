@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { cva } from 'class-variance-authority';
 import Button from '@/components/ui/Button';
+import Dialog from '@/components/ui/Dialog';
 import { IconPlus } from '@/components/ui/icons';
-import CampaignRequestFilters, {
-  type CampaignRequestFilterValues,
-  type CampaignRequestStatusFilter,
-} from '@/components/admin/campaign/CampaignRequestFilters';
+import CampaignRequestFilters, { type CampaignRequestFilterValues } from '@/components/admin/campaign/CampaignRequestFilters';
+import CampaignRequestCard from '@/components/admin/campaign/CampaignRequestCard';
 import CampaignRequestList from '@/components/admin/campaign/CampaignRequestList';
-import RefuseRequestDialog from '@/components/admin/campaign/RefuseRequestDialog';
+import CampaignPlanning from '@/components/admin/campaign/CampaignPlanning';
+import RefuseRequestDialog, { type ReasonIntent } from '@/components/admin/campaign/RefuseRequestDialog';
+import { formatDayLabel, slotDate } from '@/lib/campaignDates';
 import SlotFormDialog, { type SlotFormSubmit } from '@/components/admin/campaign/SlotFormDialog';
 import type { CampaignRequestActions } from '@/hooks/useCampaignRequests';
+import { applyRequestFilters, competitorNames, countRequestsByStatus } from '@/lib/roomRequestFilters';
 import type { CampaignRequest } from '@/lib/api/types';
 
 interface Option {
@@ -29,25 +32,24 @@ interface CampaignRequestsSectionProps {
 }
 
 type SlotDialogState = { mode: 'add' } | { mode: 'reschedule'; request: CampaignRequest } | null;
+type ReasonDialogState = { intent: ReasonIntent; request: CampaignRequest } | null;
+type View = 'planning' | 'list';
+
+const VIEWS: { value: View; label: string }[] = [
+  { value: 'planning', label: 'Planning' },
+  { value: 'list', label: 'Liste' },
+];
+
+const viewTabVariants = cva('rounded-control px-4 py-2 text-meta font-bold uppercase tracking-label transition-colors cursor-pointer', {
+  variants: {
+    active: {
+      true: 'bg-white text-primary shadow-xs',
+      false: 'text-muted hover:text-ink',
+    },
+  },
+});
 
 const INITIAL_FILTERS: CampaignRequestFilterValues = { status: 'pending', salleId: '', search: '' };
-
-function countByStatus(requests: CampaignRequest[]): Record<CampaignRequestStatusFilter, number> {
-  return requests.reduce(
-    (counts, request) => ({ ...counts, [request.status]: counts[request.status] + 1, all: counts.all + 1 }),
-    { pending: 0, accepted: 0, refused: 0, closed: 0, all: 0 },
-  );
-}
-
-function applyFilters(requests: CampaignRequest[], filters: CampaignRequestFilterValues): CampaignRequest[] {
-  const search = filters.search.trim().toLocaleLowerCase('fr');
-  return requests.filter(
-    (request) =>
-      (filters.status === 'all' || request.status === filters.status) &&
-      (!filters.salleId || String(request.salle.id) === filters.salleId) &&
-      (!search || (request.association.nom ?? '').toLocaleLowerCase('fr').includes(search)),
-  );
-}
 
 /** Suivi et décisions sur les demandes de salle de la campagne sélectionnée. */
 export default function CampaignRequestsSection({
@@ -60,12 +62,16 @@ export default function CampaignRequestsSection({
   onFeedback,
 }: CampaignRequestsSectionProps) {
   const [filters, setFilters] = useState<CampaignRequestFilterValues>(INITIAL_FILTERS);
-  const [refusing, setRefusing] = useState<CampaignRequest | null>(null);
+  const [view, setView] = useState<View>('planning');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [reasonDialog, setReasonDialog] = useState<ReasonDialogState>(null);
   const [slotDialog, setSlotDialog] = useState<SlotDialogState>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const counts = countByStatus(requests);
-  const visibleRequests = applyFilters(requests, filters);
+  const counts = countRequestsByStatus(requests);
+  const selected = requests.find((request) => request.id === selectedId) ?? null;
+  const associationNames = new Map(requests.map((request) => [request.id, request.association.nom ?? '']));
+  const visibleRequests = applyRequestFilters(requests, filters);
   const hasFilters = filters.status !== 'all' || filters.salleId !== '' || filters.search !== '';
 
   const accept = async (request: CampaignRequest) => {
@@ -78,10 +84,30 @@ export default function CampaignRequestsSection({
     }
   };
 
-  const refuse = async (request: CampaignRequest, reason: string) => {
-    await actions.refuse(request, reason);
-    setRefusing(null);
-    onFeedback(`Demande de ${request.association.nom} refusée. L’association a été prévenue.`);
+  const confirmReason = async (request: CampaignRequest, reason: string) => {
+    const intent = reasonDialog?.intent ?? 'refuse';
+    await (intent === 'refuse' ? actions.refuse(request, reason) : actions.cancel(request, reason));
+    setReasonDialog(null);
+    onFeedback(
+      intent === 'refuse'
+        ? `Demande de ${request.association.nom} refusée. L’association a été prévenue.`
+        : `Réservation de ${request.association.nom} annulée. L’association et les agents ont été prévenus.`,
+    );
+  };
+
+  const openReason = (intent: ReasonIntent) => (request: CampaignRequest) => {
+    setSelectedId(null);
+    setReasonDialog({ intent, request });
+  };
+
+  const openReschedule = (request: CampaignRequest) => {
+    setSelectedId(null);
+    setSlotDialog({ mode: 'reschedule', request });
+  };
+
+  const acceptSelected = async (request: CampaignRequest) => {
+    await accept(request);
+    setSelectedId(null);
   };
 
   const submitSlot = async (values: SlotFormSubmit) => {
@@ -113,15 +139,31 @@ export default function CampaignRequestsSection({
             Demandes de salle
           </h2>
           <p className="mt-1 text-body-sm text-muted">
-            Acceptez, refusez ou déplacez chaque demande : l’association est prévenue par e-mail et dans son espace.
+            Repérez les créneaux disputés sur le planning, puis acceptez, refusez ou déplacez chaque demande. L’association est
+            prévenue par e-mail et dans son espace.
           </p>
         </div>
-        <Button size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setSlotDialog({ mode: 'add' })}>
-          Ajouter un créneau
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div role="group" aria-label="Affichage des demandes" className="flex rounded-soft bg-paper p-1 ring-1 ring-line">
+            {VIEWS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={view === option.value}
+                onClick={() => setView(option.value)}
+                className={viewTabVariants({ active: view === option.value })}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <Button size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setSlotDialog({ mode: 'add' })}>
+            Ajouter un créneau
+          </Button>
+        </div>
       </header>
 
-      <CampaignRequestFilters values={filters} counts={counts} salles={salles} onChange={setFilters} />
+      {view === 'list' && <CampaignRequestFilters values={filters} counts={counts} salles={salles} onChange={setFilters} />}
 
       {actionError && (
         <p role="alert" className="rounded-soft bg-danger/10 px-4 py-3 text-body-sm font-semibold text-danger">
@@ -141,23 +183,56 @@ export default function CampaignRequestsSection({
         </p>
       )}
 
-      {!isLoading && visibleRequests.length === 0 && !error && (
+      {view === 'planning' && !error && (requests.length > 0 || !isLoading) && (
+        <CampaignPlanning
+          key={requests[0]?.campaignId ?? 'empty'}
+          requests={requests}
+          salles={salles}
+          onSelect={(request) => setSelectedId(request.id)}
+        />
+      )}
+
+      {view === 'list' && !isLoading && visibleRequests.length === 0 && !error && (
         <p className="rounded-card border border-dashed border-line px-6 py-10 text-center text-body-sm text-muted">
           {emptyMessage}
         </p>
       )}
 
-      {visibleRequests.length > 0 && (
+      {view === 'list' && visibleRequests.length > 0 && (
         <CampaignRequestList
           requests={visibleRequests}
           allRequests={requests}
           onAccept={accept}
-          onReschedule={(request) => setSlotDialog({ mode: 'reschedule', request })}
-          onRefuse={setRefusing}
+          onReschedule={openReschedule}
+          onRefuse={openReason('refuse')}
+          onCancel={openReason('cancel')}
         />
       )}
 
-      <RefuseRequestDialog request={refusing} onClose={() => setRefusing(null)} onConfirm={refuse} />
+      <Dialog
+        open={selected !== null}
+        title="Demande de salle"
+        description={selected ? formatDayLabel(slotDate(selected.dateDebut)) : undefined}
+        onClose={() => setSelectedId(null)}
+      >
+        {selected && (
+          <CampaignRequestCard
+            flat
+            request={selected}
+            competitors={competitorNames(selected, associationNames)}
+            onAccept={(request) => void acceptSelected(request)}
+            onReschedule={openReschedule}
+            onRefuse={openReason('refuse')}
+            onCancel={openReason('cancel')}
+          />
+        )}
+      </Dialog>
+      <RefuseRequestDialog
+        request={reasonDialog?.request ?? null}
+        intent={reasonDialog?.intent}
+        onClose={() => setReasonDialog(null)}
+        onConfirm={confirmReason}
+      />
       <SlotFormDialog
         open={slotDialog !== null}
         request={slotDialog?.mode === 'reschedule' ? slotDialog.request : null}

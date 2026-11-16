@@ -4,9 +4,17 @@ import type {
   CampaignCurrentResponse,
   CampaignRequest,
   CampaignRequestsResponse,
+  MyCampaignRequestsResponse,
+  RoomRequestsResponse,
 } from './types';
 
-export interface CreateCampaignPayload {
+/** Jours réservables de la campagne (AAAA-MM-JJ). */
+export interface CampaignPeriod {
+  periodStart: string | null;
+  periodEnd: string | null;
+}
+
+export interface CreateCampaignPayload extends CampaignPeriod {
   seasonLabel: string;
   openingAt: string;
   closingAt: string;
@@ -56,6 +64,16 @@ export async function closeCampaign(id: number): Promise<Campaign> {
 }
 
 /**
+ * Rouvre une campagne clôturée par erreur ; ses demandes sont conservées.
+ */
+export function reopenCampaign(id: number, closingAt: string): Promise<Campaign> {
+  return request<Campaign>(`/api/admin/campaigns/${id}/reopen`, {
+    method: 'POST',
+    body: JSON.stringify({ closingAt }),
+  });
+}
+
+/**
  * Récupère l'état de la campagne courante (accessible usager / association).
  */
 export async function getCurrentCampaign(): Promise<CampaignCurrentResponse> {
@@ -81,13 +99,58 @@ export interface AddCampaignSlotPayload extends CampaignSlotPayload {
   motifEvenement: string;
 }
 
+export interface CampaignSchedulePayload extends CampaignPeriod {
+  openingAt: string;
+  closingAt: string;
+}
+
 /**
- * Avance ou repousse l'ouverture et la clôture d'une campagne ; le statut suit les dates.
+ * Modifie les dates de dépôt et la période réservable ; le statut suit les dates.
  */
-export function rescheduleCampaign(id: number, openingAt: string, closingAt: string): Promise<Campaign> {
+export function rescheduleCampaign(id: number, payload: CampaignSchedulePayload): Promise<Campaign> {
   return request<Campaign>(`/api/admin/campaigns/${id}/schedule`, {
     method: 'PATCH',
-    body: JSON.stringify({ openingAt, closingAt }),
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Annulation d'une demande par la mairie, possible même après la clôture. */
+export function cancelCampaignRequest(campaignId: number, requestId: number, reason: string): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/campaigns/${campaignId}/requests/${requestId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+/** Demandes de l'association connectée pour la campagne en cours ou la dernière clôturée. */
+export function getMyCampaignRequests(): Promise<MyCampaignRequestsResponse> {
+  return accountRequest<MyCampaignRequestsResponse>(
+    '/api/campaigns/current/requests',
+    {},
+    'Impossible de charger vos demandes de campagne.',
+  );
+}
+
+/** Réservations ponctuelles (hors campagne) à traiter par la mairie. */
+export function getRoomRequests(): Promise<RoomRequestsResponse> {
+  return request<RoomRequestsResponse>('/api/admin/room-requests');
+}
+
+export function acceptRoomRequest(requestId: number): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/room-requests/${requestId}/accept`, { method: 'POST' });
+}
+
+export function refuseRoomRequest(requestId: number, reason: string): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/room-requests/${requestId}/refuse`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function cancelRoomRequest(requestId: number, reason: string): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/room-requests/${requestId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
   });
 }
 
