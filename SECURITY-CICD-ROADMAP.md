@@ -798,6 +798,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | Premier administrateur | Commande `app:create-admin` : création du compte `ROLE_ADMIN` sur un serveur sans fixtures, mot de passe saisi masqué (jamais en argument ni en log), politique 12 caractères |
 | 16/11/2026 | Image frontend allégée | npm, npx, corepack et yarn retirés de l’image finale, `apk upgrade` : Trivy 0 HIGH/CRITICAL ; `.dockerignore` exclut `node_modules`, `.next` et les `.env.local` |
 | 16/11/2026 | Messenger en développement | `MESSENGER_TRANSPORT_DSN=sync://` : les notifications de réservation arrivent dans Mailpit sans worker |
+| 16/11/2026 | Deux environnements sur un VPS | Serveur saturé après 8 déploiements de production consécutifs : limites mémoire par service, MySQL allégé (`performance_schema` désactivé), 2 workers FrankenPHP, déploiements préproduction/production sérialisés (`deploy-vps`), fichier d’échange documenté |
 | 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
 | 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
 | 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |

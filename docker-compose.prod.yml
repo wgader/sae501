@@ -58,6 +58,9 @@ services:
     # l’environnement) : elle n’est pas lue à l’exécution.
     environment:
       NODE_ENV: production
+      # Plafond du tas V8, cohérent avec la limite mémoire du conteneur.
+      NODE_OPTIONS: --max-old-space-size=${FRONTEND_NODE_HEAP_MB:-192}
+    mem_limit: ${FRONTEND_MEM_LIMIT:-320m}
     depends_on:
       backend:
         condition: service_healthy
@@ -81,6 +84,8 @@ services:
       <<: *backend-environment
       # HTTP seul : TLS est terminé par le proxy d’entrée.
       SERVER_NAME: ":80"
+      FRANKENPHP_WORKERS: ${FRANKENPHP_WORKERS:-2}
+    mem_limit: ${BACKEND_MEM_LIMIT:-512m}
     volumes:
       # Images publiques (salles, matériel) servies par Caddy.
       - backend_uploads:/app/public/uploads
@@ -114,6 +119,7 @@ services:
     <<: [*hardening, *backend-image]
     command: sh -c "while true; do php bin/console app:campaigns:synchronize --env=prod --no-interaction; sleep 60; done"
     environment: *backend-environment
+    mem_limit: ${SCHEDULER_MEM_LIMIT:-192m}
     healthcheck:
       disable: true
     depends_on:
@@ -126,8 +132,9 @@ services:
   # pour libérer la mémoire et prendre en compte un nouveau déploiement.
   messenger-worker:
     <<: [*hardening, *backend-image]
-    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=256M --env=prod --no-interaction
+    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=160M --env=prod --no-interaction
     environment: *backend-environment
+    mem_limit: ${WORKER_MEM_LIMIT:-256m}
     healthcheck:
       disable: true
     depends_on:
@@ -140,6 +147,14 @@ services:
 
   mysql:
     image: mysql:8.4
+    # Réglages pour un petit VPS partagé par deux environnements : performance_schema seul coûte
+    # plusieurs centaines de Mo ; le cache InnoDB et les connexions sont dimensionnés pour l’appli.
+    command:
+      - --performance-schema=OFF
+      - --innodb-buffer-pool-size=${MYSQL_INNODB_BUFFER_POOL:-128M}
+      - --max-connections=${MYSQL_MAX_CONNECTIONS:-40}
+      - --skip-name-resolve
+    mem_limit: ${MYSQL_MEM_LIMIT:-512m}
     init: true
     restart: unless-stopped
     logging: *logging
@@ -158,8 +173,9 @@ services:
       test: ["CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_ROOT_PASSWORD}\" mysqladmin ping --protocol=tcp -h 127.0.0.1 -u root --silent"]
       interval: 10s
       timeout: 5s
+      # La première initialisation de la base peut dépasser deux minutes sur un VPS chargé.
       retries: 10
-      start_period: 30s
+      start_period: 180s
     networks:
       - db_network
 
