@@ -24,8 +24,10 @@ final class RequestCancellationNotifier
     public const BY_TOWN_HALL = 'mairie';
 
     /** Types lus par les cloches de notifications pour ouvrir le bon écran. */
-    public const TYPE_ASSOCIATION = 'RESERVATION_CANCELLED';
-    public const TYPE_AGENT = 'RESERVATION_CANCELLED_AGENT';
+    public const TYPE_ROOM = 'SALLE_RESERVATION_CANCELLED';
+    public const TYPE_EQUIPMENT = 'MATERIEL_RESERVATION_CANCELLED';
+    public const TYPE_ROOM_AGENT = 'SALLE_RESERVATION_CANCELLED_AGENT';
+    public const TYPE_EQUIPMENT_AGENT = 'MATERIEL_RESERVATION_CANCELLED_AGENT';
 
     public function __construct(
         private readonly MailerInterface $mailer,
@@ -58,7 +60,7 @@ final class RequestCancellationNotifier
             ? 'Votre association a annulé cette réservation. La mairie en a été informée.'
             : 'La mairie a annulé cette réservation de votre association.';
         foreach ($association->getUsers() as $user) {
-            $this->notificationService->createForUser($user, $subject, $associationIntro.' '.$summary, self::TYPE_ASSOCIATION, $reservation->getId());
+            $this->notificationService->createForUser($user, $subject, $associationIntro.' '.$summary, $isRoom ? self::TYPE_ROOM : self::TYPE_EQUIPMENT, $reservation->getId());
             $this->send($user, $subject, $associationIntro, $details, $reason, 'Retrouvez vos démarches depuis votre espace association.');
         }
 
@@ -67,7 +69,7 @@ final class RequestCancellationNotifier
             : \sprintf('La réservation de l’association « %s » a été annulée par la mairie.', $association->getNom());
         $role = $isRoom ? 'ROLE_GESTION_SALLE' : 'ROLE_GESTION_MATERIEL';
         foreach ($this->userRepository->findMunicipalAgentsWithRole($role) as $agent) {
-            $this->notificationService->createForUser($agent, $subject, $agentIntro.' '.$summary, self::TYPE_AGENT, $reservation->getId());
+            $this->notificationService->createForUser($agent, $subject, $agentIntro.' '.$summary, $isRoom ? self::TYPE_ROOM_AGENT : self::TYPE_EQUIPMENT_AGENT, $reservation->getId());
             $this->send($agent, $subject, $agentIntro, $details, $reason, 'Retrouvez les demandes depuis l’espace de gestion de la mairie.');
         }
     }
