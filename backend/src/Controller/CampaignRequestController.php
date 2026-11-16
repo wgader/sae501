@@ -10,15 +10,18 @@ use App\Entity\ReservationSalle;
 use App\Entity\Salle;
 use App\Entity\User;
 use App\Exception\RoomReservationConflictException;
+use App\Service\CampaignPlanningExporter;
 use App\Service\CampaignRequestService;
 use App\Service\CampaignService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
@@ -34,7 +37,38 @@ final class CampaignRequestController extends AbstractController
         private readonly CampaignRequestService $requestService,
         private readonly CampaignService $campaignService,
         private readonly EntityManagerInterface $entityManager,
+        private readonly CampaignPlanningExporter $planningExporter,
     ) {
+    }
+
+    /**
+     * Planning PDF des demandes : ?view=complet|general|salle|association, ?from=&to= (AAAA-MM-JJ)
+     * pour une période, ?refused=1 pour inclure les demandes refusées.
+     */
+    #[Route('/planning.pdf', name: 'admin_campaign_planning_pdf', methods: ['GET'])]
+    public function planning(Campaign $campaign, Request $request): Response
+    {
+        $view = $request->query->getString('view', CampaignPlanningExporter::VIEW_FULL);
+
+        try {
+            $pdf = $this->planningExporter->export(
+                $campaign,
+                $this->dayParameter($request, 'from'),
+                $this->dayParameter($request, 'to'),
+                $view,
+                $request->query->getBoolean('refused'),
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $filename = \sprintf('planning-salles-%s-%s.pdf', (new AsciiSlugger('fr'))->slug((string) $campaign->getSeasonLabel())->lower(), $view);
+
+        return new Response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $filename),
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     #[Route('/schedule', name: 'admin_campaign_schedule', methods: ['PATCH'])]
@@ -164,6 +198,21 @@ final class CampaignRequestController extends AbstractController
         }
     }
 
+    private function dayParameter(Request $request, string $name): ?\DateTimeImmutable
+    {
+        $value = $request->query->getString($name);
+        if ('' === $value) {
+            return null;
+        }
+
+        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        if (false === $day || $day->format('Y-m-d') !== $value) {
+            throw new \InvalidArgumentException(\sprintf('Le paramètre « %s » doit être une date au format AAAA-MM-JJ.', $name));
+        }
+
+        return $day;
+    }
+
     /**
      * Les créneaux de salle sont des heures locales (« de 18h à 20h ») : le décalage horaire
      * éventuel est ignoré pour enregistrer et afficher partout la même heure.
@@ -229,7 +278,7 @@ final class CampaignRequestController extends AbstractController
 
         return [
             'id' => $reservation->getId(),
-            'status' => self::statusKey($reservation->getStatut()),
+            'status' => CampaignRequestService::statusKey($reservation->getStatut()),
             'statusLabel' => $reservation->getStatut(),
             'association' => ['id' => $association?->getId(), 'nom' => $association?->getNom()],
             'salle' => ['id' => $salle?->getId(), 'nom' => $salle?->getNom(), 'capaciteMax' => $salle?->getCapaciteMax()],
@@ -241,45 +290,7 @@ final class CampaignRequestController extends AbstractController
             'decisionComment' => $reservation->getDecisionComment(),
             'createdAt' => $reservation->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $reservation->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
-            'conflictsWith' => self::overlappingIds($reservation, $siblings),
+            'conflictsWith' => CampaignRequestService::overlappingIds($reservation, $siblings),
         ];
-    }
-
-    private static function statusKey(string $statut): string
-    {
-        return match ($statut) {
-            CampaignRequestService::STATUS_ACCEPTED => 'accepted',
-            CampaignRequestService::STATUS_REFUSED => 'refused',
-            'Annulée', 'Clôturée' => 'closed',
-            default => 'pending',
-        };
-    }
-
-    /**
-     * @param list<ReservationSalle> $siblings
-     *
-     * @return list<int>
-     */
-    private static function overlappingIds(ReservationSalle $reservation, array $siblings): array
-    {
-        if ('refused' === self::statusKey($reservation->getStatut())) {
-            return [];
-        }
-
-        $ids = [];
-        foreach ($siblings as $other) {
-            if (
-                $other === $reservation
-                || \in_array(self::statusKey($other->getStatut()), ['refused', 'closed'], true)
-                || $other->getSalle()?->getId() !== $reservation->getSalle()?->getId()
-                || $other->getDateDebut() >= $reservation->getDateFin()
-                || $other->getDateFin() <= $reservation->getDateDebut()
-            ) {
-                continue;
-            }
-            $ids[] = (int) $other->getId();
-        }
-
-        return $ids;
     }
 }

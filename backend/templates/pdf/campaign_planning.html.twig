@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Planning des salles — {{ campaign.seasonLabel }}</title>
+    <style>
+        @page { margin: 1.4cm 1.2cm 1.6cm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 8.5pt; color: #1E2420; line-height: 1.35; }
+        h1, h2, h3, p { margin: 0; }
+
+        .masthead { border-bottom: 2px solid #146E67; padding-bottom: 8pt; margin-bottom: 10pt; }
+        .eyebrow { color: #146E67; font-size: 7.5pt; font-weight: bold; letter-spacing: 1pt; text-transform: uppercase; }
+        .masthead h1 { font-size: 17pt; margin-top: 2pt; }
+        .meta { color: #6D746E; margin-top: 3pt; }
+
+        .summary { width: 100%; border-collapse: separate; border-spacing: 5pt 0; margin: 0 -5pt 12pt; }
+        .summary td { background: #F7F8F4; border: 1px solid #D9DED9; padding: 6pt 8pt; width: 20%; }
+        .summary strong { display: block; font-size: 14pt; }
+        .summary span { color: #6D746E; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .5pt; }
+        .summary td.alert { background: #FBEAEA; border-color: #E9A9AB; }
+        .summary td.alert strong { color: #CD2429; }
+
+        .section { page-break-before: always; }
+        .section.first { page-break-before: auto; }
+        .section > h2 { font-size: 13pt; color: #146E67; margin-bottom: 2pt; }
+        .section > .lead { color: #6D746E; margin-bottom: 8pt; }
+
+        .group { margin-bottom: 10pt; page-break-inside: auto; }
+        .group h3 { font-size: 10pt; background: #CFEDE5; padding: 4pt 6pt; border-left: 3pt solid #146E67; }
+        .group h3 small { font-weight: normal; color: #496A56; font-size: 8pt; }
+
+        table.planning { width: 100%; border-collapse: collapse; }
+        table.planning thead { display: table-header-group; }
+        table.planning th { text-align: left; font-size: 7pt; text-transform: uppercase; letter-spacing: .4pt; color: #6D746E; border-bottom: 1px solid #D9DED9; padding: 4pt 5pt; }
+        table.planning td { border-bottom: 1px solid #EEF0EC; padding: 4pt 5pt; vertical-align: top; }
+        table.planning tr { page-break-inside: avoid; }
+        table.planning tr.conflict td { background: #FDF3F3; }
+        .nowrap { white-space: nowrap; }
+        .num { text-align: right; }
+        .muted { color: #6D746E; }
+        .note { color: #6D746E; font-size: 7.5pt; margin-top: 1pt; }
+        .warn { color: #CD2429; font-size: 7.5pt; font-weight: bold; margin-top: 1pt; }
+
+        .badge { display: inline-block; padding: 1pt 5pt; border-radius: 6pt; font-size: 7pt; font-weight: bold; white-space: nowrap; }
+        .badge-pending { background: #FFF4D6; color: #7A5A00; }
+        .badge-accepted { background: #DFE9DF; color: #496A56; }
+        .badge-refused { background: #FBEAEA; color: #CD2429; }
+
+        .empty { border: 1px dashed #D9DED9; padding: 18pt; text-align: center; color: #6D746E; }
+        .legend { margin-top: 6pt; color: #6D746E; font-size: 7.5pt; }
+    </style>
+</head>
+<body>
+    <header class="masthead">
+        <p class="eyebrow">Mairie de Feytiat · Campagne des salles</p>
+        <h1>Planning des demandes — {{ campaign.seasonLabel }}</h1>
+        <p class="meta">
+            {{ periodLabel }}{% if not includeRefused %} · demandes refusées exclues{% endif %} · édité le {{ generatedAt }}
+        </p>
+    </header>
+
+    <table class="summary">
+        <tr>
+            <td><strong>{{ summary.total }}</strong><span>Demandes</span></td>
+            <td><strong>{{ summary.pending }}</strong><span>À arbitrer</span></td>
+            <td><strong>{{ summary.accepted }}</strong><span>Acceptées</span></td>
+            <td><strong>{{ summary.refused }}</strong><span>Refusées</span></td>
+            <td class="{{ summary.conflicts > 0 ? 'alert' : '' }}"><strong>{{ summary.conflicts }}</strong><span>En chevauchement</span></td>
+        </tr>
+    </table>
+
+    {% macro badge(row) %}
+        <span class="badge badge-{{ row.status }}">{{ row.statusLabel }}</span>
+    {% endmacro %}
+
+    {% macro details(row) %}
+        {{ row.motif }}
+        {% if row.comment %}<p class="note">Note de la mairie : {{ row.comment }}</p>{% endif %}
+        {% if row.conflicts is not empty %}<p class="warn">⚠ Chevauche : {{ row.conflicts|join(', ') }}</p>{% endif %}
+    {% endmacro %}
+
+    {% if summary.total == 0 %}
+        <p class="empty">Aucune demande de salle sur cette période.</p>
+    {% else %}
+        {% set first = true %}
+
+        {% if showGeneral %}
+            <section class="section{{ first ? ' first' : '' }}">
+                <h2>Planning général</h2>
+                <p class="lead">Toutes les demandes, jour par jour.</p>
+                {% for day in days %}
+                    <div class="group">
+                        <h3>{{ day.label }} <small>· {{ day.rows|length }} demande{{ day.rows|length > 1 ? 's' }}</small></h3>
+                        <table class="planning">
+                            <thead><tr><th style="width: 11%">Horaire</th><th style="width: 17%">Salle</th><th style="width: 20%">Association</th><th>Objet</th><th class="num" style="width: 7%">Effectif</th><th style="width: 10%">Décision</th></tr></thead>
+                            <tbody>
+                            {% for row in day.rows %}
+                                <tr class="{{ row.conflicts is not empty ? 'conflict' }}">
+                                    <td class="nowrap">{{ row.hours }}</td>
+                                    <td>{{ row.salle }}</td>
+                                    <td>{{ row.association }}</td>
+                                    <td>{{ _self.details(row) }}</td>
+                                    <td class="num">{{ row.attendees ?? '—' }}</td>
+                                    <td>{{ _self.badge(row) }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </section>
+            {% set first = false %}
+        {% endif %}
+
+        {% if showRooms %}
+            <section class="section{{ first ? ' first' : '' }}">
+                <h2>Demandes par salle</h2>
+                <p class="lead">Pour repérer les salles disputées et arbitrer les priorités.</p>
+                {% for room in rooms %}
+                    <div class="group">
+                        <h3>{{ room.label }} <small>· {{ room.rows|length }} demande{{ room.rows|length > 1 ? 's' }}{% if room.rows[0].capacity %} · {{ room.rows[0].capacity }} places{% endif %}</small></h3>
+                        <table class="planning">
+                            <thead><tr><th style="width: 15%">Jour</th><th style="width: 11%">Horaire</th><th style="width: 20%">Association</th><th>Objet</th><th class="num" style="width: 7%">Effectif</th><th style="width: 10%">Décision</th></tr></thead>
+                            <tbody>
+                            {% for row in room.rows %}
+                                <tr class="{{ row.conflicts is not empty ? 'conflict' }}">
+                                    <td class="nowrap">{{ row.shortDay }}</td>
+                                    <td class="nowrap">{{ row.hours }}</td>
+                                    <td>{{ row.association }}</td>
+                                    <td>{{ _self.details(row) }}</td>
+                                    <td class="num">{{ row.attendees ?? '—' }}</td>
+                                    <td>{{ _self.badge(row) }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </section>
+            {% set first = false %}
+        {% endif %}
+
+        {% if showAssociations %}
+            <section class="section{{ first ? ' first' : '' }}">
+                <h2>Demandes par association</h2>
+                <p class="lead">Ce que chaque association a demandé, à lui remettre lors de la réunion.</p>
+                {% for association in associations %}
+                    <div class="group">
+                        <h3>{{ association.label }} <small>· {{ association.rows|length }} demande{{ association.rows|length > 1 ? 's' }}</small></h3>
+                        <table class="planning">
+                            <thead><tr><th style="width: 15%">Jour</th><th style="width: 11%">Horaire</th><th style="width: 18%">Salle</th><th>Objet</th><th class="num" style="width: 7%">Effectif</th><th style="width: 10%">Décision</th></tr></thead>
+                            <tbody>
+                            {% for row in association.rows %}
+                                <tr class="{{ row.conflicts is not empty ? 'conflict' }}">
+                                    <td class="nowrap">{{ row.shortDay }}</td>
+                                    <td class="nowrap">{{ row.hours }}</td>
+                                    <td>{{ row.salle }}</td>
+                                    <td>{{ _self.details(row) }}</td>
+                                    <td class="num">{{ row.attendees ?? '—' }}</td>
+                                    <td>{{ _self.badge(row) }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        <p class="legend">Les lignes surlignées signalent deux demandes non refusées sur la même salle au même moment.</p>
+    {% endif %}
+</body>
+</html>

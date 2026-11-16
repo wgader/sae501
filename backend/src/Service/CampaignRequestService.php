@@ -230,4 +230,45 @@ final class CampaignRequestService
 
         return '' === $reason ? null : $reason;
     }
+
+    /**
+     * Clé de décision exposée au frontend et au planning : pending, accepted, refused ou closed.
+     */
+    public static function statusKey(string $statut): string
+    {
+        return match ($statut) {
+            self::STATUS_ACCEPTED => 'accepted',
+            self::STATUS_REFUSED => 'refused',
+            'Annulée', 'Clôturée' => 'closed',
+            default => 'pending',
+        };
+    }
+
+    /**
+     * @param list<ReservationSalle> $siblings
+     *
+     * @return list<int>
+     */
+    public static function overlappingIds(ReservationSalle $reservation, array $siblings): array
+    {
+        if ('refused' === self::statusKey($reservation->getStatut())) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($siblings as $other) {
+            if (
+                $other === $reservation
+                || \in_array(self::statusKey($other->getStatut()), ['refused', 'closed'], true)
+                || $other->getSalle()?->getId() !== $reservation->getSalle()?->getId()
+                || $other->getDateDebut() >= $reservation->getDateFin()
+                || $other->getDateFin() <= $reservation->getDateDebut()
+            ) {
+                continue;
+            }
+            $ids[] = (int) $other->getId();
+        }
+
+        return $ids;
+    }
 }
