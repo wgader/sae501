@@ -1,10 +1,49 @@
+# Mises à jour des dépendances, une fois par semaine.
+# - Les PR visent develop (branche de travail) : main ne reçoit que les mises en production.
+# - Les versions mineures et correctives sont regroupées dans une seule PR par écosystème au lieu
+#   d’une PR par paquet ; les versions majeures restent séparées pour être testées une à une.
+# - react et react-dom sont toujours mis à jour ensemble (versions exactes identiques exigées).
 version: 2
 updates:
   - package-ecosystem: composer
     directory: /backend
+    target-branch: develop
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      symfony:
+        patterns:
+          - "symfony/*"
+        update-types: [minor, patch]
+      backend-minor-patch:
+        update-types: [minor, patch]
+
   - package-ecosystem: npm
     directory: /frontend
+    target-branch: develop
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      frontend-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint ne prend pas encore en charge TypeScript 7 : rester en 5.x jusque-là.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
