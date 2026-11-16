@@ -62,6 +62,36 @@ class ReservationSalleRepository extends ServiceEntityRepository
     }
 
     /**
+     * Réservations déjà acceptées qui chevauchent un créneau. Pendant une campagne, plusieurs
+     * associations peuvent demander le même créneau : seules les acceptations bloquent.
+     *
+     * @return list<ReservationSalle>
+     */
+    public function findAcceptedOverlaps(
+        Salle $salle,
+        \DateTimeImmutable $start,
+        \DateTimeImmutable $end,
+        ?int $excludeReservationId = null,
+    ): array {
+        $qb = $this->createQueryBuilder('r')
+            ->andWhere('r.salle = :salle')
+            ->andWhere('r.statut = :accepted')
+            ->andWhere('r.dateDebut < :end')
+            ->andWhere('r.dateFin > :start')
+            ->setParameter('salle', $salle)
+            ->setParameter('accepted', 'Validée')
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('r.dateDebut', 'ASC');
+
+        if (null !== $excludeReservationId) {
+            $qb->andWhere('r.id != :excludeId')->setParameter('excludeId', $excludeReservationId);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * Plages réservées ou verrouillées pour l'affichage calendrier sur un intervalle donné.
      *
      * @return list<ReservationSalle>
