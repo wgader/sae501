@@ -329,10 +329,18 @@ jobs:
       - name: Baseline scans
         run: |
           mkdir -p zap && chmod 0777 zap
+          # Alertes analysées et sans risque pour ce site (voir SECURITY-CICD-ROADMAP.md) :
+          # 10202 : formulaires envoyés par l'API (cookie SameSite=Strict + X-Requested-With) ;
+          # 90004 : COEP inutile sans ressource cross-origin ; 10109 : simple détection d'une SPA ;
+          # 10049 et 10015 : pages publiques sans données personnelles en cache.
+          printf '%s\tIGNORE\t(%s)\n' \
+            10202 'Absence of Anti-CSRF Tokens' 90004 'Cross-Origin-Embedder-Policy' \
+            10109 'Modern Web Application' 10049 'Non-Storable Content' 10015 'Re-examine Cache-control Directives' \
+            > zap/rules.tsv
           scan() {
             # -I : les alertes sont rapportées sans faire échouer le job.
             docker run --rm -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.17.0 \
-              zap-baseline.py -t "$2" -I -m 2 -J "zap-$1.json" -r "zap-$1.html" -w "zap-$1.md" || true
+              zap-baseline.py -t "$2" -I -m 2 -c rules.tsv -J "zap-$1.json" -r "zap-$1.html" -w "zap-$1.md" || true
           }
           scan frontend "$FRONTEND_URL"
           scan api "$API_URL/api/campaigns/current"
