@@ -4,9 +4,9 @@
 
 ## Dernière mise à jour
 
-- Date : 15 novembre 2026
-- Statut : déploiement SSH préproduction / production préparé (image backend non root, projets Compose séparés, CD, mise en service du VPS, sauvegardes) ; à valider sur le VPS
-- Prochaine étape : créer les environnements et secrets GitHub, lancer `bootstrap-server.sh` sur le VPS, puis un premier déploiement de préproduction
+- Date : 16 novembre 2026
+- Statut : préproduction en ligne sur le VPS (`dev-feytiat.wahelgader.fr`, HTTPS, déploiement automatique depuis `develop`) ; premier administrateur créé avec `app:create-admin`
+- Prochaine étape : valider la préproduction, puis premier déploiement de production depuis `main` (PR `develop` → `main`, approbation)
 
 ## Réalisé
 
@@ -755,14 +755,14 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - ~~Aucun worker Messenger en production~~ — ajouté le 15/11/2026.
 - ~~Faire tourner l’image backend avec un utilisateur non privilégié (Trivy DS-0002)~~ — fait le
   15/11/2026.
-- Déploiement : créer les environnements GitHub `preprod` et `production` (avec relecteurs
-  obligatoires), leurs secrets et variables, lancer `bootstrap-server.sh` sur le VPS et valider un
-  premier déploiement de préproduction ; choisir une copie hors site chiffrée des sauvegardes ;
-  retirer `npm` de l’image frontend finale (6 HIGH Trivy) ; adapter les proxys de confiance si
-  Cloudflare est retenu (voir `DEPLOYMENT.md`).
+- ~~Déploiement : environnements GitHub, secrets, `bootstrap-server.sh` et premier déploiement de
+  préproduction~~ — fait le 16/11/2026. Reste : premier déploiement de production, copie hors site
+  chiffrée des sauvegardes, proxys de confiance si Cloudflare est retenu (voir `DEPLOYMENT.md`).
+- ~~Retirer `npm` de l’image frontend finale (6 HIGH Trivy)~~ — fait le 16/11/2026 (npm, npx,
+  corepack et yarn supprimés, paquets Alpine mis à jour : 0 HIGH/CRITICAL).
 - Compléter les scans : Bearer (SAST), SBOM (Syft) et OWASP ZAP sur la préproduction.
-- En développement, `MESSENGER_TRANSPORT_DSN=in-memory://` (dans `backend/.env`) perd les messages
-  asynchrones : les notifications de réservation ne partent jamais vers Mailpit.
+- ~~En développement, `MESSENGER_TRANSPORT_DSN=in-memory://` perdait les messages asynchrones~~ —
+  corrigé le 16/11/2026 (`sync://` en développement, notifications reçues dans Mailpit).
 - ~~Fichiers orphelins côté administration et réservation de salle~~ — corrigé le 15/11/2026.
 - Un PDF commençant par `%PDF-` est accepté même si la suite est illisible, et une image valide
   peut contenir des données ajoutées : risque limité (stockage hors racine web, `attachment` et
@@ -796,6 +796,8 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 15/11/2026 | Interrupteur de déploiement | Variable de dépôt `DEPLOY_ENABLED` : la CD saute le déploiement tant que le serveur n’est pas configuré, au lieu d’échouer |
 | 16/11/2026 | Droits du proxy d’entrée | Premier déploiement préproduction : Caddy (root sans `CAP_DAC_OVERRIDE`) ne pouvait pas lire `Caddyfile` (0640) ni `edge/sites` (0750) et redémarrait en boucle ; ces fichiers sans secret passent en lecture pour tous |
 | 16/11/2026 | Premier administrateur | Commande `app:create-admin` : création du compte `ROLE_ADMIN` sur un serveur sans fixtures, mot de passe saisi masqué (jamais en argument ni en log), politique 12 caractères |
+| 16/11/2026 | Image frontend allégée | npm, npx, corepack et yarn retirés de l’image finale, `apk upgrade` : Trivy 0 HIGH/CRITICAL ; `.dockerignore` exclut `node_modules`, `.next` et les `.env.local` |
+| 16/11/2026 | Messenger en développement | `MESSENGER_TRANSPORT_DSN=sync://` : les notifications de réservation arrivent dans Mailpit sans worker |
 | 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
 | 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
 | 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |
