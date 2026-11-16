@@ -7,20 +7,24 @@
 #   backup.sh uploads  <preprod|prod> [étiquette]   archive des volumes d’uploads publics et privés
 #   backup.sh restore-db      <preprod|prod> <fichier.sql.gz> --yes
 #   backup.sh restore-uploads <preprod|prod> <fichier.tar.gz> --yes
+#   backup.sh offsite                              copie chiffrée hors du serveur (restic)
+#   backup.sh offsite-snapshots                    liste des copies hors du serveur
 #
 # Option : --base-dir DIR (par défaut : dossier parent de ce script).
 # Les fichiers sont écrits dans <base>/backups/<environnement>/ (droits 0600) et conservés
-# BACKUP_RETENTION_DAYS jours (14 par défaut). Ils contiennent des données personnelles : une
-# copie hors du serveur, chiffrée, reste à mettre en place (voir DEPLOYMENT.md).
+# BACKUP_RETENTION_DAYS jours (14 par défaut). Ils contiennent des données personnelles : si
+# <base>/backups/offsite.env existe, « all » en envoie aussi une copie chiffrée par restic hors du
+# serveur (voir DEPLOYMENT.md).
 set -Eeuo pipefail
 umask 077
 
 readonly HELPER_IMAGE=alpine:3.22
+readonly RESTIC_IMAGE=restic/restic:0.18.1
 readonly RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-14}
 
 log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; }
 die() { log "ERREUR : $*"; exit 1; }
-usage() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage() { sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 
 [[ $# -ge 1 ]] || usage
 ACTION=$1; shift
@@ -91,6 +95,33 @@ rotate() {
   find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.partial' -mmin +120 -delete
 }
 
+# Copie hors du serveur : restic chiffre les sauvegardes avant envoi (AES-256) avec RESTIC_PASSWORD.
+# offsite.env (0600) contient RESTIC_REPOSITORY, RESTIC_PASSWORD et les accès du stockage ; son
+# contenu n’est jamais affiché. Un dépôt local (chemin absolu, disque externe) est monté tel quel.
+restic_run() {
+  local env_file="$BASE_DIR/backups/offsite.env" repository mounts=()
+  [[ -f "$env_file" ]] || die "$env_file absent : copie hors du serveur non configurée"
+  repository=$(sed -n 's/^RESTIC_REPOSITORY=//p' "$env_file" | tail -n 1)
+  [[ -n "$repository" ]] || die "RESTIC_REPOSITORY absent de $env_file"
+  if [[ "$repository" == /* ]]; then
+    mounts=(-v "$repository:$repository")
+  fi
+  docker run --rm --env-file "$env_file" --hostname sae501 \
+    -v "$BASE_DIR/backups:/backups:ro" "${mounts[@]}" "$RESTIC_IMAGE" "$@"
+}
+
+backup_offsite() {
+  # Premier envoi : le dépôt chiffré est créé.
+  if ! restic_run cat config >/dev/null 2>&1; then
+    restic_run init >/dev/null
+    log "dépôt hors du serveur initialisé"
+  fi
+  # offsite.env (mot de passe du dépôt et accès au stockage) ne quitte jamais le serveur.
+  restic_run backup --quiet --tag sae501 --exclude '*.partial' --exclude 'backup.log' --exclude 'offsite.env' /backups
+  restic_run forget --quiet --tag sae501 --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune
+  log "copie chiffrée hors du serveur envoyée"
+}
+
 require_confirmation() {
   [[ "$CONFIRMED" == 1 ]] || die "restauration destructive : relancer avec --yes"
 }
@@ -110,7 +141,16 @@ case $ACTION in
       backup_uploads daily || status=1
       rotate
     done
+    if [[ -f "$BASE_DIR/backups/offsite.env" ]]; then
+      backup_offsite || status=1
+    fi
     exit "$status"
+    ;;
+  offsite)
+    backup_offsite
+    ;;
+  offsite-snapshots)
+    restic_run snapshots --tag sae501
     ;;
   db)
     select_environment "${POSITIONAL[0]:-}"

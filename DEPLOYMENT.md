@@ -411,6 +411,37 @@ Contrôle après bascule : `curl -sI https://feytiat.wahelgader.fr` affiche `ser
 un en-tête `cf-ray` ; une requête directe sur l’IP du VPS
 (`curl -sk --resolve feytiat.wahelgader.fr:443:<IP> https://feytiat.wahelgader.fr`) est coupée.
 
+## 7 bis. Copie chiffrée des sauvegardes hors du serveur
+
+Les sauvegardes quotidiennes restent sur le VPS : si le serveur est perdu, elles le sont aussi.
+`backup.sh` peut en envoyer chaque nuit une copie chiffrée avec restic (AES-256, chiffrée avant
+l’envoi : le stockage ne voit jamais les données en clair).
+
+1. Choisir un stockage compatible S3 (OVH Object Storage, Scaleway, Backblaze B2…) et créer un
+   bucket privé avec une clé d’accès limitée à ce bucket.
+2. Sur le VPS, en tant que `deploy`, créer `backups/offsite.env` (droits 0600) :
+
+   ```bash
+   install -m 0600 /dev/null ~/sae501/backups/offsite.env
+   nano ~/sae501/backups/offsite.env
+   ```
+
+   ```dotenv
+   RESTIC_REPOSITORY=s3:https://s3.gra.io.cloud.ovh.net/<bucket>/sae501
+   RESTIC_PASSWORD=<longue phrase aléatoire, à conserver aussi dans un gestionnaire de mots de passe>
+   AWS_ACCESS_KEY_ID=<clé>
+   AWS_SECRET_ACCESS_KEY=<secret>
+   ```
+
+3. Premier envoi et vérification : `bin/backup.sh offsite` puis `bin/backup.sh offsite-snapshots`.
+   Ensuite, la tâche de 03:17 l’envoie automatiquement (14 copies quotidiennes, 8 hebdomadaires,
+   12 mensuelles conservées).
+
+Sans `RESTIC_PASSWORD`, les copies sont illisibles, y compris pour vous : le garder hors du VPS.
+`offsite.env` n’est jamais inclus dans les copies. Restauration : `docker run --rm --env-file
+backups/offsite.env -v /tmp/restauration:/restore restic/restic:0.18.1 restore latest --target /restore`,
+puis `backup.sh restore-db` / `restore-uploads` sur les fichiers obtenus.
+
 ## 8 bis. Antivirus des fichiers déposés (facultatif)
 
 Les pièces justificatives, fichiers d’événement et images peuvent être analysés par ClamAV avant
