@@ -781,8 +781,10 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - Mots de passe de démonstration : ~~versionnés dans les fixtures et le seed SQL~~ — retirés le
   16/11/2026 (`FIXTURES_PASSWORD`, mot de passe aléatoire en CI). Changer le mot de passe des comptes
   créés avec l’ancien mot de passe public sur toute base partagée.
-- Reste : JWT en cookie `HttpOnly` (le jeton est encore dans `localStorage`, exposé en cas de XSS),
-  jetons d’activation stockés en empreinte comme ceux de réinitialisation, analyse antivirus des uploads.
+- ~~JWT en cookie `HttpOnly`~~ — fait le 16/11/2026 (cookie `SameSite=Strict`, en-tête
+  `X-Requested-With` exigé contre le CSRF, profil d’affichage seul dans `localStorage`).
+- ~~Jetons d’activation stockés en clair~~ — empreinte SHA-256 depuis le 16/11/2026.
+- Reste : analyse antivirus des uploads, CSP complète du site Next.js, copie hors site des sauvegardes.
 
 ## Historique des tâches
 
@@ -818,3 +820,6 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | En-têtes et documentation API | CSP `default-src 'none'` sur l’API, `form-action 'self'` sur le site, `X-Powered-By` retiré, OpenAPI non publiée en production, optimiseur d’images limité à l’API |
 | 16/11/2026 | Journal d’audit | Canal `audit` (JSON sur stderr) : connexions, échecs, limitations, déconnexions, mots de passe, rôles ; identifiants en empreinte HMAC ; paramètres SQL exclus des journaux d’erreur |
 | 16/11/2026 | SAST, SBOM, DAST | Bearer bloquant sur HIGH/CRITICAL (0 constat), SBOM CycloneDX (Syft), ZAP baseline sur la préproduction après chaque déploiement (0 FAIL, 7 avertissements) |
+| 16/11/2026 | Session par cookie HttpOnly | JWT illisible par JavaScript, CSRF bloqué sans `X-Requested-With`, comptes suspendus refusés à chaque appel (`AccountStatusChecker`), endpoint `/api/auth/session` ; 5 tests |
+| 16/11/2026 | Liens d’activation | Stockés en empreinte SHA-256, liens déjà envoyés valables jusqu’à expiration |
+| 16/11/2026 | Photo de profil association | Image vérifiée par son contenu (JPEG, PNG, WebP, 5 Mo), nom aléatoire, ancienne image supprimée ; 4 tests |
