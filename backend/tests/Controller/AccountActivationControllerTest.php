@@ -39,10 +39,11 @@ final class AccountActivationControllerTest extends ControllerRouteTestCase
         $this->em->flush();
         self::assertSame(hash('sha256', 'jeton-envoye-par-email'), $user->getActivationToken());
 
-        $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-envoye-par-email', 'password' => 'Nouveau1motdepasse']);
+        $password = 'Aa1'.bin2hex(random_bytes(8));
+        $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-envoye-par-email', 'password' => $password]);
         $this->assertResponseIsSuccessful();
 
-        $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-envoye-par-email', 'password' => 'Nouveau1motdepasse']);
+        $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-envoye-par-email', 'password' => $password]);
         $this->assertResponseStatusCodeSame(401);
     }
 }

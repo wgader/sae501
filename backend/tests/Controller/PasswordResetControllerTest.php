@@ -60,11 +60,12 @@ final class PasswordResetControllerTest extends ControllerRouteTestCase
         $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => $resetToken, 'password' => 'faible']);
         $this->assertResponseStatusCodeSame(422);
 
-        $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => $resetToken, 'password' => 'Nouveau1motdepasse']);
+        $newPassword = self::randomPassword();
+        $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => $resetToken, 'password' => $newPassword]);
         $this->assertResponseIsSuccessful();
         $this->assertJsonContains(['loginPath' => '/connexion']);
 
-        $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => $resetToken, 'password' => 'Encore1autrefois']);
+        $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => $resetToken, 'password' => self::randomPassword()]);
         $this->assertResponseStatusCodeSame(401);
 
         $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$oldToken);
@@ -72,7 +73,7 @@ final class PasswordResetControllerTest extends ControllerRouteTestCase
         $this->assertResponseStatusCodeSame(401);
 
         $this->client->setServerParameter('HTTP_AUTHORIZATION', '');
-        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => 'Nouveau1motdepasse']);
+        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => $newPassword]);
         $this->assertResponseIsSuccessful();
     }
 
@@ -82,7 +83,7 @@ final class PasswordResetControllerTest extends ControllerRouteTestCase
         $user->startPasswordReset(hash('sha256', 'jeton-expire'), new \DateTimeImmutable('-1 minute'));
         $this->em->flush();
 
-        $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => 'jeton-expire', 'password' => 'Nouveau1motdepasse']);
+        $this->requestJson('POST', '/api/auth/password-reset/confirm', ['token' => 'jeton-expire', 'password' => self::randomPassword()]);
 
         $this->assertResponseStatusCodeSame(401);
     }
@@ -110,7 +111,7 @@ final class PasswordResetControllerTest extends ControllerRouteTestCase
             ->setRoles(['ROLE_ASSOCIATION'])
             ->setIsVerified(true);
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-        $user->setPassword($hasher->hashPassword($user, 'Ancien1motdepasse'));
+        $user->setPassword($hasher->hashPassword($user, self::randomPassword()));
         $this->em->persist($user);
         $this->em->flush();
 
@@ -124,5 +125,11 @@ final class PasswordResetControllerTest extends ControllerRouteTestCase
         self::assertSame(1, preg_match('/reinitialiser-mot-de-passe\?token=([a-f0-9]{64})/', (string) $message->getHtmlBody(), $matches));
 
         return $matches[1];
+    }
+
+    /** Mot de passe de test tiré au hasard : aucun mot de passe n’est écrit en dur. */
+    private static function randomPassword(): string
+    {
+        return 'Aa1'.bin2hex(random_bytes(8));
     }
 }

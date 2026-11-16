@@ -14,13 +14,20 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
  */
 final class SessionCookieTest extends ControllerRouteTestCase
 {
-    private const PASSWORD = 'Motdepasse1solide';
+    private string $password;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Tiré au hasard : aucun mot de passe n’est écrit en dur dans le dépôt.
+        $this->password = 'Aa1'.bin2hex(random_bytes(8));
+    }
 
     public function testAssociationLoginSetsAnHttpOnlyCookieWithoutTokenInBody(): void
     {
         $this->createUser('asso@example.test', 'association', ['ROLE_ASSOCIATION']);
 
-        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => self::PASSWORD]);
+        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => $this->password]);
 
         $this->assertResponseIsSuccessful();
         $this->assertSessionCookieIsSafe();
@@ -33,7 +40,7 @@ final class SessionCookieTest extends ControllerRouteTestCase
     {
         $this->createUser('agent@example.test', 'mairie', ['ROLE_ADMIN']);
 
-        $this->requestJson('POST', '/api/auth/admin/login', ['email' => 'agent@example.test', 'password' => self::PASSWORD]);
+        $this->requestJson('POST', '/api/auth/admin/login', ['email' => 'agent@example.test', 'password' => $this->password]);
         $this->assertResponseIsSuccessful();
         $this->assertSessionCookieIsSafe();
         self::assertStringNotContainsString('"token"', (string) $this->client->getResponse()->getContent());
@@ -47,7 +54,7 @@ final class SessionCookieTest extends ControllerRouteTestCase
     public function testStateChangingRequestWithCookieRequiresTheCsrfHeader(): void
     {
         $this->createUser('agent@example.test', 'mairie', ['ROLE_ADMIN']);
-        $this->requestJson('POST', '/api/auth/admin/login', ['email' => 'agent@example.test', 'password' => self::PASSWORD]);
+        $this->requestJson('POST', '/api/auth/admin/login', ['email' => 'agent@example.test', 'password' => $this->password]);
 
         // Un formulaire piégé sur un autre site enverrait le cookie, mais pas l’en-tête.
         $this->client->request('POST', '/api/auth/logout');
@@ -72,7 +79,7 @@ final class SessionCookieTest extends ControllerRouteTestCase
         $user->setInactivatedAt(new \DateTimeImmutable());
         $this->em->flush();
 
-        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => self::PASSWORD]);
+        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => $this->password]);
         $this->assertResponseStatusCodeSame(403);
         $this->assertJsonContains(['message' => 'Votre compte a été suspendu. Contactez la mairie.']);
         self::assertSame([], $this->client->getResponse()->headers->getCookies());
@@ -105,7 +112,7 @@ final class SessionCookieTest extends ControllerRouteTestCase
             ->setRoles($roles)
             ->setIsVerified(true);
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
-        $user->setPassword($hasher->hashPassword($user, self::PASSWORD));
+        $user->setPassword($hasher->hashPassword($user, $this->password));
         $this->em->persist($user);
         $this->em->flush();
 

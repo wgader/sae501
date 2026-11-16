@@ -18,7 +18,7 @@ lexik_jwt_authentication:
         sae501_session:
             samesite: strict
             path: /
-            secure: '%env(bool:JWT_COOKIE_SECURE)%'
+            secure: '%env(bool:default:app.jwt_cookie_secure_default:JWT_COOKIE_SECURE)%'
             httpOnly: true
     remove_token_from_body_when_cookies_used: true
 

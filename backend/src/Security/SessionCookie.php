@@ -22,7 +22,7 @@ final class SessionCookie
         #[Autowire(service: 'lexik_jwt_authentication.cookie_provider.sae501_session')]
         private readonly JWTCookieProvider $cookieProvider,
         private readonly JWTTokenManagerInterface $jwtManager,
-        #[Autowire('%env(bool:JWT_COOKIE_SECURE)%')]
+        #[Autowire('%env(bool:default:app.jwt_cookie_secure_default:JWT_COOKIE_SECURE)%')]
         private readonly bool $secure,
     ) {
     }

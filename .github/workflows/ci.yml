@@ -303,7 +303,8 @@ jobs:
           bearer() {
             docker run --rm -v "$PWD:/repo" -w /repo bearer/bearer:v1.51.1 scan /repo --quiet --config-file /repo/bearer.yml "$@"
           }
-          bearer --format json --output /repo/security-reports/bearer.json --exit-code 0
+          # L’image Bearer n’est pas root : le rapport passe par la sortie standard.
+          bearer --format json --exit-code 0 > security-reports/bearer.json
           bearer --severity critical,high --exit-code 1 > /dev/null
 
       # Inventaire des composants (CycloneDX), conservé avec le rapport : non bloquant.
