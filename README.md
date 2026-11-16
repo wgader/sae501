@@ -68,6 +68,10 @@ Pour une base locale créée avant ce regroupement, une seule fois :
 - base jetable (cas habituel en développement) — les données locales sont perdues
   puis recréées par les fixtures :
 
+  Les fixtures lisent le mot de passe des comptes de démonstration dans `FIXTURES_PASSWORD`
+  (10 caractères minimum, avec majuscule, minuscule et chiffre), à placer dans
+  `backend/.env.local` qui n’est jamais versionné.
+
   ```bash
   docker compose exec backend php bin/console doctrine:database:drop --force
   docker compose exec backend php bin/console doctrine:database:create
@@ -182,7 +186,9 @@ docker exec sae501-prod-messenger-worker-1 php bin/console messenger:failed:show
 
 La CI démarre une pile complète (MySQL, migrations, fixtures, API Symfony et
 frontend compilé) puis exécute les parcours sur Chromium avec les comptes de
-démonstration des fixtures. En local, avec l’API et le frontend lancés :
+démonstration des fixtures, dont le mot de passe est tiré au hasard à chaque exécution.
+En local, avec l’API et le frontend lancés, exporter `TEST_ADMIN_PASSWORD` et
+`TEST_USER_PASSWORD` (valeur de `FIXTURES_PASSWORD`) puis :
 
 ```bash
 npm --prefix frontend run test:e2e -- --project=chromium

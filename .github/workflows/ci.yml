@@ -191,6 +191,17 @@ jobs:
           openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out backend/config/jwt/private.pem
           openssl pkey -in backend/config/jwt/private.pem -pubout -out backend/config/jwt/public.pem
 
+      # Mot de passe des comptes de démonstration tiré au hasard à chaque exécution, masqué dans les journaux.
+      - name: Generate demo credentials
+        run: |
+          password="Aa1$(openssl rand -hex 16)"
+          echo "::add-mask::$password"
+          {
+            echo "FIXTURES_PASSWORD=$password"
+            echo "TEST_ADMIN_PASSWORD=$password"
+            echo "TEST_USER_PASSWORD=$password"
+          } >> "$GITHUB_ENV"
+
       - name: Prepare the database
         run: |
           cd backend
@@ -208,15 +219,6 @@ jobs:
           done
           cat "$RUNNER_TEMP/api.log"
           exit 1
-
-      # Le mot de passe de démonstration est lu dans les fixtures et masqué dans les journaux.
-      - name: Expose demo credentials to Playwright
-        run: |
-          cd backend
-          password=$(php -r 'require "vendor/autoload.php"; echo (new ReflectionClassConstant(App\DataFixtures\AppFixtures::class, "DEMO_PASSWORD"))->getValue();')
-          echo "::add-mask::$password"
-          echo "TEST_ADMIN_PASSWORD=$password" >> "$GITHUB_ENV"
-          echo "TEST_USER_PASSWORD=$password" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v7
         with:

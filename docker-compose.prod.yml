@@ -117,7 +117,12 @@ services:
 
   campaign-scheduler:
     <<: [*hardening, *backend-image]
-    command: sh -c "while true; do php bin/console app:campaigns:synchronize --env=prod --no-interaction; sleep 60; done"
+    # Chaque minute : statuts des campagnes. Chaque heure : purge des révocations de JWT expirées.
+    command: >-
+      sh -c 'i=0; while true;
+      do php bin/console app:campaigns:synchronize --env=prod --no-interaction;
+      if [ $$((i % 60)) -eq 0 ]; then php bin/console cache:pool:prune --env=prod --no-interaction; fi;
+      i=$$((i + 1)); sleep 60; done'
     environment: *backend-environment
     mem_limit: ${SCHEDULER_MEM_LIMIT:-192m}
     healthcheck:
