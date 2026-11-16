@@ -13,6 +13,11 @@
     # Le CORS est géré par Symfony (nelmio_cors, variable CORS_ALLOW_ORIGIN).
 
     php_server {
-        worker /app/public/index.php
+        # Chaque worker garde Symfony chargé en mémoire : leur nombre est borné (2 par défaut,
+        # FRANKENPHP_WORKERS) pour que préproduction et production tiennent sur le même VPS.
+        worker {
+            file /app/public/index.php
+            num {$FRANKENPHP_WORKERS:2}
+        }
     }
 }
