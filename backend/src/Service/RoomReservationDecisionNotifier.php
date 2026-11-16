@@ -22,7 +22,8 @@ final class RoomReservationDecisionNotifier
     public const DECISION_RESCHEDULED = 'rescheduled';
     public const DECISION_ADDED = 'added';
 
-    private const NOTIFICATION_TYPE = 'room_reservation';
+    /** Type lu par la cloche de notifications pour ouvrir le détail de la demande. */
+    public const NOTIFICATION_TYPE = 'SALLE_RESERVATION_DECISION';
 
     /**
      * @var array<string, array{title: string, intro: string}>
@@ -79,7 +80,7 @@ final class RoomReservationDecisionNotifier
         }
 
         foreach ($association->getUsers() as $user) {
-            $this->notificationService->createForUser($user, $message['title'], $summary, self::NOTIFICATION_TYPE);
+            $this->notificationService->createForUser($user, $message['title'], $summary, self::NOTIFICATION_TYPE, $reservation->getId());
 
             $email = $user->getEmail();
             if (null === $email || '' === trim($email)) {
