@@ -15,21 +15,24 @@ interface CreateCampaignDialogProps {
 }
 
 /**
- * Création d'une campagne annuelle : fenêtre de dépôt des demandes (par défaut juin à septembre)
- * et jours réservables (par défaut de septembre à juin suivant).
+ * Création d'une campagne annuelle. Valeurs proposées, modifiables : dépôt des demandes de juin à
+ * fin septembre de l'année N, pour des créneaux du 1er janvier au 31 décembre de l'année N+1.
+ * Passé septembre, la campagne proposée est celle de l'année suivante.
  */
 export default function CreateCampaignDialog(props: CreateCampaignDialogProps) {
   return <CreateCampaignDialogContent key={props.open ? 'open' : 'closed'} {...props} />;
 }
 
 function CreateCampaignDialogContent({ open, onClose, onSubmit }: CreateCampaignDialogProps) {
-  const year = new Date().getFullYear() + 1;
+  const now = new Date();
+  // Année N du dépôt des demandes ; les créneaux réservés portent sur l'année N+1.
+  const year = now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear();
   const ids = { form: useId(), label: useId(), opening: useId(), closing: useId() };
-  const [label, setLabel] = useState(`Campagne des salles ${year}-${year + 1}`);
+  const [label, setLabel] = useState(`Campagne des salles ${year + 1}`);
   const [opening, setOpening] = useState(`${year}-06-01T00:00`);
-  const [closing, setClosing] = useState(`${year}-07-15T23:59`);
-  const [periodStart, setPeriodStart] = useState(`${year}-09-01`);
-  const [periodEnd, setPeriodEnd] = useState(`${year + 1}-06-30`);
+  const [closing, setClosing] = useState(`${year}-09-30T23:59`);
+  const [periodStart, setPeriodStart] = useState(`${year + 1}-01-01`);
+  const [periodEnd, setPeriodEnd] = useState(`${year + 1}-12-31`);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

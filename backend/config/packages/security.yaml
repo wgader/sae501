@@ -19,6 +19,7 @@ security:
         login:
             pattern: ^/api/auth/login
             stateless: true
+            user_checker: App\Security\AccountStatusChecker
             json_login:
                 check_path: /api/auth/login
                 username_path: email
@@ -34,6 +35,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
+            user_checker: App\Security\AccountStatusChecker
             jwt: ~
 
     access_control:
@@ -43,13 +45,14 @@ security:
         - { path: ^/api/auth/activate, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/resend-activation, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/password-reset/(request|confirm)$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/rooms$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/salles$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/campaigns/current, roles: PUBLIC_ACCESS }
-        - { path: ^/api/admin/(campaigns|room-requests), allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
+        - { path: ^/api/admin/(campaigns|campaign-history|room-requests), allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 

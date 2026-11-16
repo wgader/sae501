@@ -4,7 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use App\Security\SecurityAuditLogger;
+use App\Security\SessionCookie;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -31,7 +32,7 @@ final class AdminAuthController extends AbstractController
      * { "email": "admin@mairie.fr", "password": "monMotDePasse" }
      *
      * Réponses :
-     *   200 → { "token": "<JWT>" }
+     *   200 → { "user": {…} } et cookie de session HttpOnly
      *   400 → champs manquants
      *   401 → identifiants incorrects
      *   403 → compte valide mais sans rôle mairie autorisé
@@ -41,11 +42,12 @@ final class AdminAuthController extends AbstractController
         Request $request,
         UserRepository $userRepository,
         UserPasswordHasherInterface $passwordHasher,
-        JWTTokenManagerInterface $jwtManager,
+        SessionCookie $sessionCookie,
         #[Autowire(service: 'limiter.admin_login_account')]
         RateLimiterFactory $accountLimiter,
         #[Autowire(service: 'limiter.admin_login_ip')]
         RateLimiterFactory $ipLimiter,
+        SecurityAuditLogger $audit,
     ): JsonResponse {
         $data     = json_decode($request->getContent(), true);
         $email    = trim((string) ($data['email'] ?? ''));
@@ -65,6 +67,8 @@ final class AdminAuthController extends AbstractController
         $ipLimit = $ipLimiter->create($clientIp);
         // consume(0) lit l’état sans rien décompter : bloqué dès qu’il ne reste plus d’essai.
         if ($accountLimit->consume(0)->getRemainingTokens() <= 0 || $ipLimit->consume(0)->getRemainingTokens() <= 0) {
+            $audit->loginFailed($email, 'mairie', 'throttled');
+
             return $this->json(
                 ['message' => 'Trop de tentatives de connexion. Réessayez dans 15 minutes.'],
                 Response::HTTP_TOO_MANY_REQUESTS,
@@ -81,6 +85,7 @@ final class AdminAuthController extends AbstractController
             // Seuls les échecs sont comptés.
             $accountLimit->consume();
             $ipLimit->consume();
+            $audit->loginFailed($email, 'mairie', 'invalid_credentials');
 
             return $this->json(
                 ['message' => 'Identifiants incorrects.'],
@@ -95,6 +100,8 @@ final class AdminAuthController extends AbstractController
             || $user->getInactivatedAt() !== null
             || array_intersect(User::ROLES_MAIRIE, $user->getRoles()) === []
         ) {
+            $audit->loginFailed($email, 'mairie', 'not_allowed');
+
             return $this->json(
                 ['message' => 'Accès refusé — un rôle mairie est requis.'],
                 Response::HTTP_FORBIDDEN
@@ -102,8 +109,9 @@ final class AdminAuthController extends AbstractController
         }
 
         $accountLimit->reset();
+        $audit->loginSucceeded($user, 'mairie');
 
-        // ── Génération du JWT ─────────────────────────────────────────────────
-        return $this->json(['token' => $jwtManager->create($user)]);
+        // ── Session : JWT dans un cookie HttpOnly, profil dans le corps ──────
+        return $sessionCookie->open($this->json(['user' => SessionCookie::profile($user)]), $user);
     }
 }

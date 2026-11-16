@@ -5,6 +5,7 @@ import {
   acceptCampaignRequest,
   addCampaignSlot,
   cancelCampaignRequest,
+  notifyCampaignConflict,
   getCampaignRequests,
   refuseCampaignRequest,
   rescheduleCampaignRequest,
@@ -19,6 +20,7 @@ export interface CampaignRequestActions {
   reschedule: (request: CampaignRequest, slot: CampaignSlotPayload, reason: string) => Promise<CampaignRequest>;
   addSlot: (payload: AddCampaignSlotPayload) => Promise<CampaignRequest>;
   cancel: (request: CampaignRequest, reason: string) => Promise<CampaignRequest>;
+  notifyConflict: (request: CampaignRequest) => Promise<number>;
 }
 
 /**
@@ -74,6 +76,7 @@ export function useCampaignRequests(campaignId: number | null) {
       withReload(() => rescheduleCampaignRequest(requireCampaign(), request.id, { ...slot, reason })),
     addSlot: (payload) => withReload(() => addCampaignSlot(requireCampaign(), payload)),
     cancel: (request, reason) => withReload(() => cancelCampaignRequest(requireCampaign(), request.id, reason)),
+    notifyConflict: async (request) => (await notifyCampaignConflict(requireCampaign(), request.id)).notified,
   };
 
   return { requests, isLoading, error, reload, actions };

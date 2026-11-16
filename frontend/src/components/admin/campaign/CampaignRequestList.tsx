@@ -12,6 +12,7 @@ interface CampaignRequestListProps {
   onReschedule?: (request: CampaignRequest) => void;
   onRefuse: (request: CampaignRequest) => void;
   onCancel: (request: CampaignRequest) => void;
+  onNotifyConflict?: (request: CampaignRequest) => void;
 }
 
 interface DayGroup {
@@ -42,6 +43,7 @@ export default function CampaignRequestList({
   onReschedule,
   onRefuse,
   onCancel,
+  onNotifyConflict,
 }: CampaignRequestListProps) {
   const associationNames = new Map(allRequests.map((request) => [request.id, request.association.nom ?? '']));
   const days = groupByDay(requests);
@@ -63,6 +65,7 @@ export default function CampaignRequestList({
                   onReschedule={onReschedule}
                   onRefuse={onRefuse}
                   onCancel={onCancel}
+                  onNotifyConflict={onNotifyConflict}
                 />
               </li>
             ))}

@@ -32,6 +32,8 @@ final class CampaignRequestControllerTest extends ControllerRouteTestCase
             ->setSeasonLabel('Saison 2027-2028')
             ->setOpeningAt($now->modify('-1 day'))
             ->setClosingAt($now->modify('+30 days'))
+            ->setPeriodStart($now)
+            ->setPeriodEnd($now->modify('+1 year'))
             ->setResourceTypes(['salle'])
             ->setStatus(Campaign::STATUS_ACTIVE);
         $this->association = (new Association())->setNom('Amicale du parc')->setStatut('VALIDATED')->setModuleSalleActif(true);
@@ -218,7 +220,8 @@ final class CampaignRequestControllerTest extends ControllerRouteTestCase
 
         $this->assertResponseStatusCodeSame(201);
         $data = $this->response();
-        self::assertSame('accepted', $data['status']);
+        // Ajouté par la mairie, le créneau reste en attente jusqu’à l’arbitrage, comme les autres.
+        self::assertSame('pending', $data['status']);
         self::assertSame('Entraînement hebdomadaire', $data['motifEvenement']);
         $reservation = $this->em->getRepository(ReservationSalle::class)->find($data['id']);
         self::assertSame($this->campaign->getId(), $reservation?->getCampaign()?->getId());
@@ -325,6 +328,30 @@ final class CampaignRequestControllerTest extends ControllerRouteTestCase
     private function response(): array
     {
         return json_decode((string) $this->client->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+    }
+
+    public function testAddedSlotMayOverlapAndConflictsCanBeNotified(): void
+    {
+        $this->authenticateAsAdmin();
+        $day = $this->day()->format('Y-m-d');
+        $existing = $this->pendingRequest('18:00', '20:00');
+        $other = (new Association())->setNom('Club voisin')->setStatut('VALIDATED');
+        $this->em->persist($other);
+        $this->em->flush();
+
+        $this->requestJson('POST', $this->url('/requests'), [
+            'associationId' => $other->getId(),
+            'salleId' => $this->grandeSalle->getId(),
+            'dateDebut' => $day.'T19:00:00',
+            'dateFin' => $day.'T21:00:00',
+            'motifEvenement' => 'Même créneau, autre association',
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        self::assertContains($existing->getId(), $this->response()['conflictsWith'] ?? [], 'La concurrence est signalée.');
+
+        $this->requestJson('POST', $this->url('/requests/'.$existing->getId().'/notify-conflict'));
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains(['notified' => 2]);
     }
 
     private function day(): \DateTimeImmutable

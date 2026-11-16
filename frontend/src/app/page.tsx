@@ -1,44 +1,18 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LandingPage from '@/components/landing/LandingPage';
 import ConnectedDashboard from '@/components/dashboard/ConnectedDashboard';
-
-function subscribeAuth(callback: () => void) {
-  window.addEventListener('storage', callback);
-  window.addEventListener('auth-change', callback);
-  return () => {
-    window.removeEventListener('storage', callback);
-    window.removeEventListener('auth-change', callback);
-  };
-}
-
-function getAuthSnapshot() {
-  return Boolean(localStorage.getItem('token'));
-}
-
-// Compte mairie connecté sans session association : son accueil est le tableau de bord admin.
-function getAdminSnapshot() {
-  return Boolean(localStorage.getItem('admin_token')) && !localStorage.getItem('token');
-}
-
-function getServerAuthSnapshot() {
-  return false;
-}
+import { useSessionKind } from '@/hooks/useSessionKind';
+import { signOut } from '@/lib/api/auth';
 
 export default function Home() {
   const router = useRouter();
-  const isConnected = useSyncExternalStore(
-    subscribeAuth,
-    getAuthSnapshot,
-    getServerAuthSnapshot,
-  );
-  const isAdminOnly = useSyncExternalStore(
-    subscribeAuth,
-    getAdminSnapshot,
-    getServerAuthSnapshot,
-  );
+  const sessionKind = useSessionKind();
+  const isConnected = sessionKind === 'association';
+  // Compte mairie connecté : son accueil est le tableau de bord admin.
+  const isAdminOnly = sessionKind === 'admin';
 
   useEffect(() => {
     if (isAdminOnly) {
@@ -53,9 +27,7 @@ export default function Home() {
   }, [isConnected]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('association_name');
-    window.dispatchEvent(new Event('auth-change'));
+    void signOut();
   };
 
   if (isConnected) {

@@ -1,4 +1,5 @@
-import { accountRequest, API_URL, ApiError, requestBlob } from './client';
+import { accountRequest, apiFetch, API_URL, ApiError, requestBlob } from './client';
+import { clearSessions, storeSession, updateSessionLogo, type SessionKind, type SessionUser } from '@/lib/session';
 import type { ExternalEventFile } from './evenements';
 import type {
   AccountProfile,
@@ -144,4 +145,90 @@ export async function registerAssociation(payload: {
       response.status,
     );
   }
+}
+
+/** Appel public (sans session) : renvoie le JSON ou lève une ApiError avec le message du serveur. */
+async function publicAuthRequest<T>(path: string, payload: Record<string, string>, fallbackMessage: string): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const errors = Array.isArray(data?.errors) ? (data.errors as string[]).join(' ') : null;
+    throw new ApiError(errors ?? (typeof data?.message === 'string' ? data.message : fallbackMessage), response.status, data);
+  }
+  return data as T;
+}
+
+/** Demande un lien de réinitialisation ; la réponse est la même que le compte existe ou non. */
+export function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return publicAuthRequest('/api/auth/password-reset/request', { email }, 'La demande n’a pas pu être envoyée.');
+}
+
+export function confirmPasswordReset(token: string, password: string): Promise<{ message: string; loginPath: string }> {
+  return publicAuthRequest(
+    '/api/auth/password-reset/confirm',
+    { token, password },
+    'Le mot de passe n’a pas pu être modifié.',
+  );
+}
+
+/**
+ * Connexion : l'API pose le cookie de session HttpOnly et renvoie le profil, conservé pour
+ * l'affichage. Le JWT n'est jamais accessible au JavaScript.
+ */
+export async function signIn(kind: SessionKind, email: string, password: string): Promise<SessionUser> {
+  const response = await apiFetch(kind === 'admin' ? '/api/auth/admin/login' : '/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+  const data = (await response.json().catch(() => null)) as { user?: SessionUser; message?: string } | null;
+  if (!response.ok || !data?.user) {
+    throw new ApiError(data?.message ?? 'Identifiants incorrects.', response.status, data);
+  }
+  storeSession(kind, data.user);
+  return data.user;
+}
+
+/** Activation du compte : définit le mot de passe et ouvre directement la session. */
+export async function activateAccount(token: string, email: string, password: string): Promise<SessionUser> {
+  const response = await apiFetch('/api/auth/activate', {
+    method: 'POST',
+    body: JSON.stringify({ token, email, password }),
+  });
+  const data = (await response.json().catch(() => null)) as { user?: SessionUser; message?: string; errors?: string[] } | null;
+  if (!response.ok || !data?.user) {
+    const message = data?.errors?.join(' ') ?? data?.message ?? 'Une erreur est survenue lors de l’activation.';
+    throw new ApiError(message, response.status, data);
+  }
+  storeSession('association', data.user);
+  return data.user;
+}
+
+/** Déconnexion : l'API révoque le JWT et efface le cookie ; le profil local est supprimé dans tous les cas. */
+export async function signOut(): Promise<void> {
+  try {
+    await apiFetch('/api/auth/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Déconnexion côté serveur impossible', error);
+  } finally {
+    clearSessions();
+  }
+}
+
+/** Photo de profil de l'association ; le profil de session est mis à jour pour l'affichage. */
+export async function uploadAssociationPhoto(file: File): Promise<AccountProfile> {
+  const body = new FormData();
+  body.append('photo', file);
+  const profile = await accountRequest<AccountProfile>('/api/account/profile/photo', { method: 'POST', body }, 'La photo n’a pas pu être envoyée.');
+  updateSessionLogo(profile.logoUrl ?? null);
+  return profile;
+}
+
+export async function deleteAssociationPhoto(): Promise<AccountProfile> {
+  const profile = await accountRequest<AccountProfile>('/api/account/profile/photo', { method: 'DELETE' }, 'La photo n’a pas pu être retirée.');
+  updateSessionLogo(null);
+  return profile;
 }

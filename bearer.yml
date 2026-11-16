@@ -1,0 +1,15 @@
+# Configuration de Bearer (analyse statique de sécurité, job « security » de la CI).
+scan:
+  skip-path:
+    # Dépendances et fichiers générés : analysés par Trivy, pas par le SAST.
+    - backend/vendor
+    - backend/var
+    - backend/assets/vendor
+    - frontend/node_modules
+    - frontend/.next
+    - "frontend/sprint 2"
+    # Script de hook Git (lint-staged), jamais déployé : les chemins viennent de Git lui-même.
+    - lint-staged.config.mjs
+report:
+  # Le seuil bloquant de la CI : HIGH et CRITICAL.
+  severity: critical,high,medium,low

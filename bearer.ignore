@@ -1,0 +1,17 @@
+{
+  "1e3a827cdc33a86699bd6ea641bdefd7_0": {
+    "author": "SAE501",
+    "comment": "User::__serialize : empreinte CRC32C du hash du mot de passe, motif recommandé par Symfony pour détecter un changement de mot de passe sans stocker le hash en session. Pas une protection cryptographique.",
+    "ignored_at": "2026-11-16T10:30:00Z"
+  },
+  "334e29bc7926f103ea8015466135e1fa_0": {
+    "author": "SAE501",
+    "comment": "Comparaison côté navigateur du mot de passe et de sa confirmation saisis par l’utilisateur : aucun secret serveur, pas d’attaque temporelle possible.",
+    "ignored_at": "2026-11-16T10:30:00Z"
+  },
+  "93da12a2826e66bf2889ab676127ae84_0": {
+    "author": "SAE501",
+    "comment": "Même cas que la page d’activation : confirmation du mot de passe dans le navigateur.",
+    "ignored_at": "2026-11-16T10:30:00Z"
+  }
+}

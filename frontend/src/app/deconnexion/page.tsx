@@ -2,21 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_URL } from '@/lib/api/client';
-import { clearSessions } from '@/lib/session';
+import { signOut } from '@/lib/api/auth';
 
 export default function LogoutPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-    void fetch(`${API_URL}/api/auth/logout`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    }).finally(() => {
-      clearSessions();
-      router.replace('/');
-    });
+    void signOut().finally(() => router.replace('/'));
   }, [router]);
 
   return (

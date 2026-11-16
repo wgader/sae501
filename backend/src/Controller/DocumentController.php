@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\DocumentJustificatif;
-use App\Entity\User;
 use App\Repository\DocumentJustificatifRepository;
+use App\Security\DocumentVoter;
 use App\Service\PrivateDocumentStorage;
 use App\Service\PrivateFileResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,15 +27,8 @@ final class DocumentController extends AbstractController
     public function download(int $id): BinaryFileResponse|JsonResponse
     {
         $document = $this->documentRepository->find($id);
-        $user = $this->getUser();
-        if (!$document instanceof DocumentJustificatif || null !== $document->getDeletedAt() || !$user instanceof User) {
-            return $this->json(['message' => 'Document introuvable.'], Response::HTTP_NOT_FOUND);
-        }
-
-        $isMunicipalUser = [] !== array_intersect(User::ROLES_MAIRIE, $user->getRoles());
-        $documentAssociationId = $document->getAssociation()?->getId();
-        $userAssociationId = $user->getAssociation()?->getId();
-        if (!$isMunicipalUser && (null === $documentAssociationId || $documentAssociationId !== $userAssociationId)) {
+        // Un document refusé répond comme un document inexistant : son existence n’est pas révélée.
+        if (!$document instanceof DocumentJustificatif || !$this->isGranted(DocumentVoter::DOWNLOAD, $document)) {
             return $this->json(['message' => 'Document introuvable.'], Response::HTTP_NOT_FOUND);
         }
 

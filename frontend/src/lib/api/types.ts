@@ -183,6 +183,8 @@ export type AccountProfile = {
   nom: string | null;
   prenom: string | null;
   nomAssociation?: string | null;
+  /** Photo de profil de l'association (chemin public), ou null. */
+  logoUrl?: string | null;
   typeCompte?: string | null;
   moduleSubventionActif?: boolean | null;
   moduleMaterielActif?: boolean | null;
@@ -449,6 +451,11 @@ export type CampaignRequest = {
 export type CampaignRequestsResponse = {
   campaign: Campaign;
   requests: CampaignRequest[];
+};
+
+export type CampaignWithTotals = Campaign & {
+  /** Demandes reçues (hors annulées), créneaux acceptés et salles attribuées. */
+  totals: { requests: number; accepted: number; rooms: number };
 };
 
 export type MyCampaignRequestsResponse = {

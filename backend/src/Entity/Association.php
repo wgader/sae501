@@ -48,6 +48,10 @@ class Association
     #[Assert\Positive(message: "Le nombre de membres doit être positif.")]
     private ?int $nombreMembres = null;
 
+    /** Photo de profil de l’association (chemin public sous /uploads/associations/). */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $logoUrl = null;
+
     /**
      * PENDING_VALIDATION → en attente de validation par la mairie
      * VALIDATED          → validée, lien d'activation envoyé à l'asso
@@ -107,6 +111,9 @@ class Association
 
     public function getNombreMembres(): ?int { return $this->nombreMembres; }
     public function setNombreMembres(?int $v): static { $this->nombreMembres = $v; return $this; }
+
+    public function getLogoUrl(): ?string { return $this->logoUrl; }
+    public function setLogoUrl(?string $logoUrl): static { $this->logoUrl = $logoUrl; return $this; }
 
     public function getStatut(): ?string { return $this->statut; }
     public function setStatut(string $statut): static { $this->statut = $statut; return $this; }

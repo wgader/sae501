@@ -6,8 +6,7 @@ import Link from "next/link";
 import FormField from "@/components/ui/FormField";
 import ButtonView from "@/components/ui/ButtonView";
 import BackButton from "@/components/ui/BackButton";
-import { API_URL } from "@/lib/api/client";
-import { storeAssociationSession } from "@/lib/session";
+import { signIn } from "@/lib/api/auth";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -32,30 +31,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email: String(identifier), password }),
-      });
-
-      const data = (await response.json().catch(() => ({}))) as {
-        token?: string;
-        message?: string;
-        error?: boolean;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.message || "Identifiants incorrects");
-      }
-
-      if (!data.token) {
-        throw new Error(data.message || "La connexion n’a pas pu être finalisée.");
-      }
-
-      storeAssociationSession(data.token);
+      await signIn('association', String(identifier), password);
       router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) {

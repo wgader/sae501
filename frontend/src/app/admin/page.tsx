@@ -4,9 +4,9 @@ import { type FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { storeAdminSession } from '@/lib/session';
+import { hasSession } from '@/lib/session';
+import { signIn } from '@/lib/api/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
@@ -17,8 +17,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     document.title = 'Administration · Connexion | Ville de Feytiat';
-    const token = localStorage.getItem('admin_token');
-    if (token) {
+    if (hasSession('admin')) {
       router.replace('/admin/dashboard');
     }
   }, [router]);
@@ -37,27 +36,7 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: identifier, password }),
-      });
-
-      const data = (await response.json().catch(() => ({}))) as {
-        token?: string;
-        message?: string;
-        error?: boolean;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.message ?? 'Identifiants incorrects.');
-      }
-
-      if (!data.token) {
-        throw new Error(data.message ?? 'La connexion n’a pas pu être finalisée.');
-      }
-
-      storeAdminSession(data.token);
+      await signIn('admin', identifier, password);
       router.push('/admin/dashboard');
     } catch (err: unknown) {
       setSubmitError(
@@ -239,7 +218,7 @@ export default function AdminLoginPage() {
 
             {submitError && (
               <p
-                className="rounded-lg border-l-4 border-danger bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-danger"
+                className="rounded-soft bg-danger/10 p-3.5 text-xs font-semibold leading-5 text-danger"
                 role="alert"
               >
                 {submitError}
@@ -263,6 +242,14 @@ export default function AdminLoginPage() {
                 <span>Se connecter</span>
               )}
             </button>
+            <p className="text-center">
+              <Link
+                href="/mot-de-passe-oublie"
+                className="text-xs font-semibold text-ink underline underline-offset-4 hover:text-primary"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </p>
           </form>
 
           <footer className="mt-8 border-t border-line pt-6 text-center text-xs text-muted">

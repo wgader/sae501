@@ -3,9 +3,7 @@
 import { useId, useState, type CSSProperties } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import Button from '@/components/ui/Button';
 import { IconChevronLeft, IconChevronRight, IconWarning } from '@/components/ui/icons';
-import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
 import { CAMPAIGN_REQUEST_STATUS_LABELS } from '@/components/admin/campaign/CampaignRequestStatusBadge';
 import { formatDayLabel, formatSlotTime, slotDate } from '@/lib/campaignDates';
 import {
@@ -30,9 +28,26 @@ interface Option {
 
 interface CampaignPlanningProps {
   requests: CampaignRequest[];
+  /** Premier jour réservable de la campagne (AAAA-MM-JJ). */
+  periodStart: string | null;
   salles: Option[];
   onSelect: (request: CampaignRequest) => void;
 }
+
+/** Contrôles de la barre d'outils : tous à la même hauteur que les boutons « sm ». */
+const toolbarControlVariants = cva(
+  'inline-flex h-9 items-center justify-center rounded-control border border-line bg-white text-meta font-bold text-ink transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft cursor-pointer',
+  {
+    variants: {
+      shape: {
+        text: 'px-3 uppercase tracking-label',
+        icon: 'w-9',
+        field: 'px-3 font-semibold normal-case',
+      },
+    },
+    defaultVariants: { shape: 'text' },
+  },
+);
 
 const eventVariants = cva(
   'planning-event m-0.5 flex min-w-0 flex-col overflow-hidden rounded-control px-2 py-1 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer',
@@ -93,11 +108,11 @@ const legendDotVariants = cva('h-3 w-3 shrink-0 rounded-sm', {
  * mobile), une ligne par demi-heure. Les demandes en concurrence sont posées côte à côte et
  * cerclées de rouge ; un clic ouvre la demande pour la traiter.
  */
-export default function CampaignPlanning({ requests, salles, onSelect }: CampaignPlanningProps) {
+export default function CampaignPlanning({ requests, periodStart, salles, onSelect }: CampaignPlanningProps) {
   const titleId = useId();
   const salleFilterId = useId();
   const jumpId = useId();
-  const [monday, setMonday] = useState(() => initialWeek(requests));
+  const [monday, setMonday] = useState(() => initialWeek(requests, periodStart));
   const [selectedDay, setSelectedDay] = useState(monday);
   const [salleId, setSalleId] = useState('');
   const [showRefused, setShowRefused] = useState(false);
@@ -123,19 +138,18 @@ export default function CampaignPlanning({ requests, salles, onSelect }: Campaig
 
   return (
     <section aria-labelledby={titleId} className="space-y-4">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" aria-label="Semaine précédente" onClick={() => goToWeek(addDays(monday, -7))}>
-            <IconChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => goToWeek(today)}>
-            Aujourd’hui
-          </Button>
-          <Button variant="secondary" size="sm" aria-label="Semaine suivante" onClick={() => goToWeek(addDays(monday, 7))}>
-            <IconChevronRight className="h-4 w-4" />
-          </Button>
-          <div className="ml-2">
-            <h3 id={titleId} className="text-body-lg font-black capitalize text-ink">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <button type="button" aria-label="Semaine précédente" onClick={() => goToWeek(addDays(monday, -7))} className={toolbarControlVariants({ shape: 'icon' })}>
+              <IconChevronLeft className="h-4 w-4" />
+            </button>
+            <button type="button" aria-label="Semaine suivante" onClick={() => goToWeek(addDays(monday, 7))} className={toolbarControlVariants({ shape: 'icon' })}>
+              <IconChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="min-w-0">
+            <h3 id={titleId} className="text-body-lg font-black capitalize leading-tight text-ink">
               {monthLabel(monday)}
             </h3>
             <p className="text-meta text-muted">
@@ -144,32 +158,36 @@ export default function CampaignPlanning({ requests, salles, onSelect }: Campaig
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:w-auto xl:min-w-96">
-          <div>
-            <label htmlFor={salleFilterId} className={fieldLabelVariants()}>
-              Salle
-            </label>
-            <select id={salleFilterId} value={salleId} onChange={(event) => setSalleId(event.target.value)} className={fieldControlVariants()}>
-              <option value="">Toutes les salles</option>
-              {salles.map((salle) => (
-                <option key={salle.id} value={salle.id}>
-                  {salle.nom}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor={jumpId} className={fieldLabelVariants()}>
-              Aller au
-            </label>
-            <input
-              id={jumpId}
-              type="date"
-              value={selectedDay}
-              onChange={(event) => event.target.value && goToWeek(event.target.value)}
-              className={fieldControlVariants()}
-            />
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {periodStart && (
+            <button type="button" onClick={() => goToWeek(periodStart)} className={toolbarControlVariants()}>
+              Début de campagne
+            </button>
+          )}
+          <button type="button" onClick={() => goToWeek(today)} className={toolbarControlVariants()}>
+            Aujourd’hui
+          </button>
+          <label htmlFor={salleFilterId} className="sr-only">
+            Salle
+          </label>
+          <select id={salleFilterId} value={salleId} onChange={(event) => setSalleId(event.target.value)} className={toolbarControlVariants({ shape: 'field' })}>
+            <option value="">Toutes les salles</option>
+            {salles.map((salle) => (
+              <option key={salle.id} value={salle.id}>
+                {salle.nom}
+              </option>
+            ))}
+          </select>
+          <label htmlFor={jumpId} className="sr-only">
+            Aller au
+          </label>
+          <input
+            id={jumpId}
+            type="date"
+            value={selectedDay}
+            onChange={(event) => event.target.value && goToWeek(event.target.value)}
+            className={toolbarControlVariants({ shape: 'field' })}
+          />
         </div>
       </div>
 
@@ -184,7 +202,7 @@ export default function CampaignPlanning({ requests, salles, onSelect }: Campaig
         </span>
         <span className="flex items-center gap-2">
           <span className={legendDotVariants({ tone: 'conflict' })} aria-hidden="true" />
-          Même salle, même créneau
+          En conflit (même salle, même créneau)
         </span>
         <label className="ml-auto flex cursor-pointer items-center gap-2 text-ink">
           <input type="checkbox" checked={showRefused} onChange={(event) => setShowRefused(event.target.checked)} className="accent-primary" />

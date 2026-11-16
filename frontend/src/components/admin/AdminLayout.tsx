@@ -1,9 +1,10 @@
 'use client';
 
-import { ReactNode, useEffect, useState, useSyncExternalStore } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
+import { useSessionKind } from '@/hooks/useSessionKind';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -11,7 +12,6 @@ interface AdminLayoutProps {
   onSearchChange?: (term: string) => void;
 }
 
-const emptySubscribe = () => () => {};
 
 export default function AdminLayout({
   children,
@@ -21,17 +21,14 @@ export default function AdminLayout({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const token = useSyncExternalStore(
-    emptySubscribe,
-    () => localStorage.getItem('admin_token'),
-    () => undefined,
-  );
+  const sessionKind = useSessionKind();
 
   useEffect(() => {
-    if (token === null) {
+    // undefined : rendu serveur, la session n'est pas encore connue.
+    if (sessionKind !== undefined && sessionKind !== 'admin') {
       router.replace('/admin');
     }
-  }, [token, router]);
+  }, [sessionKind, router]);
 
   useEffect(() => {
     const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -45,7 +42,7 @@ export default function AdminLayout({
     };
   }, []);
 
-  if (token === undefined) {
+  if (sessionKind === undefined) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-primary text-white">
         <p className="text-sm font-semibold tracking-wider uppercase">
@@ -55,7 +52,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!token) {
+  if (sessionKind !== 'admin') {
     return null;
   }
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Campaign;
+use App\Repository\CampaignRepository;
+use App\Repository\ReservationSalleRepository;
 use App\Service\CampaignService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -62,6 +64,22 @@ final class CampaignController extends AbstractController
     }
 
     /**
+     * Historique : chaque campagne avec son bilan, la plus récente d’abord.
+     */
+    #[Route('/api/admin/campaign-history', name: 'admin_campaign_history', methods: ['GET'])]
+    public function history(CampaignRepository $campaigns, ReservationSalleRepository $reservations): JsonResponse
+    {
+        $totals = $reservations->campaignTotals();
+
+        return $this->json(array_map(
+            static fn (Campaign $campaign): array => self::serializeCampaign($campaign) + [
+                'totals' => $totals[(int) $campaign->getId()] ?? ['requests' => 0, 'accepted' => 0, 'rooms' => 0],
+            ],
+            $campaigns->findAllOrdered(),
+        ));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function serializeCampaign(Campaign $campaign): array
@@ -71,8 +89,9 @@ final class CampaignController extends AbstractController
             'seasonLabel' => $campaign->getSeasonLabel(),
             'openingAt' => $campaign->getOpeningAt()?->format(\DateTimeInterface::ATOM),
             'closingAt' => $campaign->getClosingAt()?->format(\DateTimeInterface::ATOM),
-            'periodStart' => $campaign->getPeriodStart()?->format('Y-m-d'),
-            'periodEnd' => $campaign->getPeriodEnd()?->format('Y-m-d'),
+            // Période effective : celle saisie, sinon l’année civile qui suit l’ouverture.
+            'periodStart' => $campaign->getEffectivePeriodStart()?->format('Y-m-d'),
+            'periodEnd' => $campaign->getEffectivePeriodEnd()?->format('Y-m-d'),
             'resourceTypes' => $campaign->getResourceTypes(),
             'status' => $campaign->getStatus(),
             'statusLabel' => $campaign->getStatusLabel(),

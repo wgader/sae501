@@ -158,6 +158,9 @@ jobs:
     environment:
       name: ${{ needs.context.outputs.environment }}
       url: ${{ vars.PUBLIC_FRONTEND_URL }}
+    outputs:
+      frontend_url: ${{ steps.healthcheck.outputs.frontend_url }}
+      api_url: ${{ steps.healthcheck.outputs.api_url }}
     permissions:
       contents: read
       # Publication de l’image frontend, puis pull des images par le serveur avec le jeton du job
@@ -274,7 +277,7 @@ jobs:
           incoming="$DEPLOY_PATH/.incoming/$SERVER_ENV"
           # shellcheck disable=SC2029 # chemins validés plus haut, développés volontairement ici.
           tar -czf - docker-compose.prod.yml docker/deploy/deploy.sh docker/deploy/backup.sh \
-              docker/deploy/edge/compose.yml docker/deploy/edge/Caddyfile \
+              docker/deploy/edge/compose.yml docker/deploy/edge/Caddyfile docker/deploy/edge/cloudflare-ips.txt \
             | ssh deploy-target "rm -rf '$incoming' && mkdir -p '$incoming' && tar -xzf - -C '$incoming'"
 
       # Pull, sauvegarde, migrations Doctrine, up --wait (healthchecks), puis proxy d’entrée.
@@ -291,6 +294,7 @@ jobs:
                 --base-dir '$DEPLOY_PATH' --from '$incoming' --registry-login"
 
       - name: Public healthcheck
+        id: healthcheck
         run: |
           curl --fail --silent --show-error --output /dev/null \
             --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_API_URL/healthcheck.php"
@@ -299,7 +303,47 @@ jobs:
               --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_FRONTEND_URL"
           fi
           echo "Version $SHA en ligne sur $SERVER_ENV" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "frontend_url=$PUBLIC_FRONTEND_URL"
+            echo "api_url=$PUBLIC_API_URL"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Remove SSH material
         if: always()
         run: rm -f ~/.ssh/deploy_key ~/.ssh/config ~/.ssh/deploy_known_hosts
+
+  # Analyse dynamique passive (OWASP ZAP baseline) de la préproduction juste déployée : en-têtes,
+  # cookies, fuites d’informations. Aucune attaque active, jamais lancée sur la production.
+  # Le rapport est conservé ; les alertes ne bloquent pas le déploiement déjà effectué.
+  dast:
+    name: OWASP ZAP — préproduction
+    needs: [context, deploy]
+    if: needs.deploy.result == 'success' && needs.context.outputs.server_environment == 'preprod'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: {}
+    env:
+      FRONTEND_URL: ${{ needs.deploy.outputs.frontend_url }}
+      API_URL: ${{ needs.deploy.outputs.api_url }}
+    steps:
+      - name: Baseline scans
+        run: |
+          mkdir -p zap && chmod 0777 zap
+          scan() {
+            # -I : les alertes sont rapportées sans faire échouer le job.
+            docker run --rm -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:2.17.0 \
+              zap-baseline.py -t "$2" -I -m 2 -J "zap-$1.json" -r "zap-$1.html" -w "zap-$1.md" || true
+          }
+          scan frontend "$FRONTEND_URL"
+          scan api "$API_URL/api/campaigns/current"
+          for report in zap/zap-*.md; do
+            [ -f "$report" ] && cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Keep the ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: zap-preprod
+          path: zap
+          retention-days: 30

@@ -1,3 +1,5 @@
+import { clearSessions, readSession } from '@/lib/session';
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
 export function getMediaUrl(path: string | null | undefined): string | null {
@@ -13,109 +15,73 @@ export class ApiError extends Error {
 }
 
 export function redirectToAdminLogin(): never {
-  localStorage.removeItem('admin_token');
-  localStorage.removeItem('token');
+  clearSessions();
   window.location.replace('/admin');
   throw new ApiError('Redirection vers la connexion administrateur.', 401);
 }
 
 export function redirectToAssociationLogin(): never {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
-    localStorage.removeItem('association_name');
-    window.dispatchEvent(new Event('auth-change'));
+    clearSessions();
     window.location.replace('/connexion');
   }
   throw new ApiError('Votre session a expiré. Redirection vers la page de connexion...', 401);
 }
 
-function getToken(): string {
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-  if (!token) return redirectToAdminLogin();
-  return token;
-}
-
-export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    Authorization: `Bearer ${getToken()}`,
-  };
-
-  if (!(options.body instanceof FormData)) {
+/**
+ * Appel à l'API avec la session du navigateur : le cookie HttpOnly part automatiquement
+ * (credentials) et l'en-tête X-Requested-With est exigé par la protection CSRF de l'API.
+ */
+export function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers: Record<string, string> = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+  // Un envoi de fichier laisse le navigateur poser le multipart et sa frontière.
+  if (options.body !== undefined && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
 
-  if (options.headers) {
-    Object.assign(headers, options.headers);
-  }
-
-  const response = await fetch(`${API_URL}${path}`, {
+  return fetch(`${API_URL}${path}`, {
     ...options,
-    headers,
+    credentials: 'include',
+    headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
   });
+}
+
+async function readJson<T>(response: Response, defaultErrorMessage: string): Promise<T> {
   const data = await response.json().catch(() => null);
-  if (response.status === 401) redirectToAdminLogin();
   if (!response.ok) {
-    throw new ApiError(
-      typeof data?.message === 'string' ? data.message : 'Une erreur est survenue.',
-      response.status,
-      data,
-    );
+    throw new ApiError(typeof data?.message === 'string' ? data.message : defaultErrorMessage, response.status, data);
   }
   return data as T;
 }
 
+/** Session absente ou expirée : retour à la page de connexion de l'espace concerné. */
+function redirectToLogin(): never {
+  return readSession()?.kind === 'association' ? redirectToAssociationLogin() : redirectToAdminLogin();
+}
+
+/** Appel authentifié commun aux deux espaces. */
+export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (!readSession()) return redirectToLogin();
+  const response = await apiFetch(path, options);
+  if (response.status === 401) return redirectToLogin();
+  return readJson<T>(response, 'Une erreur est survenue.');
+}
+
+/** Appel de l'espace association : sans session, retour à la connexion association. */
 export async function accountRequest<T>(
   path: string,
   options: RequestInit = {},
   defaultErrorMessage = 'Une erreur est survenue lors de la communication avec le serveur.',
 ): Promise<T> {
-  const token = typeof window !== 'undefined'
-    ? (localStorage.getItem('token') || localStorage.getItem('admin_token'))
-    : null;
-  if (!token) {
-    return redirectToAssociationLogin();
-  }
-
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    Authorization: `Bearer ${token}`,
-  };
-  // Un envoi de fichier laisse le navigateur poser le multipart et sa frontière.
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },
-  });
-  const data = await response.json().catch(() => null);
-
-  if (response.status === 401) {
-    return redirectToAssociationLogin();
-  }
-
-  if (!response.ok) {
-    throw new ApiError(
-      typeof data?.message === 'string' ? data.message : defaultErrorMessage,
-      response.status,
-      data,
-    );
-  }
-
-  return data as T;
+  if (!readSession()) return redirectToAssociationLogin();
+  const response = await apiFetch(path, options);
+  if (response.status === 401) return redirectToAssociationLogin();
+  return readJson<T>(response, defaultErrorMessage);
 }
 
 export async function requestBlob(path: string): Promise<Blob> {
-  const token = getToken();
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: {
-      Accept: 'application/octet-stream',
-      Authorization: 'Bearer ' + token,
-    },
-  });
-  if (response.status === 401) redirectToAssociationLogin();
+  const response = await apiFetch(path, { headers: { Accept: 'application/octet-stream' } });
+  if (response.status === 401) return redirectToLogin();
   if (!response.ok) {
     const data = await response.json().catch(() => null);
     throw new ApiError(

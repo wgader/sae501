@@ -103,7 +103,7 @@ if [[ -n "$FROM_DIR" ]]; then
   install -m 0640 "$FROM_DIR/docker-compose.prod.yml" "$ENV_DIR/docker-compose.prod.yml"
   install -m 0750 "$FROM_DIR/docker/deploy/deploy.sh" "$FROM_DIR/docker/deploy/backup.sh" "$BASE_DIR/bin/"
   install -m 0640 "$FROM_DIR/docker/deploy/edge/compose.yml" "$BASE_DIR/edge/"
-  install -m 0644 "$FROM_DIR/docker/deploy/edge/Caddyfile" "$BASE_DIR/edge/"
+  install -m 0644 "$FROM_DIR/docker/deploy/edge/Caddyfile" "$FROM_DIR/docker/deploy/edge/cloudflare-ips.txt" "$BASE_DIR/edge/"
   log "fichiers de déploiement installés depuis $FROM_DIR"
 fi
 
@@ -180,20 +180,48 @@ pull_images() {
   fi
 }
 
+# Derrière Cloudflare (EDGE_CLOUDFLARE=1 dans edge/.env) : l’IP du visiteur est lue dans
+# CF-Connecting-IP, uniquement depuis les plages Cloudflare, et toute connexion directe au VPS est
+# refusée pour que le WAF ne puisse pas être contourné. Sinon, les deux fichiers sont neutres.
+write_edge_proxy() {
+  local proxy_dir="$BASE_DIR/edge/proxy" ranges=""
+  install -d -m 0755 "$proxy_dir"
+  if [[ "$(env_value EDGE_CLOUDFLARE "$BASE_DIR/edge/.env" 2>/dev/null)" == "1" ]]; then
+    # Seules des plages CIDR sont recopiées dans la configuration.
+    ranges=$(grep -E '^[0-9a-fA-F:.]+/[0-9]{1,3}$' "$BASE_DIR/edge/cloudflare-ips.txt" | tr '\n' ' ')
+    [[ -n "$ranges" ]] || die "EDGE_CLOUDFLARE=1 mais aucune plage dans edge/cloudflare-ips.txt"
+    printf 'servers {\n\ttrusted_proxies static %s\n\tclient_ip_headers CF-Connecting-IP\n}\n' "$ranges" > "$proxy_dir/global.caddy.tmp"
+    printf '(origin_guard) {\n\t@direct not remote_ip %s\n\tabort @direct\n}\n' "$ranges" > "$proxy_dir/guard.caddy.tmp"
+    log "proxy d’entrée : mode Cloudflare (connexions directes refusées)"
+  else
+    printf '# Accès direct : aucun proxy de confiance en amont.\n' > "$proxy_dir/global.caddy.tmp"
+    printf '(origin_guard) {\n}\n' > "$proxy_dir/guard.caddy.tmp"
+  fi
+  chmod 0644 "$proxy_dir/global.caddy.tmp" "$proxy_dir/guard.caddy.tmp"
+  mv "$proxy_dir/global.caddy.tmp" "$proxy_dir/global.caddy"
+  mv "$proxy_dir/guard.caddy.tmp" "$proxy_dir/guard.caddy"
+}
+
 # Le proxy d’entrée route les deux domaines de l’environnement vers ses conteneurs.
 update_edge() {
+  write_edge_proxy
   local site_file="$BASE_DIR/edge/sites/$PROJECT.caddy"
   install -d -m 0755 "$BASE_DIR/edge/sites"
   cat > "$site_file.tmp" <<EOF
 # Généré par deploy.sh pour $PROJECT à partir de $ENV_FILE : ne pas modifier à la main.
 $FRONTEND_DOMAIN {
 	import common
-	reverse_proxy $PROJECT-frontend:3000
+	reverse_proxy $PROJECT-frontend:3000 {
+		header_up X-Forwarded-For {client_ip}
+	}
 }
 
 $API_DOMAIN {
-	import common
-	reverse_proxy $PROJECT-backend:80
+	import api
+	# L’API (limiteurs de connexion) lit l’IP du visiteur dans X-Forwarded-For.
+	reverse_proxy $PROJECT-backend:80 {
+		header_up X-Forwarded-For {client_ip}
+	}
 }
 EOF
   chmod 0644 "$site_file.tmp"

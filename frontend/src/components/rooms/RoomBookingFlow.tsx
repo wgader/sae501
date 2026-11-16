@@ -10,6 +10,7 @@ import RoomSlotModal from '@/components/rooms/RoomSlotModal';
 import { todayKey } from '@/lib/campaignPlanning';
 import { OccupiedSlot, PublicRoom, getPublicRooms, getRoomAvailability } from '@/lib/api';
 import type { Campaign } from '@/lib/api/types';
+import { readSession } from '@/lib/session';
 
 type Step = 'slot' | 'rooms' | 'booking';
 
@@ -20,16 +21,9 @@ const dateTitleFormatter = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 
-/** Le module salles est-il désactivé pour l'association (information portée par le jeton) ? */
+/** Le module salles est-il désactivé pour l'association (profil de session) ? */
 function readModuleForbidden(): boolean {
-  if (typeof window === 'undefined') return false;
-  const token = localStorage.getItem('token') || localStorage.getItem('admin_token');
-  try {
-    const payload = token ? JSON.parse(atob(token.split('.')[1] ?? '')) : null;
-    return payload?.moduleSalleActif === false;
-  } catch {
-    return false;
-  }
+  return readSession()?.user.modules?.salles === false;
 }
 
 function toLocalDate(day: string): Date {

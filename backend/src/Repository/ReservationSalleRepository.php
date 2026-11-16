@@ -120,4 +120,36 @@ class ReservationSalleRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Bilan par campagne : demandes reçues (hors annulées), créneaux acceptés et salles attribuées.
+     *
+     * @return array<int, array{requests: int, accepted: int, rooms: int}>
+     */
+    public function campaignTotals(): array
+    {
+        $rows = $this->createQueryBuilder('r')
+            ->select('IDENTITY(r.campaign) AS campaign')
+            ->addSelect('SUM(CASE WHEN r.statut NOT IN (:closed) THEN 1 ELSE 0 END) AS requests')
+            ->addSelect('SUM(CASE WHEN r.statut = :accepted THEN 1 ELSE 0 END) AS accepted')
+            ->addSelect('COUNT(DISTINCT CASE WHEN r.statut = :accepted THEN IDENTITY(r.salle) ELSE :none END) AS rooms')
+            ->andWhere('r.campaign IS NOT NULL')
+            ->groupBy('r.campaign')
+            ->setParameter('closed', ['Annulée', 'Clôturée'])
+            ->setParameter('accepted', 'Validée')
+            ->setParameter('none', null)
+            ->getQuery()
+            ->getArrayResult();
+
+        $totals = [];
+        foreach ($rows as $row) {
+            $totals[(int) $row['campaign']] = [
+                'requests' => (int) $row['requests'],
+                'accepted' => (int) $row['accepted'],
+                'rooms' => (int) $row['rooms'],
+            ];
+        }
+
+        return $totals;
+    }
 }

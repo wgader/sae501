@@ -25,6 +25,7 @@ final class RoomReservationService
 {
     public const OPENING_HOUR = 8;
     public const CLOSING_HOUR = 23;
+    private const ONE_OFF_HORIZON = '+18 months';
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -211,8 +212,8 @@ final class RoomReservationService
             if (!$active->coversDay($slotStart)) {
                 throw new \InvalidArgumentException(\sprintf(
                     'Ce jour est en dehors de la période réservable de la campagne (du %s au %s).',
-                    $active->getPeriodStart()?->format('d/m/Y'),
-                    $active->getPeriodEnd()?->format('d/m/Y'),
+                    $active->getEffectivePeriodStart()?->format('d/m/Y'),
+                    $active->getEffectivePeriodEnd()?->format('d/m/Y'),
                 ));
             }
 
@@ -226,12 +227,12 @@ final class RoomReservationService
             );
         }
 
+        // Réservation ponctuelle : au plus 18 mois à l’avance, jamais sur les jours d’une campagne à venir.
+        if ($slotStart > $now->modify(self::ONE_OFF_HORIZON)) {
+            throw new \InvalidArgumentException('Une réservation ponctuelle se fait au plus 18 mois à l’avance.');
+        }
         foreach ($this->campaignRepository->findBy(['status' => Campaign::STATUS_PROGRAMMED]) as $upcoming) {
-            if (
-                null !== $upcoming->getPeriodStart()
-                && \in_array('salle', $upcoming->getResourceTypes(), true)
-                && $upcoming->coversDay($slotStart)
-            ) {
+            if (\in_array('salle', $upcoming->getResourceTypes(), true) && $upcoming->coversDay($slotStart)) {
                 throw new RoomBookingClosedException(
                     \sprintf('Ce jour sera attribué lors de la campagne « %s » : il ne peut pas être réservé ponctuellement.', $upcoming->getSeasonLabel()),
                     RoomBookingClosedException::SLOT_IN_CAMPAIGN,
