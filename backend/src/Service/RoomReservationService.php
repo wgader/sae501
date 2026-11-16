@@ -12,6 +12,7 @@ use App\Entity\Salle;
 use App\Entity\User;
 use App\Exception\RoomReservationConflictException;
 use App\Message\SendRoomReservationNotificationMessage;
+use App\Repository\CampaignRepository;
 use App\Repository\ReservationSalleRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,6 +29,7 @@ final class RoomReservationService
         private readonly PrivateDocumentStorage $documentStorage,
         private readonly ReservationSalleRepository $reservationSalleRepository,
         private readonly MessageBusInterface $messageBus,
+        private readonly CampaignRepository $campaignRepository,
     ) {
     }
 
@@ -127,6 +129,8 @@ final class RoomReservationService
                 $reservation->setDateFin($dateFin);
                 $reservation->setCapaciteAttendue($capaciteAttendue);
                 $reservation->setStatut('En attente de validation par la mairie');
+                // Déposée pendant une campagne ouverte : la demande apparaît dans son suivi.
+                $reservation->setCampaign($this->campaignRepository->findCurrent(new \DateTimeImmutable(), 'salle'));
                 $reservation->setCreatedAt(new \DateTimeImmutable());
 
                 $this->entityManager->persist($reservation);
