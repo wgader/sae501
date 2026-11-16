@@ -451,6 +451,11 @@ export type CampaignRequestsResponse = {
   requests: CampaignRequest[];
 };
 
+export type CampaignWithTotals = Campaign & {
+  /** Demandes reçues (hors annulées), créneaux acceptés et salles attribuées. */
+  totals: { requests: number; accepted: number; rooms: number };
+};
+
 export type MyCampaignRequestsResponse = {
   campaign: Campaign | null;
   requests: CampaignRequest[];

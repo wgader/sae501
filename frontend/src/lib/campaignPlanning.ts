@@ -110,13 +110,18 @@ export function placeDay(requests: CampaignRequest[]): PlacedDay {
   return { lanes: Math.max(1, laneEnds.length), items };
 }
 
-/** Semaine affichée par défaut : celle de la première demande à traiter, sinon de la première demande. */
-export function initialWeek(requests: CampaignRequest[]): string {
+/**
+ * Semaine affichée par défaut : celle de la première demande à traiter, sinon de la première
+ * demande, sinon le début de la période réservable de la campagne (ou aujourd'hui s'il est passé).
+ */
+export function initialWeek(requests: CampaignRequest[], periodStart: string | null): string {
   const days = (status?: string) =>
     requests
       .filter((request) => !status || request.status === status)
       .map((request) => slotDate(request.dateDebut))
       .filter(Boolean)
       .sort();
-  return startOfWeek(days('pending')[0] ?? days()[0] ?? todayKey());
+  const today = todayKey();
+  const fallback = periodStart && periodStart > today ? periodStart : today;
+  return startOfWeek(days('pending')[0] ?? days()[0] ?? fallback);
 }

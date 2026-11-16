@@ -21,6 +21,7 @@ final class RoomReservationDecisionNotifier
     public const DECISION_REFUSED = 'refused';
     public const DECISION_RESCHEDULED = 'rescheduled';
     public const DECISION_ADDED = 'added';
+    public const DECISION_CONFLICT = 'conflict';
 
     /** Type lu par la cloche de notifications pour ouvrir le détail de la demande. */
     public const NOTIFICATION_TYPE = 'SALLE_RESERVATION_DECISION';
@@ -42,8 +43,12 @@ final class RoomReservationDecisionNotifier
             'intro' => 'La mairie a modifié votre réservation de salle (salle, jour ou horaire). Elle est acceptée avec les informations ci-dessous.',
         ],
         self::DECISION_ADDED => [
-            'title' => 'Nouveau créneau de salle attribué',
-            'intro' => 'La mairie a attribué un créneau de salle à votre association.',
+            'title' => 'Nouveau créneau de salle proposé',
+            'intro' => 'La mairie a ajouté une demande de salle pour votre association. Elle sera confirmée après la réunion d’arbitrage.',
+        ],
+        self::DECISION_CONFLICT => [
+            'title' => 'Créneau demandé par plusieurs associations',
+            'intro' => 'D’autres associations ont demandé la même salle sur ce créneau. La mairie vous départagera lors de la réunion d’arbitrage : votre demande reste en attente.',
         ],
     ];
 

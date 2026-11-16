@@ -368,6 +368,20 @@ final class RoomReservationControllerTest extends WebTestCase
         $this->assertCampaignRequestRefused();
     }
 
+    public function testFarFutureSlotsAreRefused(): void
+    {
+        [$user] = $this->createAssociationAndUser('Club Pressé');
+        $salle = $this->createSalle('Salle');
+
+        $this->postSlot($user, '/api/rooms/reservations', $salle, 'An 3000', '+974 years', '10:00', '12:00');
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->createCampaign(Campaign::STATUS_ACTIVE, '-1 day', '+30 days');
+        $this->postSlot($user, self::CAMPAIGN_URI, $salle, 'An 3000', '+974 years', '10:00', '12:00');
+        $this->assertResponseStatusCodeSame(400);
+        $this->assertSame(0, $this->em->getRepository(ReservationSalle::class)->count([]));
+    }
+
     public function testOneOffReservationIsRefusedWhileACampaignIsOpen(): void
     {
         $this->createCampaign(Campaign::STATUS_ACTIVE, '-1 day', '+30 days');

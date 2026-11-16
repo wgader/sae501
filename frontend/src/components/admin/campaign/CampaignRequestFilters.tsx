@@ -3,7 +3,8 @@ import { cva } from 'class-variance-authority';
 import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
 import type { CampaignRequestStatus } from '@/lib/api/types';
 
-export type CampaignRequestStatusFilter = CampaignRequestStatus | 'all';
+/** « conflict » : demandes en attente qui visent la même salle au même moment. */
+export type CampaignRequestStatusFilter = CampaignRequestStatus | 'conflict' | 'all';
 
 export interface CampaignRequestFilterValues {
   status: CampaignRequestStatusFilter;
@@ -20,6 +21,7 @@ interface CampaignRequestFiltersProps {
 
 const STATUS_TABS: { value: CampaignRequestStatusFilter; label: string }[] = [
   { value: 'pending', label: 'À traiter' },
+  { value: 'conflict', label: 'En conflit' },
   { value: 'accepted', label: 'Acceptées' },
   { value: 'refused', label: 'Refusées' },
   { value: 'all', label: 'Toutes' },

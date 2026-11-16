@@ -4,6 +4,7 @@ import type {
   CampaignCurrentResponse,
   CampaignRequest,
   CampaignRequestsResponse,
+  CampaignWithTotals,
   MyCampaignRequestsResponse,
   RoomRequestsResponse,
 } from './types';
@@ -33,6 +34,11 @@ export async function getAdminCampaigns(): Promise<Campaign[]> {
     return data['hydra:member'];
   }
   return [];
+}
+
+/** Toutes les campagnes avec leur bilan, la plus récente d'abord. */
+export function getCampaignHistory(): Promise<CampaignWithTotals[]> {
+  return request<CampaignWithTotals[]>('/api/admin/campaign-history');
 }
 
 /**
@@ -119,6 +125,13 @@ export function cancelCampaignRequest(campaignId: number, requestId: number, rea
   return request<CampaignRequest>(`/api/admin/campaigns/${campaignId}/requests/${requestId}/cancel`, {
     method: 'POST',
     body: JSON.stringify({ reason }),
+  });
+}
+
+/** Prévient toutes les associations en concurrence sur le créneau de cette demande. */
+export function notifyCampaignConflict(campaignId: number, requestId: number): Promise<{ notified: number }> {
+  return request<{ notified: number }>(`/api/admin/campaigns/${campaignId}/requests/${requestId}/notify-conflict`, {
+    method: 'POST',
   });
 }
 

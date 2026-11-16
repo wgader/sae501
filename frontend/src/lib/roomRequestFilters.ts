@@ -4,10 +4,20 @@ import type {
 } from '@/components/admin/campaign/CampaignRequestFilters';
 import type { CampaignRequest } from '@/lib/api/types';
 
+/** Demande en attente qui vise la même salle au même moment qu'une autre. */
+export function isInConflict(request: CampaignRequest): boolean {
+  return request.status === 'pending' && request.conflictsWith.length > 0;
+}
+
 export function countRequestsByStatus(requests: CampaignRequest[]): Record<CampaignRequestStatusFilter, number> {
   return requests.reduce(
-    (counts, request) => ({ ...counts, [request.status]: counts[request.status] + 1, all: counts.all + 1 }),
-    { pending: 0, accepted: 0, refused: 0, closed: 0, all: 0 },
+    (counts, request) => ({
+      ...counts,
+      [request.status]: counts[request.status] + 1,
+      conflict: counts.conflict + (isInConflict(request) ? 1 : 0),
+      all: counts.all + 1,
+    }),
+    { pending: 0, conflict: 0, accepted: 0, refused: 0, closed: 0, all: 0 },
   );
 }
 
@@ -15,7 +25,9 @@ export function applyRequestFilters(requests: CampaignRequest[], filters: Campai
   const search = filters.search.trim().toLocaleLowerCase('fr');
   return requests.filter(
     (request) =>
-      (filters.status === 'all' || request.status === filters.status) &&
+      (filters.status === 'all' ||
+        request.status === filters.status ||
+        (filters.status === 'conflict' && isInConflict(request))) &&
       (!filters.salleId || String(request.salle.id) === filters.salleId) &&
       (!search || (request.association.nom ?? '').toLocaleLowerCase('fr').includes(search)),
   );

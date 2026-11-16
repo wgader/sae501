@@ -104,7 +104,8 @@ final class CampaignRequestController extends AbstractController
     {
         $payload = $this->payload($request);
 
-        return $this->handle(fn (): array => CampaignRequestService::serialize($this->requestService->addSlot(
+        // Les demandes voisines accompagnent la réponse : un chevauchement est signalé tout de suite.
+        return $this->handle(fn (): array => $this->withSiblings($campaign, $this->requestService->addSlot(
             $campaign,
             $this->agent(),
             $this->findOr404(Association::class, $payload['associationId'] ?? null, 'Association introuvable.'),
@@ -113,6 +114,14 @@ final class CampaignRequestController extends AbstractController
             $this->slotField($payload, 'dateFin'),
             \is_string($payload['motifEvenement'] ?? null) ? $payload['motifEvenement'] : '',
         )), Response::HTTP_CREATED);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function withSiblings(Campaign $campaign, ReservationSalle $reservation): array
+    {
+        return CampaignRequestService::serialize($reservation, $this->requestService->listRequests($campaign));
     }
 
     #[Route('/requests/{requestId<\d+>}/accept', name: 'admin_campaign_request_accept', methods: ['POST'])]
@@ -132,6 +141,16 @@ final class CampaignRequestController extends AbstractController
         return $this->handle(fn (): array => CampaignRequestService::serialize(
             $this->requestService->refuse($reservation, $this->agent(), \is_string($reason) ? $reason : null),
         ));
+    }
+
+    #[Route('/requests/{requestId<\d+>}/notify-conflict', name: 'admin_campaign_request_notify_conflict', methods: ['POST'])]
+    public function notifyConflict(Campaign $campaign, int $requestId): JsonResponse
+    {
+        $reservation = $this->findRequest($campaign, $requestId);
+
+        return $this->handle(fn (): array => [
+            'notified' => \count($this->requestService->notifyConflict($reservation, $this->agent())),
+        ]);
     }
 
     #[Route('/requests/{requestId<\d+>}/cancel', name: 'admin_campaign_request_cancel', methods: ['POST'])]

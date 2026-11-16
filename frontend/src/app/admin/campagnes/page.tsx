@@ -9,6 +9,7 @@ import CampaignSummary, { type CampaignRequestCounts } from '@/components/admin/
 import CampaignRequestsSection from '@/components/admin/campaign/CampaignRequestsSection';
 import CampaignScheduleDialog from '@/components/admin/campaign/CampaignScheduleDialog';
 import CampaignExportDialog from '@/components/admin/campaign/CampaignExportDialog';
+import CampaignHistory from '@/components/admin/campaign/CampaignHistory';
 import CampaignStateDialog, { type CampaignStateAction } from '@/components/admin/campaign/CampaignStateDialog';
 import CreateCampaignDialog from '@/components/admin/campaign/CreateCampaignDialog';
 import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
@@ -225,6 +226,7 @@ export default function AdminCampaignsPage() {
               onExport={() => setExporting(selectedCampaign)}
             />
             <CampaignRequestsSection
+              periodStart={selectedCampaign.periodStart?.slice(0, 10) ?? null}
               requests={requests}
               isLoading={requestsLoading}
               error={requestsError}
@@ -234,6 +236,17 @@ export default function AdminCampaignsPage() {
               onFeedback={setFeedback}
             />
           </>
+        )}
+
+        {!isLoading && (
+          <CampaignHistory
+            currentId={selectedId}
+            refreshKey={campaigns.map((campaign) => `${campaign.id}:${campaign.status}:${campaign.updatedAt}`).join('|')}
+            onSelect={(campaign) => {
+              setSelectedId(campaign.id);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         )}
       </div>
 

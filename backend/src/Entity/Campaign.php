@@ -173,14 +173,43 @@ class Campaign
     }
 
     /**
-     * Le jour du créneau fait-il partie de la période couverte par la campagne ?
+     * Premier jour réservable ; sans période saisie, le 1er janvier de l’année qui suit l’ouverture.
+     */
+    public function getEffectivePeriodStart(): ?\DateTimeImmutable
+    {
+        return $this->periodStart ?? $this->defaultPeriodBound(1, 1);
+    }
+
+    /**
+     * Dernier jour réservable ; sans période saisie, le 31 décembre de l’année qui suit l’ouverture.
+     */
+    public function getEffectivePeriodEnd(): ?\DateTimeImmutable
+    {
+        return $this->periodEnd ?? $this->defaultPeriodBound(12, 31);
+    }
+
+    /**
+     * Le jour du créneau fait-il partie de la période réservable de la campagne ?
      */
     public function coversDay(\DateTimeImmutable $slot): bool
     {
+        $start = $this->getEffectivePeriodStart();
+        $end = $this->getEffectivePeriodEnd();
+        if (null === $start || null === $end) {
+            return false;
+        }
         $day = $slot->format('Y-m-d');
 
-        return (null === $this->periodStart || $day >= $this->periodStart->format('Y-m-d'))
-            && (null === $this->periodEnd || $day <= $this->periodEnd->format('Y-m-d'));
+        return $day >= $start->format('Y-m-d') && $day <= $end->format('Y-m-d');
+    }
+
+    private function defaultPeriodBound(int $month, int $day): ?\DateTimeImmutable
+    {
+        if (null === $this->openingAt) {
+            return null;
+        }
+
+        return (new \DateTimeImmutable('today'))->setDate((int) $this->openingAt->format('Y') + 1, $month, $day);
     }
 
     /**

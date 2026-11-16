@@ -11,6 +11,7 @@ export const campaignRequestStatusVariants = cva(
         accepted: 'bg-primary-soft text-primary',
         refused: 'bg-danger/10 text-danger',
         closed: 'bg-paper text-muted ring-1 ring-line',
+        conflict: 'bg-danger/10 text-danger',
       },
     },
     defaultVariants: {
@@ -34,14 +35,22 @@ export const ASSOCIATION_REQUEST_STATUS_LABELS: Record<CampaignRequestStatus, st
 
 interface CampaignRequestStatusBadgeProps {
   status: CampaignRequestStatus;
+  /** Demande en attente en concurrence avec une autre : affichée « En conflit ». */
+  conflict?: boolean;
   labels?: Record<CampaignRequestStatus, string>;
   className?: string;
 }
 
 export default function CampaignRequestStatusBadge({
   status,
+  conflict = false,
   labels = CAMPAIGN_REQUEST_STATUS_LABELS,
   className,
 }: CampaignRequestStatusBadgeProps) {
-  return <span className={cn(campaignRequestStatusVariants({ status }), className)}>{labels[status]}</span>;
+  const inConflict = conflict && status === 'pending';
+  return (
+    <span className={cn(campaignRequestStatusVariants({ status: inConflict ? 'conflict' : status }), className)}>
+      {inConflict ? 'En conflit' : labels[status]}
+    </span>
+  );
 }

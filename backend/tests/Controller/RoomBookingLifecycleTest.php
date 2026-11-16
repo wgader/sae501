@@ -168,6 +168,23 @@ final class RoomBookingLifecycleTest extends ControllerRouteTestCase
         self::assertCount(1, $this->response()['requests']);
     }
 
+    public function testHistoryListsCampaignsWithTheirTotals(): void
+    {
+        $campaign = $this->createCampaign(Campaign::STATUS_CLOSED, '-20 days', '-1 day');
+        $this->createReservation($campaign, 'Validée');
+        $this->createReservation($campaign, 'En attente de validation par la mairie', '+11 days');
+        $this->createReservation($campaign, 'Annulée', '+12 days');
+
+        $this->authenticate($this->member);
+        $this->client->request('GET', '/api/admin/campaign-history');
+        $this->assertResponseStatusCodeSame(403);
+
+        $this->authenticate($this->agent);
+        $this->client->request('GET', '/api/admin/campaign-history');
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([['id' => $campaign->getId(), 'totals' => ['requests' => 2, 'accepted' => 1, 'rooms' => 1]]]);
+    }
+
     private function createCampaign(string $status, string $opening, string $closing): Campaign
     {
         $now = new \DateTimeImmutable();

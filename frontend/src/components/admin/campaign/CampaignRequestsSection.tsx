@@ -22,6 +22,8 @@ interface Option {
 }
 
 interface CampaignRequestsSectionProps {
+  /** Premier jour réservable : semaine affichée par défaut sur le planning. */
+  periodStart: string | null;
   requests: CampaignRequest[];
   isLoading: boolean;
   error: string | null;
@@ -40,7 +42,7 @@ const VIEWS: { value: View; label: string }[] = [
   { value: 'list', label: 'Liste' },
 ];
 
-const viewTabVariants = cva('rounded-control px-4 py-2 text-meta font-bold uppercase tracking-label transition-colors cursor-pointer', {
+const viewTabVariants = cva('h-7 rounded-control px-4 text-meta font-bold uppercase tracking-label transition-colors cursor-pointer', {
   variants: {
     active: {
       true: 'bg-white text-primary shadow-xs',
@@ -53,6 +55,7 @@ const INITIAL_FILTERS: CampaignRequestFilterValues = { status: 'pending', salleI
 
 /** Suivi et décisions sur les demandes de salle de la campagne sélectionnée. */
 export default function CampaignRequestsSection({
+  periodStart,
   requests,
   isLoading,
   error,
@@ -105,6 +108,16 @@ export default function CampaignRequestsSection({
     setSlotDialog({ mode: 'reschedule', request });
   };
 
+  const notifyConflict = async (request: CampaignRequest) => {
+    setActionError(null);
+    try {
+      const notified = await actions.notifyConflict(request);
+      onFeedback(`${notified} associations prévenues : leurs demandes seront départagées en réunion.`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Les associations n’ont pas pu être prévenues.');
+    }
+  };
+
   const acceptSelected = async (request: CampaignRequest) => {
     await accept(request);
     setSelectedId(null);
@@ -133,7 +146,7 @@ export default function CampaignRequestsSection({
 
   return (
     <section aria-labelledby="campaign-requests-title" className="space-y-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 id="campaign-requests-title" className="text-lg font-black text-ink sm:text-xl">
             Demandes de salle
@@ -143,8 +156,8 @@ export default function CampaignRequestsSection({
             prévenue par e-mail et dans son espace.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div role="group" aria-label="Affichage des demandes" className="flex rounded-soft bg-paper p-1 ring-1 ring-line">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div role="group" aria-label="Affichage des demandes" className="flex h-9 items-center rounded-control bg-paper p-1 ring-1 ring-line">
             {VIEWS.map((option) => (
               <button
                 key={option.value}
@@ -185,8 +198,9 @@ export default function CampaignRequestsSection({
 
       {view === 'planning' && !error && (requests.length > 0 || !isLoading) && (
         <CampaignPlanning
-          key={requests[0]?.campaignId ?? 'empty'}
+          key={`${requests[0]?.campaignId ?? 'empty'}-${periodStart}`}
           requests={requests}
+          periodStart={periodStart}
           salles={salles}
           onSelect={(request) => setSelectedId(request.id)}
         />
@@ -206,6 +220,7 @@ export default function CampaignRequestsSection({
           onReschedule={openReschedule}
           onRefuse={openReason('refuse')}
           onCancel={openReason('cancel')}
+          onNotifyConflict={(request) => void notifyConflict(request)}
         />
       )}
 
@@ -224,6 +239,7 @@ export default function CampaignRequestsSection({
             onReschedule={openReschedule}
             onRefuse={openReason('refuse')}
             onCancel={openReason('cancel')}
+            onNotifyConflict={(request) => void notifyConflict(request)}
           />
         )}
       </Dialog>

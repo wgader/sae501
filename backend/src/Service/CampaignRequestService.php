@@ -101,7 +101,8 @@ final class CampaignRequestService
     }
 
     /**
-     * Ajoute directement un créneau accepté à une association, rattaché à la campagne.
+     * Ajoute un créneau pour une association, rattaché à la campagne et en attente comme les
+     * autres demandes : il peut chevaucher d’autres demandes, la réunion d’arbitrage tranche.
      */
     public function addSlot(
         Campaign $campaign,
@@ -123,7 +124,6 @@ final class CampaignRequestService
             throw new \InvalidArgumentException('Un créneau ne peut être attribué qu’à une association validée.');
         }
         $this->assertSlot($salle, $start, $end, null);
-        $this->assertNoConflict($salle, $start, $end, null);
 
         $reservation = (new ReservationSalle())
             ->setAssociation($association)
@@ -132,7 +132,7 @@ final class CampaignRequestService
             ->setMotifEvenement($motif)
             ->setDateDebut($start)
             ->setDateFin($end)
-            ->setStatut(self::STATUS_ACCEPTED)
+            ->setStatut(self::STATUS_PENDING)
             ->setCreatedAt(new \DateTimeImmutable());
         $this->entityManager->persist($reservation);
         // L’identifiant est nécessaire à l’historique.
@@ -141,10 +141,42 @@ final class CampaignRequestService
         return $this->record(
             $reservation,
             $agent,
-            'Créneau attribué par la mairie',
+            'Créneau proposé par la mairie',
             \sprintf('%s, le %s de %s à %s.', $salle->getNom(), $start->format('d/m/Y'), $start->format('H\hi'), $end->format('H\hi')),
             RoomReservationDecisionNotifier::DECISION_ADDED,
         );
+    }
+
+    /**
+     * Prévient chaque association concernée que sa demande est en concurrence avec d’autres sur
+     * le même créneau : elle sera départagée lors de la réunion d’arbitrage.
+     *
+     * @return list<ReservationSalle> demandes dont l’association a été prévenue
+     */
+    public function notifyConflict(ReservationSalle $reservation, User $agent): array
+    {
+        $campaign = $reservation->getCampaign();
+        $siblings = null === $campaign ? [] : $this->listRequests($campaign);
+        $ids = self::overlappingIds($reservation, $siblings);
+        if ([] === $ids || 'pending' !== self::statusKey($reservation->getStatut())) {
+            throw new \DomainException('Cette demande n’est en concurrence avec aucune autre demande en cours.');
+        }
+
+        $group = [$reservation, ...array_values(array_filter($siblings, static fn (ReservationSalle $r): bool => \in_array($r->getId(), $ids, true)))];
+        foreach ($group as $request) {
+            $this->entityManager->persist(new DemandeStatusHistory(
+                'salle',
+                (int) $request->getId(),
+                $request->getStatut(),
+                'Créneau demandé par plusieurs associations',
+                'La demande sera départagée lors de la réunion d’arbitrage.',
+                trim(($agent->getPrenom() ?? '').' '.($agent->getNom() ?? '')),
+            ));
+            $this->notifier->notify($request, RoomReservationDecisionNotifier::DECISION_CONFLICT);
+        }
+        $this->entityManager->flush();
+
+        return $group;
     }
 
     private function record(ReservationSalle $reservation, User $agent, string $title, string $comment, string $decision): ReservationSalle

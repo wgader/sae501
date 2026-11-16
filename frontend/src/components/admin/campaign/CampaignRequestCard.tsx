@@ -23,6 +23,8 @@ interface CampaignRequestCardProps {
   onReschedule?: (request: CampaignRequest) => void;
   onRefuse: (request: CampaignRequest) => void;
   onCancel: (request: CampaignRequest) => void;
+  /** Prévient les associations en concurrence (absent hors campagne). */
+  onNotifyConflict?: (request: CampaignRequest) => void;
   /** Sans cadre ni ombre, pour l'afficher dans une fenêtre. */
   flat?: boolean;
 }
@@ -34,6 +36,7 @@ export default function CampaignRequestCard({
   onReschedule,
   onRefuse,
   onCancel,
+  onNotifyConflict,
   flat = false,
 }: CampaignRequestCardProps) {
   const titleId = `campaign-request-${request.id}`;
@@ -52,7 +55,7 @@ export default function CampaignRequestCard({
           </h4>
           <p className="mt-0.5 text-body-sm text-muted">{request.motifEvenement}</p>
         </div>
-        <CampaignRequestStatusBadge status={request.status} />
+        <CampaignRequestStatusBadge status={request.status} conflict={hasCompetitors} />
       </header>
 
       <ul className="grid gap-2 text-body-sm text-ink sm:grid-cols-3">
@@ -82,7 +85,7 @@ export default function CampaignRequestCard({
           <IconWarning className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
           <span>
             Même salle, même créneau que : <strong>{competitors.join(', ')}</strong>. Une seule demande pourra être
-            acceptée.
+            acceptée : départagez-les en réunion, puis acceptez, déplacez ou refusez.
           </span>
         </p>
       )}
@@ -96,6 +99,11 @@ export default function CampaignRequestCard({
 
       {canDecide && (
         <footer className="flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end">
+          {hasCompetitors && request.status === 'pending' && onNotifyConflict && (
+            <Button variant="ghost" size="sm" onClick={() => onNotifyConflict(request)}>
+              Prévenir du conflit
+            </Button>
+          )}
           {canCancel && (
             <Button variant="ghost" size="sm" onClick={() => onCancel(request)}>
               Annuler la réservation
