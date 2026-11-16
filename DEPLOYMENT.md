@@ -203,6 +203,10 @@ Variables*) ne vaut pas `true`, un push sur `develop` ou `main` construit, analy
 images mais saute le déploiement, sans échec. La définir à `true` une fois le serveur mis en
 service et les secrets créés. « Run workflow » déploie dans tous les cas.
 
+Elle doit être créée dans **Repository variables**, pas dans un environnement : GitHub évalue la
+condition du job avant d’ouvrir l’environnement, une variable d’environnement n’y est donc pas
+visible et le déploiement serait sauté.
+
 ### Images GHCR
 
 Les paquets `sae501/backend` et `sae501/frontend` sont créés au premier push et restent privés

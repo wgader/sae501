@@ -15,8 +15,15 @@ FROM node:26-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 
-RUN addgroup --system --gid 1001 nodejs \
- && adduser  --system --uid 1001 nextjs
+# Le serveur standalone n’a besoin que de node : npm, npx, corepack et yarn sont retirés de
+# l’image finale (dépendances vulnérables signalées par Trivy, outils inutiles à un attaquant).
+# Correctifs de sécurité Alpine publiés après l’image de base (musl, zlib…).
+RUN apk upgrade --no-cache \
+ && addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nextjs \
+ && rm -rf /usr/local/lib/node_modules /opt/yarn-* \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static     ./.next/static
