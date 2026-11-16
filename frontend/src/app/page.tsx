@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
 import LandingPage from '@/components/landing/LandingPage';
 import ConnectedDashboard from '@/components/dashboard/ConnectedDashboard';
 
@@ -17,16 +18,33 @@ function getAuthSnapshot() {
   return Boolean(localStorage.getItem('token'));
 }
 
+// Compte mairie connecté sans session association : son accueil est le tableau de bord admin.
+function getAdminSnapshot() {
+  return Boolean(localStorage.getItem('admin_token')) && !localStorage.getItem('token');
+}
+
 function getServerAuthSnapshot() {
   return false;
 }
 
 export default function Home() {
+  const router = useRouter();
   const isConnected = useSyncExternalStore(
     subscribeAuth,
     getAuthSnapshot,
     getServerAuthSnapshot,
   );
+  const isAdminOnly = useSyncExternalStore(
+    subscribeAuth,
+    getAdminSnapshot,
+    getServerAuthSnapshot,
+  );
+
+  useEffect(() => {
+    if (isAdminOnly) {
+      router.replace('/admin/dashboard');
+    }
+  }, [isAdminOnly, router]);
 
   useEffect(() => {
     document.title = isConnected
