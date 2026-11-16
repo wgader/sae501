@@ -294,11 +294,33 @@ jobs:
           done
           exit $status
 
+      # Analyse statique du code (bearer.yml, exceptions justifiées dans bearer.ignore) :
+      # rapport complet, échec sur HIGH et CRITICAL.
+      - name: Bearer (SAST)
+        id: bearer
+        continue-on-error: true
+        run: |
+          bearer() {
+            docker run --rm -v "$PWD:/repo" -w /repo bearer/bearer:v1.51.1 scan /repo --quiet --config-file /repo/bearer.yml "$@"
+          }
+          bearer --format json --output /repo/security-reports/bearer.json --exit-code 0
+          bearer --severity critical,high --exit-code 1 > /dev/null
+
+      # Inventaire des composants (CycloneDX), conservé avec le rapport : non bloquant.
+      - name: Syft (SBOM)
+        id: syft
+        continue-on-error: true
+        run: >-
+          docker run --rm -v "$PWD:/repo" anchore/syft:v1.38.0 scan dir:/repo
+          --exclude "./frontend/sprint 2" --exclude ./backend/var --quiet
+          --output cyclonedx-json=/repo/security-reports/sbom.cdx.json
+
       - name: Build SECURITY-REPORT.md
         if: always()
         run: |
           python3 -I .github/scripts/security_report.py security-reports \
-            "${{ steps.gitleaks.outcome }}" "${{ steps.trivy.outcome }}" "${{ steps.hadolint.outcome }}" \
+            "gitleaks=${{ steps.gitleaks.outcome }}" "trivy=${{ steps.trivy.outcome }}" \
+            "hadolint=${{ steps.hadolint.outcome }}" "bearer=${{ steps.bearer.outcome }}" "syft=${{ steps.syft.outcome }}" \
             > security-reports/SECURITY-REPORT.md
           cat security-reports/SECURITY-REPORT.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -315,7 +337,8 @@ jobs:
         if: always()
         run: |
           failed=0
-          for outcome in "${{ steps.gitleaks.outcome }}" "${{ steps.trivy.outcome }}" "${{ steps.hadolint.outcome }}"; do
+          # Le SBOM est informatif : il ne bloque pas.
+          for outcome in "${{ steps.gitleaks.outcome }}" "${{ steps.trivy.outcome }}" "${{ steps.hadolint.outcome }}" "${{ steps.bearer.outcome }}"; do
             [ "$outcome" = "success" ] || failed=1
           done
           exit $failed

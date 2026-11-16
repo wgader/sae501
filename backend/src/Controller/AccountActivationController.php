@@ -130,7 +130,7 @@ final class AccountActivationController extends AbstractController
             );
         } catch (\Throwable $e) {
             $this->logger->error('account_activation: email de confirmation non envoyé', [
-                'user'      => $user->getEmail(),
+                'user'      => $user->getId(),
                 'exception' => $e->getMessage(),
             ]);
         }

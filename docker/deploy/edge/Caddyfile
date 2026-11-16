@@ -22,6 +22,7 @@ import /etc/caddy/proxy/guard.caddy
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		-Server
+		-X-Powered-By
 	}
 	log
 }

@@ -1,12 +1,18 @@
 import type { NextConfig } from "next";
 
+// Seules les images de l'API sont optimisées : un motif ouvert ferait de /_next/image un proxy
+// capable de télécharger n'importe quelle image d'Internet.
+const apiUrl = new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost');
+
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // N'annonce pas la technologie du serveur (en-tête X-Powered-By).
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: 'http', hostname: 'localhost' },
       { protocol: 'http', hostname: '127.0.0.1' },
-      { protocol: 'https', hostname: '**' },
+      { protocol: apiUrl.protocol === 'https:' ? 'https' : 'http', hostname: apiUrl.hostname },
     ],
   },
   async rewrites() {
