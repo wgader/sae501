@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\Association;
 use App\Entity\ReservationSalle;
 use App\Entity\User;
+use App\Exception\RoomBookingClosedException;
 use App\Exception\RoomReservationConflictException;
 use App\Service\RoomReservationService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -132,6 +133,11 @@ final class RoomReservationController extends AbstractController
                 self::serializeReservation($reservation),
                 Response::HTTP_CREATED,
             );
+        } catch (RoomBookingClosedException $exception) {
+            return $this->json([
+                'code' => 'ROOM_CAMPAIGN_CLOSED',
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_FORBIDDEN);
         } catch (RoomReservationConflictException $exception) {
             return $this->json([
                 'code' => 'ROOM_SLOT_CONFLICT',

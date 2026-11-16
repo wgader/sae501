@@ -10,6 +10,7 @@ use App\Entity\DocumentJustificatif;
 use App\Entity\ReservationSalle;
 use App\Entity\Salle;
 use App\Entity\User;
+use App\Exception\RoomBookingClosedException;
 use App\Exception\RoomReservationConflictException;
 use App\Message\SendRoomReservationNotificationMessage;
 use App\Repository\CampaignRepository;
@@ -30,6 +31,7 @@ final class RoomReservationService
         private readonly ReservationSalleRepository $reservationSalleRepository,
         private readonly MessageBusInterface $messageBus,
         private readonly CampaignRepository $campaignRepository,
+        private readonly CampaignService $campaignService,
     ) {
     }
 
@@ -46,12 +48,21 @@ final class RoomReservationService
         ?int $capaciteAttendue = null,
         ?UploadedFile $justificatif = null,
     ): ReservationSalle {
+        // Les associations ne déposent leurs demandes que pendant une campagne ouverte ;
+        // après la clôture, seule la mairie ajoute ou modifie des créneaux.
+        $this->campaignService->synchronize(new \DateTimeImmutable());
+        $campaign = $this->campaignRepository->findCurrent(new \DateTimeImmutable(), 'salle');
+        if (null === $campaign) {
+            throw new RoomBookingClosedException();
+        }
+
         $storedJustificatifPath = null;
 
         try {
             $reservation = $this->entityManager->wrapInTransaction(function () use (
                 $association,
                 $user,
+                $campaign,
                 $salleId,
                 $motif,
                 $dateDebut,
@@ -129,8 +140,8 @@ final class RoomReservationService
                 $reservation->setDateFin($dateFin);
                 $reservation->setCapaciteAttendue($capaciteAttendue);
                 $reservation->setStatut('En attente de validation par la mairie');
-                // Déposée pendant une campagne ouverte : la demande apparaît dans son suivi.
-                $reservation->setCampaign($this->campaignRepository->findCurrent(new \DateTimeImmutable(), 'salle'));
+                // Rattachée à la campagne ouverte : la demande apparaît dans son suivi.
+                $reservation->setCampaign($campaign);
                 $reservation->setCreatedAt(new \DateTimeImmutable());
 
                 $this->entityManager->persist($reservation);
