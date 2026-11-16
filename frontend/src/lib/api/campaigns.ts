@@ -1,4 +1,4 @@
-import { request, accountRequest, ApiError } from './client';
+import { request, accountRequest, ApiError, downloadPrivateDocument } from './client';
 import type {
   Campaign,
   CampaignCurrentResponse,
@@ -128,4 +128,30 @@ export function addCampaignSlot(campaignId: number, payload: AddCampaignSlotPayl
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export type CampaignPlanningView = 'complet' | 'general' | 'salle' | 'association';
+
+export interface CampaignPlanningExportOptions {
+  view: CampaignPlanningView;
+  /** Jours inclus au format AAAA-MM-JJ ; sans période, toute la campagne est exportée. */
+  from?: string;
+  to?: string;
+  includeRefused: boolean;
+}
+
+/** Télécharge le planning PDF des demandes de salle d'une campagne. */
+export function downloadCampaignPlanning(
+  campaign: Campaign,
+  { view, from, to, includeRefused }: CampaignPlanningExportOptions,
+): Promise<void> {
+  const params = new URLSearchParams({ view });
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  if (includeRefused) params.set('refused', '1');
+
+  return downloadPrivateDocument(
+    `/api/admin/campaigns/${campaign.id}/planning.pdf?${params.toString()}`,
+    `planning-salles-${campaign.seasonLabel.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${view}.pdf`,
+  );
 }

@@ -8,6 +8,7 @@ import { IconPlus } from '@/components/ui/icons';
 import CampaignSummary, { type CampaignRequestCounts } from '@/components/admin/campaign/CampaignSummary';
 import CampaignRequestsSection from '@/components/admin/campaign/CampaignRequestsSection';
 import CampaignScheduleDialog from '@/components/admin/campaign/CampaignScheduleDialog';
+import CampaignExportDialog from '@/components/admin/campaign/CampaignExportDialog';
 import CampaignStateDialog, { type CampaignStateAction } from '@/components/admin/campaign/CampaignStateDialog';
 import CreateCampaignDialog from '@/components/admin/campaign/CreateCampaignDialog';
 import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
@@ -15,14 +16,16 @@ import { useCampaignRequests } from '@/hooks/useCampaignRequests';
 import {
   closeCampaign,
   createCampaign,
+  downloadCampaignPlanning,
   getAdminCampaigns,
   openCampaign,
   rescheduleCampaign,
+  type CampaignPlanningExportOptions,
   type CreateCampaignPayload,
 } from '@/lib/api/campaigns';
 import { getSalles } from '@/lib/api/salles';
 import { getAssociations } from '@/lib/api/associations';
-import { formatInstantDate } from '@/lib/campaignDates';
+import { formatInstantDate, slotDate } from '@/lib/campaignDates';
 import type { Campaign, CampaignRequest } from '@/lib/api/types';
 
 interface Option {
@@ -38,6 +41,12 @@ function defaultCampaign(campaigns: Campaign[]): Campaign | null {
     campaigns[0] ??
     null
   );
+}
+
+/** Premier et dernier jour demandés, pour préremplir la période de l'export. */
+function requestedRange(requests: CampaignRequest[]): { from: string; to: string } | null {
+  const days = requests.map((request) => slotDate(request.dateDebut)).filter(Boolean).sort();
+  return days.length > 0 ? { from: days[0], to: days[days.length - 1] } : null;
 }
 
 function countRequests(requests: CampaignRequest[]): CampaignRequestCounts {
@@ -59,6 +68,7 @@ export default function AdminCampaignsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingDates, setEditingDates] = useState<Campaign | null>(null);
   const [stateAction, setStateAction] = useState<CampaignStateAction | null>(null);
+  const [exporting, setExporting] = useState<Campaign | null>(null);
 
   const selectedCampaign = campaigns.find((campaign) => campaign.id === selectedId) ?? null;
   const { requests, isLoading: requestsLoading, error: requestsError, actions } = useCampaignRequests(selectedId);
@@ -113,6 +123,11 @@ export default function AdminCampaignsPage() {
     replaceCampaign(updated);
     setEditingDates(null);
     setFeedback('Les dates de la campagne ont été mises à jour.');
+  };
+
+  const handleExport = async (campaign: Campaign, options: CampaignPlanningExportOptions) => {
+    await downloadCampaignPlanning(campaign, options);
+    setExporting(null);
   };
 
   return (
@@ -192,6 +207,7 @@ export default function AdminCampaignsPage() {
               onOpen={() => setStateAction('open')}
               onClose={() => setStateAction('close')}
               onEditDates={() => setEditingDates(selectedCampaign)}
+              onExport={() => setExporting(selectedCampaign)}
             />
             <CampaignRequestsSection
               requests={requests}
@@ -208,6 +224,12 @@ export default function AdminCampaignsPage() {
 
       <CreateCampaignDialog open={isCreating} onClose={() => setIsCreating(false)} onSubmit={handleCreate} />
       <CampaignScheduleDialog campaign={editingDates} onClose={() => setEditingDates(null)} onSubmit={handleSchedule} />
+      <CampaignExportDialog
+        campaign={exporting}
+        requestedRange={requestedRange(requests)}
+        onClose={() => setExporting(null)}
+        onExport={handleExport}
+      />
       <CampaignStateDialog
         campaign={stateAction ? selectedCampaign : null}
         action={stateAction}

@@ -1,5 +1,5 @@
 import Button from '@/components/ui/Button';
-import { IconClock, IconEdit } from '@/components/ui/icons';
+import { IconClock, IconDownload, IconEdit } from '@/components/ui/icons';
 import CampaignStatusBadge from '@/components/admin/campaign/CampaignStatusBadge';
 import { formatInstant } from '@/lib/campaignDates';
 import type { Campaign, CampaignRequestStatus } from '@/lib/api/types';
@@ -12,6 +12,7 @@ interface CampaignSummaryProps {
   onOpen: () => void;
   onClose: () => void;
   onEditDates: () => void;
+  onExport: () => void;
 }
 
 const COUNTERS: { key: CampaignRequestStatus; label: string }[] = [
@@ -21,7 +22,7 @@ const COUNTERS: { key: CampaignRequestStatus; label: string }[] = [
 ];
 
 /** En-tête de la campagne sélectionnée : statut, période, compteurs et actions. */
-export default function CampaignSummary({ campaign, counts, onOpen, onClose, onEditDates }: CampaignSummaryProps) {
+export default function CampaignSummary({ campaign, counts, onOpen, onClose, onEditDates, onExport }: CampaignSummaryProps) {
   const isOpen = campaign.status === 'ACTIVE';
   const isProgrammed = campaign.status === 'PROGRAMMED';
 
@@ -30,7 +31,7 @@ export default function CampaignSummary({ campaign, counts, onOpen, onClose, onE
       aria-labelledby="campaign-summary-title"
       className="rounded-card border border-line bg-white p-5 shadow-card sm:p-6"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <CampaignStatusBadge status={campaign.status} />
           <h2 id="campaign-summary-title" className="mt-3 text-xl font-black text-ink sm:text-2xl">
@@ -45,7 +46,10 @@ export default function CampaignSummary({ campaign, counts, onOpen, onClose, onE
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row lg:shrink-0">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:shrink-0">
+          <Button variant="secondary" size="sm" leftIcon={<IconDownload className="h-4 w-4" />} onClick={onExport}>
+            Planning PDF
+          </Button>
           <Button variant="secondary" size="sm" leftIcon={<IconEdit className="h-4 w-4" />} onClick={onEditDates}>
             Modifier les dates
           </Button>
