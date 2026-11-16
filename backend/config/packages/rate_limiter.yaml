@@ -17,3 +17,14 @@ framework:
             policy: 'fixed_window'
             limit: 5
             interval: '15 minutes'
+
+        # Connexion mairie : 5 échecs par compte et par IP, 25 par IP, sur 15 minutes
+        admin_login_account:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '15 minutes'
+
+        admin_login_ip:
+            policy: 'sliding_window'
+            limit: 25
+            interval: '15 minutes'

@@ -10,6 +10,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthenticationException;
 
 /**
  * Intercepte les événements d'authentification JWT.
@@ -103,6 +104,17 @@ class AuthenticationSubscriber implements EventSubscriberInterface
      */
     public function onAuthenticationFailure(AuthenticationFailureEvent $event): void
     {
+        // Trop d’échecs récents (login_throttling) : 429 explicite plutôt que « identifiants incorrects ».
+        if ($event->getException() instanceof TooManyLoginAttemptsAuthenticationException) {
+            $event->setResponse(new JsonResponse(
+                ['message' => 'Trop de tentatives de connexion. Réessayez dans 15 minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS,
+                ['Retry-After' => '900'],
+            ));
+
+            return;
+        }
+
         $event->setResponse(new JsonResponse(
             ['message' => 'Identifiants incorrects.'],
             Response::HTTP_UNAUTHORIZED

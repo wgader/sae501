@@ -30,6 +30,9 @@ abstract class ControllerRouteTestCase extends WebTestCase
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $this->jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
 
+        // Compteurs de tentatives (connexion, inscription…) remis à zéro : chaque test part d’un état neutre.
+        static::getContainer()->get('cache.rate_limiter')->clear();
+
         $schemaTool = new SchemaTool($this->em);
         $metadata = $this->em->getMetadataFactory()->getAllMetadata();
         $schemaTool->dropSchema($metadata);

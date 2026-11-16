@@ -722,7 +722,7 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - remplacer le stockage des JWT dans `localStorage` par des cookies `HttpOnly`, `Secure` et `SameSite` ;
 - activer une protection CSRF adaptée si l’authentification passe par cookie ;
 - ajouter une rotation de refresh tokens si les sessions longues sont nécessaires ;
-- limiter les tentatives de connexion et de réinitialisation de mot de passe côté serveur ;
+- ~~limiter les tentatives de connexion~~ (fait le 16/11/2026) ; reste la réinitialisation de mot de passe ;
 - rendre les tokens d’activation strictement mono-usage et plus courts ;
 - ajouter une politique CSP stricte et vérifier les en-têtes de sécurité ;
 - journaliser les connexions, déconnexions, échecs et changements de privilèges sans enregistrer de secrets ;
@@ -799,6 +799,9 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | Image frontend allégée | npm, npx, corepack et yarn retirés de l’image finale, `apk upgrade` : Trivy 0 HIGH/CRITICAL ; `.dockerignore` exclut `node_modules`, `.next` et les `.env.local` |
 | 16/11/2026 | Messenger en développement | `MESSENGER_TRANSPORT_DSN=sync://` : les notifications de réservation arrivent dans Mailpit sans worker |
 | 16/11/2026 | Deux environnements sur un VPS | Serveur saturé après 8 déploiements de production consécutifs : limites mémoire par service, MySQL allégé (`performance_schema` désactivé), 2 workers FrankenPHP, déploiements préproduction/production sérialisés (`deploy-vps`), fichier d’échange documenté |
+| 16/11/2026 | Ressource `reservation_salles` fermée | L’entité `ReservationSalle` était exposée par API Platform avec lecture, modification et suppression pour tout utilisateur connecté : exposition retirée (accès via les contrôleurs dédiés), subscriber mort supprimé |
+| 16/11/2026 | Limitation des connexions | `login_throttling` sur la connexion association, limiteurs dédiés sur la connexion mairie : 5 échecs par compte et par IP, 25 par IP, sur 15 minutes ; réponse 429 en français avec `Retry-After` |
+| 16/11/2026 | En-têtes du proxy d’entrée | `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'; base-uri 'self'; object-src 'none'`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` |
 | 15/11/2026 | Images publiques | `PublicImageStorage` partagé ; contenu réel vérifié pour le matériel ; 166 tests réussis |
 | 15/11/2026 | CI e2e et Brevo | Job Playwright avec pile complète (10 tests en 9,3 s) ; `MAILER_DSN` de test corrigé ; bridge Brevo et variables de production documentés |
 | 15/11/2026 | Tests d’upload | 51 tests ; fichiers orphelins et caractères de contrôle corrigés ; 149 tests réussis |

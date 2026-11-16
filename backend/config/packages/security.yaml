@@ -25,6 +25,11 @@ security:
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            # Contre le test massif de mots de passe : 5 échecs par compte et par IP sur 15 minutes
+            # (et 25 par IP tous comptes confondus) ; réponse 429 en français (LoginThrottlingListener).
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
 
         api:
             pattern: ^/api

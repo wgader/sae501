@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ReservationSalleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -10,14 +9,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Représente une réservation de salle municipale effectuée par une association.
+ *
+ * Volontairement absente d’API Platform : la ressource générée autorisait lecture, modification et
+ * suppression à tout utilisateur connecté. Les accès passent par les contrôleurs dédiés
+ * (/api/rooms/reservations, /api/admin/campaigns/{id}/requests…), qui vérifient les droits.
  */
 #[ORM\Entity(repositoryClass: ReservationSalleRepository::class)]
 #[ORM\Table(name: 'reservation_salle')]
-#[ApiResource(
-    security: "is_granted('ROLE_USER')",
-    paginationItemsPerPage: 20,
-    paginationMaximumItemsPerPage: 100,
-)]
 class ReservationSalle
 {
     public const STATUTS = [
