@@ -274,7 +274,7 @@ jobs:
           incoming="$DEPLOY_PATH/.incoming/$SERVER_ENV"
           # shellcheck disable=SC2029 # chemins validés plus haut, développés volontairement ici.
           tar -czf - docker-compose.prod.yml docker/deploy/deploy.sh docker/deploy/backup.sh \
-              docker/deploy/edge/compose.yml docker/deploy/edge/Caddyfile \
+              docker/deploy/edge/compose.yml docker/deploy/edge/Caddyfile docker/deploy/edge/cloudflare-ips.txt \
             | ssh deploy-target "rm -rf '$incoming' && mkdir -p '$incoming' && tar -xzf - -C '$incoming'"
 
       # Pull, sauvegarde, migrations Doctrine, up --wait (healthchecks), puis proxy d’entrée.

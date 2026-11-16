@@ -1,10 +1,16 @@
 {
 	# Adresse de contact Let’s Encrypt (expiration de certificat, incident).
 	email {$ACME_EMAIL}
+	# Proxys de confiance (plages Cloudflare si EDGE_CLOUDFLARE=1), générés par deploy.sh.
+	import /etc/caddy/proxy/global.caddy
 }
+
+# Définit (origin_guard), vide sauf derrière Cloudflare ; généré par deploy.sh.
+import /etc/caddy/proxy/guard.caddy
 
 # En-têtes communs à tous les sites publics.
 (common) {
+	import origin_guard
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"

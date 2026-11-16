@@ -377,20 +377,39 @@ Utiliser une adresse d’expéditeur distincte pour la préproduction (par exemp
 
 ## 8. Cloudflare (optionnel)
 
-Cloudflare peut se placer devant le VPS (WAF, limitation de débit, masquage de l’IP) :
+Cloudflare se place devant le VPS : WAF, limitation de débit, protection DDoS et masquage de l’IP.
+Le proxy d’entrée est prêt ; le passage se fait sans modifier le code.
 
-- enregistrements DNS en mode *Proxied* ; SSL/TLS en mode **Full (strict)** (Caddy conserve
-  des certificats valides) ;
-- pendant l’émission initiale des certificats, Let’s Encrypt doit joindre le port 80 : laisser les
-  enregistrements en *DNS only* le temps du premier déploiement, ou garder *Always Use HTTPS*
-  désactivé tant que le certificat n’est pas émis ;
-- n’autoriser ensuite les ports 80/443 que depuis les plages IP de Cloudflare dans UFW, sinon le
-  WAF peut être contourné en visant directement l’IP du VPS ;
-- l’IP réelle des visiteurs arrive dans `CF-Connecting-IP` : sans configuration supplémentaire
-  du proxy d’entrée (`trusted_proxies` Caddy limité aux plages Cloudflare), les limiteurs de
-  débit de l’API compteraient les requêtes par nœud Cloudflare. Cette adaptation est à faire si
-  Cloudflare est retenu.
-- la préproduction peut être réservée à l’équipe avec *Cloudflare Access*.
+1. **Compte et zone** : ajouter `wahelgader.fr` dans Cloudflare (offre gratuite), vérifier que les
+   enregistrements importés (A des quatre sous-domaines, MX et TXT de Brevo : SPF, DKIM, DMARC)
+   sont complets, puis remplacer chez OVH les serveurs DNS par ceux indiqués par Cloudflare.
+2. **DNS** : les quatre enregistrements A en mode *Proxied* (nuage orange) ; les enregistrements de
+   messagerie restent en *DNS only*.
+3. **SSL/TLS** : mode **Full (strict)** (Caddy garde ses certificats Let’s Encrypt valides),
+   *Always Use HTTPS* et TLS 1.2 minimum. Les certificats déjà émis se renouvellent sans
+   intervention : Let’s Encrypt passe par Cloudflare sur le port 80.
+4. **Activer le mode Cloudflare du proxy d’entrée** : sur le VPS, dans `edge/.env`, passer
+   `EDGE_CLOUDFLARE=1`, puis relancer un déploiement (ou `deploy.sh deploy` sur l’environnement
+   courant). Le proxy :
+   - lit l’IP du visiteur dans `CF-Connecting-IP`, uniquement si la connexion vient d’une plage
+     Cloudflare : les limiteurs de connexion et d’inscription de l’API comptent par visiteur ;
+   - refuse toute connexion directe à l’IP du VPS : le WAF ne peut pas être contourné.
+
+   Les plages sont lues dans `docker/deploy/edge/cloudflare-ips.txt` (à comparer de temps en temps
+   avec https://www.cloudflare.com/ips/). Pour revenir en arrière : `EDGE_CLOUDFLARE=0` et
+   redéploiement, **avant** de repasser les DNS en *DNS only*.
+5. **Sécurité** (Security → WAF) :
+   - activer les *Managed Rules* gratuites et le *Bot Fight Mode* ;
+   - règle de limitation de débit : `POST` sur `/api/auth/` (connexion, inscription,
+     réinitialisation), par exemple 20 requêtes par minute et par IP, action *Block* 10 minutes ;
+   - en préproduction, *Cloudflare Access* (Zero Trust, gratuit jusqu’à 50 utilisateurs) peut
+     réserver `dev-feytiat` et `api-dev-feytiat` à l’équipe.
+6. **Cache** : laisser le comportement par défaut. L’API et les documents privés répondent en
+   `Cache-Control: private, no-store` et ne sont jamais mis en cache par Cloudflare.
+
+Contrôle après bascule : `curl -sI https://feytiat.wahelgader.fr` affiche `server: cloudflare` et
+un en-tête `cf-ray` ; une requête directe sur l’IP du VPS
+(`curl -sk --resolve feytiat.wahelgader.fr:443:<IP> https://feytiat.wahelgader.fr`) est coupée.
 
 ## 9. Points d’attention
 
