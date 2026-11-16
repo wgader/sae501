@@ -44,11 +44,11 @@ class ReservationSalleRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->createQueryBuilder('r')
             ->andWhere('r.salle = :salle')
-            ->andWhere('r.statut != :refuse')
+            ->andWhere('r.statut NOT IN (:inactive)')
             ->andWhere('r.dateDebut < :end')
             ->andWhere('r.dateFin > :start')
             ->setParameter('salle', $salle)
-            ->setParameter('refuse', 'Refusée')
+            ->setParameter('inactive', ['Refusée', 'Annulée', 'Clôturée'])
             ->setParameter('start', $start)
             ->setParameter('end', $end)
             ->orderBy('r.dateDebut', 'ASC');
@@ -102,5 +102,22 @@ class ReservationSalleRepository extends ServiceEntityRepository
         \DateTimeImmutable $end,
     ): array {
         return $this->findOverlappingReservations($salle, $start, $end);
+    }
+
+    /**
+     * Réservations ponctuelles (hors campagne), les plus proches d’abord.
+     *
+     * @return list<ReservationSalle>
+     */
+    public function findOneOffRequests(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('salle', 'association')
+            ->join('r.salle', 'salle')
+            ->join('r.association', 'association')
+            ->andWhere('r.campaign IS NULL')
+            ->orderBy('r.dateDebut', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

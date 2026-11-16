@@ -75,6 +75,14 @@ class Campaign
     #[Assert\NotNull]
     private ?\DateTimeImmutable $closingAt = null;
 
+    /** Premier jour des créneaux réservables pendant la campagne (null : pas de borne). */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $periodStart = null;
+
+    /** Dernier jour des créneaux réservables pendant la campagne (null : pas de borne). */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $periodEnd = null;
+
     /**
      * @var list<string>
      */
@@ -138,6 +146,41 @@ class Campaign
         $this->closingAt = $closingAt;
 
         return $this;
+    }
+
+    public function getPeriodStart(): ?\DateTimeImmutable
+    {
+        return $this->periodStart;
+    }
+
+    public function setPeriodStart(?\DateTimeImmutable $periodStart): static
+    {
+        $this->periodStart = $periodStart?->setTime(0, 0);
+
+        return $this;
+    }
+
+    public function getPeriodEnd(): ?\DateTimeImmutable
+    {
+        return $this->periodEnd;
+    }
+
+    public function setPeriodEnd(?\DateTimeImmutable $periodEnd): static
+    {
+        $this->periodEnd = $periodEnd?->setTime(0, 0);
+
+        return $this;
+    }
+
+    /**
+     * Le jour du créneau fait-il partie de la période couverte par la campagne ?
+     */
+    public function coversDay(\DateTimeImmutable $slot): bool
+    {
+        $day = $slot->format('Y-m-d');
+
+        return (null === $this->periodStart || $day >= $this->periodStart->format('Y-m-d'))
+            && (null === $this->periodEnd || $day <= $this->periodEnd->format('Y-m-d'));
     }
 
     /**
@@ -209,6 +252,11 @@ class Campaign
         if (null !== $this->openingAt && null !== $this->closingAt && $this->closingAt <= $this->openingAt) {
             $context->buildViolation('La clôture doit être postérieure à l’ouverture.')
                 ->atPath('closingAt')
+                ->addViolation();
+        }
+        if (null !== $this->periodStart && null !== $this->periodEnd && $this->periodEnd < $this->periodStart) {
+            $context->buildViolation('La fin de la période réservable doit suivre son début.')
+                ->atPath('periodEnd')
                 ->addViolation();
         }
     }

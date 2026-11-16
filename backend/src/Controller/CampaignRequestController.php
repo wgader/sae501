@@ -10,6 +10,7 @@ use App\Entity\ReservationSalle;
 use App\Entity\Salle;
 use App\Entity\User;
 use App\Exception\RoomReservationConflictException;
+use App\Service\AssociationRequestCancellationService;
 use App\Service\CampaignPlanningExporter;
 use App\Service\CampaignRequestService;
 use App\Service\CampaignService;
@@ -31,13 +32,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')"))]
 final class CampaignRequestController extends AbstractController
 {
-    private const SLOT_FORMAT = 'Y-m-d\\TH:i:s';
-
     public function __construct(
         private readonly CampaignRequestService $requestService,
         private readonly CampaignService $campaignService,
         private readonly EntityManagerInterface $entityManager,
         private readonly CampaignPlanningExporter $planningExporter,
+        private readonly AssociationRequestCancellationService $cancellationService,
     ) {
     }
 
@@ -80,6 +80,8 @@ final class CampaignRequestController extends AbstractController
             $campaign,
             $this->dateField($payload, 'openingAt'),
             $this->dateField($payload, 'closingAt'),
+            $this->optionalDay($payload, 'periodStart'),
+            $this->optionalDay($payload, 'periodEnd'),
         )));
     }
 
@@ -91,7 +93,7 @@ final class CampaignRequestController extends AbstractController
         return $this->json([
             'campaign' => CampaignController::serializeCampaign($campaign),
             'requests' => array_map(
-                fn (ReservationSalle $reservation): array => $this->serializeRequest($reservation, $requests),
+                static fn (ReservationSalle $reservation): array => CampaignRequestService::serialize($reservation, $requests),
                 $requests,
             ),
         ]);
@@ -102,7 +104,7 @@ final class CampaignRequestController extends AbstractController
     {
         $payload = $this->payload($request);
 
-        return $this->handle(fn (): array => $this->serializeRequest($this->requestService->addSlot(
+        return $this->handle(fn (): array => CampaignRequestService::serialize($this->requestService->addSlot(
             $campaign,
             $this->agent(),
             $this->findOr404(Association::class, $payload['associationId'] ?? null, 'Association introuvable.'),
@@ -118,7 +120,7 @@ final class CampaignRequestController extends AbstractController
     {
         $reservation = $this->findRequest($campaign, $requestId);
 
-        return $this->handle(fn (): array => $this->serializeRequest($this->requestService->accept($reservation, $this->agent())));
+        return $this->handle(fn (): array => CampaignRequestService::serialize($this->requestService->accept($reservation, $this->agent())));
     }
 
     #[Route('/requests/{requestId<\d+>}/refuse', name: 'admin_campaign_request_refuse', methods: ['POST'])]
@@ -127,8 +129,19 @@ final class CampaignRequestController extends AbstractController
         $reservation = $this->findRequest($campaign, $requestId);
         $reason = $this->payload($request)['reason'] ?? null;
 
-        return $this->handle(fn (): array => $this->serializeRequest(
+        return $this->handle(fn (): array => CampaignRequestService::serialize(
             $this->requestService->refuse($reservation, $this->agent(), \is_string($reason) ? $reason : null),
+        ));
+    }
+
+    #[Route('/requests/{requestId<\d+>}/cancel', name: 'admin_campaign_request_cancel', methods: ['POST'])]
+    public function cancel(Campaign $campaign, int $requestId, Request $request): JsonResponse
+    {
+        $reservation = $this->findRequest($campaign, $requestId);
+        $reason = $this->payload($request)['reason'] ?? null;
+
+        return $this->handle(fn (): array => CampaignRequestService::serialize(
+            $this->cancellationService->cancelByTownHall($reservation, $this->agent(), \is_string($reason) ? $reason : null),
         ));
     }
 
@@ -139,7 +152,7 @@ final class CampaignRequestController extends AbstractController
         $payload = $this->payload($request);
         $reason = $payload['reason'] ?? null;
 
-        return $this->handle(fn (): array => $this->serializeRequest($this->requestService->reschedule(
+        return $this->handle(fn (): array => CampaignRequestService::serialize($this->requestService->reschedule(
             $reservation,
             $this->agent(),
             $this->findOr404(Salle::class, $payload['salleId'] ?? null, 'Salle introuvable.'),
@@ -196,6 +209,23 @@ final class CampaignRequestController extends AbstractController
         } catch (\Exception) {
             throw new \InvalidArgumentException(\sprintf('Le champ « %s » n’est pas une date valide.', $field));
         }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function optionalDay(array $payload, string $field): ?\DateTimeImmutable
+    {
+        $value = $payload[$field] ?? null;
+        if (null === $value || '' === $value) {
+            return null;
+        }
+        $day = \is_string($value) ? \DateTimeImmutable::createFromFormat('!Y-m-d', $value) : false;
+        if (false === $day || $day->format('Y-m-d') !== $value) {
+            throw new \InvalidArgumentException(\sprintf('Le champ « %s » doit être une date au format AAAA-MM-JJ.', $field));
+        }
+
+        return $day;
     }
 
     private function dayParameter(Request $request, string $name): ?\DateTimeImmutable
@@ -264,33 +294,5 @@ final class CampaignRequestController extends AbstractController
     private function createBadRequest(): \Symfony\Component\HttpKernel\Exception\BadRequestHttpException
     {
         return new \Symfony\Component\HttpKernel\Exception\BadRequestHttpException('Le corps de la requête est invalide.');
-    }
-
-    /**
-     * @param list<ReservationSalle> $siblings demandes de la campagne, pour signaler les chevauchements
-     *
-     * @return array<string, mixed>
-     */
-    private function serializeRequest(ReservationSalle $reservation, array $siblings = []): array
-    {
-        $association = $reservation->getAssociation();
-        $salle = $reservation->getSalle();
-
-        return [
-            'id' => $reservation->getId(),
-            'status' => CampaignRequestService::statusKey($reservation->getStatut()),
-            'statusLabel' => $reservation->getStatut(),
-            'association' => ['id' => $association?->getId(), 'nom' => $association?->getNom()],
-            'salle' => ['id' => $salle?->getId(), 'nom' => $salle?->getNom(), 'capaciteMax' => $salle?->getCapaciteMax()],
-            'motifEvenement' => $reservation->getMotifEvenement(),
-            'capaciteAttendue' => $reservation->getCapaciteAttendue(),
-            // Heures locales, sans décalage : voir slotField().
-            'dateDebut' => $reservation->getDateDebut()?->format(self::SLOT_FORMAT),
-            'dateFin' => $reservation->getDateFin()?->format(self::SLOT_FORMAT),
-            'decisionComment' => $reservation->getDecisionComment(),
-            'createdAt' => $reservation->getCreatedAt()?->format(\DateTimeInterface::ATOM),
-            'updatedAt' => $reservation->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
-            'conflictsWith' => CampaignRequestService::overlappingIds($reservation, $siblings),
-        ];
     }
 }

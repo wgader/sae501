@@ -9,6 +9,7 @@ use App\Service\CampaignService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -41,6 +42,25 @@ final class CampaignController extends AbstractController
         }
     }
 
+    #[Route('/api/admin/campaigns/{id}/reopen', name: 'admin_campaign_reopen', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function reopen(Campaign $campaign, Request $request): JsonResponse
+    {
+        $payload = json_decode($request->getContent() ?: '{}', true);
+        $value = \is_array($payload) ? ($payload['closingAt'] ?? null) : null;
+
+        try {
+            $closingAt = \is_string($value) && '' !== $value ? new \DateTimeImmutable($value) : null;
+
+            return $this->json(self::serializeCampaign($this->campaignService->reopen($campaign, $closingAt)));
+        } catch (\DomainException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_CONFLICT);
+        } catch (\InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (\Exception) {
+            return $this->json(['message' => 'La date de clôture est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -51,6 +71,8 @@ final class CampaignController extends AbstractController
             'seasonLabel' => $campaign->getSeasonLabel(),
             'openingAt' => $campaign->getOpeningAt()?->format(\DateTimeInterface::ATOM),
             'closingAt' => $campaign->getClosingAt()?->format(\DateTimeInterface::ATOM),
+            'periodStart' => $campaign->getPeriodStart()?->format('Y-m-d'),
+            'periodEnd' => $campaign->getPeriodEnd()?->format('Y-m-d'),
             'resourceTypes' => $campaign->getResourceTypes(),
             'status' => $campaign->getStatus(),
             'statusLabel' => $campaign->getStatusLabel(),
