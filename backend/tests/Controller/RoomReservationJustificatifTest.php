@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Association;
+use App\Entity\Campaign;
 use App\Entity\DocumentJustificatif;
 use App\Entity\ReservationSalle;
 use App\Entity\Salle;
@@ -88,7 +89,14 @@ final class RoomReservationJustificatifTest extends ControllerRouteTestCase
             ->setUpdatedAt(new \DateTimeImmutable());
         $this->em->persist($association);
         $this->em->persist($user);
+        $campaign = (new Campaign())
+            ->setSeasonLabel('Saison test')
+            ->setOpeningAt(new \DateTimeImmutable('-1 day'))
+            ->setClosingAt(new \DateTimeImmutable('+30 days'))
+            ->setResourceTypes(['salle'])
+            ->setStatus(Campaign::STATUS_ACTIVE);
         $this->em->persist($salle);
+        $this->em->persist($campaign);
         $this->em->flush();
         $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$this->jwtManager->create($user));
 

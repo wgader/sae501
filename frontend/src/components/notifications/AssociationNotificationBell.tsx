@@ -13,6 +13,9 @@ function notificationHref(notification: AssociationNotification): string {
   if (notification.type === 'EVENT_FILES_REQUESTED') {
     return `/historique/event-${notification.event_id}/pieces-annexes?type=evenement`;
   }
+  if (notification.type === 'SALLE_RESERVATION_DECISION') {
+    return `/historique/sal-${notification.event_id}?type=salle`;
+  }
   if (notification.type === 'SALLE_DOCUMENTS_REQUESTED') {
     return `/historique/${notification.event_id}/pieces-annexes?type=salle`;
   }

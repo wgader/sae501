@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Association;
+use App\Entity\Campaign;
 use App\Entity\ReservationSalle;
 use App\Entity\Salle;
 use App\Entity\User;
@@ -19,6 +20,7 @@ final class RoomReservationControllerTest extends WebTestCase
     private KernelBrowser $client;
     private EntityManagerInterface $em;
     private JWTTokenManagerInterface $jwtManager;
+    private Campaign $campaign;
 
     protected function setUp(): void
     {
@@ -30,6 +32,23 @@ final class RoomReservationControllerTest extends WebTestCase
         $metadata = $this->em->getMetadataFactory()->getAllMetadata();
         $schemaTool->dropSchema($metadata);
         $schemaTool->createSchema($metadata);
+
+        $this->campaign = $this->createCampaign(Campaign::STATUS_ACTIVE, '-1 day', '+30 days');
+    }
+
+    private function createCampaign(string $status, string $opening, string $closing): Campaign
+    {
+        $now = new \DateTimeImmutable();
+        $campaign = (new Campaign())
+            ->setSeasonLabel('Saison test')
+            ->setOpeningAt($now->modify($opening))
+            ->setClosingAt($now->modify($closing))
+            ->setResourceTypes(['salle'])
+            ->setStatus($status);
+        $this->em->persist($campaign);
+        $this->em->flush();
+
+        return $campaign;
     }
 
     private function createAssociationAndUser(string $nomAsso, bool $moduleSalleActif = true): array
@@ -254,5 +273,61 @@ final class RoomReservationControllerTest extends WebTestCase
         $this->assertSame('ROOM_SLOT_CONFLICT', $data['code']);
         $this->assertNotEmpty($data['conflicts']);
     }
-}
 
+    public function testCreateReservationIsAttachedToTheOpenCampaign(): void
+    {
+        [$user] = $this->createAssociationAndUser('Club Photo');
+        $salle = $this->createSalle('Salle Photo');
+
+        $this->requestWithAuth($user, 'POST', '/api/rooms/reservations', [
+            'salleId' => $salle->getId(),
+            'motifEvenement' => 'Exposition',
+            'dateDebut' => '2026-12-24T10:00:00+01:00',
+            'dateFin' => '2026-12-24T12:00:00+01:00',
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $reservation = $this->em->getRepository(ReservationSalle::class)->findOneBy(['motifEvenement' => 'Exposition']);
+        $this->assertSame($this->campaign->getId(), $reservation?->getCampaign()?->getId());
+    }
+
+    public function testCreateReservationIsRefusedOnceTheCampaignIsClosed(): void
+    {
+        $this->campaign->setStatus(Campaign::STATUS_CLOSED)->setClosingAt(new \DateTimeImmutable('-1 hour'));
+        $this->em->flush();
+        $this->assertReservationRefusedWhileClosed();
+    }
+
+    public function testCreateReservationIsRefusedWhenTheCampaignEndedButIsStillMarkedOpen(): void
+    {
+        // La date de clôture est passée : la synchronisation ferme la campagne avant la vérification.
+        $this->campaign->setClosingAt(new \DateTimeImmutable('-1 minute'));
+        $this->em->flush();
+        $this->assertReservationRefusedWhileClosed();
+    }
+
+    public function testCreateReservationIsRefusedBeforeTheCampaignOpens(): void
+    {
+        $this->em->remove($this->campaign);
+        $this->createCampaign(Campaign::STATUS_PROGRAMMED, '+2 days', '+30 days');
+        $this->assertReservationRefusedWhileClosed();
+    }
+
+    private function assertReservationRefusedWhileClosed(): void
+    {
+        [$user] = $this->createAssociationAndUser('Club Tardif');
+        $salle = $this->createSalle('Salle Tardive');
+
+        $this->requestWithAuth($user, 'POST', '/api/rooms/reservations', [
+            'salleId' => $salle->getId(),
+            'motifEvenement' => 'Demande hors campagne',
+            'dateDebut' => '2026-12-26T10:00:00+01:00',
+            'dateFin' => '2026-12-26T12:00:00+01:00',
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertSame('ROOM_CAMPAIGN_CLOSED', $data['code']);
+        $this->assertSame(0, $this->em->getRepository(ReservationSalle::class)->count([]));
+    }
+}

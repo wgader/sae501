@@ -64,6 +64,16 @@ class ReservationSalle
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observations = null;
 
+    /** Campagne annuelle pendant laquelle la demande a été déposée ou ajoutée par la mairie. */
+    #[ORM\ManyToOne(targetEntity: Campaign::class)]
+    #[ORM\JoinColumn(name: 'campaign_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?Campaign $campaign = null;
+
+    /** Motif communiqué à l’association lors d’un refus ou d’une modification par la mairie. */
+    #[ORM\Column(name: 'decision_comment', type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 1000)]
+    private ?string $decisionComment = null;
+
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -197,6 +207,31 @@ class ReservationSalle
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function getCampaign(): ?Campaign
+    {
+        return $this->campaign;
+    }
+
+    public function setCampaign(?Campaign $campaign): static
+    {
+        $this->campaign = $campaign;
+
+        return $this;
+    }
+
+    public function getDecisionComment(): ?string
+    {
+        return $this->decisionComment;
+    }
+
+    public function setDecisionComment(?string $decisionComment): static
+    {
+        $decisionComment = null === $decisionComment ? null : trim($decisionComment);
+        $this->decisionComment = '' === $decisionComment ? null : $decisionComment;
 
         return $this;
     }

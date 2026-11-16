@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import RoomBookingDetailView from '@/components/rooms/RoomBookingDetailView';
 import RoomCatalogCard from '@/components/rooms/RoomCatalogCard';
 import RoomSlotModal from '@/components/rooms/RoomSlotModal';
+import RoomCampaignNotice from '@/components/rooms/RoomCampaignNotice';
+import { getCurrentCampaign } from '@/lib/api/campaigns';
+import type { CampaignCurrentResponse } from '@/lib/api/types';
 import {
   OccupiedSlot,
   PublicRoom,
@@ -45,6 +48,29 @@ export default function SallesPage() {
   // Salle sélectionnée pour la réservation finale
   const [chosenRoom, setChosenRoom] = useState<PublicRoom | null>(null);
   const [occupiedSlots, setOccupiedSlots] = useState<OccupiedSlot[]>([]);
+
+  // Campagne annuelle : les demandes ne sont possibles que lorsqu'elle est ouverte
+  const [campaignState, setCampaignState] = useState<CampaignCurrentResponse | null>(null);
+  const bookingOpen = campaignState?.active === true;
+
+  useEffect(() => {
+    let active = true;
+    getCurrentCampaign()
+      .then((state) => {
+        if (active) setCampaignState(state);
+      })
+      .catch(() => {
+        if (active) setCampaignState({ active: false, campaign: null });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const openSlotPicker = () => {
+    if (bookingOpen) setIsModalOpen(true);
+  };
 
   // Filtre de recherche par équipement / texte
   const [searchFilter, setSearchFilter] = useState('');
@@ -212,20 +238,24 @@ export default function SallesPage() {
               </p>
             </header>
 
+            {campaignState && <RoomCampaignNotice state={campaignState} />}
+
             {/* Barre de recherche du créneau */}
             <div className="space-y-4">
               <div className="relative">
                 <input
                   type="text"
                   readOnly
+                  disabled={!bookingOpen}
                   placeholder="Veuillez sélectionner un créneau pour commencer"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={openSlotPicker}
                   className="w-full cursor-pointer rounded-full border border-line bg-paper/60 px-6 py-4 pr-14 text-sm font-medium text-ink placeholder:text-muted/70 shadow-xs outline-none transition-all hover:border-primary focus:border-primary"
                 />
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="absolute inset-y-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink transition-colors hover:bg-primary-soft hover:text-primary cursor-pointer"
+                  onClick={openSlotPicker}
+                  disabled={!bookingOpen}
+                  className="absolute inset-y-2 right-2 disabled:cursor-not-allowed disabled:opacity-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink transition-colors hover:bg-primary-soft hover:text-primary cursor-pointer"
                   aria-label="Ouvrir le calendrier pour sélectionner un créneau"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -239,7 +269,7 @@ export default function SallesPage() {
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={openSlotPicker}
                   className="flex items-center gap-2 text-muted hover:text-ink cursor-pointer transition-colors"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -268,8 +298,9 @@ export default function SallesPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="mt-6 rounded-lg bg-primary px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-primary-hover cursor-pointer"
+                onClick={openSlotPicker}
+                disabled={!bookingOpen}
+                className="mt-6 rounded-lg bg-primary disabled:cursor-not-allowed disabled:opacity-50 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-primary-hover cursor-pointer"
               >
                 Choisir un créneau →
               </button>
