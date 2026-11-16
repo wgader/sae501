@@ -199,6 +199,12 @@ EOF
   chmod 0644 "$site_file.tmp"
   mv "$site_file.tmp" "$site_file"
   edge_compose up --detach --wait --wait-timeout 60
+  # Le Caddyfile est monté comme fichier unique : install(1) le remplace par un nouvel inode que le
+  # conteneur ne voit pas. S'il diffère de celui chargé, on recrée le proxy pour monter le nouveau.
+  if ! edge_compose exec -T caddy cat /etc/caddy/Caddyfile | cmp -s - "$BASE_DIR/edge/Caddyfile"; then
+    log "Caddyfile modifié : recréation du proxy d’entrée"
+    edge_compose up --detach --wait --wait-timeout 60 --force-recreate
+  fi
   # Le rechargement valide d’abord la configuration ; en cas d’erreur, l’ancienne reste active.
   edge_compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 }
