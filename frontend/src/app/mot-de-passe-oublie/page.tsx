@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
               </Link>
             </div>
           ) : (
-            <form className="flex flex-col gap-5" noValidate onSubmit={handleSubmit}>
+            <form method="post" className="flex flex-col gap-5" noValidate onSubmit={handleSubmit}>
               <FormField
                 label="Votre adresse électronique"
                 type="email"

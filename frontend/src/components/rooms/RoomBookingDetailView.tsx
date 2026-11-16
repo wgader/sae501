@@ -344,7 +344,7 @@ export default function RoomBookingDetailView({
           </div>
 
           {/* Form fields for Motif and Justificatif */}
-          <form id="room-reservation-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
+          <form method="post" id="room-reservation-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
             {/* Scénario 3 : Conflit simultané */}
             {conflictError && (
               <Notice

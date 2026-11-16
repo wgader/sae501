@@ -109,7 +109,7 @@ export default function CampaignExportDialog({ campaign, requestedRange, onClose
         </>
       }
     >
-      <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-6">
+      <form method="post" id={formId} onSubmit={handleSubmit} noValidate className="space-y-6">
         <fieldset>
           <legend className={fieldLabelVariants()}>Contenu</legend>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">

@@ -86,7 +86,7 @@ export default function LoginPage() {
             </p>
           </header>
 
-          <form
+          <form method="post"
             className="flex flex-col gap-5"
             noValidate
             onSubmit={handleSubmit}

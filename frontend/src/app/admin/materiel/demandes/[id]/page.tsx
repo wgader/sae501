@@ -192,7 +192,7 @@ export default function AdminEquipmentReservationDetailPage() {
                       {showDocumentsRequest ? 'Fermer la demande' : 'Demander des pièces annexes'}
                     </button>
                     {showDocumentsRequest && (
-                      <form onSubmit={handleRequestDocuments} className="mt-4 space-y-4 rounded-control border border-accent bg-white p-4">
+                      <form method="post" onSubmit={handleRequestDocuments} className="mt-4 space-y-4 rounded-control border border-accent bg-white p-4">
                         <div>
                           <label htmlFor="missing-equipment-file" className="text-label font-bold uppercase tracking-label text-muted">Pièce attendue</label>
                           <input id="missing-equipment-file" value={missingFile} onChange={(event) => setMissingFile(event.target.value)} maxLength={150} placeholder="Ex. attestation d’assurance" className="mt-2 w-full rounded-control border border-line bg-paper px-3 py-3 text-sm text-ink focus:border-primary focus:outline-none" />

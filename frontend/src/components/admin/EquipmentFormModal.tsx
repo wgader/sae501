@@ -126,7 +126,7 @@ export default function EquipmentFormModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form method="post" onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
             <label htmlFor="equipment-designation" className="block text-xs font-bold uppercase tracking-wider text-muted">
               Désignation <span className="text-danger">*</span>

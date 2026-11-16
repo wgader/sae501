@@ -53,7 +53,7 @@ export default function RenameDocumentModal({
           </h2>
         </header>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <form method="post" onSubmit={handleSubmit} className="mt-5 space-y-4">
           {error && (
             <p className="rounded-control border border-danger/30 bg-rose-50/70 p-3 text-xs font-semibold text-danger">
               {error}
