@@ -243,6 +243,21 @@ choisir la référence et l’environnement, laisser `image_tag` vide.
 /srv/sae501/bin/deploy.sh status prod
 ```
 
+### Premier compte administrateur
+
+Les fixtures ne sont jamais chargées sur le serveur : après le premier déploiement, la base ne
+contient aucun compte. Créer l’administrateur de la mairie depuis le serveur, en tant que
+`deploy` (remplacer `preprod` par `prod` pour la production) :
+
+```bash
+docker exec -it sae501-preprod-backend-1 php bin/console app:create-admin adresse@domaine.fr --prenom=Prénom --nom=Nom
+```
+
+Le mot de passe (12 caractères minimum, avec majuscule, minuscule et chiffre) est demandé deux fois,
+masqué : il n’apparaît ni dans l’historique du shell, ni dans les logs. La commande refuse une
+adresse déjà utilisée et le mode non interactif. Les autres comptes (agents, associations) se
+créent ensuite depuis l’application.
+
 ## 5. Retour arrière
 
 **Automatique** : si la nouvelle version ne devient pas saine, `deploy.sh` redémarre aussitôt les
