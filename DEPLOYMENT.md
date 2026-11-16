@@ -411,6 +411,20 @@ Contrôle après bascule : `curl -sI https://feytiat.wahelgader.fr` affiche `ser
 un en-tête `cf-ray` ; une requête directe sur l’IP du VPS
 (`curl -sk --resolve feytiat.wahelgader.fr:443:<IP> https://feytiat.wahelgader.fr`) est coupée.
 
+## 8 bis. Antivirus des fichiers déposés (facultatif)
+
+Les pièces justificatives, fichiers d’événement et images peuvent être analysés par ClamAV avant
+d’être enregistrés. Le service demande environ 1 Go de mémoire : à n’activer que si le VPS le
+permet (`free -h`).
+
+1. Dans le `.env` de l’environnement : `COMPOSE_PROFILES=antivirus` et
+   `CLAMAV_DSN=tcp://clamav:3310`.
+2. Redéployer. Au premier démarrage, ClamAV télécharge ses signatures (quelques minutes) : pendant
+   ce temps, un dépôt est refusé avec « réessayez plus tard », jamais enregistré sans analyse.
+3. Un fichier infecté est refusé (422) et signalé dans les journaux (`antivirus: fichier refusé`).
+
+Pour désactiver : retirer les deux lignes et redéployer.
+
 ## 9. Points d’attention
 
 - Le groupe `docker` donne un accès équivalent à root : la clé `deploy` ne sert qu’à la CD et ne

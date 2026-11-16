@@ -22,6 +22,7 @@ final class SecureEventFileStorage
     public function __construct(
         #[Autowire('%app.event_upload_directory%')]
         private readonly string $uploadDirectory,
+        private readonly ?AntivirusScanner $antivirus = null,
     ) {
     }
 
@@ -78,6 +79,8 @@ final class SecureEventFileStorage
         }
 
         $storedName = bin2hex(random_bytes(16)).'.'.$extension;
+        // Analyse avant tout enregistrement : un fichier infecté n’arrive jamais sur le disque.
+        $this->antivirus?->assertClean($file->getPathname());
         $file->move($directory, $storedName);
 
         return [

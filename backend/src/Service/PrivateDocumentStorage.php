@@ -22,6 +22,7 @@ final class PrivateDocumentStorage
     public function __construct(
         #[Autowire('%app.private_document_directory%')]
         private readonly string $uploadDirectory,
+        private readonly ?AntivirusScanner $antivirus = null,
     ) {
     }
 
@@ -69,6 +70,8 @@ final class PrivateDocumentStorage
 
         $extension = self::ALLOWED_TYPES[$mimeType];
         $storedName = bin2hex(random_bytes(24)).'.'.$extension;
+        // Analyse avant tout enregistrement : un fichier infecté n’arrive jamais sur le disque.
+        $this->antivirus?->assertClean($file->getPathname());
         $file->move($directory, $storedName);
 
         return [
