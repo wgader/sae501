@@ -416,6 +416,32 @@ export type Campaign = {
   updatedAt: string;
 };
 
+export type CampaignRequestStatus = 'pending' | 'accepted' | 'refused' | 'closed';
+
+/** Demande de salle d'une campagne, telle que renvoyée par /api/admin/campaigns/{id}/requests. */
+export type CampaignRequest = {
+  id: number;
+  status: CampaignRequestStatus;
+  statusLabel: string;
+  association: { id: number | null; nom: string | null };
+  salle: { id: number | null; nom: string | null; capaciteMax: number | null };
+  motifEvenement: string | null;
+  capaciteAttendue: number | null;
+  /** Heure locale sans décalage, par exemple 2027-06-01T18:00:00. */
+  dateDebut: string | null;
+  dateFin: string | null;
+  decisionComment: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  /** Identifiants des demandes de la campagne qui se chevauchent sur la même salle. */
+  conflictsWith: number[];
+};
+
+export type CampaignRequestsResponse = {
+  campaign: Campaign;
+  requests: CampaignRequest[];
+};
+
 export type CampaignCurrentResponse = {
   active: boolean;
   campaign: Campaign | null;

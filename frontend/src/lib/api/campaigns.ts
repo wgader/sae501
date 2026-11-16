@@ -1,5 +1,10 @@
 import { request, accountRequest, ApiError } from './client';
-import type { Campaign, CampaignCurrentResponse } from './types';
+import type {
+  Campaign,
+  CampaignCurrentResponse,
+  CampaignRequest,
+  CampaignRequestsResponse,
+} from './types';
 
 export interface CreateCampaignPayload {
   seasonLabel: string;
@@ -62,4 +67,65 @@ export async function getCurrentCampaign(): Promise<CampaignCurrentResponse> {
     }
     throw error;
   }
+}
+
+/** Créneau proposé par la mairie (déplacement ou ajout), en heures locales. */
+export interface CampaignSlotPayload {
+  salleId: number;
+  dateDebut: string;
+  dateFin: string;
+}
+
+export interface AddCampaignSlotPayload extends CampaignSlotPayload {
+  associationId: number;
+  motifEvenement: string;
+}
+
+/**
+ * Avance ou repousse l'ouverture et la clôture d'une campagne ; le statut suit les dates.
+ */
+export function rescheduleCampaign(id: number, openingAt: string, closingAt: string): Promise<Campaign> {
+  return request<Campaign>(`/api/admin/campaigns/${id}/schedule`, {
+    method: 'PATCH',
+    body: JSON.stringify({ openingAt, closingAt }),
+  });
+}
+
+export function getCampaignRequests(id: number): Promise<CampaignRequestsResponse> {
+  return request<CampaignRequestsResponse>(`/api/admin/campaigns/${id}/requests`);
+}
+
+export function acceptCampaignRequest(campaignId: number, requestId: number): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/campaigns/${campaignId}/requests/${requestId}/accept`, {
+    method: 'POST',
+  });
+}
+
+export function refuseCampaignRequest(
+  campaignId: number,
+  requestId: number,
+  reason: string,
+): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/campaigns/${campaignId}/requests/${requestId}/refuse`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function rescheduleCampaignRequest(
+  campaignId: number,
+  requestId: number,
+  payload: CampaignSlotPayload & { reason: string },
+): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/campaigns/${campaignId}/requests/${requestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function addCampaignSlot(campaignId: number, payload: AddCampaignSlotPayload): Promise<CampaignRequest> {
+  return request<CampaignRequest>(`/api/admin/campaigns/${campaignId}/requests`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }

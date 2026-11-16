@@ -1,232 +1,219 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import CampaignActiveBanner from '@/components/admin/campaign/CampaignActiveBanner';
-import CampaignCalendar from '@/components/admin/campaign/CampaignCalendar';
-import CampaignListTable from '@/components/admin/campaign/CampaignListTable';
-import CampaignForm from '@/components/admin/campaign/CampaignForm';
-import CampaignActionModal from '@/components/admin/campaign/CampaignActionModal';
+import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import Button from '@/components/ui/Button';
+import { IconPlus } from '@/components/ui/icons';
+import CampaignSummary, { type CampaignRequestCounts } from '@/components/admin/campaign/CampaignSummary';
+import CampaignRequestsSection from '@/components/admin/campaign/CampaignRequestsSection';
+import CampaignScheduleDialog from '@/components/admin/campaign/CampaignScheduleDialog';
+import CampaignStateDialog, { type CampaignStateAction } from '@/components/admin/campaign/CampaignStateDialog';
+import CreateCampaignDialog from '@/components/admin/campaign/CreateCampaignDialog';
+import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
+import { useCampaignRequests } from '@/hooks/useCampaignRequests';
 import {
-  getAdminCampaigns,
-  createCampaign,
-  openCampaign,
   closeCampaign,
+  createCampaign,
+  getAdminCampaigns,
+  openCampaign,
+  rescheduleCampaign,
   type CreateCampaignPayload,
 } from '@/lib/api/campaigns';
-import type { Campaign } from '@/lib/api/types';
+import { getSalles } from '@/lib/api/salles';
+import { getAssociations } from '@/lib/api/associations';
+import { formatInstantDate } from '@/lib/campaignDates';
+import type { Campaign, CampaignRequest } from '@/lib/api/types';
+
+interface Option {
+  id: number;
+  nom: string;
+}
+
+/** Campagne affichée par défaut : l'ouverte, sinon la prochaine programmée, sinon la plus récente. */
+function defaultCampaign(campaigns: Campaign[]): Campaign | null {
+  return (
+    campaigns.find((campaign) => campaign.status === 'ACTIVE') ??
+    campaigns.find((campaign) => campaign.status === 'PROGRAMMED') ??
+    campaigns[0] ??
+    null
+  );
+}
+
+function countRequests(requests: CampaignRequest[]): CampaignRequestCounts {
+  return requests.reduce(
+    (counts, request) => ({ ...counts, [request.status]: counts[request.status] + 1 }),
+    { pending: 0, accepted: 0, refused: 0, closed: 0 },
+  );
+}
 
 export default function AdminCampaignsPage() {
+  const selectorId = useId();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [salles, setSalles] = useState<Option[]>([]);
+  const [associations, setAssociations] = useState<Option[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFormView, setIsFormView] = useState(false);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingDates, setEditingDates] = useState<Campaign | null>(null);
+  const [stateAction, setStateAction] = useState<CampaignStateAction | null>(null);
 
-  // Modale d'action rapide (ouverture / clôture manuelle)
-  const [actionModal, setActionModal] = useState<{
-    isOpen: boolean;
-    type: 'open' | 'close' | null;
-    campaign: Campaign | null;
-  }>({
-    isOpen: false,
-    type: null,
-    campaign: null,
-  });
+  const selectedCampaign = campaigns.find((campaign) => campaign.id === selectedId) ?? null;
+  const { requests, isLoading: requestsLoading, error: requestsError, actions } = useCampaignRequests(selectedId);
 
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
-
-  const fetchCampaigns = useCallback(async () => {
+  const loadCampaigns = useCallback(async (preferredId?: number) => {
     try {
       const data = await getAdminCampaigns();
       setCampaigns(data);
-    } catch {
-      setNotification({
-        type: 'error',
-        message: 'Impossible de récupérer la liste des campagnes.',
-      });
+      setSelectedId((current) => preferredId ?? current ?? defaultCampaign(data)?.id ?? null);
+    } catch (err) {
+      console.error('Chargement des campagnes impossible', err);
+      setPageError('Impossible de charger les campagnes.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void fetchCampaigns();
+    const timer = window.setTimeout(() => {
+      void loadCampaigns();
+      void getSalles()
+        .then((data) =>
+          setSalles(data.filter((salle) => salle.isActive && !salle.deletedAt).map(({ id, nom }) => ({ id, nom }))),
+        )
+        .catch((err) => console.error('Chargement des salles impossible', err));
+      void getAssociations(1, 'VALIDATED', undefined, false, 100)
+        .then((page) => setAssociations(page.items.map(({ id, nom }) => ({ id, nom }))))
+        .catch((err) => console.error('Chargement des associations impossible', err));
     }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, [fetchCampaigns]);
+    return () => window.clearTimeout(timer);
+  }, [loadCampaigns]);
 
-  // Campagnes remarquables
-  const activeCampaign = useMemo(
-    () => campaigns.find((c) => c.status === 'ACTIVE') ?? null,
-    [campaigns]
-  );
+  const replaceCampaign = (updated: Campaign) =>
+    setCampaigns((current) => current.map((campaign) => (campaign.id === updated.id ? updated : campaign)));
 
-  const programmedCampaign = useMemo(
-    () => campaigns.find((c) => c.status === 'PROGRAMMED') ?? null,
-    [campaigns]
-  );
-
-  // Soumission du formulaire de création (Scénario 1)
-  const handleCreateCampaign = async (payload: CreateCampaignPayload) => {
-    setIsSubmitting(true);
-    try {
-      const newCamp = await createCampaign(payload);
-      setNotification({
-        type: 'success',
-        message: `La campagne "${newCamp.seasonLabel}" a été enregistrée avec succès.`,
-      });
-      setIsFormView(false);
-      await fetchCampaigns();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erreur lors de la création de la campagne.';
-      setNotification({
-        type: 'error',
-        message: msg,
-      });
-      throw err;
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleCreate = async (payload: CreateCampaignPayload) => {
+    const created = await createCampaign(payload);
+    setIsCreating(false);
+    setFeedback(`La campagne « ${created.seasonLabel} » a été créée.`);
+    await loadCampaigns(created.id);
   };
 
-  // Confirmation d'action manuelle (Scénario 2 & 3)
-  const handleConfirmAction = async () => {
-    if (!actionModal.campaign || !actionModal.type) return;
+  const handleStateChange = async (campaign: Campaign, action: CampaignStateAction) => {
+    const updated = action === 'open' ? await openCampaign(campaign.id) : await closeCampaign(campaign.id);
+    replaceCampaign(updated);
+    setStateAction(null);
+    setFeedback(action === 'open' ? 'La campagne est ouverte.' : 'La campagne est clôturée.');
+  };
 
-    setIsSubmitting(true);
-    try {
-      if (actionModal.type === 'open') {
-        const updated = await openCampaign(actionModal.campaign.id);
-        setNotification({
-          type: 'success',
-          message: `La campagne "${updated.seasonLabel}" est désormais ouverte. Le guichet de vœux est actif.`,
-        });
-      } else if (actionModal.type === 'close') {
-        const updated = await closeCampaign(actionModal.campaign.id);
-        setNotification({
-          type: 'success',
-          message: `La campagne "${updated.seasonLabel}" a été clôturée. Les dépôts de vœux sont verrouillés.`,
-        });
-      }
-      setActionModal({ isOpen: false, type: null, campaign: null });
-      await fetchCampaigns();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Une erreur est survenue lors de l’opération.';
-      setNotification({
-        type: 'error',
-        message: msg,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSchedule = async (campaign: Campaign, openingAt: string, closingAt: string) => {
+    const updated = await rescheduleCampaign(campaign.id, openingAt, closingAt);
+    replaceCampaign(updated);
+    setEditingDates(null);
+    setFeedback('Les dates de la campagne ont été mises à jour.');
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6 pb-12">
-        {/* Toast de notification */}
-        {notification && (
-          <div
-            role="status"
-            className={`flex items-center justify-between rounded-control p-4 text-body-sm font-semibold shadow-xs ${
-              notification.type === 'success'
-                ? 'bg-sage text-moss border border-moss/20'
-                : 'bg-danger/10 text-danger border border-danger/20'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <span>{notification.type === 'success' ? '✓' : '⚠️'}</span>
-              <span>{notification.message}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setNotification(null)}
-              className="text-meta uppercase font-bold tracking-wider hover:opacity-75 cursor-pointer"
-            >
+        <AdminPageHeader
+          title="Campagne des salles"
+          description="Ouvrez la campagne annuelle, traitez les demandes des associations et attribuez les créneaux."
+          className="flex flex-col gap-4"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            {campaigns.length > 1 ? (
+              <div className="sm:w-80">
+                <label htmlFor={selectorId} className={fieldLabelVariants()}>
+                  Campagne affichée
+                </label>
+                <select
+                  id={selectorId}
+                  value={selectedId ?? ''}
+                  onChange={(event) => setSelectedId(Number(event.target.value))}
+                  className={fieldControlVariants()}
+                >
+                  {campaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.seasonLabel} · {formatInstantDate(campaign.openingAt)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <span />
+            )}
+            <Button variant="secondary" size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setIsCreating(true)}>
+              Nouvelle campagne
+            </Button>
+          </div>
+        </AdminPageHeader>
+
+        {feedback && (
+          <div role="status" className="flex items-center justify-between gap-4 rounded-soft bg-primary-soft px-4 py-3 text-body-sm font-semibold text-primary">
+            <span>{feedback}</span>
+            <button type="button" onClick={() => setFeedback(null)} className="text-meta font-bold uppercase tracking-label hover:underline">
               Fermer
             </button>
           </div>
         )}
 
-        {isFormView ? (
-          /* Vue Préparation / Configuration (Figma Image 2) */
-          <CampaignForm
-            isLoading={isSubmitting}
-            onCancel={() => setIsFormView(false)}
-            onSubmit={handleCreateCampaign}
-          />
-        ) : (
-          /* Vue Principale : En-tête, Calendrier et suivi (Figma Image 1) */
-          <div className="space-y-6">
-            {/* Header de la page conforme au Figma Image 1 */}
-            <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h1 className="text-2xl font-black uppercase tracking-wider text-ink sm:text-3xl">
-                  CAMPAGNE ANNUELLE
-                </h1>
-                <p className="mt-1 max-w-2xl text-meta text-muted sm:text-body-sm">
-                  Une campagne par an, du 1er juin au 30 septembre. Chaque association choisit les salles et les créneaux souhaités pendant cette période.
-                </p>
-              </div>
-
-              {/* Bouton d'action unique en haut à droite */}
-              <div className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsFormView(true)}
-                  className="inline-flex h-11 items-center gap-2 rounded-control bg-primary px-5 text-meta font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover cursor-pointer"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>LANCER LA CAMPAGNE</span>
-                </button>
-              </div>
-            </header>
-
-            {/* Bannière d'état dynamique (si active ou programmée) */}
-            <CampaignActiveBanner
-              activeCampaign={activeCampaign}
-              programmedCampaign={programmedCampaign}
-              onOpenClick={(camp) =>
-                setActionModal({ isOpen: true, type: 'open', campaign: camp })
-              }
-              onCloseClick={(camp) =>
-                setActionModal({ isOpen: true, type: 'close', campaign: camp })
-              }
-            />
-
-            {/* Calendrier dynamique fidèle à l'image 1 de Figma */}
-            <CampaignCalendar />
-
-            {/* Récapitulatif épuré des campagnes (sans bouton doublon d'ajout) */}
-            <CampaignListTable
-              campaigns={campaigns}
-              isLoading={isLoading}
-              onOpenClick={(camp) =>
-                setActionModal({ isOpen: true, type: 'open', campaign: camp })
-              }
-              onCloseClick={(camp) =>
-                setActionModal({ isOpen: true, type: 'close', campaign: camp })
-              }
-            />
-          </div>
+        {pageError && (
+          <p role="alert" className="rounded-soft bg-danger/10 px-4 py-3 text-body-sm font-semibold text-danger">
+            {pageError}
+          </p>
         )}
 
-        {/* Modale de confirmation d'action rapide (ouvrir / clôturer) */}
-        <CampaignActionModal
-          isOpen={actionModal.isOpen}
-          type={actionModal.type}
-          campaign={actionModal.campaign}
-          isLoading={isSubmitting}
-          onClose={() => setActionModal({ isOpen: false, type: null, campaign: null })}
-          onConfirm={handleConfirmAction}
-        />
+        {isLoading && (
+          <p role="status" className="py-10 text-center text-body-sm text-muted">
+            Chargement des campagnes…
+          </p>
+        )}
+
+        {!isLoading && !pageError && selectedCampaign === null && (
+          <section className="rounded-card border border-dashed border-line px-6 py-12 text-center">
+            <h2 className="text-lg font-black text-ink">Aucune campagne</h2>
+            <p className="mx-auto mt-2 max-w-md text-body-sm text-muted">
+              Créez la campagne annuelle : les demandes de salle déposées pendant son ouverture apparaîtront ici.
+            </p>
+            <Button className="mt-6" size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setIsCreating(true)}>
+              Créer la campagne
+            </Button>
+          </section>
+        )}
+
+        {selectedCampaign && (
+          <>
+            <CampaignSummary
+              campaign={selectedCampaign}
+              counts={countRequests(requests)}
+              onOpen={() => setStateAction('open')}
+              onClose={() => setStateAction('close')}
+              onEditDates={() => setEditingDates(selectedCampaign)}
+            />
+            <CampaignRequestsSection
+              requests={requests}
+              isLoading={requestsLoading}
+              error={requestsError}
+              salles={salles}
+              associations={associations}
+              actions={actions}
+              onFeedback={setFeedback}
+            />
+          </>
+        )}
       </div>
+
+      <CreateCampaignDialog open={isCreating} onClose={() => setIsCreating(false)} onSubmit={handleCreate} />
+      <CampaignScheduleDialog campaign={editingDates} onClose={() => setEditingDates(null)} onSubmit={handleSchedule} />
+      <CampaignStateDialog
+        campaign={stateAction ? selectedCampaign : null}
+        action={stateAction}
+        onClose={() => setStateAction(null)}
+        onConfirm={handleStateChange}
+      />
     </AdminLayout>
   );
 }
