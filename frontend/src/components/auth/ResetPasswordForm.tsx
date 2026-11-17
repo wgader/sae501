@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import FormField from '@/components/ui/FormField';
@@ -11,14 +11,28 @@ import { confirmPasswordReset } from '@/lib/api/auth';
 const linkClassName =
   'inline-flex h-control-compact items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover';
 
+const noSubscription = () => () => {};
+
+/** Jeton placé après le « # » du lien : il n'est jamais envoyé au serveur ni journalisé. */
+const readFragmentToken = () => new URLSearchParams(window.location.hash.slice(1)).get('token') ?? '';
+
 /** Choix d'un nouveau mot de passe depuis le lien reçu par e-mail. */
 export default function ResetPasswordForm() {
-  const token = useSearchParams().get('token') ?? '';
+  const fragmentToken = useSyncExternalStore(noSubscription, readFragmentToken, () => null);
+  // Repli sur « ?token= » pour les liens envoyés avant le passage au fragment (valables 1 h).
+  const queryToken = useSearchParams().get('token') ?? '';
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loginPath, setLoginPath] = useState<string | null>(null);
+
+  // Rendu serveur : le fragment n'est lisible qu'une fois dans le navigateur.
+  if (fragmentToken === null) {
+    return null;
+  }
+
+  const token = fragmentToken || queryToken;
 
   if (!token) {
     return (
