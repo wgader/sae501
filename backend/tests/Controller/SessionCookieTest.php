@@ -72,6 +72,36 @@ final class SessionCookieTest extends ControllerRouteTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
+    public function testDeletedAccountLoginLooksLikeWrongCredentialsAndLosesItsSession(): void
+    {
+        $user = $this->createUser('asso@example.test', 'association', ['ROLE_ASSOCIATION']);
+        $token = $this->jwtManager->create($user);
+        $user->setDeletedAt(new \DateTimeImmutable());
+        $this->em->flush();
+
+        // Même message qu’un mauvais mot de passe : rien ne révèle que le compte a existé.
+        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => $this->password]);
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertJsonContains(['message' => 'Identifiants incorrects.']);
+        self::assertSame([], $this->client->getResponse()->headers->getCookies());
+
+        $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$token);
+        $this->client->request('GET', '/api/auth/session');
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testNotActivatedAccountGetsNoCookie(): void
+    {
+        $user = $this->createUser('asso@example.test', 'association', ['ROLE_ASSOCIATION']);
+        $user->setIsVerified(false);
+        $this->em->flush();
+
+        $this->requestJson('POST', '/api/auth/login', ['email' => 'asso@example.test', 'password' => $this->password]);
+        $this->assertResponseStatusCodeSame(403);
+        $this->assertJsonContains(['message' => 'Votre compte n’est pas encore activé.']);
+        self::assertSame([], $this->client->getResponse()->headers->getCookies());
+    }
+
     public function testSuspendedAccountGetsNoCookieAndLosesItsSession(): void
     {
         $user = $this->createUser('asso@example.test', 'association', ['ROLE_ASSOCIATION']);
