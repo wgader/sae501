@@ -410,6 +410,9 @@ Le proxy d’entrée est prêt ; le passage se fait sans modifier le code.
      action *Block* (durée imposée par l’offre gratuite). Les limiteurs de l’API restent la
      protection principale ; `/api/auth/session`, appelé à chaque page, n’est pas concerné ;
    - blocage ponctuel d’une IP : Security → WAF → *Tools* → *IP Access Rules* ;
+   - **Email Address Obfuscation désactivé** : Cloudflare réécrit les adresses en
+     `[email protected]` et ajoute un script sans nonce, bloqué par la CSP : les adresses ne
+     s’afficheraient plus (le scan ZAP bloquant le détecte) ;
    - en préproduction, *Cloudflare Access* (Zero Trust, gratuit jusqu’à 50 utilisateurs) peut
      réserver `dev-feytiat` et `api-dev-feytiat` à l’équipe.
 6. **Cache** : laisser le comportement par défaut. L’API et les documents privés répondent en

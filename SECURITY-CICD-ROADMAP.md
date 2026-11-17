@@ -4,9 +4,9 @@
 
 ## Dernière mise à jour
 
-- Date : 16 novembre 2026
-- Statut : préproduction en ligne sur le VPS (`dev-feytiat.wahelgader.fr`, HTTPS, déploiement automatique depuis `develop`) ; premier administrateur créé avec `app:create-admin` ; durcissement du 16/11 (Cloudflare prêt, mot de passe oublié, audit, SAST/SBOM/DAST)
-- Prochaine étape : valider la préproduction, puis premier déploiement de production depuis `main` (PR `develop` → `main`, approbation)
+- Date : 17 novembre 2026
+- Statut : préproduction et production en ligne derrière Cloudflare (WAF, limitation de débit, accès direct au VPS coupé) ; production déployée depuis `main` ; ZAP bloquant sur la préproduction
+- Prochaine étape : activer ClamAV sur le VPS si la mémoire le permet (`DEPLOYMENT.md` §8 bis), DNSSEC Cloudflare en cours d’activation chez OVH
 
 ## Réalisé
 
@@ -723,13 +723,17 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - activer une protection CSRF adaptée si l’authentification passe par cookie ;
 - ajouter une rotation de refresh tokens si les sessions longues sont nécessaires ;
 - ~~limiter les tentatives de connexion~~ (fait le 16/11/2026) ; ~~réinitialisation de mot de passe~~ (fait le 16/11/2026) ;
-- rendre les tokens d’activation strictement mono-usage et plus courts ;
+- ~~rendre les tokens d’activation strictement mono-usage~~ (effacés à l’activation, empreinte
+  SHA-256, 72 h conservées pour laisser le temps aux associations) ; ~~limiter l’activation et le
+  renvoi du lien~~ (fait le 17/11/2026) ;
 - ajouter une politique CSP stricte et vérifier les en-têtes de sécurité : ~~API en `default-src 'none'`~~
   (fait le 16/11/2026) ; reste une CSP complète du site Next.js (nonces pour les scripts inline) ;
 - ~~journaliser les connexions, déconnexions, échecs et changements de privilèges sans enregistrer de secrets~~
   (fait le 16/11/2026, canal `audit`) ;
-- ajouter des tests d’accès pour les comptes suspendus, supprimés et les tokens révoqués ;
-- configurer une durée de conservation et une protection des logs conformes au besoin RGPD.
+- ~~ajouter des tests d’accès pour les comptes suspendus, supprimés et les tokens révoqués~~ (fait,
+  mairie et association, `SessionCookieTest` et `AdminAuthControllerTest`) ;
+- ~~configurer une durée de conservation des logs~~ : rotation Docker de 5 × 10 Mo par service
+  (aucune copie ailleurs), requêtes SQL exclues, identifiants hachés dans le canal `audit`.
 
 ### Tests de sécurité ajoutés
 
@@ -758,19 +762,21 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 - ~~Faire tourner l’image backend avec un utilisateur non privilégié (Trivy DS-0002)~~ — fait le
   15/11/2026.
 - ~~Déploiement : environnements GitHub, secrets, `bootstrap-server.sh` et premier déploiement de
-  préproduction~~ — fait le 16/11/2026. Reste : premier déploiement de production et copie hors site
-  chiffrée des sauvegardes. ~~Proxys de confiance si Cloudflare est retenu~~ — prêt le 16/11/2026
-  (`EDGE_CLOUDFLARE=1`, voir `DEPLOYMENT.md`) ; reste la bascule DNS chez Cloudflare.
+  préproduction~~ — fait le 16/11/2026. ~~Premier déploiement de production~~ — fait le 17/11/2026.
+  Copie hors site des sauvegardes : abandonnée (choix de l’équipe). ~~Proxys de confiance et bascule
+  Cloudflare~~ — fait le 17/11/2026 (`EDGE_CLOUDFLARE=1`, connexions directes au VPS coupées).
 - ~~Retirer `npm` de l’image frontend finale (6 HIGH Trivy)~~ — fait le 16/11/2026 (npm, npx,
   corepack et yarn supprimés, paquets Alpine mis à jour : 0 HIGH/CRITICAL).
 - ~~Compléter les scans : Bearer (SAST), SBOM (Syft) et OWASP ZAP sur la préproduction~~ — fait le
-  16/11/2026. Reste : passer ZAP en bloquant une fois les alertes de la préproduction traitées.
+  16/11/2026. ~~Passer ZAP en bloquant~~ — fait le 17/11/2026 (toute alerte non justifiée
+  dans `rules.tsv` fait échouer le job).
 - ~~En développement, `MESSENGER_TRANSPORT_DSN=in-memory://` perdait les messages asynchrones~~ —
   corrigé le 16/11/2026 (`sync://` en développement, notifications reçues dans Mailpit).
 - ~~Fichiers orphelins côté administration et réservation de salle~~ — corrigé le 15/11/2026.
 - Un PDF commençant par `%PDF-` est accepté même si la suite est illisible, et une image valide
   peut contenir des données ajoutées : risque limité (stockage hors racine web, `attachment` et
-  `nosniff`), une analyse antivirus (ClamAV) reste à étudier.
+  `nosniff`). ClamAV est prêt (profil `antivirus`) : **reste à l’activer sur le VPS** une fois la
+  mémoire vérifiée (`free -h`, environ 1,5 Go), voir `DEPLOYMENT.md` §8 bis.
 - ~~Job CI de migrations sur base vide~~ — ajouté le 15/11/2026 ; le rendre obligatoire dans la
   protection des branches `develop` et `main` une fois qu’il a tourné sur GitHub.
 - Chaque membre de l’équipe doit mettre sa base locale à niveau une fois (réinitialisation ou
@@ -832,3 +838,8 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | Sauvegardes hors site | `backup.sh offsite` (restic chiffré, rétention 14/8/12), `offsite.env` exclu ; envoi, absence de clair et restauration vérifiés |
 | 17/11/2026 | Formulaires en POST | Champs (e-mail, mot de passe) jamais placés dans l’URL avant l’hydratation (ZAP 10024) |
 | 17/11/2026 | CSP avec nonce | Nonce par requête dans `proxy.ts`, `strict-dynamic`, pages rendues à la demande ; injection d’attribut bloquée (vérifié en build de production et par Playwright) ; alertes ZAP justifiées ignorées par `rules.tsv` |
+| 17/11/2026 | Bascule Cloudflare | Zone active, WAF managé, règle anti-scanners, limitation de débit sur connexion et formulaires, `EDGE_CLOUDFLARE=1` : accès direct au VPS coupé (vérifié) |
+| 17/11/2026 | Activation limitée | 10 tentatives par IP sur 15 min pour l’activation et le renvoi du lien (envoi d’e-mails en masse impossible) ; 1 test |
+| 17/11/2026 | Jetons hors des journaux | Liens de réinitialisation et de renvoi d’activation en fragment `#token=` : jamais envoyés au serveur ni journalisés |
+| 17/11/2026 | ZAP bloquant | Toute alerte non justifiée fait échouer la CD de préproduction ; a révélé l’obfuscation d’e-mails de Cloudflare (script bloqué par la CSP) |
+| 17/11/2026 | Statut des comptes association | Comptes supprimés (même message qu’un mauvais mot de passe) et non activés : aucun cookie, jeton existant refusé ; 2 tests |
