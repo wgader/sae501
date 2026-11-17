@@ -64,6 +64,21 @@ final class AssociationPhotoTest extends ControllerRouteTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    public function testUploadsArePerAccountRateLimited(): void
+    {
+        $this->authenticateMember();
+
+        for ($upload = 1; $upload <= 20; ++$upload) {
+            $this->upload($this->file('logo.png', base64_decode(self::PNG)));
+            $this->assertResponseIsSuccessful();
+        }
+
+        $this->upload($this->file('logo.png', base64_decode(self::PNG)));
+
+        $this->assertResponseStatusCodeSame(429);
+        self::assertTrue($this->client->getResponse()->headers->has('Retry-After'));
+    }
+
     public function testUploadRequiresAuthentication(): void
     {
         $this->upload($this->file('logo.png', base64_decode(self::PNG)));

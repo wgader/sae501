@@ -2,7 +2,7 @@
 
 ## Statut
 
-- Date : 13 novembre 2026
+- Date : 13 novembre 2026, mis à jour le 17 novembre 2026
 - Périmètre : authentification, JWT, uploads, téléchargement de fichiers, routage frontend/API et protections anti-abus
 - Type : audit de conception et de code ciblé
 - Exécution de charge DDoS : non réalisée et interdite dans un environnement non autorisé
@@ -25,14 +25,14 @@ Un rapport doit rester disponible même lorsqu’un scan échoue ; le pipeline d
 | 2 | 🟠 HIGH | Téléchargements | Le téléchargement doit vérifier le propriétaire ou le rôle municipal autorisé | Corrigé via `/api/documents/{id}/download` |
 | 3 | 🟠 HIGH | Path traversal | La stratégie de nommage et de résolution doit rester protégée contre `..`, chemins absolus et encodages | Résolution canonique et noms aléatoires ajoutés |
 | 4 | 🟠 HIGH | Fichiers dangereux | Les règles d’extension, MIME réel, signature et contenu doivent être uniformisées sur tous les uploads | Corrigé pour les justificatifs, les fichiers d’événement et les images publiques (salles, matériel) |
-| 5 | 🟡 MEDIUM | SVG/HTML/JS | Ces formats peuvent contenir du contenu actif et ne doivent pas être servis inline | À interdire ou sanitiser |
-| 6 | 🟡 MEDIUM | Déni de service applicatif | Les tailles, nombres de fichiers, temps et quotas doivent être limités par endpoint | À ajouter |
-| 7 | 🟡 MEDIUM | JWT navigateur | Le stockage `localStorage` reste exposé à une compromission XSS | Migration cookies sécurisés à planifier |
+| 5 | 🟡 MEDIUM | SVG/HTML/JS | Ces formats peuvent contenir du contenu actif et ne doivent pas être servis inline | Interdits : seuls PDF, JPEG, PNG et WebP sont acceptés (type réel vérifié), fichiers privés servis en pièce jointe |
+| 6 | 🟡 MEDIUM | Déni de service applicatif | Les tailles, nombres de fichiers, temps et quotas doivent être limités par endpoint | Corrigé : un fichier par requête, 5 Mo (images) ou 10 Mo (documents), 20 envois par compte et par heure sur toute l’API (`UploadThrottleSubscriber`), analyse ClamAV en production |
+| 7 | 🟡 MEDIUM | JWT navigateur | Le stockage `localStorage` reste exposé à une compromission XSS | Corrigé le 16/11/2026 : JWT en cookie `HttpOnly`, `Secure`, `SameSite=Strict`, CSP avec nonce |
 | 8 | 🟠 HIGH | Cache des téléchargements | `BinaryFileResponse` renvoyait `Cache-Control: public` : un proxy ou un CDN pouvait conserver un justificatif privé | Corrigé (`private, no-store`) pour les justificatifs et les fichiers d’événement |
 | 9 | 🟡 MEDIUM | Téléchargements | Documents supprimés logiquement encore téléchargeables, `Content-Type` repris sans contrôle, erreur 500 sur un nom contenant `\` | Corrigé et testé |
 | 10 | 🔴 CRITICAL | Persistance | `var/uploads` n’était monté sur aucun volume en production : chaque redéploiement aurait effacé les justificatifs et fichiers d’événement | Corrigé (volume `backend_private_uploads`, uploads exclus des images) |
 | 11 | 🟡 MEDIUM | Historique Git | Gitleaks relève une ancienne clé JWT chiffrée (septembre) et un `APP_SECRET` de développement dans l’historique ; aucune n’est en service, la production utilise ses propres clés | Analysé ; empreintes listées dans `.gitleaksignore`, nouvelles fuites bloquantes en CI |
-| 12 | 🟡 MEDIUM | Image backend | L’image FrankenPHP s’exécute en `root` (Trivy DS-0002, HIGH) | À traiter : utilisateur non privilégié avec capacité de liaison aux ports 80/443 |
+| 12 | 🟡 MEDIUM | Image backend | L’image FrankenPHP s’exécute en `root` (Trivy DS-0002, HIGH) | Corrigé le 15/11/2026 : utilisateur non privilégié (contrôlé en CI) |
 
 ## Mesures obligatoires pour les uploads
 
@@ -103,6 +103,9 @@ Les tests doivent utiliser de petits fichiers synthétiques. Aucun test de DDoS 
 - vulnérabilités moyennes : rapport et correction planifiée selon le risque ;
 - résultats non vérifiables : échec ou blocage, jamais succès silencieux.
 
-## Prochaine tâche d’implémentation
+## État au 17/11/2026
 
-La prochaine tâche CI/CD devra créer le script de génération du rapport et intégrer `actions/upload-artifact` dans les workflows. Ensuite, le stockage et le téléchargement des documents privés devront être sécurisés avec les tests PHPUnit correspondants. Les deux rapports Markdown devront être mis à jour avec les fichiers modifiés et les commandes réellement exécutées.
+Tous les constats sont corrigés. Le rapport `SECURITY-REPORT.md` est généré et publié en artefact
+par la CI ; Bearer, Syft, Trivy, Gitleaks, Hadolint et OWASP ZAP (bloquant sur la préproduction)
+tournent à chaque livraison. En production : Cloudflare (WAF, limitation de débit, accès direct
+au VPS coupé), ClamAV, Fail2ban et pare-feu `ufw` (installés par `bootstrap-server.sh`).
