@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -38,6 +39,8 @@ final class AccountActivationController extends AbstractController
         private readonly LoggerInterface $logger,
         #[Autowire(env: 'MAILER_FROM')] private readonly string $mailerFrom,
         #[Autowire(env: 'FRONTEND_URL')] private readonly string $frontendUrl,
+        #[Autowire(service: 'limiter.account_activation')]
+        private readonly RateLimiterFactory $limiter,
     ) {
     }
 
@@ -61,6 +64,10 @@ final class AccountActivationController extends AbstractController
         PasswordPolicy $passwordPolicy,
         SecurityAuditLogger $audit,
     ): JsonResponse {
+        if (null !== $tooMany = $this->throttle($request)) {
+            return $tooMany;
+        }
+
         // ── Décodage du payload ───────────────────────────────────────────────
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
@@ -155,6 +162,11 @@ final class AccountActivationController extends AbstractController
     #[Route('/resend-activation', name: 'api_resend_activation', methods: ['POST'])]
     public function resendActivation(Request $request): JsonResponse
     {
+        // Chaque renvoi envoie un e-mail : on limite par IP pour empêcher l’envoi en masse.
+        if (null !== $tooMany = $this->throttle($request)) {
+            return $tooMany;
+        }
+
         $genericResponse = $this->json(
             ['message' => 'Si un compte en attente d\'activation existe pour cet email, un nouveau lien vous a été envoyé.'],
             Response::HTTP_OK
@@ -209,5 +221,22 @@ final class AccountActivationController extends AbstractController
         );
 
         return $genericResponse;
+    }
+
+    /**
+     * Limite les tentatives par IP (activation et renvoi partagent le même compteur).
+     */
+    private function throttle(Request $request): ?JsonResponse
+    {
+        $limit = $this->limiter->create($request->getClientIp() ?? 'unknown')->consume();
+        if ($limit->isAccepted()) {
+            return null;
+        }
+
+        return $this->json(
+            ['message' => 'Trop de tentatives. Réessayez dans quelques minutes.'],
+            Response::HTTP_TOO_MANY_REQUESTS,
+            ['Retry-After' => (string) max(1, $limit->getRetryAfter()->getTimestamp() - time())],
+        );
     }
 }

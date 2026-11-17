@@ -7,6 +7,21 @@ use App\Entity\User;
 
 final class AccountActivationControllerTest extends ControllerRouteTestCase
 {
+    public function testActivationAndResendShareAnIpRateLimit(): void
+    {
+        for ($attempt = 1; $attempt <= 5; ++$attempt) {
+            $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-inconnu', 'password' => 'x']);
+            $this->assertResponseStatusCodeSame(401);
+            $this->requestJson('POST', '/api/auth/resend-activation', ['email' => 'inconnu@example.test']);
+            $this->assertResponseIsSuccessful();
+        }
+
+        $this->requestJson('POST', '/api/auth/resend-activation', ['email' => 'inconnu@example.test']);
+
+        $this->assertResponseStatusCodeSame(429);
+        self::assertTrue($this->client->getResponse()->headers->has('Retry-After'));
+    }
+
     public function testActivationRejectsMissingCredentials(): void
     {
         $this->requestJson('POST', '/api/auth/activate', ['token' => '', 'password' => '']);
