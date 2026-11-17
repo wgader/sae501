@@ -785,8 +785,8 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
   `X-Requested-With` exigé contre le CSRF, profil d’affichage seul dans `localStorage`).
 - ~~Jetons d’activation stockés en clair~~ — empreinte SHA-256 depuis le 16/11/2026.
 - ~~Analyse antivirus des uploads~~ — ClamAV facultatif depuis le 16/11/2026 (profil `antivirus`).
-- ~~CSP du site Next.js~~ — fait le 16/11/2026 (sans nonce : `script-src 'unsafe-inline'` reste
-  nécessaire tant que les pages sont pré-rendues ; passer aux nonces imposerait un rendu dynamique).
+- ~~CSP du site Next.js~~ — fait le 16/11/2026, puis avec nonce le 17/11/2026 (`proxy.ts`, rendu à
+  la demande) : `unsafe-inline` retiré des scripts, un attribut injecté ne s’exécute plus.
 - ~~Copie hors site des sauvegardes~~ — prête le 16/11/2026 (restic chiffré) ; reste à choisir le
   stockage et créer `backups/offsite.env`.
 
@@ -830,3 +830,5 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 16/11/2026 | CSP du site | Scripts, styles et polices du seul site, connexions et images limitées au site et à l’API ; vérifiée sur un build de production ; le proxy conserve la CSP de l’application |
 | 16/11/2026 | Antivirus facultatif | `AntivirusScanner` (INSTREAM clamd) avant tout enregistrement, refus si infecté ou si ClamAV ne répond pas ; service `clamav` derrière le profil `antivirus` ; 4 tests |
 | 16/11/2026 | Sauvegardes hors site | `backup.sh offsite` (restic chiffré, rétention 14/8/12), `offsite.env` exclu ; envoi, absence de clair et restauration vérifiés |
+| 17/11/2026 | Formulaires en POST | Champs (e-mail, mot de passe) jamais placés dans l’URL avant l’hydratation (ZAP 10024) |
+| 17/11/2026 | CSP avec nonce | Nonce par requête dans `proxy.ts`, `strict-dynamic`, pages rendues à la demande ; injection d’attribut bloquée (vérifié en build de production et par Playwright) ; alertes ZAP justifiées ignorées par `rules.tsv` |
