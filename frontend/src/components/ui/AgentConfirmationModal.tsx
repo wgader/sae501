@@ -58,17 +58,17 @@ export default function AgentConfirmationModal({
     <div
       role="presentation"
       onClick={() => { if (!isLoading) onClose(); }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink)]/50 p-4 backdrop-blur-[0.13rem]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink)]/50 p-4 backdrop-blur-xs"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="agent-confirmation-title"
         onClick={(event) => event.stopPropagation()}
-        className="relative w-full max-w-[34rem] rounded-[1.25rem] border border-[var(--line)] bg-[var(--White)] p-6 shadow-2xl sm:p-8"
+        className="relative w-full max-w-136 rounded-card border border-line bg-white p-6 shadow-2xl sm:p-8"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
-          <h2 id="agent-confirmation-title" className="text-xl font-black uppercase tracking-tight text-[var(--ink)] sm:text-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-line pb-4">
+          <h2 id="agent-confirmation-title" className="text-xl font-black uppercase tracking-tight text-ink sm:text-2xl">
             {title}
           </h2>
           <button
@@ -76,27 +76,27 @@ export default function AgentConfirmationModal({
             disabled={isLoading}
             onClick={onClose}
             aria-label="Fermer la boîte de dialogue"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)] disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-paper hover:text-ink disabled:opacity-50"
           >
             <span aria-hidden="true">×</span>
           </button>
         </div>
 
-        <div className="mt-5 space-y-4 text-sm text-[var(--ink)]">
-          <p className="text-xs leading-relaxed text-[var(--muted)]">{description}</p>
+        <div className="mt-5 space-y-4 text-sm text-ink">
+          <p className="text-xs leading-relaxed text-muted">{description}</p>
           <dl className="space-y-2">
             {items.map((item) => (
-              <div key={item.label} className="flex items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--line)] bg-[var(--paper)] p-3">
-                <dt className="text-xs font-bold text-[var(--muted)]">{item.label}</dt>
-                <dd className="text-right text-xs font-bold text-[var(--ink)]">{item.value}</dd>
+              <div key={item.label} className="flex items-center justify-between gap-3 rounded-soft border border-line bg-paper p-3">
+                <dt className="text-xs font-bold text-muted">{item.label}</dt>
+                <dd className="text-right text-xs font-bold text-ink">{item.value}</dd>
               </div>
             ))}
           </dl>
           {moduleChanges.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Modules</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted">Modules</p>
               {moduleChanges.map((change) => (
-                <div key={change.module} className="flex items-center justify-between gap-3 rounded-[0.75rem] border border-[var(--line)] bg-[var(--paper)] p-3">
+                <div key={change.module} className="flex items-center justify-between gap-3 rounded-soft border border-line bg-paper p-3">
                   <StatusTag status={change.module} />
                   <span className="text-xs font-bold">
                     {change.previousState ? 'Actif' : 'Inactif'} → {change.nextState ? 'Actif' : 'Inactif'}
@@ -108,10 +108,10 @@ export default function AgentConfirmationModal({
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button type="button" disabled={isLoading} onClick={onClose} className="inline-flex h-11 items-center justify-center rounded-[0.75rem] border border-[var(--line)] px-5 text-xs font-bold uppercase tracking-wider text-[var(--ink)] hover:bg-[var(--paper)] disabled:opacity-50">
+          <button type="button" disabled={isLoading} onClick={onClose} className="inline-flex h-11 items-center justify-center rounded-soft border border-line px-5 text-xs font-bold uppercase tracking-wider text-ink hover:bg-paper disabled:opacity-50">
             Annuler
           </button>
-          <button type="button" disabled={isLoading} onClick={onConfirm} className={`inline-flex h-11 items-center justify-center gap-2 rounded-[0.75rem] px-5 text-xs font-bold uppercase tracking-wider text-[var(--White)] shadow-sm disabled:opacity-50 ${actionClass}`}>
+          <button type="button" disabled={isLoading} onClick={onConfirm} className={`inline-flex h-11 items-center justify-center gap-2 rounded-soft px-5 text-xs font-bold uppercase tracking-wider text-white shadow-sm disabled:opacity-50 ${actionClass}`}>
             {isLoading && <span className="animate-spin" aria-hidden="true">⟳</span>}
             {confirmLabel}
           </button>

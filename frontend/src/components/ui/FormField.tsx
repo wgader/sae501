@@ -3,11 +3,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export const formFieldLabelVariants = cva(
-  'flex w-full flex-col gap-2 text-[0.63rem] font-bold uppercase tracking-[0.18em]',
+  'flex w-full flex-col gap-2 text-caption font-bold uppercase tracking-section',
 );
 
 export const formFieldInputVariants = cva(
-  'rounded-control border border-[#d9ded9] bg-white/60 px-4 py-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-[#496a56] focus:ring-0',
+  'rounded-control border border-line bg-white/60 px-4 py-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-moss focus:ring-0',
 );
 
 export interface FormFieldDataProps {
