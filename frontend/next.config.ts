@@ -3,27 +3,6 @@ import type { NextConfig } from "next";
 // Seules les images de l'API sont optimisées : un motif ouvert ferait de /_next/image un proxy
 // capable de télécharger n'importe quelle image d'Internet.
 const apiUrl = new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost');
-const isDev = process.env.NODE_ENV === 'development';
-
-/**
- * Politique de sécurité du site (sans nonce : les pages restent pré-rendues). Aucun script ni
- * aucune ressource externe ; les appels et images ne visent que le site et l'API. En
- * développement, React a besoin d'eval et le rechargement à chaud d'une WebSocket.
- */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
-  "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' blob: data: ${apiUrl.origin}`,
-  "font-src 'self'",
-  `connect-src 'self' ${apiUrl.origin}${isDev ? ' ws:' : ''}`,
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  ...(apiUrl.protocol === 'https:' ? ['upgrade-insecure-requests'] : []),
-].join('; ');
-
 const nextConfig: NextConfig = {
   output: 'standalone',
   // N'annonce pas la technologie du serveur (en-tête X-Powered-By).
@@ -34,9 +13,6 @@ const nextConfig: NextConfig = {
       { protocol: 'http', hostname: '127.0.0.1' },
       { protocol: apiUrl.protocol === 'https:' ? 'https' : 'http', hostname: apiUrl.hostname },
     ],
-  },
-  async headers() {
-    return [{ source: '/(.*)', headers: [{ key: 'Content-Security-Policy', value: contentSecurityPolicy }] }];
   },
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
