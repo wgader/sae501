@@ -333,11 +333,12 @@ jobs:
           # 10202 : formulaires envoyés par l'API (cookie SameSite=Strict + X-Requested-With) ;
           # 90004 : COEP/CORP inutiles sans ressource cross-origin ; 10109 : simple détection d'une SPA ;
           # 10049 et 10015 : pages publiques sans données personnelles en cache ;
-          # 10055 : styles inline de Next.js (les scripts restent protégés par nonce).
+          # 10055 : styles inline de Next.js (les scripts restent protégés par nonce) ;
+          # 10050 : fichiers publics /_next/static (nom haché) servis par le cache Cloudflare.
           printf '%s\tIGNORE\t(%s)\n' \
             10202 'Absence of Anti-CSRF Tokens' 90004 'Cross-Origin-Embedder-Policy' \
             10109 'Modern Web Application' 10049 'Non-Storable Content' 10015 'Re-examine Cache-control Directives' \
-            10055 'CSP: style-src unsafe-inline' \
+            10055 'CSP: style-src unsafe-inline' 10050 'Retrieved from Cache' \
             > zap/rules.tsv
           failed=0
           scan() {
