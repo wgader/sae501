@@ -57,4 +57,12 @@ test.describe('Sécurité du navigateur', () => {
 
         await expect(page.getByRole('alert').filter({ hasText: 'invalide ou a expiré' })).toBeVisible();
     });
+
+    test('Le fichier security.txt indique où signaler une faille', async ({ request }) => {
+        const response = await request.get('/.well-known/security.txt');
+        expect(response.status()).toBe(200);
+        const body = await response.text();
+        expect(body).toContain('Contact: ');
+        expect(body).toMatch(/^Expires: \d{4}-\d{2}-\d{2}T/m);
+    });
 });

@@ -1,0 +1,5 @@
+# Signalement de vulnérabilité (RFC 9116). Merci de ne pas exploiter la faille
+# au-delà de ce qui est nécessaire pour la démontrer.
+Contact: https://feytiat.wahelgader.fr/contact
+Expires: 2027-11-17T00:00:00.000Z
+Preferred-Languages: fr, en
