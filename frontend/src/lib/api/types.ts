@@ -183,6 +183,8 @@ export type AccountProfile = {
   nom: string | null;
   prenom: string | null;
   nomAssociation?: string | null;
+  /** Photo de profil de l'association (chemin public), ou null. */
+  logoUrl?: string | null;
   typeCompte?: string | null;
   moduleSubventionActif?: boolean | null;
   moduleMaterielActif?: boolean | null;
@@ -355,6 +357,8 @@ export type OccupiedSlot = {
   end: string;
   statut: string;
   isPreReserved: boolean;
+  /** Campagne de la demande ; null pour une réservation ponctuelle. */
+  campaignId: number | null;
 };
 
 export type RoomAvailabilityResponse = {
@@ -371,6 +375,8 @@ export type CreateRoomReservationInput = {
   dateFin: string;
   capaciteAttendue?: number | null;
   justificatif?: File | null;
+  /** Demande de campagne (arbitrée par la mairie) plutôt que réservation ponctuelle. */
+  forCampaign?: boolean;
 };
 
 export type RoomReservationResponse = {
@@ -409,11 +415,56 @@ export type Campaign = {
   seasonLabel: string;
   openingAt: string;
   closingAt: string;
+  /** Premier et dernier jour réservables (AAAA-MM-JJ, parfois suivis d'une heure), ou null. */
+  periodStart?: string | null;
+  periodEnd?: string | null;
   resourceTypes: string[];
   status: CampaignStatus;
   statusLabel?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type CampaignRequestStatus = 'pending' | 'accepted' | 'refused' | 'closed';
+
+/** Demande de salle d'une campagne, telle que renvoyée par /api/admin/campaigns/{id}/requests. */
+export type CampaignRequest = {
+  id: number;
+  status: CampaignRequestStatus;
+  statusLabel: string;
+  /** Campagne de rattachement ; null pour une réservation ponctuelle. */
+  campaignId: number | null;
+  association: { id: number | null; nom: string | null };
+  salle: { id: number | null; nom: string | null; capaciteMax: number | null };
+  motifEvenement: string | null;
+  capaciteAttendue: number | null;
+  /** Heure locale sans décalage, par exemple 2027-06-01T18:00:00. */
+  dateDebut: string | null;
+  dateFin: string | null;
+  decisionComment: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  /** Identifiants des demandes de la campagne qui se chevauchent sur la même salle. */
+  conflictsWith: number[];
+};
+
+export type CampaignRequestsResponse = {
+  campaign: Campaign;
+  requests: CampaignRequest[];
+};
+
+export type CampaignWithTotals = Campaign & {
+  /** Demandes reçues (hors annulées), créneaux acceptés et salles attribuées. */
+  totals: { requests: number; accepted: number; rooms: number };
+};
+
+export type MyCampaignRequestsResponse = {
+  campaign: Campaign | null;
+  requests: CampaignRequest[];
+};
+
+export type RoomRequestsResponse = {
+  requests: CampaignRequest[];
 };
 
 export type CampaignCurrentResponse = {

@@ -139,15 +139,4 @@ final class CampaignControllerTest extends ControllerRouteTestCase
             ],
         ]);
     }
-
-    public function testRoomSubmissionIsBlockedWithoutActiveCampaign(): void
-    {
-        $this->authenticateAsAdmin();
-        $this->requestJson('POST', '/api/reservation_salles', []);
-
-        $this->assertResponseStatusCodeSame(403);
-        $this->assertJsonContains([
-            'message' => 'Le dépôt des vœux annuels est fermé : aucune campagne active.',
-        ]);
-    }
 }

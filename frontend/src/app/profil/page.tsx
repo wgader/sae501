@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState, useSyncExternalStore } from 'react';
 import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import { ApiError, AccountProfile, getAccountProfile, updateAccountProfile } from '@/lib/api';
+import ProfilePhoto from '@/components/profile/ProfilePhoto';
+import { subscribeSession } from '@/lib/session';
 import { getStoredAssociationName, getAssociationInitials, getStoredUserName, getUserInitials, getPersonInitials } from '@/lib/authUtils';
 
 type ProfileForm = {
@@ -27,6 +29,8 @@ export default function ProfilPage() {
     getStoredAssociationName,
     () => 'Feytiat Loisirs',
   );
+  // Lu après l'hydratation, comme le nom de l'association : le rendu serveur n'a pas de session.
+  const storedUserName = useSyncExternalStore(subscribeSession, getStoredUserName, () => '');
 
   useEffect(() => {
     let isMounted = true;
@@ -77,7 +81,7 @@ export default function ProfilPage() {
 
   const userPrenom = profile?.prenom;
   const userNom = profile?.nom;
-  const presidentName = [userPrenom, userNom].filter(Boolean).join(' ') || getStoredUserName();
+  const presidentName = [userPrenom, userNom].filter(Boolean).join(' ') || storedUserName;
   const associationTitle = profile?.nomAssociation || associationName;
   const displayName = presidentName || associationTitle;
   const initials = getPersonInitials(userPrenom, userNom) || (presidentName ? getUserInitials(presidentName) : getAssociationInitials(associationTitle));
@@ -92,11 +96,14 @@ export default function ProfilPage() {
             <p className="mt-3 text-body-sm text-muted">Gérez les coordonnées et les accès associés à votre compte.</p>
           </header>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10">
-            <section aria-labelledby="profile-summary" className="border-b border-line pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
-              <div className="flex size-14 items-center justify-center rounded-full bg-accent text-xl font-black text-black sm:size-16">
-                {initials}
-              </div>
+          <div className="mt-8 grid gap-8 lg:grid-cols-5 lg:gap-10">
+            <section aria-labelledby="profile-summary" className="min-w-0 border-b border-line pb-8 lg:col-span-2 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
+              <ProfilePhoto
+                logoUrl={profile?.logoUrl ?? null}
+                initials={initials}
+                editable={profile?.typeCompte === 'association'}
+                onChange={setProfile}
+              />
               <h2 id="profile-summary" className="mt-5 text-xl font-bold leading-tight text-black">{displayName}</h2>
               {presidentName && associationTitle && (
                 <p className="mt-1 text-sm font-semibold text-primary">{associationTitle}</p>
@@ -109,7 +116,7 @@ export default function ProfilPage() {
               </span>
             </section>
 
-            <section aria-labelledby="profile-form" className="min-w-0">
+            <section aria-labelledby="profile-form" className="min-w-0 lg:col-span-3">
               <div className="border-b border-line pb-5">
                 <div>
                   <p className="text-label font-bold uppercase tracking-section text-primary">Informations personnelles</p>
@@ -120,7 +127,7 @@ export default function ProfilPage() {
               {isLoading ? (
                 <p className="mt-8 text-sm text-muted" role="status">Chargement de votre profil…</p>
               ) : (
-                <form className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
+                <form method="post" className="mt-8 flex flex-col gap-6" onSubmit={handleSubmit} noValidate>
                   <FormField
                     label="Numéro de téléphone"
                     name="telephone"

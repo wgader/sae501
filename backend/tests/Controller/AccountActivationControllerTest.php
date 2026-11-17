@@ -2,6 +2,9 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Association;
+use App\Entity\User;
+
 final class AccountActivationControllerTest extends ControllerRouteTestCase
 {
     public function testActivationRejectsMissingCredentials(): void
@@ -16,6 +19,31 @@ final class AccountActivationControllerTest extends ControllerRouteTestCase
             'token' => 'unknown-token',
             'password' => 'ValidPassword1',
         ]);
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testActivationLinkWorksOnceAndOnlyItsHashIsStored(): void
+    {
+        $association = (new Association())->setNom('Club de lecture')->setStatut('VALIDATED');
+        $user = (new User())
+            ->setEmail('nouveau@example.test')
+            ->setNom('Nouveau')
+            ->setPrenom('Membre')
+            ->setTypeCompte('association')
+            ->setRoles(['ROLE_ASSOCIATION'])
+            ->setActivationToken('jeton-envoye-par-email')
+            ->setActivationTokenExpiresAt(new \DateTimeImmutable('+1 day'));
+        $association->addUser($user);
+        $this->em->persist($association);
+        $this->em->persist($user);
+        $this->em->flush();
+        self::assertSame(hash('sha256', 'jeton-envoye-par-email'), $user->getActivationToken());
+
+        $password = 'Aa1'.bin2hex(random_bytes(8));
+        $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-envoye-par-email', 'password' => $password]);
+        $this->assertResponseIsSuccessful();
+
+        $this->requestJson('POST', '/api/auth/activate', ['token' => 'jeton-envoye-par-email', 'password' => $password]);
         $this->assertResponseStatusCodeSame(401);
     }
 }

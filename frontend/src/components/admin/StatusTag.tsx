@@ -6,15 +6,15 @@ import type { AssociationStatus, AssociationModule } from '@/lib/api';
 export type { AssociationModule } from '@/lib/api';
 
 export const statusTagVariants = cva(
-  'inline-flex w-fit items-center rounded-full px-[0.81rem] py-[0.44rem] text-[0.63rem] font-bold uppercase leading-normal tracking-[0.11rem]',
+  'inline-flex w-fit items-center rounded-full px-3 py-2 text-caption font-bold uppercase leading-normal tracking-widest',
   {
     variants: {
       status: {
-        PENDING_VALIDATION: 'bg-[#9c7a19] text-white',
+        PENDING_VALIDATION: 'bg-ochre text-white',
         VALIDATED: 'bg-Mosaic-Tile text-white',
         REFUSED: 'bg-Flush-Mahogany text-white',
         SUSPENDED: 'bg-Flush-Mahogany text-white',
-        evenements: 'bg-[#d9c2a7] text-ink',
+        evenements: 'bg-sand text-ink',
         salles: 'bg-Mosaic-Tile text-white',
         subventions: 'bg-Misty-Rose text-ink',
         materiel: 'bg-Indigo-Bloom text-white',

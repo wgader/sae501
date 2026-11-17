@@ -8,19 +8,25 @@ use App\Entity\Association;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+/**
+ * Données de démonstration. Le mot de passe des comptes vient de FIXTURES_PASSWORD
+ * (backend/.env.local en local, valeur aléatoire en CI) : aucun mot de passe n’est versionné.
+ */
 final class AppFixtures extends Fixture
 {
-    private const DEMO_PASSWORD = 'FeytiatDemo2026!';
-
     public function __construct(
         private readonly UserPasswordHasherInterface $passwordHasher,
+        #[Autowire(env: 'default::FIXTURES_PASSWORD')]
+        private readonly ?string $fixturesPassword,
     ) {
     }
 
     public function load(ObjectManager $manager): void
     {
+        $password = $this->demoPassword();
         $validatedAt = new \DateTimeImmutable();
         $associations = [
             'Amicale des donneurs de sang bénévoles',
@@ -97,7 +103,7 @@ final class AppFixtures extends Fixture
             ->setTypeCompte('mairie')
             ->setIsVerified(true)
             ->setCguValidateAt($validatedAt);
-        $admin->setPassword($this->passwordHasher->hashPassword($admin, self::DEMO_PASSWORD));
+        $admin->setPassword($this->passwordHasher->hashPassword($admin, $password));
 
         $representative = (new User())
             ->setEmail('antonio.alves@feytiat.test')
@@ -110,7 +116,7 @@ final class AppFixtures extends Fixture
             ->setIsVerified(true)
             ->setCguValidateAt($validatedAt);
         $firstAssociation->addUser($representative);
-        $representative->setPassword($this->passwordHasher->hashPassword($representative, self::DEMO_PASSWORD));
+        $representative->setPassword($this->passwordHasher->hashPassword($representative, $password));
 
         // Demande d’inscription en attente : permet de tester la validation par la mairie.
         $pendingAssociation = (new Association())
@@ -127,7 +133,7 @@ final class AppFixtures extends Fixture
             ->setIsVerified(true)
             ->setCguValidateAt($validatedAt);
         $pendingAssociation->addUser($pendingRepresentative);
-        $pendingRepresentative->setPassword($this->passwordHasher->hashPassword($pendingRepresentative, self::DEMO_PASSWORD));
+        $pendingRepresentative->setPassword($this->passwordHasher->hashPassword($pendingRepresentative, $password));
 
         $manager->persist($pendingAssociation);
         $manager->persist($admin);
@@ -135,5 +141,15 @@ final class AppFixtures extends Fixture
         $manager->persist($pendingRepresentative);
 
         $manager->flush();
+    }
+
+    private function demoPassword(): string
+    {
+        $password = trim((string) $this->fixturesPassword);
+        if (mb_strlen($password) < 10) {
+            throw new \RuntimeException('Définissez FIXTURES_PASSWORD (10 caractères minimum) dans backend/.env.local avant de charger les fixtures.');
+        }
+
+        return $password;
     }
 }

@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import Notice from '@/components/ui/Notice';
+import { IconArrowLeft, IconArrowRight, IconCheck, IconLocation, IconWarning } from '@/components/ui/icons';
 import {
   ApiError,
   OccupiedSlot,
@@ -21,6 +23,8 @@ interface RoomBookingDetailViewProps {
   onBack: () => void;
   onRefreshCalendar: () => void;
   onReservationCreated: (newSlot: OccupiedSlot) => void;
+  /** Campagne ouverte : la demande lui est rattachée et sera arbitrée. Sinon, réservation ponctuelle. */
+  campaignId?: number | null;
 }
 
 const MONTH_NAMES = [
@@ -64,7 +68,9 @@ export default function RoomBookingDetailView({
   onBack,
   onRefreshCalendar,
   onReservationCreated,
+  campaignId = null,
 }: RoomBookingDetailViewProps) {
+  const forCampaign = campaignId !== null;
   const [motif, setMotif] = useState('');
   const [attendees, setAttendees] = useState<number | ''>(initialAttendees);
   const [file, setFile] = useState<File | null>(null);
@@ -119,7 +125,11 @@ export default function RoomBookingDetailView({
 
     // Vérification dynamique du chevauchement avec une réservation existante
     const endDateTime = new Date(`${dateIso}T${endHour}:00`);
-    const hasOverlap = occupiedSlots.some((slot) => {
+    // Pendant la campagne, une demande en attente d'une autre association ne bloque pas le créneau.
+    const blockingSlots = occupiedSlots.filter(
+      (slot) => !(forCampaign && slot.campaignId === campaignId && slot.isPreReserved),
+    );
+    const hasOverlap = blockingSlots.some((slot) => {
       const slotStart = new Date(slot.start);
       const slotEnd = new Date(slot.end);
       return slotStart < endDateTime && slotEnd > startDateTime;
@@ -133,7 +143,7 @@ export default function RoomBookingDetailView({
     }
 
     return { isValid: true, error: null };
-  }, [dateIso, startHour, endHour, occupiedSlots]);
+  }, [dateIso, startHour, endHour, occupiedSlots, forCampaign, campaignId]);
 
   // Validation de la capacité déclarée
   const capacityValidation = useMemo(() => {
@@ -155,9 +165,10 @@ export default function RoomBookingDetailView({
       temporalValidation.isValid &&
       capacityValidation.isValid &&
       motif.trim().length > 0 &&
-      !isSubmitting
+      !isSubmitting &&
+      successInfo === null
     );
-  }, [temporalValidation.isValid, capacityValidation.isValid, motif, isSubmitting]);
+  }, [temporalValidation.isValid, capacityValidation.isValid, motif, isSubmitting, successInfo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,6 +189,7 @@ export default function RoomBookingDetailView({
         dateFin: endIso,
         capaciteAttendue: attendees === '' ? null : Number(attendees),
         justificatif: file,
+        forCampaign,
       });
 
       // Scénario 1 : Soumission réussie
@@ -193,6 +205,7 @@ export default function RoomBookingDetailView({
         end: endIso,
         statut: result.statut,
         isPreReserved: true,
+        campaignId,
       });
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -231,16 +244,17 @@ export default function RoomBookingDetailView({
           onClick={onBack}
           className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted hover:text-ink cursor-pointer transition-colors"
         >
-          ← RETOUR
+          <IconArrowLeft />
+          Retour
         </button>
 
         <div className="mt-4">
           <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
-            Demande de salle
+            {forCampaign ? 'Demande de campagne' : 'Réservation ponctuelle'}
           </p>
-          <h1 className="mt-1 text-4xl font-black tracking-display text-ink">
+          <h2 className="mt-1 text-3xl font-black tracking-display text-ink sm:text-4xl">
             Réserver une salle
-          </h1>
+          </h2>
         </div>
       </div>
 
@@ -287,7 +301,7 @@ export default function RoomBookingDetailView({
               {room.nom}
             </h2>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
-              <span>📍</span> {room.adresse}
+              <IconLocation className="h-3.5 w-3.5 shrink-0 text-primary" /> {room.adresse}
             </p>
 
             {room.description && (
@@ -330,83 +344,51 @@ export default function RoomBookingDetailView({
           </div>
 
           {/* Form fields for Motif and Justificatif */}
-          <form id="room-reservation-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
+          <form method="post" id="room-reservation-form" onSubmit={handleSubmit} className="space-y-5 pt-2">
             {/* Scénario 3 : Conflit simultané */}
             {conflictError && (
-              <div
-                role="alert"
-                className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-900"
+              <Notice
+                tone="danger"
+                title="Ce créneau n’est plus libre"
+                action={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConflictError(null);
+                      onRefreshCalendar();
+                    }}
+                    className="text-meta font-bold uppercase tracking-label text-danger hover:underline cursor-pointer"
+                  >
+                    Actualiser les disponibilités
+                  </button>
+                }
               >
-                <div className="flex items-start gap-3">
-                  <span className="text-xl" aria-hidden="true">⚠️</span>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm text-red-800">
-                      Conflit de réservation simultanée
-                    </h4>
-                    <p className="mt-1 text-xs text-red-700">
-                      {conflictError}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setConflictError(null);
-                        onRefreshCalendar();
-                      }}
-                      className="mt-3 rounded-md bg-red-800 px-3 py-1.5 text-caption font-bold uppercase tracking-wider text-white hover:bg-red-900 cursor-pointer shadow-xs"
-                    >
-                      Actualiser le calendrier
-                    </button>
-                  </div>
-                </div>
-              </div>
+                {conflictError}
+              </Notice>
             )}
 
-            {/* Erreur */}
-            {errorMessage && (
-              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">
-                {errorMessage}
-              </div>
-            )}
+            {errorMessage && <Notice tone="danger">{errorMessage}</Notice>}
 
-            {/* Succès (Scénario 1) */}
             {successInfo && (
-              <div
-                role="status"
-                className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900"
+              <Notice
+                tone="success"
+                title={forCampaign ? 'Demande de campagne envoyée' : 'Créneau réservé, en attente de confirmation'}
+                action={
+                  <>
+                    <Link href={forCampaign ? '/campagne' : '/historique'} className="text-meta font-bold uppercase tracking-label text-primary hover:underline">
+                      {forCampaign ? 'Voir mes demandes de campagne' : 'Voir mes démarches'}
+                    </Link>
+                    <button type="button" onClick={onBack} className="text-meta font-bold uppercase tracking-label text-ink hover:underline cursor-pointer">
+                      Faire une autre demande
+                    </button>
+                  </>
+                }
               >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl" aria-hidden="true">✅</span>
-                  <div>
-                    <h4 className="font-bold text-base text-emerald-800">
-                      Demande transmise avec succès !
-                    </h4>
-                    <p className="mt-1 text-xs text-emerald-700 leading-relaxed">
-                      {successInfo.message}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-caption">
-                      <span className="rounded-md bg-emerald-200 px-2 py-0.5 font-bold text-emerald-800">
-                        Statut : {successInfo.statut}
-                      </span>
-                      <span>✉️ Un accusé de réception récapitulatif vous a été envoyé par email.</span>
-                    </div>
-                    <div className="mt-4 flex items-center gap-3">
-                      <Link
-                        href="/historique"
-                        className="rounded-lg bg-emerald-800 px-4 py-2 text-caption font-bold uppercase tracking-wider text-white hover:bg-emerald-900"
-                      >
-                        Voir mes démarches
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={onBack}
-                        className="text-caption font-bold uppercase tracking-wider text-emerald-800 underline hover:text-emerald-950"
-                      >
-                        Réserver une autre salle
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                {forCampaign
+                  ? 'La mairie étudiera votre demande avec les autres lors de la réunion d’arbitrage.'
+                  : 'Le créneau est bloqué pour votre association jusqu’à la décision de la mairie.'}{' '}
+                Un accusé de réception vous a été envoyé par e-mail.
+              </Notice>
             )}
 
             {/* Motif */}
@@ -446,8 +428,9 @@ export default function RoomBookingDetailView({
                 className="mt-1.5 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {!capacityValidation.isValid && capacityValidation.error && (
-                <p role="alert" className="mt-1 text-caption font-semibold text-red-600">
-                  ⚠️ {capacityValidation.error}
+                <p role="alert" className="mt-1 flex items-center gap-1.5 text-caption font-semibold text-danger">
+                  <IconWarning className="h-3.5 w-3.5 shrink-0" />
+                  {capacityValidation.error}
                 </p>
               )}
             </div>
@@ -468,15 +451,17 @@ export default function RoomBookingDetailView({
                 className="mt-1.5 block w-full text-xs text-muted file:mr-3 file:rounded-md file:border-0 file:bg-paper file:px-3 file:py-2 file:text-xs file:font-bold file:text-ink hover:file:bg-line/60 cursor-pointer"
               />
               {file && (
-                <p className="mt-1 text-caption text-emerald-700">
-                  ✓ Fichier sélectionné : {file.name} ({(file.size / 1024).toFixed(1)} Ko)
+                <p className="mt-1 flex items-center gap-1.5 text-caption text-primary">
+                  <IconCheck className="h-3.5 w-3.5 shrink-0" />
+                  Fichier sélectionné : {file.name} ({(file.size / 1024).toFixed(1)} Ko)
                 </p>
               )}
             </div>
 
             {!temporalValidation.isValid && temporalValidation.error && (
-              <p role="alert" className="rounded-md bg-amber-50 p-2.5 text-caption font-semibold text-amber-800">
-                ⚠️ {temporalValidation.error}
+              <p role="alert" className="flex items-center gap-2 rounded-soft bg-accent/50 p-3 text-meta font-semibold text-ink">
+                <IconWarning className="h-4 w-4 shrink-0" />
+                {temporalValidation.error}
               </p>
             )}
           </form>
@@ -563,7 +548,10 @@ export default function RoomBookingDetailView({
                     Enregistrement...
                   </span>
                 ) : (
-                  'Valider la réservation →'
+                  <span className="flex items-center justify-center gap-2">
+                    {forCampaign ? 'Envoyer la demande' : 'Réserver ce créneau'}
+                    <IconArrowRight />
+                  </span>
                 )}
               </button>
 

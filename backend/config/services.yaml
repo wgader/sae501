@@ -10,6 +10,8 @@ parameters:
     app.event_upload_directory: '%kernel.project_dir%/var/uploads/events'
     app.private_document_directory: '%kernel.project_dir%/var/uploads/documents'
     app.public_upload_directory: '%kernel.project_dir%/public/uploads'
+    # Cookie de session réservé à HTTPS si JWT_COOKIE_SECURE n’est pas défini.
+    app.jwt_cookie_secure_default: '1'
 
 services:
     # default configuration for services in *this* file

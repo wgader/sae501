@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Security\SessionCookie;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,9 +19,13 @@ final class LogoutController
         Request $request,
         EventDispatcherInterface $eventDispatcher,
         TokenStorageInterface $tokenStorage,
+        SessionCookie $sessionCookie,
     ): JsonResponse {
+        // Le JWT est révoqué (blocklist) et le cookie effacé.
         $eventDispatcher->dispatch(new LogoutEvent($request, $tokenStorage->getToken()));
+        $response = new JsonResponse(['message' => 'Déconnexion réussie.'], Response::HTTP_OK);
+        $sessionCookie->close($response);
 
-        return new JsonResponse(['message' => 'Déconnexion réussie.'], Response::HTTP_OK);
+        return $response;
     }
 }

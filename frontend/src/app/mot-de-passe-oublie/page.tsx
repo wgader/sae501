@@ -4,21 +4,33 @@ import { type FormEvent, useState } from 'react';
 import Link from 'next/link';
 import FormField from '@/components/ui/FormField';
 import BackButton from '@/components/ui/BackButton';
+import Notice from '@/components/ui/Notice';
+import { requestPasswordReset } from '@/lib/api/auth';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email) return;
+    if (!email.trim()) {
+      setError('Indiquez votre adresse électronique.');
+      return;
+    }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    setError(null);
+    try {
+      await requestPasswordReset(email.trim());
       setIsSubmitted(true);
-    }, 800);
+    } catch (err) {
+      console.error('Demande de réinitialisation impossible', err);
+      setError(err instanceof Error ? err.message : 'La demande n’a pas pu être envoyée.');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -55,34 +67,27 @@ export default function ForgotPasswordPage() {
               Mot de passe oublié
             </h1>
             <p className="mt-2 text-body-sm leading-normal text-muted">
-              Saisissez l&apos;adresse électronique associée à votre compte association.
+              Saisissez l&apos;adresse électronique de votre compte, association ou mairie.
             </p>
           </header>
 
           {isSubmitted ? (
-            <div className="rounded-card border border-emerald-200 bg-emerald-50/70 p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="mt-4 text-base font-bold text-emerald-950">
-                Email envoyé avec succès
-              </h2>
-              <p className="mt-2 text-xs leading-5 text-emerald-900/80">
-                Si un compte est associé à <strong className="font-semibold">{email}</strong>, vous recevrez un lien de réinitialisation d&apos;ici quelques instants.
-              </p>
+            <div className="space-y-5">
+              <Notice tone="success" title="Vérifiez votre messagerie">
+                Si un compte actif est associé à <strong className="font-semibold">{email}</strong>, un lien de
+                réinitialisation vient de lui être envoyé. Il est valable une heure.
+              </Notice>
               <Link
                 href="/connexion"
-                className="mt-5 inline-flex h-control-compact items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover"
+                className="inline-flex h-control-compact items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover"
               >
                 Retour à la connexion
               </Link>
             </div>
           ) : (
-            <form className="flex flex-col gap-5" noValidate onSubmit={handleSubmit}>
+            <form method="post" className="flex flex-col gap-5" noValidate onSubmit={handleSubmit}>
               <FormField
-                label="Votre adresse électronique *"
+                label="Votre adresse électronique"
                 type="email"
                 name="email"
                 placeholder="exemple : contact@association.fr"
@@ -91,6 +96,8 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+
+              {error && <Notice tone="danger">{error}</Notice>}
 
               <button
                 type="submit"

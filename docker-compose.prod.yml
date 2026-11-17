@@ -43,6 +43,9 @@ x-backend-environment: &backend-environment
   JWT_SECRET_KEY: /run/secrets/jwt_private_key
   JWT_PUBLIC_KEY: /run/secrets/jwt_public_key
   JWT_PASSPHRASE: ${JWT_PASSPHRASE:?}
+  JWT_COOKIE_SECURE: "1"
+  # Antivirus des fichiers déposés : vide = désactivé, sinon tcp://clamav:3310 (profil antivirus).
+  CLAMAV_DSN: ${CLAMAV_DSN:-}
   # Le proxy d’entrée est sur un réseau Docker privé : Symfony lit l’IP du client et le schéma
   # HTTPS dans X-Forwarded-*, indispensable aux limiteurs de débit par IP.
   SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES:-private_ranges}
@@ -117,7 +120,12 @@ services:
 
   campaign-scheduler:
     <<: [*hardening, *backend-image]
-    command: sh -c "while true; do php bin/console app:campaigns:synchronize --env=prod --no-interaction; sleep 60; done"
+    # Chaque minute : statuts des campagnes. Chaque heure : purge des révocations de JWT expirées.
+    command: >-
+      sh -c 'i=0; while true;
+      do php bin/console app:campaigns:synchronize --env=prod --no-interaction;
+      if [ $$((i % 60)) -eq 0 ]; then php bin/console cache:pool:prune --env=prod --no-interaction; fi;
+      i=$$((i + 1)); sleep 60; done'
     environment: *backend-environment
     mem_limit: ${SCHEDULER_MEM_LIMIT:-192m}
     healthcheck:
@@ -179,6 +187,24 @@ services:
     networks:
       - db_network
 
+  # Antivirus facultatif (environ 1 Go de mémoire) : activer avec COMPOSE_PROFILES=antivirus et
+  # CLAMAV_DSN=tcp://clamav:3310 dans .env. Les signatures se mettent à jour d’elles-mêmes
+  # (freshclam) ; aucun port publié.
+  clamav:
+    image: clamav/clamav:1.4.3
+    profiles: [antivirus]
+    restart: unless-stopped
+    mem_limit: ${CLAMAV_MEM_LIMIT:-1536m}
+    # Son contrôle de santé laisse 6 minutes au premier chargement des signatures : le déploiement,
+    # qui attend 5 minutes, échouerait. Pendant ce démarrage, les dépôts sont refusés (« réessayez »).
+    healthcheck:
+      disable: true
+    volumes:
+      - clamav_data:/var/lib/clamav
+    logging: *logging
+    networks:
+      - default
+
 networks:
   # Sortie Internet (Brevo) ; aucun port publié.
   default:
@@ -194,6 +220,8 @@ networks:
     external: true
 
 volumes:
+  clamav_data:
+    name: ${COMPOSE_PROJECT_NAME}_clamav_data
   backend_uploads:
     name: ${COMPOSE_PROJECT_NAME}_backend_uploads
   backend_private_uploads:

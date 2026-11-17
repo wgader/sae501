@@ -3,12 +3,12 @@ import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 export const filterTagVariants = cva(
-  'inline-flex min-h-14 min-w-[10rem] cursor-pointer items-center justify-center whitespace-nowrap rounded-[0.63rem] px-5 py-[0.63rem] text-[0.81rem] font-extrabold uppercase leading-[1.22rem] tracking-[0.09rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#146e67] sm:px-[2.19rem]',
+  'inline-flex min-h-14 min-w-40 cursor-pointer items-center justify-center whitespace-nowrap rounded-control px-5 py-2.5 text-body-sm font-extrabold uppercase leading-5 tracking-wider transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-9',
   {
     variants: {
       selected: {
-        true: 'bg-[#146e67] text-white',
-        false: 'border border-[#146e67] text-[#146e67] hover:bg-[#E8F4F2]',
+        true: 'bg-primary text-white',
+        false: 'border border-primary text-primary hover:bg-primary-soft',
       },
     },
     defaultVariants: {

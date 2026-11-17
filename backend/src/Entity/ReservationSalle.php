@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ReservationSalleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -10,14 +9,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Représente une réservation de salle municipale effectuée par une association.
+ *
+ * Volontairement absente d’API Platform : la ressource générée autorisait lecture, modification et
+ * suppression à tout utilisateur connecté. Les accès passent par les contrôleurs dédiés
+ * (/api/rooms/reservations, /api/admin/campaigns/{id}/requests…), qui vérifient les droits.
  */
 #[ORM\Entity(repositoryClass: ReservationSalleRepository::class)]
 #[ORM\Table(name: 'reservation_salle')]
-#[ApiResource(
-    security: "is_granted('ROLE_USER')",
-    paginationItemsPerPage: 20,
-    paginationMaximumItemsPerPage: 100,
-)]
 class ReservationSalle
 {
     public const STATUTS = [
@@ -65,6 +63,16 @@ class ReservationSalle
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $observations = null;
+
+    /** Campagne annuelle pendant laquelle la demande a été déposée ou ajoutée par la mairie. */
+    #[ORM\ManyToOne(targetEntity: Campaign::class)]
+    #[ORM\JoinColumn(name: 'campaign_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?Campaign $campaign = null;
+
+    /** Motif communiqué à l’association lors d’un refus ou d’une modification par la mairie. */
+    #[ORM\Column(name: 'decision_comment', type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 1000)]
+    private ?string $decisionComment = null;
 
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
@@ -199,6 +207,31 @@ class ReservationSalle
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function getCampaign(): ?Campaign
+    {
+        return $this->campaign;
+    }
+
+    public function setCampaign(?Campaign $campaign): static
+    {
+        $this->campaign = $campaign;
+
+        return $this;
+    }
+
+    public function getDecisionComment(): ?string
+    {
+        return $this->decisionComment;
+    }
+
+    public function setDecisionComment(?string $decisionComment): static
+    {
+        $decisionComment = null === $decisionComment ? null : trim($decisionComment);
+        $this->decisionComment = '' === $decisionComment ? null : $decisionComment;
 
         return $this;
     }

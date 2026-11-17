@@ -124,7 +124,7 @@ function AgentCard({ agent, onSelect }: { agent: Agent; onSelect: () => void }) 
         </span>
         <span className="mt-3 flex flex-wrap gap-2" aria-label="Rôles de l’agent">
           {agent.roles.map((role) => (
-            <span key={role} className="rounded-pill border border-line bg-paper px-2.5 py-1 text-[0.65rem] font-semibold text-muted">
+            <span key={role} className="rounded-pill border border-line bg-paper px-2.5 py-1 text-caption font-semibold text-muted">
               {role.replace(/^ROLE_/, '').replaceAll('_', ' ')}
             </span>
           ))}
@@ -146,8 +146,8 @@ function ModuleSelector({
 }) {
   return (
     <fieldset>
-      <legend className="text-base font-bold tracking-[0.16em] text-[var(--ink)]">Accès aux modules</legend>
-      <p className="mt-2 text-xs text-[var(--muted)]">
+      <legend className="text-base font-bold tracking-section text-ink">Accès aux modules</legend>
+      <p className="mt-2 text-xs text-muted">
         Sélectionnez un ou plusieurs modules pour définir les droits de l&apos;agent.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -201,24 +201,24 @@ function AgentForm({
   const isEdit = mode === 'edit';
 
   return (
-    <form
+    <form method="post"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
       }}
       className="space-y-8"
     >
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-5">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
         <div>
           <button
             type="button"
             onClick={onCancel}
-            className="mb-4 inline-flex items-center gap-1 text-[0.68rem] font-bold text-[var(--Mosaic-Tile)] hover:underline"
+            className="mb-4 inline-flex items-center gap-1 text-label font-bold text-primary hover:underline"
           >
             <ArrowLeft />
             <span>Retour à la liste des agents</span>
           </button>
-          <h1 className="text-2xl font-black uppercase tracking-[0.12em] text-[var(--ink)]">
+          <h1 className="text-2xl font-black uppercase tracking-label text-ink">
             {isEdit ? 'Modifier un agent' : 'Ajouter un agent'}
           </h1>
         </div>
@@ -231,9 +231,9 @@ function AgentForm({
         )}
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_1.15fr]">
+      <div className="grid gap-8 xl:grid-cols-2">
         <section aria-labelledby="agent-information-heading">
-          <h2 id="agent-information-heading" className="text-base font-bold tracking-[0.16em] text-[var(--ink)]">
+          <h2 id="agent-information-heading" className="text-base font-bold tracking-section text-ink">
             {isEdit ? 'Informations de l’agent' : 'Identité et contact'}
           </h2>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -243,18 +243,18 @@ function AgentForm({
             <FormField label="Téléphone" required={false} value={form.telephone} onChange={(event) => onChange('telephone', event.target.value)} placeholder="exemple : 05 XX XX XX XX" />
           </div>
           {isEdit && (
-            <p className="mt-6 text-xs text-[var(--muted)]">
+            <p className="mt-6 text-xs text-muted">
               Les coordonnées non renseignées peuvent être complétées ultérieurement.
             </p>
           )}
         </section>
 
-        <section className="border-t border-[var(--line)] pt-8 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
+        <section className="border-t border-line pt-8 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
           <ModuleSelector selectedModules={form.modules} onToggle={onToggleModule} />
         </section>
       </div>
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-6">
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
         <div className="flex flex-wrap gap-3">
           <Button type="submit" size="sm" isLoading={isSubmitting}>
             {isEdit ? 'Enregistrer les modifications' : 'Enregistrer'}
@@ -480,7 +480,7 @@ export default function AdminAgentsPage() {
 
       <section aria-labelledby="agents-filter-heading">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="agents-filter-heading" className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--muted)]">
+          <h2 id="agents-filter-heading" className="text-xs font-bold uppercase tracking-section text-muted">
             <span aria-hidden="true" className="mr-2">▽</span>
             Filtrer les agents
           </h2>
@@ -489,7 +489,7 @@ export default function AdminAgentsPage() {
               label="Tous"
               isSelected={moduleFilter === 'all'}
               onClick={() => setModuleFilter('all')}
-              className="min-h-0 min-w-0 px-3 py-2 text-[0.68rem] tracking-[0.06rem]"
+              className="min-h-0 min-w-0 px-3 py-2 text-label tracking-wider"
             />
             {MODULES.map((module) => (
               <FilterTag
@@ -497,7 +497,7 @@ export default function AdminAgentsPage() {
                 label={module.title}
                 isSelected={moduleFilter === module.id}
                 onClick={() => setModuleFilter(module.id)}
-                className="min-h-0 min-w-0 px-3 py-2 text-[0.68rem] tracking-[0.06rem]"
+                className="min-h-0 min-w-0 px-3 py-2 text-label tracking-wider"
               />
             ))}
           </div>
@@ -507,12 +507,12 @@ export default function AdminAgentsPage() {
       <section aria-labelledby="agents-list-heading">
         <h2 id="agents-list-heading" className="sr-only">Liste des agents</h2>
         {isLoading && (
-          <p className="rounded-[0.9rem] border border-[var(--line)] px-5 py-8 text-center text-sm text-[var(--muted)]">
+          <p className="rounded-soft border border-line px-5 py-8 text-center text-sm text-muted">
             Chargement des agents...
           </p>
         )}
         {loadError && (
-          <p role="alert" className="rounded-[0.9rem] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          <p role="alert" className="rounded-soft border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
             {loadError}
           </p>
         )}
@@ -526,7 +526,7 @@ export default function AdminAgentsPage() {
           </ul>
         )}
         {!isLoading && !loadError && filteredAgents.length === 0 && (
-          <p className="rounded-[0.9rem] border border-dashed border-[var(--line)] px-5 py-8 text-center text-sm text-[var(--muted)]">
+          <p className="rounded-soft border border-dashed border-line px-5 py-8 text-center text-sm text-muted">
             Aucun agent ne correspond à ce filtre.
           </p>
         )}

@@ -75,6 +75,14 @@ class Campaign
     #[Assert\NotNull]
     private ?\DateTimeImmutable $closingAt = null;
 
+    /** Premier jour des créneaux réservables pendant la campagne (null : pas de borne). */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $periodStart = null;
+
+    /** Dernier jour des créneaux réservables pendant la campagne (null : pas de borne). */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $periodEnd = null;
+
     /**
      * @var list<string>
      */
@@ -138,6 +146,70 @@ class Campaign
         $this->closingAt = $closingAt;
 
         return $this;
+    }
+
+    public function getPeriodStart(): ?\DateTimeImmutable
+    {
+        return $this->periodStart;
+    }
+
+    public function setPeriodStart(?\DateTimeImmutable $periodStart): static
+    {
+        $this->periodStart = $periodStart?->setTime(0, 0);
+
+        return $this;
+    }
+
+    public function getPeriodEnd(): ?\DateTimeImmutable
+    {
+        return $this->periodEnd;
+    }
+
+    public function setPeriodEnd(?\DateTimeImmutable $periodEnd): static
+    {
+        $this->periodEnd = $periodEnd?->setTime(0, 0);
+
+        return $this;
+    }
+
+    /**
+     * Premier jour réservable ; sans période saisie, le 1er janvier de l’année qui suit l’ouverture.
+     */
+    public function getEffectivePeriodStart(): ?\DateTimeImmutable
+    {
+        return $this->periodStart ?? $this->defaultPeriodBound(1, 1);
+    }
+
+    /**
+     * Dernier jour réservable ; sans période saisie, le 31 décembre de l’année qui suit l’ouverture.
+     */
+    public function getEffectivePeriodEnd(): ?\DateTimeImmutable
+    {
+        return $this->periodEnd ?? $this->defaultPeriodBound(12, 31);
+    }
+
+    /**
+     * Le jour du créneau fait-il partie de la période réservable de la campagne ?
+     */
+    public function coversDay(\DateTimeImmutable $slot): bool
+    {
+        $start = $this->getEffectivePeriodStart();
+        $end = $this->getEffectivePeriodEnd();
+        if (null === $start || null === $end) {
+            return false;
+        }
+        $day = $slot->format('Y-m-d');
+
+        return $day >= $start->format('Y-m-d') && $day <= $end->format('Y-m-d');
+    }
+
+    private function defaultPeriodBound(int $month, int $day): ?\DateTimeImmutable
+    {
+        if (null === $this->openingAt) {
+            return null;
+        }
+
+        return (new \DateTimeImmutable('today'))->setDate((int) $this->openingAt->format('Y') + 1, $month, $day);
     }
 
     /**
@@ -209,6 +281,11 @@ class Campaign
         if (null !== $this->openingAt && null !== $this->closingAt && $this->closingAt <= $this->openingAt) {
             $context->buildViolation('La clôture doit être postérieure à l’ouverture.')
                 ->atPath('closingAt')
+                ->addViolation();
+        }
+        if (null !== $this->periodStart && null !== $this->periodEnd && $this->periodEnd < $this->periodStart) {
+            $context->buildViolation('La fin de la période réservable doit suivre son début.')
+                ->atPath('periodEnd')
                 ->addViolation();
         }
     }

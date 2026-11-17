@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Security\PasswordPolicy;
+use App\Security\SecurityAuditLogger;
+use App\Security\SessionCookie;
 use App\Service\AssociationStatusNotifier;
 use Doctrine\ORM\EntityManagerInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,8 +19,6 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Gère l'activation de compte et le renvoi du lien d'activation.
@@ -48,7 +48,7 @@ final class AccountActivationController extends AbstractController
      * { "token": "...", "password": "<password>" }
      *
      * Réponses :
-     *   200 → compte activé, JWT retourné (auto-login)
+     *   200 → compte activé, session ouverte par cookie HttpOnly (auto-login)
      *   400 → payload invalide
      *   401 → token invalide ou expiré
      *   409 → compte déjà activé
@@ -57,8 +57,9 @@ final class AccountActivationController extends AbstractController
     #[Route('/activate', name: 'api_activate_account', methods: ['POST'])]
     public function activate(
         Request $request,
-        JWTTokenManagerInterface $jwtManager,
-        ValidatorInterface $validator,
+        SessionCookie $sessionCookie,
+        PasswordPolicy $passwordPolicy,
+        SecurityAuditLogger $audit,
     ): JsonResponse {
         // ── Décodage du payload ───────────────────────────────────────────────
         $data = json_decode($request->getContent(), true);
@@ -74,7 +75,9 @@ final class AccountActivationController extends AbstractController
         }
 
         // ── Recherche du user par token ───────────────────────────────────────
-        $user = $this->userRepository->findOneBy(['activationToken' => $token]);
+        // Les liens émis avant le stockage en empreinte restent valables jusqu’à leur expiration (72 h).
+        $user = $this->userRepository->findOneBy(['activationToken' => hash('sha256', $token)])
+            ?? $this->userRepository->findOneBy(['activationToken' => $token]);
 
         // ── Compte déjà activé : cas distinct pour un message clair ───────────
         if ($user !== null && $user->isVerified()) {
@@ -97,38 +100,20 @@ final class AccountActivationController extends AbstractController
         }
 
         // ── Validation du mot de passe ────────────────────────────────────────
-        $violations = $validator->validate($password, [
-            new Assert\NotBlank(),
-            new Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins 8 caractères.'),
-            new Assert\Regex(
-                pattern: '/[A-Z]/',
-                message: 'Le mot de passe doit contenir au moins une majuscule.'
-            ),
-            new Assert\Regex(
-                pattern: '/[a-z]/',
-                message: 'Le mot de passe doit contenir au moins une minuscule.'
-            ),
-            new Assert\Regex(
-                pattern: '/[0-9]/',
-                message: 'Le mot de passe doit contenir au moins un chiffre.'
-            ),
-        ]);
-
-        if (count($violations) > 0) {
-            $errors = [];
-            foreach ($violations as $violation) {
-                $errors[] = $violation->getMessage();
-            }
+        $errors = $passwordPolicy->violations($password);
+        if ($errors !== []) {
             return $this->json(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         // ── Activation du compte ──────────────────────────────────────────────
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
         $user->setIsVerified(true);
+        $user->setCredentialsChangedAt(new \DateTimeImmutable());
         $user->setActivationToken(null);
         $user->setActivationTokenExpiresAt(null);
 
         $this->entityManager->flush();
+        $audit->passwordChanged($user, 'activation');
 
         // ── Email de confirmation ─────────────────────────────────────────────
         try {
@@ -147,18 +132,16 @@ final class AccountActivationController extends AbstractController
             );
         } catch (\Throwable $e) {
             $this->logger->error('account_activation: email de confirmation non envoyé', [
-                'user'      => $user->getEmail(),
+                'user'      => $user->getId(),
                 'exception' => $e->getMessage(),
             ]);
         }
 
-        // ── Auto-login : génération du JWT ────────────────────────────────────
-        $jwt = $jwtManager->create($user);
-
-        return $this->json([
+        // ── Auto-login : session ouverte par cookie HttpOnly ──────────────────
+        return $sessionCookie->open($this->json([
             'message' => 'Votre compte a été activé avec succès.',
-            'token'   => $jwt,
-        ]);
+            'user'    => SessionCookie::profile($user),
+        ]), $user);
     }
 
     /**

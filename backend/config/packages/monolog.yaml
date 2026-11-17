@@ -1,6 +1,7 @@
 monolog:
     channels: # To see all channels, run bin/console debug:autowiring logger
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
+        - audit # Journal de sécurité (SecurityAuditLogger) : connexions, mots de passe, rôles
 
 when@dev:
     monolog:
@@ -37,8 +38,16 @@ when@prod:
                 action_level: error
                 handler: nested
                 excluded_http_codes: [404, 405]
-                channels: ["!deprecation"]
+                # Les requêtes SQL et leurs paramètres (données personnelles) ne sont jamais vidés dans les journaux.
+                channels: ["!deprecation", "!audit", "!doctrine"]
                 buffer_size: 50 # How many messages should be saved? Prevent memory leaks
+            # Le journal de sécurité est toujours écrit, même sans erreur dans la requête.
+            audit:
+                type: stream
+                path: php://stderr
+                level: info
+                channels: [audit]
+                formatter: monolog.formatter.json
             nested:
                 type: stream
                 path: php://stderr

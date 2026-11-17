@@ -137,7 +137,7 @@ export default function AdminAssociationRequestAnnexesPage() {
           {canRequestDocuments && (
             <section className="rounded-card border border-accent/50 bg-accent/10 p-5" aria-labelledby="request-documents-title">
               <h3 id="request-documents-title" className="text-xs font-bold uppercase tracking-section text-ink">Demander une pièce manquante</h3>
-              <form className="mt-4 space-y-4 border-t border-line pt-4" onSubmit={(event) => void handleRequestDocuments(event)}>
+              <form method="post" className="mt-4 space-y-4 border-t border-line pt-4" onSubmit={(event) => void handleRequestDocuments(event)}>
                 <div>
                   <label htmlFor="missing-file" className="text-label font-bold uppercase tracking-label text-muted">Pièce manquante</label>
                   <input id="missing-file" value={missingFile} onChange={(event) => setMissingFile(event.target.value)} className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-ink" placeholder="Ex. attestation d’assurance" />

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Assemble SECURITY-REPORT.md à partir des sorties brutes de Gitleaks, Trivy et Hadolint.
+"""Assemble SECURITY-REPORT.md à partir des sorties de Gitleaks, Trivy, Hadolint, Bearer et Syft.
 
-Usage : security_report.py <dossier des rapports> <résultat gitleaks> <résultat trivy> <résultat hadolint>
+Usage : security_report.py <dossier des rapports> gitleaks=<résultat> trivy=<résultat> hadolint=<résultat>
+        bearer=<résultat> syft=<résultat>
 Les résultats sont ceux des étapes GitHub Actions (success, failure, skipped…).
 Le rapport ne contient jamais la valeur d’un secret : Gitleaks est lancé avec --redact
 et seuls la règle, le fichier et le commit sont repris.
@@ -66,13 +67,50 @@ def hadolint_section(reports: Path) -> list[str]:
     return lines or ["Rapport Hadolint indisponible."]
 
 
+CONTROLS = {
+    "gitleaks": "Gitleaks (secrets)",
+    "trivy": "Trivy (dépendances, configuration)",
+    "hadolint": "Hadolint (Dockerfiles)",
+    "bearer": "Bearer (analyse statique)",
+    "syft": "Syft (SBOM, informatif)",
+}
+
+
+def bearer_section(reports: Path) -> list[str]:
+    data = load_json(reports / "bearer.json")
+    if data is None:
+        return ["Rapport Bearer indisponible : le scan n’a pas produit de résultat exploitable."]
+    counts = {severity: len(data.get(severity) or []) for severity in ("critical", "high", "medium", "low")}
+    lines = ["| Critique | Élevée | Moyenne | Faible |", "|---|---|---|---|", f"| {counts['critical']} | {counts['high']} | {counts['medium']} | {counts['low']} |"]
+    blocking = [item for severity in ("critical", "high") for item in data.get(severity) or []]
+    if blocking:
+        lines += ["", "| Gravité | Règle | Emplacement |", "|---|---|---|"]
+        lines += [f"| {item.get('severity')} | {item.get('title')} | `{item.get('filename')}:{item.get('line_number')}` |" for item in blocking]
+    return lines
+
+
+def sbom_section(reports: Path) -> list[str]:
+    data = load_json(reports / "sbom.cdx.json")
+    if data is None:
+        return ["SBOM indisponible."]
+    components = data.get("components") or []
+    by_type: dict[str, int] = {}
+    for component in components:
+        purl = component.get("purl") or ""
+        ecosystem = purl.split(":", 1)[1].split("/", 1)[0] if purl.startswith("pkg:") else component.get("type", "autre")
+        by_type[ecosystem] = by_type.get(ecosystem, 0) + 1
+    summary = ", ".join(f"{name} : {count}" for name, count in sorted(by_type.items()))
+    return [f"{len(components)} composants inventoriés ({summary}). Fichier CycloneDX : `sbom.cdx.json`."]
+
+
 def main() -> int:
-    if len(sys.argv) != 5:
+    if len(sys.argv) < 2:
         print(__doc__, file=sys.stderr)
         return 2
 
     reports = Path(sys.argv[1])
-    outcomes = {"Gitleaks (secrets)": sys.argv[2], "Trivy (dépendances, configuration)": sys.argv[3], "Hadolint (Dockerfiles)": sys.argv[4]}
+    given = dict(arg.split("=", 1) for arg in sys.argv[2:] if "=" in arg)
+    outcomes = {label: given.get(key, "skipped") for key, label in CONTROLS.items()}
     commit = os.environ.get("GITHUB_SHA", "local")[:7]
     run_url = ""
     if os.environ.get("GITHUB_RUN_ID"):
@@ -87,7 +125,8 @@ def main() -> int:
     if run_url:
         lines.append(f"- Exécution : {run_url}")
     lines += [
-        "- Seuils bloquants : tout nouveau secret, toute vulnérabilité ou configuration CRITICAL, toute erreur Hadolint.",
+        "- Seuils bloquants : tout nouveau secret, toute vulnérabilité ou configuration CRITICAL, toute erreur Hadolint,",
+        "  tout constat Bearer HIGH ou CRITICAL.",
         "",
         "| Contrôle | Résultat |",
         "|---|---|",
@@ -104,6 +143,14 @@ def main() -> int:
         "## Dockerfiles (Hadolint)",
         "",
         *hadolint_section(reports),
+        "",
+        "## Analyse statique du code (Bearer)",
+        "",
+        *bearer_section(reports),
+        "",
+        "## Inventaire des composants (Syft, CycloneDX)",
+        "",
+        *sbom_section(reports),
         "",
     ]
     print("\n".join(lines))

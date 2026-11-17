@@ -261,7 +261,8 @@ setup_environment prod "${PROD_FRONTEND_DOMAIN:-}" "${PROD_API_DOMAIN:-}" sae501
 # ── Proxy d’entrée ────────────────────────────────────────────────────────────
 log "Proxy d’entrée"
 if [[ ! -f "$BASE_DIR/edge/.env" ]]; then
-  printf 'ACME_EMAIL=%s\n' "${ACME_EMAIL:-}" > "$BASE_DIR/edge/.env"
+  # EDGE_CLOUDFLARE=1 une fois les DNS passés en mode Proxied chez Cloudflare (voir DEPLOYMENT.md).
+  printf 'ACME_EMAIL=%s\nEDGE_CLOUDFLARE=0\n' "${ACME_EMAIL:-}" > "$BASE_DIR/edge/.env"
 fi
 chown "$DEPLOY_USER:$DEPLOY_USER" "$BASE_DIR/edge/.env"
 chmod 0600 "$BASE_DIR/edge/.env"

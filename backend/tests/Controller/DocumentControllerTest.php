@@ -138,6 +138,36 @@ final class DocumentControllerTest extends ControllerRouteTestCase
         self::assertSame(self::PDF_CONTENT, $this->client->getInternalResponse()->getContent());
     }
 
+    public function testAgentOnlyDownloadsDocumentsOfTheirModule(): void
+    {
+        $association = $this->createAssociation('Association A');
+        $roomDocument = $this->createStoredDocument($association)->setLieAType('salle')->setLieAId(1);
+        $equipmentDocument = $this->createStoredDocument($association)->setLieAType('materiel')->setLieAId(2);
+        $generalDocument = $this->createStoredDocument($association);
+        $this->em->flush();
+
+        $agent = (new User())
+            ->setEmail('agent-salles@example.test')
+            ->setNom('Agent')
+            ->setPrenom('Salles')
+            ->setTypeCompte('mairie')
+            ->setRoles(['ROLE_MAIRIE', 'ROLE_GESTION_SALLE'])
+            ->setIsVerified(true);
+        $this->em->persist($agent);
+        $this->em->flush();
+        $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$this->jwtManager->create($agent));
+
+        $this->client->request('GET', $this->downloadUri($roomDocument));
+        $this->assertResponseIsSuccessful();
+
+        $this->client->request('GET', $this->downloadUri($generalDocument));
+        $this->assertResponseIsSuccessful();
+
+        // Hors de son module : réponse identique à un document inexistant.
+        $this->client->request('GET', $this->downloadUri($equipmentDocument));
+        $this->assertResponseStatusCodeSame(404);
+    }
+
     public function testUnknownDocumentReturnsNotFound(): void
     {
         $this->authenticateAsAdmin();

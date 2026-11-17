@@ -19,16 +19,23 @@ security:
         login:
             pattern: ^/api/auth/login
             stateless: true
+            user_checker: App\Security\AccountStatusChecker
             json_login:
                 check_path: /api/auth/login
                 username_path: email
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            # Contre le test massif de mots de passe : 5 échecs par compte et par IP sur 15 minutes
+            # (et 25 par IP tous comptes confondus) ; réponse 429 en français (LoginThrottlingListener).
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
 
         api:
             pattern: ^/api
             stateless: true
+            user_checker: App\Security\AccountStatusChecker
             jwt: ~
 
     access_control:
@@ -38,13 +45,14 @@ security:
         - { path: ^/api/auth/activate, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/resend-activation, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/password-reset/(request|confirm)$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/rooms$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/salles$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/campaigns/current, roles: PUBLIC_ACCESS }
-        - { path: ^/api/admin/campaigns, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
+        - { path: ^/api/admin/(campaigns|campaign-history|room-requests), allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 

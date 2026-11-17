@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Association;
+use App\Entity\Campaign;
 use App\Entity\DemandeStatusHistory;
 use App\Entity\DocumentJustificatif;
 use App\Entity\ReservationSalle;
 use App\Entity\Salle;
 use App\Entity\User;
+use App\Exception\RoomBookingClosedException;
 use App\Exception\RoomReservationConflictException;
 use App\Message\SendRoomReservationNotificationMessage;
+use App\Repository\CampaignRepository;
 use App\Repository\ReservationSalleRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,17 +25,25 @@ final class RoomReservationService
 {
     public const OPENING_HOUR = 8;
     public const CLOSING_HOUR = 23;
+    private const ONE_OFF_HORIZON = '+18 months';
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly PrivateDocumentStorage $documentStorage,
         private readonly ReservationSalleRepository $reservationSalleRepository,
         private readonly MessageBusInterface $messageBus,
+        private readonly CampaignRepository $campaignRepository,
+        private readonly CampaignService $campaignService,
     ) {
     }
 
     /**
-     * Crée une réservation de salle avec verrouillage transactionnel et contrôle d'anti-chevauchement strict.
+     * Crée une demande de salle avec verrouillage transactionnel.
+     *
+     * - Demande de campagne : seulement pendant la campagne ouverte et sur sa période réservable ;
+     *   plusieurs associations peuvent viser le même créneau, la réunion d’arbitrage tranche.
+     * - Réservation ponctuelle : hors campagne ouverte et hors période d’une campagne à venir ;
+     *   premier arrivé, premier servi, le créneau est bloqué dès le dépôt.
      */
     public function create(
         Association $association,
@@ -43,13 +54,17 @@ final class RoomReservationService
         \DateTimeImmutable $dateFin,
         ?int $capaciteAttendue = null,
         ?UploadedFile $justificatif = null,
+        bool $forCampaign = false,
     ): ReservationSalle {
+        $campaign = $this->resolveCampaign($dateDebut, $forCampaign);
+
         $storedJustificatifPath = null;
 
         try {
             $reservation = $this->entityManager->wrapInTransaction(function () use (
                 $association,
                 $user,
+                $campaign,
                 $salleId,
                 $motif,
                 $dateDebut,
@@ -104,6 +119,15 @@ final class RoomReservationService
 
                 // 5. Contrôle strict de non-chevauchement (Overlap Prevention)
                 $conflicts = $this->reservationSalleRepository->findOverlappingReservations($salle, $dateDebut, $dateFin);
+                if (null !== $campaign) {
+                    // Les demandes concurrentes de la même campagne sont arbitrées en réunion :
+                    // seuls bloquent un créneau déjà attribué ou une réservation ponctuelle.
+                    $conflicts = array_values(array_filter(
+                        $conflicts,
+                        static fn (ReservationSalle $r): bool => $r->getCampaign()?->getId() !== $campaign->getId()
+                            || CampaignRequestService::STATUS_ACCEPTED === $r->getStatut(),
+                    ));
+                }
                 if ($conflicts !== []) {
                     $conflictDetails = array_map(static fn (ReservationSalle $r): array => [
                         'id' => $r->getId(),
@@ -127,6 +151,8 @@ final class RoomReservationService
                 $reservation->setDateFin($dateFin);
                 $reservation->setCapaciteAttendue($capaciteAttendue);
                 $reservation->setStatut('En attente de validation par la mairie');
+                // Une demande de campagne apparaît dans son suivi ; sans campagne, elle est ponctuelle.
+                $reservation->setCampaign($campaign);
                 $reservation->setCreatedAt(new \DateTimeImmutable());
 
                 $this->entityManager->persist($reservation);
@@ -171,6 +197,50 @@ final class RoomReservationService
         }
 
         return $reservation;
+    }
+
+    private function resolveCampaign(\DateTimeImmutable $slotStart, bool $forCampaign): ?Campaign
+    {
+        $now = new \DateTimeImmutable();
+        $this->campaignService->synchronize($now);
+        $active = $this->campaignRepository->findCurrent($now, 'salle');
+
+        if ($forCampaign) {
+            if (null === $active) {
+                throw new RoomBookingClosedException();
+            }
+            if (!$active->coversDay($slotStart)) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'Ce jour est en dehors de la période réservable de la campagne (du %s au %s).',
+                    $active->getEffectivePeriodStart()?->format('d/m/Y'),
+                    $active->getEffectivePeriodEnd()?->format('d/m/Y'),
+                ));
+            }
+
+            return $active;
+        }
+
+        if (null !== $active) {
+            throw new RoomBookingClosedException(
+                \sprintf('La campagne « %s » est ouverte : déposez vos demandes depuis la page Campagne.', $active->getSeasonLabel()),
+                RoomBookingClosedException::ONE_OFF_CLOSED,
+            );
+        }
+
+        // Réservation ponctuelle : au plus 18 mois à l’avance, jamais sur les jours d’une campagne à venir.
+        if ($slotStart > $now->modify(self::ONE_OFF_HORIZON)) {
+            throw new \InvalidArgumentException('Une réservation ponctuelle se fait au plus 18 mois à l’avance.');
+        }
+        foreach ($this->campaignRepository->findBy(['status' => Campaign::STATUS_PROGRAMMED]) as $upcoming) {
+            if (\in_array('salle', $upcoming->getResourceTypes(), true) && $upcoming->coversDay($slotStart)) {
+                throw new RoomBookingClosedException(
+                    \sprintf('Ce jour sera attribué lors de la campagne « %s » : il ne peut pas être réservé ponctuellement.', $upcoming->getSeasonLabel()),
+                    RoomBookingClosedException::SLOT_IN_CAMPAIGN,
+                );
+            }
+        }
+
+        return null;
     }
 
     private function validateOpeningHours(\DateTimeImmutable $start, \DateTimeImmutable $end): void

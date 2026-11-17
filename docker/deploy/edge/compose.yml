@@ -16,9 +16,11 @@ services:
       - "443:443"
     environment:
       ACME_EMAIL: ${ACME_EMAIL:-}
+      # EDGE_CLOUDFLARE est lu par deploy.sh dans .env, pas par Caddy.
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./sites:/etc/caddy/sites:ro
+      - ./proxy:/etc/caddy/proxy:ro
       - edge_data:/data
       - edge_config:/config
     security_opt:

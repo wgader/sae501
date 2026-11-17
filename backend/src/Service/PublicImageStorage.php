@@ -26,6 +26,7 @@ final class PublicImageStorage
     public function __construct(
         #[Autowire('%app.public_upload_directory%')]
         private readonly string $uploadDirectory,
+        private readonly ?AntivirusScanner $antivirus = null,
     ) {
     }
 
@@ -72,6 +73,8 @@ final class PublicImageStorage
         }
 
         $filename = bin2hex(random_bytes(24)).'.'.self::ALLOWED_TYPES[(string) $image->getMimeType()];
+        // Analyse avant tout enregistrement : un fichier infecté n’arrive jamais sur le disque.
+        $this->antivirus?->assertClean($image->getPathname());
         $image->move($directory, $filename);
 
         return '/uploads/'.$folder.'/'.$filename;

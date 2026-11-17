@@ -4,8 +4,9 @@ import { type FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { hasSession } from '@/lib/session';
+import { signIn } from '@/lib/api/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
@@ -16,8 +17,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     document.title = 'Administration · Connexion | Ville de Feytiat';
-    const token = localStorage.getItem('admin_token');
-    if (token) {
+    if (hasSession('admin')) {
       router.replace('/admin/dashboard');
     }
   }, [router]);
@@ -36,27 +36,7 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: identifier, password }),
-      });
-
-      const data = (await response.json().catch(() => ({}))) as {
-        token?: string;
-        message?: string;
-        error?: boolean;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.message ?? 'Identifiants incorrects.');
-      }
-
-      if (!data.token) {
-        throw new Error(data.message ?? 'La connexion n’a pas pu être finalisée.');
-      }
-
-      localStorage.setItem('admin_token', data.token);
+      await signIn('admin', identifier, password);
       router.push('/admin/dashboard');
     } catch (err: unknown) {
       setSubmitError(
@@ -69,7 +49,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="flex min-h-screen w-full flex-col font-sans text-ink lg:flex-row">
-      <aside className="hidden min-h-screen w-[clamp(20rem,32vw,27.5rem)] shrink-0 flex-col justify-between bg-primary p-8 lg:flex lg:p-12 text-white">
+      <aside className="hidden min-h-screen w-80 xl:w-110 shrink-0 flex-col justify-between bg-primary p-8 lg:flex lg:p-12 text-white">
         <header className="space-y-8">
           <Link
             href="/"
@@ -103,7 +83,7 @@ export default function AdminLoginPage() {
             Portail municipal
           </span>
 
-          <h2 className="text-[clamp(1.875rem,2.8vw,2.5rem)] font-black leading-[1.1] tracking-display text-white">
+          <h2 className="text-3xl xl:text-4xl font-black leading-tight tracking-display text-white">
             <span className="block">Espace</span>
             <span className="block text-accent">Administration.</span>
           </h2>
@@ -170,7 +150,7 @@ export default function AdminLoginPage() {
             <p className="text-label font-bold uppercase tracking-kicker text-primary">
               Espace administration
             </p>
-            <h1 className="mt-2 text-[clamp(1.75rem,2.5vw,2.25rem)] font-black tracking-tight text-ink">
+            <h1 className="mt-2 text-2xl xl:text-4xl font-black tracking-tight text-ink">
               Connexion
             </h1>
             <p className="mt-2 text-body-sm leading-copy text-muted">
@@ -178,7 +158,7 @@ export default function AdminLoginPage() {
             </p>
           </header>
 
-          <form className="space-y-5" noValidate onSubmit={handleSubmit}>
+          <form method="post" className="space-y-5" noValidate onSubmit={handleSubmit}>
             <label className="block">
               <span className="mb-2 block text-meta font-bold uppercase tracking-label text-ink">
                 Adresse électronique
@@ -238,7 +218,7 @@ export default function AdminLoginPage() {
 
             {submitError && (
               <p
-                className="rounded-lg border-l-4 border-danger bg-rose-50/70 p-3.5 text-xs font-semibold leading-5 text-danger"
+                className="rounded-soft bg-danger/10 p-3.5 text-xs font-semibold leading-5 text-danger"
                 role="alert"
               >
                 {submitError}
@@ -262,6 +242,14 @@ export default function AdminLoginPage() {
                 <span>Se connecter</span>
               )}
             </button>
+            <p className="text-center">
+              <Link
+                href="/mot-de-passe-oublie"
+                className="text-xs font-semibold text-ink underline underline-offset-4 hover:text-primary"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </p>
           </form>
 
           <footer className="mt-8 border-t border-line pt-6 text-center text-xs text-muted">

@@ -39,7 +39,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form method="post" onSubmit={handleSubmit} className="space-y-5">
       {error && (
         <p
           className="rounded-control border border-danger/30 bg-rose-50 p-4 text-sm font-semibold text-danger"

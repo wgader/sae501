@@ -150,15 +150,27 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findMunicipalAgentsForRooms(): array
     {
+        return $this->findMunicipalAgentsWithRole('ROLE_GESTION_SALLE');
+    }
+
+    /**
+     * Agents municipaux actifs disposant du rôle de gestion donné, ou administrateurs.
+     *
+     * @return list<User>
+     */
+    public function findMunicipalAgentsWithRole(string $role): array
+    {
         $users = $this->createQueryBuilder('u')
             ->andWhere('u.typeCompte = :typeCompte')
+            ->andWhere('u.deletedAt IS NULL')
             ->setParameter('typeCompte', 'mairie')
             ->getQuery()
             ->getResult();
 
-        return array_values(array_filter($users, static function (User $user): bool {
+        return array_values(array_filter($users, static function (User $user) use ($role): bool {
             $roles = $user->getRoles();
-            return in_array('ROLE_GESTION_SALLE', $roles, true) || in_array('ROLE_ADMIN', $roles, true);
+
+            return in_array($role, $roles, true) || in_array('ROLE_ADMIN', $roles, true);
         }));
     }
 }
