@@ -96,8 +96,8 @@ export default function ProfilPage() {
             <p className="mt-3 text-body-sm text-muted">Gérez les coordonnées et les accès associés à votre compte.</p>
           </header>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-10">
-            <section aria-labelledby="profile-summary" className="border-b border-line pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
+          <div className="mt-8 grid gap-8 lg:grid-cols-5 lg:gap-10">
+            <section aria-labelledby="profile-summary" className="min-w-0 border-b border-line pb-8 lg:col-span-2 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-10">
               <ProfilePhoto
                 logoUrl={profile?.logoUrl ?? null}
                 initials={initials}
@@ -116,7 +116,7 @@ export default function ProfilPage() {
               </span>
             </section>
 
-            <section aria-labelledby="profile-form" className="min-w-0">
+            <section aria-labelledby="profile-form" className="min-w-0 lg:col-span-3">
               <div className="border-b border-line pb-5">
                 <div>
                   <p className="text-label font-bold uppercase tracking-section text-primary">Informations personnelles</p>

@@ -16,6 +16,8 @@
     --color-sage: var(--sage);
     --color-moss: var(--moss);
     --color-paper: var(--paper);
+    --color-ochre: var(--Ochre);
+    --color-sand: var(--Sand);
     --color-white: var(--White);
     --color-black: var(--Black);
     --color-grey: var(--Grey);
@@ -98,6 +100,9 @@
     --Mint-Cream: #CFEDE5;
     --Pale-Sage: #E3EFEA;
     --Flush-Mahogany: #CD2429;
+    /* Statuts : demande en attente, module événements */
+    --Ochre: #9C7A19;
+    --Sand: #D9C2A7;
     /* Neutral Colors */
     --White: #FFFFFF;
     --Black: #000000;
