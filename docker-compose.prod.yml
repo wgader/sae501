@@ -191,7 +191,7 @@ services:
   # CLAMAV_DSN=tcp://clamav:3310 dans .env. Les signatures se mettent à jour d’elles-mêmes
   # (freshclam) ; aucun port publié.
   clamav:
-    image: clamav/clamav:1.4.3
+    image: clamav/clamav:1.5.3
     profiles: [antivirus]
     restart: unless-stopped
     mem_limit: ${CLAMAV_MEM_LIMIT:-1536m}
