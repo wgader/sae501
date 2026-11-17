@@ -22,7 +22,9 @@ import /etc/caddy/proxy/guard.caddy
 		?Content-Security-Policy "{args[0]}"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
+		# Aucun indice sur les logiciels en amont (Caddy ajoute « Via » à chaque réponse relayée).
 		-Server
+		-Via
 		-X-Powered-By
 	}
 	log
