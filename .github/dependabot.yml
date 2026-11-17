@@ -55,3 +55,33 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  # Images de base : un correctif de sécurité d’Alpine, PHP, Node, MySQL ou Caddy arrive aussi
+  # par une PR. Les versions majeures (Node, MySQL, PHP) restent à planifier à la main.
+  - package-ecosystem: docker
+    directories:
+      - /docker/backend
+      - /docker/frontend
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      docker-images:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker-compose
+    directories:
+      - /
+      - /docker/deploy/edge
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      compose-images:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
