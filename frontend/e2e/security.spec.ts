@@ -48,7 +48,7 @@ test.describe('Sécurité du navigateur', () => {
     });
 
     test('Un lien de réinitialisation inconnu est refusé', async ({ page }) => {
-        await page.goto('/reinitialiser-mot-de-passe?token=' + '0'.repeat(64));
+        await page.goto('/reinitialiser-mot-de-passe#token=' + '0'.repeat(64));
         // Valeur tirée au hasard, conforme à la politique (majuscule, minuscule, chiffre, 10 caractères).
         const candidate = randomCompliantSecret();
         await page.getByLabel('Nouveau mot de passe').fill(candidate);
