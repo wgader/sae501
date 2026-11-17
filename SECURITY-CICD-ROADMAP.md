@@ -691,29 +691,19 @@ Cette permission `actions: write` devra être vérifiée selon la version de `up
 
 ### Checklist des tâches restantes
 
-- corriger le stockage public des documents et créer le téléchargement autorisé ;
-- ajouter les tests path traversal, MIME, extensions, tailles, quotas et autorisations ;
-- décider si SVG est interdit ou sanitizé puis téléchargé en pièce jointe ;
-- auditer tous les endpoints d’upload existants ;
-- ajouter les limites anti-abus et rate limiting ;
-- choisir les outils complémentaires réellement utiles ;
-- écrire le script de scan local puis le réutiliser dans GitHub Actions ;
-- créer le script de génération `SECURITY-REPORT.md` à partir des sorties des outils ;
-- ajouter `actions/upload-artifact` à la CI ;
-- ajouter les rapports d’audit des dépendances, SAST, secrets, images, SBOM et DAST aux artefacts ;
-- vérifier que les rapports sont disponibles après un échec de scan ;
-- exclure systématiquement les secrets et données utilisateurs des artefacts ;
-- confirmer les contraintes exactes de Pulseheberge : SSH, Docker, ports, reverse proxy et certificats ;
-- définir les domaines de préproduction et de production ;
-- finaliser les fichiers Compose de production ;
-- revoir les Dockerfiles et les utilisateurs d’exécution ;
-- mettre en place les secrets par fichiers ;
-- intégrer les scans dans GitHub Actions ;
-- démarrer l’application dans le pipeline avant le DAST ;
-- configurer les seuils de blocage ;
-- tester un déploiement complet sur `develop` ;
-- réaliser ensuite le déploiement contrôlé sur `main` ;
-- effectuer un audit final avant ouverture publique.
+État au 17/11/2026 : toutes les tâches de cette liste sont réalisées.
+
+- ~~stockage public des documents, téléchargement autorisé et tests (path traversal, MIME,
+  extensions, tailles, autorisations)~~ ;
+- ~~SVG interdit~~ (PDF, JPEG, PNG et WebP uniquement, type réel vérifié) ;
+- ~~audit des endpoints d’upload, limites anti-abus et rate limiting~~ (connexion, inscription,
+  activation, réinitialisation, contact, 20 dépôts de fichiers par compte et par heure, Cloudflare) ;
+- ~~outils, script de scan, `SECURITY-REPORT.md`, `actions/upload-artifact`, rapports disponibles
+  après échec, aucun secret dans les artefacts~~ ;
+- ~~hébergement, domaines, Compose de production, Dockerfiles non root, secrets, scans dans
+  GitHub Actions, DAST sur la préproduction déployée, seuils bloquants~~ ;
+- ~~déploiement complet sur `develop` puis déploiement contrôlé sur `main`~~ ;
+- ~~audit final avant ouverture~~ : en-têtes, CSP, DNSSEC, `security.txt`, ZAP vérifiés le 17/11/2026.
 
 ### Compléments de sécurité à prévoir
 
@@ -843,3 +833,5 @@ La revue ciblée a également confirmé les améliorations suivantes à planifie
 | 17/11/2026 | Jetons hors des journaux | Liens de réinitialisation et de renvoi d’activation en fragment `#token=` : jamais envoyés au serveur ni journalisés |
 | 17/11/2026 | ZAP bloquant | Toute alerte non justifiée fait échouer la CD de préproduction ; a révélé l’obfuscation d’e-mails de Cloudflare (script bloqué par la CSP) |
 | 17/11/2026 | Statut des comptes association | Comptes supprimés (même message qu’un mauvais mot de passe) et non activés : aucun cookie, jeton existant refusé ; 2 tests |
+| 17/11/2026 | Plafond de dépôts | 20 fichiers par compte et par heure sur toute l’API (`UploadThrottleSubscriber`) contre le remplissage du disque ; 1 test |
+| 17/11/2026 | Signalement et discrétion | `security.txt`, `SECURITY.md`, en-tête `Via` retiré ; DNSSEC actif via Cloudflare |
