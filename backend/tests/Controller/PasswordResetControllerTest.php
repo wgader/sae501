@@ -122,7 +122,7 @@ final class PasswordResetControllerTest extends ControllerRouteTestCase
     {
         $message = self::getMailerMessage();
         self::assertInstanceOf(Email::class, $message);
-        self::assertSame(1, preg_match('/reinitialiser-mot-de-passe\?token=([a-f0-9]{64})/', (string) $message->getHtmlBody(), $matches));
+        self::assertSame(1, preg_match('/reinitialiser-mot-de-passe#token=([a-f0-9]{64})/', (string) $message->getHtmlBody(), $matches));
 
         return $matches[1];
     }

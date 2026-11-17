@@ -216,7 +216,7 @@ final class AccountActivationController extends AbstractController
                     'nom'            => $user->getNom(),
                     'nomAssociation' => $association->getNom(),
                     'modules'        => $modules,
-                    'activationUrl'  => $this->frontendUrl . '/activer-compte?token=' . $token . '&ref=' . base64_encode((string) $user->getEmail()),
+                    'activationUrl'  => $this->frontendUrl . '/activer-compte#token=' . rawurlencode($token) . '&ref=' . rawurlencode(base64_encode((string) $user->getEmail())),
                 ])
         );
 

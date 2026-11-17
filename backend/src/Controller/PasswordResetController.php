@@ -81,7 +81,7 @@ final class PasswordResetController extends AbstractController
                     ->htmlTemplate('emails/password_reset.html.twig')
                     ->context([
                         'prenom' => $user->getPrenom(),
-                        'resetUrl' => rtrim($this->frontendUrl, '/').'/reinitialiser-mot-de-passe?token='.$token,
+                        'resetUrl' => rtrim($this->frontendUrl, '/').'/reinitialiser-mot-de-passe#token='.$token,
                     ]),
             );
         } catch (\Throwable $exception) {
