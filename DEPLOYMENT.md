@@ -375,7 +375,7 @@ préproduction au moins une fois par trimestre.
 Utiliser une adresse d’expéditeur distincte pour la préproduction (par exemple
 `noreply-preprod@…`) évite toute confusion avec les messages réels.
 
-## 8. Cloudflare (optionnel)
+## 8. Cloudflare (en place depuis novembre 2026)
 
 Cloudflare se place devant le VPS : WAF, limitation de débit, protection DDoS et masquage de l’IP.
 Le proxy d’entrée est prêt ; le passage se fait sans modifier le code.
@@ -398,10 +398,18 @@ Le proxy d’entrée est prêt ; le passage se fait sans modifier le code.
    Les plages sont lues dans `docker/deploy/edge/cloudflare-ips.txt` (à comparer de temps en temps
    avec https://www.cloudflare.com/ips/). Pour revenir en arrière : `EDGE_CLOUDFLARE=0` et
    redéploiement, **avant** de repasser les DNS en *DNS only*.
-5. **Sécurité** (Security → WAF) :
-   - activer les *Managed Rules* gratuites et le *Bot Fight Mode* ;
-   - règle de limitation de débit : `POST` sur `/api/auth/` (connexion, inscription,
-     réinitialisation), par exemple 20 requêtes par minute et par IP, action *Block* 10 minutes ;
+5. **Sécurité** (Security → WAF), réglages en place :
+   - *Cloudflare Free Managed Ruleset* activé (attaques connues) et *Block AI bots* activé ;
+   - **Bot Fight Mode désactivé** : sur l’offre gratuite il n’accepte aucune exception et
+     bloquerait le contrôle de santé public de la CD et le scan ZAP, lancés depuis GitHub ;
+   - règle personnalisée *Scanners* (*Block*) : chemins contenant `/.env`, `/.git`, `wp-admin`,
+     `wp-login`, `xmlrpc.php` ou `phpmyadmin` ;
+   - limitation de débit *Connexion et formulaires* : chemins `/api/auth/login`,
+     `/api/auth/admin/login`, `/api/auth/register`, `/api/auth/password-reset/request`,
+     `/api/auth/password-reset/confirm` et `/api/contact`, 5 requêtes en 10 secondes par IP,
+     action *Block* (durée imposée par l’offre gratuite). Les limiteurs de l’API restent la
+     protection principale ; `/api/auth/session`, appelé à chaque page, n’est pas concerné ;
+   - blocage ponctuel d’une IP : Security → WAF → *Tools* → *IP Access Rules* ;
    - en préproduction, *Cloudflare Access* (Zero Trust, gratuit jusqu’à 50 utilisateurs) peut
      réserver `dev-feytiat` et `api-dev-feytiat` à l’équipe.
 6. **Cache** : laisser le comportement par défaut. L’API et les documents privés répondent en
