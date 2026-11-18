@@ -2,19 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import EquipmentCatalogCard from '@/components/equipment/EquipmentCatalogCard';
+import EquipmentCatalogFilters from '@/components/equipment/EquipmentCatalogFilters';
+import Notice from '@/components/ui/Notice';
 import { Equipment, getPublicEquipment } from '@/lib/api';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  mobilier: 'Mobilier',
-  sonorisation: 'Sonorisation & Audio',
-  barnums: 'Barnums & Tentes',
-  eclairage: 'Éclairage',
-  autre: 'Autre matériel',
-};
-
-function getCategoryLabel(category: string): string {
-  return CATEGORY_LABELS[category] ?? category.charAt(0).toUpperCase() + category.slice(1);
-}
+import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
 
 export default function MaterielPage() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
@@ -64,7 +55,7 @@ export default function MaterielPage() {
 
     return [
       { value: '', label: 'Toutes les catégories' },
-      ...values.map((value) => ({ value, label: getCategoryLabel(value) })),
+      ...values.map((value) => ({ value, label: getEquipmentCategoryLabel(value) })),
     ];
   }, [equipmentList]);
 
@@ -85,71 +76,38 @@ export default function MaterielPage() {
           </div>
         </header>
 
-        <section aria-labelledby="catalog-filters" className="rounded-2xl border border-line bg-paper p-5">
-          <h2 id="catalog-filters" className="sr-only">
-            Filtrer les équipements
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="catalog-search" className="block text-xs font-bold uppercase tracking-wider text-muted">
-                Rechercher un matériel
-              </label>
-              <input
-                id="catalog-search"
-                type="text"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Ex: Barnum, table, micro..."
-                className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-ink focus:border-primary focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="catalog-cat" className="block text-xs font-bold uppercase tracking-wider text-muted">
-                Catégorie
-              </label>
-              <select
-                id="catalog-cat"
-                value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2 text-sm text-ink focus:border-primary focus:outline-none"
-              >
-                {categories.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </section>
+        <EquipmentCatalogFilters
+          search={search}
+          category={selectedCategory}
+          categories={categories}
+          onSearch={setSearch}
+          onCategory={setSelectedCategory}
+        />
 
         <section aria-labelledby="catalog-items-heading">
           <h2 id="catalog-items-heading" className="sr-only">
             Équipements disponibles
           </h2>
 
-          {loading ? (
-            <div className="rounded-2xl border border-line bg-paper p-12 text-center text-sm font-semibold text-muted">
-              Chargement des équipements disponibles...
-            </div>
-          ) : error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-semibold text-danger">
-              {error}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-line bg-paper p-12 text-center">
-              <p className="text-base font-bold text-ink">Aucun équipement disponible</p>
-              <p className="mt-1 text-xs text-muted">
-                Modifiez vos filtres ou contactez le service logistique municipal pour toute demande spécifique.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {loading && (
+            <p role="status" className="py-16 text-center text-body-sm text-muted">
+              Chargement des équipements…
+            </p>
+          )}
+          {error && <Notice tone="danger">{error}</Notice>}
+          {!loading && !error && filtered.length === 0 && (
+            <p className="rounded-card border border-dashed border-line px-6 py-12 text-center text-body-sm text-muted">
+              Aucun équipement ne correspond à votre recherche.
+            </p>
+          )}
+          {!loading && !error && filtered.length > 0 && (
+            <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((item) => (
-                <EquipmentCatalogCard key={item.id} equipment={item} />
+                <li key={item.id} className="flex">
+                  <EquipmentCatalogCard equipment={item} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </section>
       </div>

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\Materiel;
 use App\Entity\User;
+use App\Repository\ReservationMaterielRepository;
 use App\Service\EquipmentAvailabilityService;
+use App\Service\EquipmentReservationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +23,43 @@ final class EquipmentAvailabilityController extends AbstractController
 {
     public function __construct(
         private readonly EquipmentAvailabilityService $availabilityService,
+        private readonly ReservationMaterielRepository $reservationRepository,
     ) {
+    }
+
+    /**
+     * Stock engagé jour après jour et règles de réservation, pour construire le calendrier.
+     */
+    #[Route('/{id}/occupancy', name: 'app_equipment_occupancy', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function occupancy(Materiel $materiel, #[CurrentUser] User $user): JsonResponse
+    {
+        $association = $user->getAssociation();
+        if ($association === null || !$association->isModuleMaterielActif()) {
+            return $this->json(
+                ['message' => 'Le module matériel n’est pas activé pour votre association.'],
+                Response::HTTP_FORBIDDEN,
+            );
+        }
+        if ($materiel->isArchived()) {
+            return $this->json(['message' => 'Cet équipement n’est plus disponible.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $now = new \DateTimeImmutable();
+        $lastDay = $now->modify(EquipmentReservationService::BOOKING_HORIZON);
+
+        return $this->json([
+            'stockTotal' => $materiel->getStockTotal(),
+            'maxConsecutiveDays' => $materiel->getMaxConsecutiveDays(),
+            'lastDay' => $lastDay->format('Y-m-d'),
+            'reservations' => array_map(
+                static fn (array $period): array => [
+                    'start' => $period['start']->format(\DateTimeInterface::ATOM),
+                    'end' => $period['end']->format(\DateTimeInterface::ATOM),
+                    'quantite' => $period['quantite'],
+                ],
+                $this->reservationRepository->findEngagedPeriods($materiel, $now, $lastDay),
+            ),
+        ]);
     }
 
     #[Route('/availability', name: 'app_equipment_availability', methods: ['GET'])]

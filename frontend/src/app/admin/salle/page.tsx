@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { cva } from 'class-variance-authority';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import AdminSectionTabs, { adminTabVariants } from '@/components/admin/AdminSectionTabs';
 import SalleCreateForm from '@/components/admin/salle/SalleCreateForm';
 import SallesList from '@/components/admin/salle/SallesList';
 import RoomRequestsPanel from '@/components/admin/salle/RoomRequestsPanel';
@@ -14,18 +14,6 @@ const TABS: { value: Tab; label: string }[] = [
   { value: 'rooms', label: 'Salles' },
   { value: 'requests', label: 'Réservations ponctuelles' },
 ];
-
-const tabVariants = cva(
-  'border-b-2 px-1 pb-3 text-body-sm font-bold transition-colors cursor-pointer',
-  {
-    variants: {
-      active: {
-        true: 'border-primary text-primary',
-        false: 'border-transparent text-muted hover:text-ink',
-      },
-    },
-  },
-);
 
 export default function AdminSallesPage() {
   const [tab, setTab] = useState<Tab>('rooms');
@@ -42,19 +30,19 @@ export default function AdminSallesPage() {
           {tab === 'rooms' && <SalleCreateForm onCreated={() => setSallesListKey((key) => key + 1)} />}
         </header>
 
-        <nav aria-label="Sections de la gestion des salles" className="flex gap-6 border-b border-line">
+        <AdminSectionTabs label="Sections de la gestion des salles">
           {TABS.map((option) => (
             <button
               key={option.value}
               type="button"
               aria-current={tab === option.value ? 'page' : undefined}
               onClick={() => setTab(option.value)}
-              className={tabVariants({ active: tab === option.value })}
+              className={adminTabVariants({ active: tab === option.value })}
             >
               {option.label}
             </button>
           ))}
-        </nav>
+        </AdminSectionTabs>
 
         {tab === 'rooms' ? <SallesList key={sallesListKey} /> : <RoomRequestsPanel />}
       </section>

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Association;
+use App\Entity\Materiel;
 use App\Entity\ReservationMateriel;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -125,6 +126,29 @@ class ReservationMaterielRepository extends ServiceEntityRepository
             ->orderBy('r.dateRetrait', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Quantités engagées sur un équipement, sans aucune information sur les associations.
+     *
+     * @return list<array{start: \DateTimeImmutable, end: \DateTimeImmutable, quantite: int}>
+     */
+    public function findEngagedPeriods(Materiel $materiel, \DateTimeImmutable $start, \DateTimeImmutable $end): array
+    {
+        return $this->createQueryBuilder('r')
+            ->select('r.dateRetrait AS start, r.dateRestitution AS end, l.quantite AS quantite')
+            ->innerJoin('r.lignes', 'l')
+            ->andWhere('l.materiel = :materiel')
+            ->andWhere('r.statut IN (:statuses)')
+            ->andWhere('r.dateRetrait < :end')
+            ->andWhere('r.dateRestitution > :start')
+            ->setParameter('materiel', $materiel)
+            ->setParameter('statuses', ['En attente', 'En cours de traitement', 'Validée'])
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->orderBy('r.dateRetrait', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
     }
 
     /**

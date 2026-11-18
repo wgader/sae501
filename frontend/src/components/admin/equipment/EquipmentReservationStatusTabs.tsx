@@ -18,7 +18,7 @@ const tabs: Array<{ value: EquipmentReservationStatus; label: string; count: key
 
 export default function EquipmentReservationStatusTabs({ activeStatus, counts, onChange }: Props) {
   return (
-    <nav className="mt-5 flex flex-wrap items-center gap-3" role="tablist" aria-label="Filtres de statut des réservations">
+    <nav className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filtres de statut des réservations">
       {tabs.map((tab) => (
         <button
           key={tab.value}
@@ -26,16 +26,16 @@ export default function EquipmentReservationStatusTabs({ activeStatus, counts, o
           role="tab"
           aria-selected={activeStatus === tab.value}
           onClick={() => onChange(tab.value)}
-          className={`inline-flex items-center gap-2.5 rounded-pill px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-pill border px-4 py-2 text-meta font-bold transition-colors ${
             activeStatus === tab.value
-              ? 'bg-primary text-white shadow-xs'
-              : 'border border-primary bg-transparent text-primary hover:bg-primary/5'
+              ? 'border-primary bg-primary text-white'
+              : 'border-line bg-white text-ink hover:bg-paper'
           }`}
         >
-          <span>{tab.label.toUpperCase()}</span>
+          <span>{tab.label}</span>
           {tab.count !== null && (
-            <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-pill px-1.5 text-label font-bold ${
-              activeStatus === tab.value ? 'bg-accent text-ink' : 'bg-primary/15 text-primary'
+            <span className={`rounded-pill px-2 py-0.5 text-caption ${
+              activeStatus === tab.value ? 'bg-white/20 text-white' : 'bg-paper text-muted'
             }`}>
               {counts[tab.count]}
             </span>

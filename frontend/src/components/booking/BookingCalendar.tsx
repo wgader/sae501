@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { cva } from 'class-variance-authority';
 import { IconChevronLeft, IconChevronRight } from '@/components/ui/icons';
-import { formatLongDay, type DayState } from '@/lib/roomAvailability';
+import { formatLongDay, type DayState } from '@/lib/bookingAvailability';
 
 export interface DayRange {
   start: string | null;
@@ -18,6 +18,8 @@ interface BookingCalendarProps {
   getDayState: (day: string) => DayState;
   /** Dernier jour de fin possible depuis un jour de début. */
   getMaxEndDay: (startDay: string) => string;
+  /** Libellé lu par les lecteurs d'écran pour un jour entamé. */
+  partialLabel?: string;
 }
 
 const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -77,7 +79,15 @@ function monthTitle(month: string): string {
 }
 
 /** Calendrier de réservation : plage de jours, jours complets barrés, durée maximale respectée. */
-export default function BookingCalendar({ value, onChange, firstDay, lastDay, getDayState, getMaxEndDay }: BookingCalendarProps) {
+export default function BookingCalendar({
+  value,
+  onChange,
+  firstDay,
+  lastDay,
+  getDayState,
+  getMaxEndDay,
+  partialLabel = STATE_LABELS.partial,
+}: BookingCalendarProps) {
   const firstMonth = firstDay.slice(0, 7);
   const lastMonth = lastDay.slice(0, 7);
   const [month, setMonth] = useState((value.start ?? firstDay).slice(0, 7));
@@ -118,6 +128,7 @@ export default function BookingCalendar({ value, onChange, firstDay, lastDay, ge
     else if (maxEnd && value.start && day > maxEnd) tone = 'beyondLimit';
 
     const isDisabled = state === 'full' || state === 'blocked' || state === 'unavailable';
+    const stateLabel = state === 'partial' ? partialLabel : STATE_LABELS[state];
 
     return (
       <div key={day} className={bandVariants({ band })}>
@@ -125,8 +136,8 @@ export default function BookingCalendar({ value, onChange, firstDay, lastDay, ge
           type="button"
           disabled={isDisabled}
           aria-pressed={isEdge}
-          aria-label={`${formatLongDay(day)}, ${STATE_LABELS[state]}`}
-          title={STATE_LABELS[state]}
+          aria-label={`${formatLongDay(day)}, ${stateLabel}`}
+          title={stateLabel}
           onClick={() => pick(day)}
           onMouseEnter={() => setHoveredDay(day)}
           onMouseLeave={() => setHoveredDay(null)}

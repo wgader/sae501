@@ -20,6 +20,8 @@ interface EquipmentFormModalProps {
 
 const DEFAULT_CATEGORY = 'mobilier';
 const DEFAULT_STOCK = 10;
+const DEFAULT_MAX_DAYS = 7;
+const MAX_DAYS_LIMIT = 90;
 
 export default function EquipmentFormModal({
   isOpen,
@@ -34,6 +36,7 @@ export default function EquipmentFormModal({
   const [description, setDescription] = useState(editingItem?.description ?? '');
   const [instructions, setInstructions] = useState(editingItem?.consignesUtilisation ?? '');
   const [stock, setStock] = useState<number | ''>(editingItem?.stockTotal ?? DEFAULT_STOCK);
+  const [maxDays, setMaxDays] = useState<number | ''>(editingItem?.maxConsecutiveDays ?? DEFAULT_MAX_DAYS);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +73,10 @@ export default function EquipmentFormModal({
       validationErrors.stockTotal = 'Le stock initial doit être un entier strictement supérieur à zéro.';
     }
 
+    if (maxDays === '' || !Number.isInteger(maxDays) || maxDays < 1 || maxDays > MAX_DAYS_LIMIT) {
+      validationErrors.maxConsecutiveDays = `Indiquez un nombre de jours entre 1 et ${MAX_DAYS_LIMIT}.`;
+    }
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -86,6 +93,7 @@ export default function EquipmentFormModal({
       if (description.trim()) formData.append('description', description.trim());
       if (instructions.trim()) formData.append('consignesUtilisation', instructions.trim());
       if (!editingItem) formData.append('stockTotal', String(stock));
+      formData.append('maxConsecutiveDays', String(maxDays));
       if (photo) formData.append('photo', photo);
 
       const saved = editingItem
@@ -175,6 +183,25 @@ export default function EquipmentFormModal({
                 className="mt-1.5 w-full rounded-control border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="equipment-max-days" className="block text-xs font-bold uppercase tracking-wider text-muted">
+              Durée maximale d&apos;emprunt (jours d&apos;affilée) <span className="text-danger">*</span>
+            </label>
+            <input
+              id="equipment-max-days"
+              type="number"
+              min="1"
+              max={MAX_DAYS_LIMIT}
+              step="1"
+              required
+              value={maxDays}
+              onChange={(event) => setMaxDays(event.target.value === '' ? '' : Number(event.target.value))}
+              className="mt-1.5 w-full rounded-control border border-line bg-paper px-3.5 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
+            />
+            <p className="mt-1 text-xs text-muted">Les associations ne pourront pas réserver ce matériel plus longtemps.</p>
+            {errors.maxConsecutiveDays && <p className="mt-1 text-xs text-danger">{errors.maxConsecutiveDays}</p>}
           </div>
 
           {!editingItem && (

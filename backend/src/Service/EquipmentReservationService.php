@@ -15,6 +15,9 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final class EquipmentReservationService
 {
+    /** Horizon de réservation, repris par le calendrier. */
+    public const BOOKING_HORIZON = '+1 year';
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly MaterielRepository $materielRepository,
@@ -46,6 +49,9 @@ final class EquipmentReservationService
                 'La date de restitution doit être postérieure à la date de retrait.',
             );
         }
+        if ($start > $now->modify(self::BOOKING_HORIZON)) {
+            throw new \InvalidArgumentException('Le matériel se réserve au plus un an à l’avance.');
+        }
         if ($lines === []) {
             throw new \InvalidArgumentException('La réservation doit contenir au moins un équipement.');
         }
@@ -75,6 +81,13 @@ final class EquipmentReservationService
             foreach ($equipmentById as $item) {
                 if ($item->isArchived()) {
                     throw new \InvalidArgumentException('Un équipement sélectionné n’est plus disponible.');
+                }
+                if (self::countDays($start, $end) > $item->getMaxConsecutiveDays()) {
+                    throw new \InvalidArgumentException(\sprintf(
+                        '« %s » se réserve pour %d jour(s) d’affilée au maximum.',
+                        $item->getDesignation(),
+                        $item->getMaxConsecutiveDays(),
+                    ));
                 }
             }
 
@@ -131,5 +144,13 @@ final class EquipmentReservationService
 
             throw $exception;
         }
+    }
+
+    private static function countDays(\DateTimeImmutable $start, \DateTimeImmutable $end): int
+    {
+        $firstDay = new \DateTimeImmutable($start->format('Y-m-d'));
+        $lastDay = new \DateTimeImmutable($end->format('Y-m-d'));
+
+        return (int) $firstDay->diff($lastDay)->days + 1;
     }
 }

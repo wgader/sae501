@@ -5,7 +5,8 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import EquipmentReservationCard from '@/components/admin/equipment/EquipmentReservationCard';
 import EquipmentReservationStatusTabs, { type EquipmentReservationStatus } from '@/components/admin/equipment/EquipmentReservationStatusTabs';
-import EquipmentSectionSwitcher from '@/components/admin/equipment/EquipmentSectionSwitcher';
+import EquipmentSectionTabs from '@/components/admin/equipment/EquipmentSectionTabs';
+import Notice from '@/components/ui/Notice';
 import Pagination from '@/components/ui/Pagination';
 import { getAdminEquipmentReservations, type AdminEquipmentReservation } from '@/lib/api';
 
@@ -39,16 +40,18 @@ export default function AdminEquipmentReservationsPage() {
 
   return (
     <AdminLayout searchTerm={search} onSearchChange={(value) => { setSearch(value); setPage(1); }}>
-      <section className="mx-auto max-w-5xl">
-        <AdminPageHeader title="Demandes de réservation matériel" className="mb-6">
-          <EquipmentSectionSwitcher />
-          <EquipmentReservationStatusTabs
-            activeStatus={status}
-            counts={counts}
-            onChange={(value) => { setStatus(value); setPage(1); }}
-          />
-        </AdminPageHeader>
-        {error && <p className="mb-6 rounded-control border-l-4 border-danger bg-rose-50/70 p-4 text-xs font-semibold text-danger" role="alert">{error}</p>}
+      <section className="mx-auto max-w-328 space-y-8">
+        <AdminPageHeader
+          title="GESTION DU MATÉRIEL"
+          description="Gérez le parc communal, les durées d’emprunt et les demandes des associations."
+        />
+        <EquipmentSectionTabs />
+        <EquipmentReservationStatusTabs
+          activeStatus={status}
+          counts={counts}
+          onChange={(value) => { setStatus(value); setPage(1); }}
+        />
+        {error && <Notice tone="danger">{error}</Notice>}
         {loading ? (
           <p className="py-16 text-center text-xs font-bold uppercase tracking-label text-muted">Chargement des demandes...</p>
         ) : items.length === 0 ? (

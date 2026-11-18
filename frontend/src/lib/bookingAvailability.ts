@@ -1,5 +1,6 @@
 import { addDays } from '@/lib/campaignPlanning';
 import type { OccupiedSlot, RoomBookingRules } from '@/lib/api/types';
+import { roomDayKey } from '@/lib/roomFilters';
 
 /** Créneau occupé, en heure locale : « 2026-12-15T09:00 ». */
 export interface BusyInterval {
@@ -20,6 +21,8 @@ export interface AvailabilityContext {
   today: string;
   /** Minutes écoulées aujourd'hui : les horaires passés ne sont plus proposés. */
   nowMinutes: number;
+  /** Jours encore réservables mais déjà entamés (stock limité pour le matériel). */
+  limitedDays?: ReadonlySet<string>;
 }
 
 export type DayState = 'free' | 'partial' | 'full' | 'blocked' | 'unavailable';
@@ -33,6 +36,12 @@ export const EMPTY_SLOT: SlotSelection = { startDay: null, endDay: null, startTi
 
 const PREFERRED_START = '09:00';
 const PREFERRED_END = '12:00';
+
+/** Date et heure du navigateur, relevées une fois à l'ouverture de la page. */
+export function readBookingClock(): { today: string; nowMinutes: number } {
+  const now = new Date();
+  return { today: roomDayKey(now), nowMinutes: now.getHours() * 60 + now.getMinutes() };
+}
 
 export function toMinutes(time: string): number {
   const [hours, minutes] = time.split(':').map(Number);
@@ -96,6 +105,7 @@ export function getDayState(day: string, context: AvailabilityContext): DayState
   if (day < context.today || day > context.rules.lastDay) return 'unavailable';
   if (blockedPeriod(day, context.rules)) return 'blocked';
   if (!hasOpenWindow(day, context)) return 'full';
+  if (context.limitedDays?.has(day)) return 'partial';
   return busyRanges(day, context).some(([from]) => from > toMinutes(context.rules.openingTime) || day !== context.today)
     ? 'partial'
     : 'free';

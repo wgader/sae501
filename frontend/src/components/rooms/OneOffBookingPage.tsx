@@ -20,23 +20,19 @@ import {
   formatShortDay,
   formatTime,
   isSlotComplete,
+  readBookingClock,
   type AvailabilityContext,
-} from '@/lib/roomAvailability';
-import { DEFAULT_ROOM_FILTERS, countActiveRoomFilters, matchesRoomFilters, roomDayKey } from '@/lib/roomFilters';
+} from '@/lib/bookingAvailability';
+import { DEFAULT_ROOM_FILTERS, countActiveRoomFilters, matchesRoomFilters } from '@/lib/roomFilters';
 import { readSession } from '@/lib/session';
 
 const EMPTY_SEARCH: OneOffSearch = { slot: EMPTY_SLOT, attendees: '' };
-
-function readClock() {
-  const now = new Date();
-  return { today: roomDayKey(now), nowMinutes: now.getHours() * 60 + now.getMinutes() };
-}
 
 /** Réservation ponctuelle : on cherche une salle, puis on réserve depuis sa fiche. */
 export default function OneOffBookingPage() {
   const campaignState = useCurrentCampaign();
   const { rules, failed: rulesFailed } = useRoomBookingRules();
-  const [clock] = useState(readClock);
+  const [clock] = useState(readBookingClock);
   const [moduleForbidden] = useState(() => readSession()?.user.modules?.salles === false);
 
   const [rooms, setRooms] = useState<PublicRoom[]>([]);
