@@ -28,12 +28,12 @@ const STATUS_TABS: { value: CampaignRequestStatusFilter; label: string }[] = [
 ];
 
 const statusTabVariants = cva(
-  'inline-flex shrink-0 items-center gap-2 rounded-pill px-4 py-2 text-meta font-bold transition-colors',
+  'inline-flex shrink-0 items-center gap-2 rounded-pill border px-4 py-2 text-meta font-bold transition-colors',
   {
     variants: {
       active: {
-        true: 'bg-primary text-white',
-        false: 'bg-white text-ink ring-1 ring-line hover:bg-paper',
+        true: 'border-primary bg-primary text-white',
+        false: 'border-line bg-white text-ink hover:bg-paper',
       },
     },
   },
@@ -54,7 +54,7 @@ export default function CampaignRequestFilters({ values, counts, salles, onChang
 
   return (
     <div className="space-y-4">
-      <div role="group" aria-label="Filtrer par décision" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div role="group" aria-label="Filtrer par décision" className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {
           const active = values.status === tab.value;
           return (

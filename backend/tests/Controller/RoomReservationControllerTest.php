@@ -396,7 +396,9 @@ final class RoomReservationControllerTest extends WebTestCase
 
     public function testOneOffReservationCannotTakeADayOfAnUpcomingCampaign(): void
     {
-        $this->createCampaign(Campaign::STATUS_PROGRAMMED, '+2 days', '+30 days');
+        $campaign = $this->createCampaign(Campaign::STATUS_PROGRAMMED, '+2 days', '+30 days');
+        $campaign->setPeriodStart(new \DateTimeImmutable('+5 days'))->setPeriodEnd(new \DateTimeImmutable('+15 days'));
+        $this->em->flush();
         [$user] = $this->createAssociationAndUser('Club Anticipé');
         $salle = $this->createSalle('Salle');
 
@@ -404,8 +406,102 @@ final class RoomReservationControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(403);
         $this->assertSame('ROOM_SLOT_IN_CAMPAIGN', $this->responseData()['code']);
 
-        $this->postSlot($user, '/api/rooms/reservations', $salle, 'Après la campagne', '+90 days', '10:00', '12:00');
+        $this->postSlot($user, '/api/rooms/reservations', $salle, 'Avant la campagne', '+1 day', '10:00', '12:00');
         $this->assertResponseStatusCodeSame(201);
+    }
+
+    public function testOneOffReservationStopsAtTheEndOfTheYear(): void
+    {
+        [$user] = $this->createAssociationAndUser('Club Prévoyant');
+        $salle = $this->createSalle('Salle');
+        $nextYear = (new \DateTimeImmutable())->modify('first day of january next year')->format('Y-m-d');
+
+        $this->postRange($user, $salle, $nextYear.'T10:00:00', $nextYear.'T12:00:00');
+
+        $this->assertResponseStatusCodeSame(400);
+        $this->assertStringContainsString('31/12/', (string) $this->responseData()['message']);
+    }
+
+    public function testOneOffReservationCanSpanAFewDaysOnly(): void
+    {
+        [$user] = $this->createAssociationAndUser('Club Week-end');
+        $salle = $this->createSalle('Salle');
+        $first = new \DateTimeImmutable('2026-12-07');
+
+        $this->postRange($user, $salle, $first->format('Y-m-d').'T09:00:00', $first->modify('+3 days')->format('Y-m-d').'T18:00:00');
+        $this->assertResponseStatusCodeSame(400);
+        $this->assertStringContainsString('3 jours', (string) $this->responseData()['message']);
+
+        $this->postRange($user, $salle, $first->format('Y-m-d').'T09:00:00', $first->modify('+2 days')->format('Y-m-d').'T18:00:00');
+        $this->assertResponseStatusCodeSame(201);
+
+        // Le lendemain du début est occupé, même sans réservation commençant ce jour-là.
+        $this->postRange($user, $salle, $first->modify('+1 day')->format('Y-m-d').'T10:00:00', $first->modify('+1 day')->format('Y-m-d').'T12:00:00');
+        $this->assertResponseStatusCodeSame(409);
+    }
+
+    public function testCampaignRequestStaysOnASingleDay(): void
+    {
+        $this->createCampaign(Campaign::STATUS_ACTIVE, '-1 day', '+30 days');
+        [$user] = $this->createAssociationAndUser('Club Campagne');
+        $salle = $this->createSalle('Salle');
+        $day = new \DateTimeImmutable('+2 days');
+
+        $this->requestWithAuth($user, 'POST', self::CAMPAIGN_URI, [
+            'salleId' => $salle->getId(),
+            'motifEvenement' => 'Deux jours',
+            'dateDebut' => $day->format('Y-m-d').'T10:00:00',
+            'dateFin' => $day->modify('+1 day')->format('Y-m-d').'T12:00:00',
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testSlotsFollowTheTenMinuteStepAndMinimumDuration(): void
+    {
+        [$user] = $this->createAssociationAndUser('Club Ponctuel');
+        $salle = $this->createSalle('Salle');
+
+        $this->postRange($user, $salle, '2026-12-08T18:12:00', '2026-12-08T19:00:00');
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->postRange($user, $salle, '2026-12-08T18:10:00', '2026-12-08T18:20:00');
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->postRange($user, $salle, '2026-12-08T18:10:00', '2026-12-08T18:40:00');
+        $this->assertResponseStatusCodeSame(201);
+    }
+
+    public function testBookingRulesDescribeTheCalendar(): void
+    {
+        $this->createCampaign(Campaign::STATUS_PROGRAMMED, '+2 days', '+30 days');
+        [$user] = $this->createAssociationAndUser('Club Curieux');
+
+        $this->requestWithAuth($user, 'GET', '/api/rooms/booking-rules');
+
+        $this->assertResponseIsSuccessful();
+        $rules = $this->responseData();
+        $this->assertSame((new \DateTimeImmutable())->format('Y').'-12-31', $rules['lastDay']);
+        $this->assertSame(3, $rules['maxDays']);
+        $this->assertSame(10, $rules['stepMinutes']);
+        $this->assertCount(1, $rules['blockedPeriods']);
+    }
+
+    public function testBookingRulesRequireAuthentication(): void
+    {
+        $this->client->request('GET', '/api/rooms/booking-rules');
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    private function postRange(User $user, Salle $salle, string $start, string $end): void
+    {
+        $this->requestWithAuth($user, 'POST', '/api/rooms/reservations', [
+            'salleId' => $salle->getId(),
+            'motifEvenement' => 'Réservation',
+            'dateDebut' => $start,
+            'dateFin' => $end,
+        ]);
     }
 
     private function postSlot(User $user, string $uri, Salle $salle, string $motif, string $dayOffset, string $start, string $end): void

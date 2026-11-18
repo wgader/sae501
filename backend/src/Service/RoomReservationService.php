@@ -25,7 +25,10 @@ final class RoomReservationService
 {
     public const OPENING_HOUR = 8;
     public const CLOSING_HOUR = 23;
-    private const ONE_OFF_HORIZON = '+18 months';
+    /** Durée maximale d’une réservation ponctuelle, en jours consécutifs. */
+    public const ONE_OFF_MAX_DAYS = 3;
+    public const SLOT_STEP_MINUTES = 10;
+    public const SLOT_MIN_MINUTES = 30;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -42,7 +45,8 @@ final class RoomReservationService
      *
      * - Demande de campagne : seulement pendant la campagne ouverte et sur sa période réservable ;
      *   plusieurs associations peuvent viser le même créneau, la réunion d’arbitrage tranche.
-     * - Réservation ponctuelle : hors campagne ouverte et hors période d’une campagne à venir ;
+     * - Réservation ponctuelle : hors campagne ouverte et hors période d’une campagne à venir,
+     *   jusqu’à la fin de l’année en cours et sur quelques jours consécutifs au plus ;
      *   premier arrivé, premier servi, le créneau est bloqué dès le dépôt.
      */
     public function create(
@@ -56,7 +60,7 @@ final class RoomReservationService
         ?UploadedFile $justificatif = null,
         bool $forCampaign = false,
     ): ReservationSalle {
-        $campaign = $this->resolveCampaign($dateDebut, $forCampaign);
+        $campaign = $this->resolveCampaign($dateDebut, $dateFin, $forCampaign);
 
         $storedJustificatifPath = null;
 
@@ -94,7 +98,7 @@ final class RoomReservationService
                     throw new \InvalidArgumentException('L’heure de fin doit être strictement postérieure à l’heure de début.');
                 }
 
-                $this->validateOpeningHours($dateDebut, $dateFin);
+                $this->validateSlot($dateDebut, $dateFin, null === $campaign);
 
                 // 3. Validation du motif
                 $cleanMotif = trim($motif);
@@ -199,7 +203,51 @@ final class RoomReservationService
         return $reservation;
     }
 
-    private function resolveCampaign(\DateTimeImmutable $slotStart, bool $forCampaign): ?Campaign
+    /**
+     * Règles des réservations ponctuelles, pour que le calendrier ne propose que ce que l’API accepte.
+     *
+     * @return array<string, mixed>
+     */
+    public function oneOffRules(\DateTimeImmutable $now = new \DateTimeImmutable()): array
+    {
+        $blockedPeriods = [];
+        foreach ($this->upcomingCampaigns() as $campaign) {
+            $blockedPeriods[] = [
+                'start' => $campaign->getEffectivePeriodStart()?->format('Y-m-d'),
+                'end' => $campaign->getEffectivePeriodEnd()?->format('Y-m-d'),
+                'label' => $campaign->getSeasonLabel(),
+            ];
+        }
+
+        return [
+            'lastDay' => $this->oneOffLastDay($now),
+            'maxDays' => self::ONE_OFF_MAX_DAYS,
+            'stepMinutes' => self::SLOT_STEP_MINUTES,
+            'minMinutes' => self::SLOT_MIN_MINUTES,
+            'openingTime' => \sprintf('%02d:00', self::OPENING_HOUR),
+            'closingTime' => \sprintf('%02d:00', self::CLOSING_HOUR),
+            'blockedPeriods' => $blockedPeriods,
+        ];
+    }
+
+    /** L’année suivante est attribuée par la campagne annuelle. */
+    private function oneOffLastDay(\DateTimeImmutable $now): string
+    {
+        return $now->format('Y').'-12-31';
+    }
+
+    /**
+     * @return list<Campaign>
+     */
+    private function upcomingCampaigns(): array
+    {
+        return array_values(array_filter(
+            $this->campaignRepository->findBy(['status' => Campaign::STATUS_PROGRAMMED]),
+            static fn (Campaign $campaign): bool => \in_array('salle', $campaign->getResourceTypes(), true),
+        ));
+    }
+
+    private function resolveCampaign(\DateTimeImmutable $slotStart, \DateTimeImmutable $slotEnd, bool $forCampaign): ?Campaign
     {
         $now = new \DateTimeImmutable();
         $this->campaignService->synchronize($now);
@@ -227,12 +275,16 @@ final class RoomReservationService
             );
         }
 
-        // Réservation ponctuelle : au plus 18 mois à l’avance, jamais sur les jours d’une campagne à venir.
-        if ($slotStart > $now->modify(self::ONE_OFF_HORIZON)) {
-            throw new \InvalidArgumentException('Une réservation ponctuelle se fait au plus 18 mois à l’avance.');
+        // Réservation ponctuelle : jusqu’à la fin de l’année, jamais sur les jours d’une campagne à venir.
+        $lastDay = $this->oneOffLastDay($now);
+        if ($slotStart->format('Y-m-d') > $lastDay || $slotEnd->format('Y-m-d') > $lastDay) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Les réservations ponctuelles sont ouvertes jusqu’au %s.',
+                (new \DateTimeImmutable($lastDay))->format('d/m/Y'),
+            ));
         }
-        foreach ($this->campaignRepository->findBy(['status' => Campaign::STATUS_PROGRAMMED]) as $upcoming) {
-            if (\in_array('salle', $upcoming->getResourceTypes(), true) && $upcoming->coversDay($slotStart)) {
+        foreach ($this->upcomingCampaigns() as $upcoming) {
+            if ($upcoming->coversDay($slotStart) || $upcoming->coversDay($slotEnd)) {
                 throw new RoomBookingClosedException(
                     \sprintf('Ce jour sera attribué lors de la campagne « %s » : il ne peut pas être réservé ponctuellement.', $upcoming->getSeasonLabel()),
                     RoomBookingClosedException::SLOT_IN_CAMPAIGN,
@@ -243,28 +295,49 @@ final class RoomReservationService
         return null;
     }
 
-    private function validateOpeningHours(\DateTimeImmutable $start, \DateTimeImmutable $end): void
+    private function validateSlot(\DateTimeImmutable $start, \DateTimeImmutable $end, bool $isOneOff): void
     {
-        // Même jour civil obligatoire
-        if ($start->format('Y-m-d') !== $end->format('Y-m-d')) {
+        $startDay = new \DateTimeImmutable($start->format('Y-m-d'));
+        $endDay = new \DateTimeImmutable($end->format('Y-m-d'));
+        $days = (int) $startDay->diff($endDay)->days + 1;
+
+        if (!$isOneOff && $days > 1) {
             throw new \InvalidArgumentException('La réservation doit s’effectuer sur une même journée civile.');
         }
+        if ($days > self::ONE_OFF_MAX_DAYS) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Une réservation ponctuelle dure au plus %d jours consécutifs.',
+                self::ONE_OFF_MAX_DAYS,
+            ));
+        }
 
-        $startHour = (int) $start->format('H');
-        $endHour = (int) $end->format('H');
-        $endMin = (int) $end->format('i');
+        $opening = self::OPENING_HOUR * 60;
+        $closing = self::CLOSING_HOUR * 60;
+        $startMinutes = (int) $start->format('H') * 60 + (int) $start->format('i');
+        $endMinutes = (int) $end->format('H') * 60 + (int) $end->format('i');
 
-        if ($startHour < self::OPENING_HOUR) {
-            throw new \InvalidArgumentException(sprintf(
+        if ($startMinutes < $opening || $startMinutes >= $closing) {
+            throw new \InvalidArgumentException(\sprintf(
                 'La salle n’ouvre qu’à %02dh00. Veuillez choisir un horaire de début valide.',
                 self::OPENING_HOUR,
             ));
         }
-
-        if ($endHour === self::CLOSING_HOUR && $endMin > 0) {
-            throw new \InvalidArgumentException(sprintf(
+        if ($endMinutes <= $opening || $endMinutes > $closing) {
+            throw new \InvalidArgumentException(\sprintf(
                 'La salle ferme à %02dh00. Veuillez choisir un horaire de fin valide.',
                 self::CLOSING_HOUR,
+            ));
+        }
+        if (0 !== $startMinutes % self::SLOT_STEP_MINUTES || 0 !== $endMinutes % self::SLOT_STEP_MINUTES) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Les horaires se choisissent par tranches de %d minutes.',
+                self::SLOT_STEP_MINUTES,
+            ));
+        }
+        if (1 === $days && $endMinutes - $startMinutes < self::SLOT_MIN_MINUTES) {
+            throw new \InvalidArgumentException(\sprintf(
+                'Une réservation dure au moins %d minutes.',
+                self::SLOT_MIN_MINUTES,
             ));
         }
     }

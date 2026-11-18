@@ -351,6 +351,19 @@ export type PublicRoom = Salle & {
   horairesOuverture: RoomOpeningHours;
 };
 
+/** Règles des réservations ponctuelles, fournies par l'API. */
+export type RoomBookingRules = {
+  /** Dernier jour réservable (AAAA-MM-JJ). */
+  lastDay: string;
+  maxDays: number;
+  stepMinutes: number;
+  minMinutes: number;
+  openingTime: string;
+  closingTime: string;
+  /** Périodes réservées à une campagne à venir. */
+  blockedPeriods: { start: string; end: string; label: string }[];
+};
+
 export type OccupiedSlot = {
   id: number;
   start: string;

@@ -73,12 +73,10 @@ final class RoomReservationDecisionNotifier
         }
 
         $summary = \sprintf(
-            '%s — %s, le %s de %s à %s.',
+            '%s — %s, %s.',
             $message['intro'],
             $salle->getNom(),
-            $reservation->getDateDebut()?->format('d/m/Y'),
-            $reservation->getDateDebut()?->format('H\hi'),
-            $reservation->getDateFin()?->format('H\hi'),
+            $reservation->getSlotLabel(),
         );
         if (null !== $reservation->getDecisionComment()) {
             $summary .= ' Message de la mairie : '.$reservation->getDecisionComment();
