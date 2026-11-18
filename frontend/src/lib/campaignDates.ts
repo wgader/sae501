@@ -45,6 +45,16 @@ export function formatSlotTime(slot: string | null): string {
   return slotTime(slot).replace(':', 'h');
 }
 
+/** « 09h00 – 12h00 », ou « 15/12 09h00 – 17/12 18h00 » sur plusieurs jours. */
+export function formatSlotRange(start: string | null, end: string | null): string {
+  const startDay = start?.slice(0, 10) ?? '';
+  const endDay = end?.slice(0, 10) ?? '';
+  if (startDay === endDay) return `${formatSlotTime(start)} – ${formatSlotTime(end)}`;
+
+  const shortDay = (day: string) => day.slice(8) + '/' + day.slice(5, 7);
+  return `${shortDay(startDay)} ${formatSlotTime(start)} – ${shortDay(endDay)} ${formatSlotTime(end)}`;
+}
+
 /** « 2027-06-01 » → « mardi 1 juin 2027 ». */
 export function formatDayLabel(date: string): string {
   const [year, month, day] = date.split('-').map(Number);

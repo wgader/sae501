@@ -3,11 +3,16 @@ import type {
   CreateRoomReservationInput,
   PublicRoom,
   RoomAvailabilityResponse,
+  RoomBookingRules,
   RoomReservationResponse,
 } from './types';
 
 export function getPublicRooms(): Promise<PublicRoom[]> {
   return request<PublicRoom[]>('/api/rooms');
+}
+
+export function getRoomBookingRules(): Promise<RoomBookingRules> {
+  return request<RoomBookingRules>('/api/rooms/booking-rules');
 }
 
 export function getRoomAvailability(

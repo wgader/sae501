@@ -82,12 +82,7 @@ final class RequestCancellationNotifier
         if ($reservation instanceof ReservationSalle) {
             return [
                 'Salle' => (string) $reservation->getSalle()?->getNom(),
-                'Créneau' => \sprintf(
-                    'le %s de %s à %s',
-                    $reservation->getDateDebut()?->format('d/m/Y'),
-                    $reservation->getDateDebut()?->format('H\hi'),
-                    $reservation->getDateFin()?->format('H\hi'),
-                ),
+                'Créneau' => $reservation->getSlotLabel(),
                 'Motif' => (string) $reservation->getMotifEvenement(),
             ];
         }

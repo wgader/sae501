@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 import Button from '@/components/ui/Button';
 import { IconCheck, IconClock, IconEdit, IconLocation, IconMembres, IconWarning } from '@/components/ui/icons';
 import CampaignRequestStatusBadge from '@/components/admin/campaign/CampaignRequestStatusBadge';
-import { formatSlotTime } from '@/lib/campaignDates';
+import { formatSlotRange } from '@/lib/campaignDates';
 import type { CampaignRequest } from '@/lib/api/types';
 
 const cardVariants = cva('flex flex-col gap-4', {
@@ -61,9 +61,7 @@ export default function CampaignRequestCard({
       <ul className="grid gap-2 text-body-sm text-ink sm:grid-cols-3">
         <li className="flex items-center gap-2">
           <IconClock className="h-4 w-4 shrink-0 text-primary" />
-          <span>
-            {formatSlotTime(request.dateDebut)} – {formatSlotTime(request.dateFin)}
-          </span>
+          <span>{formatSlotRange(request.dateDebut, request.dateFin)}</span>
         </li>
         <li className="flex min-w-0 items-center gap-2">
           <IconLocation className="h-4 w-4 shrink-0 text-primary" />

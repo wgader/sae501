@@ -235,4 +235,20 @@ class ReservationSalle
 
         return $this;
     }
+
+    /** « le 15/12/2026 de 09h00 à 12h00 », ou « du 15/12/2026 à 09h00 au 17/12/2026 à 18h00 ». */
+    public function getSlotLabel(): string
+    {
+        $start = $this->dateDebut;
+        $end = $this->dateFin;
+        if (null === $start || null === $end) {
+            return '';
+        }
+
+        if ($start->format('Y-m-d') === $end->format('Y-m-d')) {
+            return \sprintf('le %s de %s à %s', $start->format('d/m/Y'), $start->format('H\hi'), $end->format('H\hi'));
+        }
+
+        return \sprintf('du %s à %s au %s à %s', $start->format('d/m/Y'), $start->format('H\hi'), $end->format('d/m/Y'), $end->format('H\hi'));
+    }
 }

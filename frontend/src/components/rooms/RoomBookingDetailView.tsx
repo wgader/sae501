@@ -12,6 +12,7 @@ import {
   createRoomReservation,
   getMediaUrl,
 } from '@/lib/api';
+import { roomSlotInstant } from '@/lib/roomFilters';
 
 interface RoomBookingDetailViewProps {
   room: PublicRoom;
@@ -123,17 +124,19 @@ export default function RoomBookingDetailView({
       };
     }
 
-    // Vérification dynamique du chevauchement avec une réservation existante
-    const endDateTime = new Date(`${dateIso}T${endHour}:00`);
+    // Une fois la demande envoyée, le créneau occupé est le sien : plus rien à contrôler.
+    if (successInfo) return { isValid: true, error: null };
+
+    // Comparaison en heure locale de la salle : l'API et le navigateur n'ont pas le même fuseau.
+    const slotStart = `${dateIso}T${startHour}`;
+    const slotEnd = `${dateIso}T${endHour}`;
     // Pendant la campagne, une demande en attente d'une autre association ne bloque pas le créneau.
     const blockingSlots = occupiedSlots.filter(
       (slot) => !(forCampaign && slot.campaignId === campaignId && slot.isPreReserved),
     );
-    const hasOverlap = blockingSlots.some((slot) => {
-      const slotStart = new Date(slot.start);
-      const slotEnd = new Date(slot.end);
-      return slotStart < endDateTime && slotEnd > startDateTime;
-    });
+    const hasOverlap = blockingSlots.some(
+      (slot) => slot.start.slice(0, 16) < slotEnd && slot.end.slice(0, 16) > slotStart,
+    );
 
     if (hasOverlap) {
       return {
@@ -143,7 +146,7 @@ export default function RoomBookingDetailView({
     }
 
     return { isValid: true, error: null };
-  }, [dateIso, startHour, endHour, occupiedSlots, forCampaign, campaignId]);
+  }, [dateIso, startHour, endHour, occupiedSlots, forCampaign, campaignId, successInfo]);
 
   // Validation de la capacité déclarée
   const capacityValidation = useMemo(() => {
@@ -178,8 +181,8 @@ export default function RoomBookingDetailView({
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const startIso = `${dateIso}T${startHour}:00+01:00`;
-    const endIso = `${dateIso}T${endHour}:00+01:00`;
+    const startIso = roomSlotInstant(dateIso, startHour);
+    const endIso = roomSlotInstant(dateIso, endHour);
 
     try {
       const result = await createRoomReservation({
