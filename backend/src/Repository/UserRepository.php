@@ -103,9 +103,11 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->select('COUNT(user.id)')
             ->andWhere('user.typeCompte = :typeCompte')
             ->andWhere('user.deletedAt IS NULL')
+            ->andWhere('user.inactivatedAt IS NULL')
             ->andWhere('user.roles LIKE :role')
             ->setParameter('typeCompte', 'mairie')
-            ->setParameter('role', '%ROLE_ADMIN%')
+            // Les guillemets écartent ROLE_ADMIN_GESTION_EVENT, qui n'est pas un administrateur.
+            ->setParameter('role', '%"ROLE_ADMIN"%')
             ->getQuery()
             ->getSingleScalarResult();
     }
