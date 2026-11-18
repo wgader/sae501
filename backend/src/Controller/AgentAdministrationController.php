@@ -72,7 +72,7 @@ final class AgentAdministrationController extends AbstractController
             return $payload;
         }
 
-        $errors = $this->validateAgentPayload($payload, false);
+        $errors = $this->validateAgentPayload($payload, false, false);
         if ($errors !== []) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -142,7 +142,7 @@ final class AgentAdministrationController extends AbstractController
             return $payload;
         }
 
-        $errors = $this->validateAgentPayload($payload, true);
+        $errors = $this->validateAgentPayload($payload, true, in_array(self::ADMIN_ROLE, $rolesBefore, true));
         if ($errors !== []) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -268,8 +268,12 @@ final class AgentAdministrationController extends AbstractController
         return $payload;
     }
 
-    /** @param array<string, mixed> $payload */
-    private function validateAgentPayload(array $payload, bool $partial): array
+    /**
+     * L'application ne compte qu'un administrateur : ce droit ne s'attribue jamais depuis la gestion des agents.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function validateAgentPayload(array $payload, bool $partial, bool $isAdministrator): array
     {
         $errors = [];
         foreach (['nom', 'prenom', 'email'] as $field) {
@@ -297,6 +301,8 @@ final class AgentAdministrationController extends AbstractController
                 $errors['roles'] = 'Un ou plusieurs rôles sont invalides.';
             } elseif (array_diff($roles, ['ROLE_MAIRIE']) === []) {
                 $errors['roles'] = 'Sélectionnez au moins un module.';
+            } elseif (in_array(self::ADMIN_ROLE, $roles, true) && !$isAdministrator) {
+                $errors['roles'] = 'L’application ne compte qu’un seul administrateur.';
             }
         }
 

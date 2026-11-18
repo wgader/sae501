@@ -46,6 +46,19 @@ test.describe('Droits des agents', () => {
         await expect(menu.getByRole('link')).toHaveCount(1);
     });
 
+    test('Un nouvel agent peut recevoir tous les modules sans devenir administrateur', async ({ page }) => {
+        await mockSession(page, ['ROLE_MAIRIE', 'ROLE_ADMIN']);
+
+        await page.goto('/admin/agent');
+        await page.getByRole('button', { name: 'Ajouter un agent' }).click();
+
+        await expect(page.getByRole('switch', { name: 'Accès administrateur' })).toHaveCount(0);
+        await page.getByRole('button', { name: 'Tous les modules' }).click();
+        for (const title of ['Événement', 'Subvention', 'Matériel', 'Salle']) {
+            await expect(page.getByRole('switch', { name: `Module ${title}` })).toBeChecked();
+        }
+    });
+
     test('Un administrateur ne peut pas retirer ses propres droits', async ({ page }) => {
         await mockSession(page, ['ROLE_MAIRIE', 'ROLE_ADMIN']);
 
