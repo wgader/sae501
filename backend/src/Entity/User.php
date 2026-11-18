@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -34,6 +36,8 @@ use Symfony\Component\Serializer\Attribute\Ignore;
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ApiResource(
+    // Lecture seule : les droits ne se modifient que par la gestion des agents, qui garantit l'administrateur unique.
+    operations: [new GetCollection(), new Get()],
     security: "is_granted('ROLE_ADMIN')",
     paginationItemsPerPage: 20,
     paginationMaximumItemsPerPage: 100,

@@ -25,7 +25,7 @@ import {
 import { readSession } from '@/lib/session';
 
 type View = 'list' | 'create' | 'edit';
-type AgentFilter = AssociationModule | 'all' | 'admin';
+type AgentFilter = AssociationModule | 'all';
 type Feedback = { tone: 'success' | 'warning'; message: string };
 type PendingAction =
   | { type: 'create' | 'update'; form: AgentFormState; agentId: number | null }
@@ -80,10 +80,11 @@ export default function AdminAgentsPage() {
 
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
   const isOwnAccount = selectedAgent !== undefined && selectedAgent.id === currentUserId;
+  const ownAdminOption = isOwnAccount ? 'locked' : 'removable';
+  const adminOption = selectedAgent?.isAdmin ? ownAdminOption : 'hidden';
 
   const filteredAgents = useMemo(() => {
     if (filter === 'all') return agents;
-    if (filter === 'admin') return agents.filter((agent) => agent.isAdmin);
     return agents.filter((agent) => agent.modules.includes(filter));
   }, [agents, filter]);
 
@@ -127,6 +128,10 @@ export default function AdminAgentsPage() {
         ? current.modules.filter((item) => item !== module)
         : [...current.modules, module],
     }));
+  };
+
+  const toggleAllModules = (selectAll: boolean) => {
+    setForm((current) => ({ ...current, modules: selectAll ? AGENT_MODULES.map((module) => module.id) : [] }));
   };
 
   const saveAgent = () => {
@@ -250,12 +255,13 @@ export default function AdminAgentsPage() {
           <AgentForm
             mode={view}
             form={form}
-            isAdminLocked={isOwnAccount}
+            adminOption={adminOption}
             isSubmitting={isSubmitting}
             notice={formNotice}
             onChange={updateField}
             onToggleAdmin={(isAdmin) => setForm((current) => ({ ...current, isAdmin }))}
             onToggleModule={toggleModule}
+            onToggleAllModules={toggleAllModules}
             onSubmit={saveAgent}
             onCancel={backToList}
             onDelete={selectedAgent && !isOwnAccount ? () => setPendingAction({ type: 'delete', agent: selectedAgent }) : undefined}
@@ -301,7 +307,6 @@ export default function AdminAgentsPage() {
           </h2>
           <div className="flex flex-wrap gap-2">
             <FilterTag label="Tous" isSelected={filter === 'all'} onClick={() => setFilter('all')} className={FILTER_TAG_CLASS} />
-            <FilterTag label="Administrateur" isSelected={filter === 'admin'} onClick={() => setFilter('admin')} className={FILTER_TAG_CLASS} />
             {AGENT_MODULES.map((module) => (
               <FilterTag
                 key={module.id}

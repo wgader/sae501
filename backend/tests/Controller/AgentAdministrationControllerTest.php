@@ -72,15 +72,58 @@ final class AgentAdministrationControllerTest extends ControllerRouteTestCase
         $this->assertResponseStatusCodeSame(409);
     }
 
-    public function testAdministratorAccessReplacesModuleRoles(): void
+    public function testNoSecondAdministratorCanBeCreated(): void
     {
         $this->authenticateAsAdmin();
 
         $this->createAgent('directeur@example.test', ['ROLE_ADMIN', 'ROLE_GESTION_SALLE']);
 
+        $this->assertResponseStatusCodeSame(422);
+        self::assertNull($this->em->getRepository(User::class)->findOneBy(['email' => 'directeur@example.test']));
+    }
+
+    public function testAgentCannotBePromotedToAdministrator(): void
+    {
+        $this->authenticateAsAdmin();
+        $this->createAgent('camille@example.test', ['ROLE_GESTION_SALLE']);
+        $agent = $this->findAgent('camille@example.test');
+
+        $this->requestJson('PATCH', '/api/admin/agents/'.$agent->getId(), ['roles' => ['ROLE_ADMIN']]);
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->em->clear();
+        self::assertNotContains('ROLE_ADMIN', $this->findAgent('camille@example.test')->getRoles());
+    }
+
+    public function testUserResourceCannotBeUsedToGrantAdministrator(): void
+    {
+        $admin = $this->authenticateAsAdmin();
+
+        $this->requestJson('POST', '/api/users', ['email' => 'intrus@example.test', 'roles' => ['ROLE_ADMIN']]);
+        $this->assertResponseStatusCodeSame(405);
+
+        $this->client->request('DELETE', '/api/users/'.$admin->getId());
+        $this->assertResponseStatusCodeSame(405);
+    }
+
+    public function testAgentCanReceiveEveryModuleWithoutBecomingAdministrator(): void
+    {
+        $this->authenticateAsAdmin();
+
+        $this->createAgent('camille@example.test', ['ROLE_GESTION_EVENT', 'ROLE_GESTION_SUBVENTION', 'ROLE_GESTION_MATERIEL', 'ROLE_GESTION_SALLE']);
+
         $this->assertResponseStatusCodeSame(201);
-        $this->assertJsonContains(['roles' => ['ROLE_ADMIN']]);
-        self::assertNotContains('ROLE_GESTION_SALLE', $this->findAgent('directeur@example.test')->getRoles());
+        self::assertNotContains('ROLE_ADMIN', $this->findAgent('camille@example.test')->getRoles());
+    }
+
+    public function testAdministratorKeepsTheirRoleWhenEditingTheirProfile(): void
+    {
+        $admin = $this->authenticateAsAdmin();
+
+        $this->requestJson('PATCH', '/api/admin/agents/'.$admin->getId(), ['prenom' => 'Alex', 'roles' => ['ROLE_ADMIN']]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains(['prenom' => 'Alex', 'roles' => ['ROLE_ADMIN']]);
     }
 
     public function testAgentNeedsAtLeastOneModule(): void
@@ -95,7 +138,7 @@ final class AgentAdministrationControllerTest extends ControllerRouteTestCase
     public function testAdministratorCannotRemoveTheirOwnRights(): void
     {
         $admin = $this->authenticateAsAdmin();
-        $this->createAgent('second@example.test', ['ROLE_ADMIN']);
+        $this->persistSurplusAdministrator();
 
         $this->requestJson('PATCH', '/api/admin/agents/'.$admin->getId(), ['roles' => ['ROLE_GESTION_SALLE']]);
 
@@ -104,11 +147,10 @@ final class AgentAdministrationControllerTest extends ControllerRouteTestCase
         self::assertContains('ROLE_ADMIN', $this->findAgent('admin@example.test')->getRoles());
     }
 
-    public function testAnotherAdministratorCanBeDemoted(): void
+    public function testSurplusAdministratorCanBeDemoted(): void
     {
         $this->authenticateAsAdmin();
-        $this->createAgent('second@example.test', ['ROLE_ADMIN']);
-        $second = $this->findAgent('second@example.test');
+        $second = $this->persistSurplusAdministrator();
 
         $this->requestJson('PATCH', '/api/admin/agents/'.$second->getId(), ['roles' => ['ROLE_GESTION_SALLE']]);
 
@@ -179,6 +221,22 @@ final class AgentAdministrationControllerTest extends ControllerRouteTestCase
             $this->client->request('GET', $uri);
             $this->assertResponseIsSuccessful($uri);
         }
+    }
+
+    /** Compte créé avant la règle de l'administrateur unique. */
+    private function persistSurplusAdministrator(): User
+    {
+        $administrator = (new User())
+            ->setEmail('second@example.test')
+            ->setNom('Admin')
+            ->setPrenom('Second')
+            ->setTypeCompte('mairie')
+            ->setRoles(['ROLE_ADMIN'])
+            ->setIsVerified(true);
+        $this->em->persist($administrator);
+        $this->em->flush();
+
+        return $administrator;
     }
 
     private function authenticateModuleAgent(string $role): void

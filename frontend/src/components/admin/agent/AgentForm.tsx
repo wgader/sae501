@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import AgentAccessSelector from '@/components/admin/agent/AgentAccessSelector';
+import AgentAccessSelector, { type AdminOption } from '@/components/admin/agent/AgentAccessSelector';
 import type { AssociationModule } from '@/components/admin/StatusTag';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
@@ -20,13 +20,14 @@ export type AgentTextField = 'nom' | 'prenom' | 'email' | 'telephone';
 interface AgentFormProps {
   mode: 'create' | 'edit';
   form: AgentFormState;
-  isAdminLocked: boolean;
+  adminOption: AdminOption;
   isSubmitting: boolean;
   /** Messages affichés sous le titre (invitation en attente, erreur…). */
   notice?: ReactNode;
   onChange: (field: AgentTextField, value: string) => void;
   onToggleAdmin: (isAdmin: boolean) => void;
   onToggleModule: (module: AssociationModule) => void;
+  onToggleAllModules: (selectAll: boolean) => void;
   onSubmit: () => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -35,12 +36,13 @@ interface AgentFormProps {
 export default function AgentForm({
   mode,
   form,
-  isAdminLocked,
+  adminOption,
   isSubmitting,
   notice,
   onChange,
   onToggleAdmin,
   onToggleModule,
+  onToggleAllModules,
   onSubmit,
   onCancel,
   onDelete,
@@ -93,9 +95,10 @@ export default function AgentForm({
         <section aria-label="Droits d’accès" className="border-t border-line pt-8 xl:border-l xl:border-t-0 xl:pl-8 xl:pt-0">
           <AgentAccessSelector
             access={form}
-            isAdminLocked={isAdminLocked}
+            adminOption={adminOption}
             onToggleAdmin={onToggleAdmin}
             onToggleModule={onToggleModule}
+            onToggleAllModules={onToggleAllModules}
           />
         </section>
       </div>
