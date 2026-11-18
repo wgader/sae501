@@ -10,6 +10,7 @@ use Doctrine\DBAL\Types\Types;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Ignore;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -67,9 +68,12 @@ class DemandeSubvention
     #[Assert\Positive(message: 'Le montant demandé doit être positif.')]
     private ?string $montantDemande = null;
 
+    // Coordonnées bancaires : jamais exposées par la ressource API générique.
+    #[Ignore]
     #[ORM\Column(name: 'bic', length: 11, nullable: true)]
     private ?string $bic = null;
 
+    #[Ignore]
     #[ORM\Column(name: 'iban', length: 34, nullable: true)]
     private ?string $iban = null;
 
