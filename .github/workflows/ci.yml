@@ -108,8 +108,11 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci --prefix frontend
-      - name: NPM audit
-        run: npm audit --prefix frontend
+      # Aucune exception pour le code livré ; les outils de développement passent par la liste d'avis acceptés.
+      - name: NPM audit (production)
+        run: npm audit --prefix frontend --omit=dev
+      - name: NPM audit (outils de développement)
+        run: python3 .github/scripts/npm_audit_gate.py frontend
       - run: npm run lint --prefix frontend
       - run: npm run build --prefix frontend
 
