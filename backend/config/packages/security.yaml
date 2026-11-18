@@ -11,6 +11,10 @@ security:
                 class: App\Entity\User
                 property: email
 
+    # Un administrateur dispose de tous les modules, sans avoir à les cumuler sur son compte.
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_GESTION_EVENT, ROLE_GESTION_SUBVENTION, ROLE_GESTION_MATERIEL, ROLE_GESTION_SALLE]
+
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -52,7 +56,10 @@ security:
         - { path: ^/api/rooms$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/salles$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/campaigns/current, roles: PUBLIC_ACCESS }
-        - { path: ^/api/admin/(campaigns|campaign-history|room-requests), allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')" }
+        # Chaque agent n'atteint que les routes de ses modules ; ROLE_ADMIN les hérite toutes.
+        - { path: ^/api/admin/(campaigns|campaign-history|room-requests|salles), roles: ROLE_GESTION_SALLE }
+        - { path: ^/api/admin/equipment, roles: ROLE_GESTION_MATERIEL }
+        - { path: ^/api/admin/associations/\d+/requests/[^/]+/request-documents$, allow_if: "is_granted('ROLE_GESTION_MATERIEL') or is_granted('ROLE_GESTION_SALLE')", methods: [POST] }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 

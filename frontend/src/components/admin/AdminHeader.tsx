@@ -1,6 +1,8 @@
 'use client';
 
 import AdminSearchBar from '@/components/admin/search/AdminSearchBar';
+import { accessFromRoles } from '@/lib/agentAccess';
+import { readSession } from '@/lib/session';
 import AdminNotificationBell from '@/components/notifications/AdminNotificationBell';
 import { getStoredUserName, getUserInitials } from '@/lib/authUtils';
 
@@ -19,6 +21,8 @@ export default function AdminHeader({
 }: AdminHeaderProps) {
   const adminName = getStoredUserName() || 'Agent municipal';
   const initials = getUserInitials(adminName);
+  // La recherche d'associations est réservée aux administrateurs, sauf filtre propre à la page.
+  const canSearch = Boolean(onSearchChange) || accessFromRoles(readSession()?.user.roles ?? []).isAdmin;
 
   return (
     <div className="flex h-20 w-full items-center justify-between bg-primary px-6 lg:px-10">
@@ -66,10 +70,12 @@ export default function AdminHeader({
           )}
         </button>
 
-        <AdminSearchBar
-          searchTerm={searchTerm}
-          onSearchChange={onSearchChange}
-        />
+        {canSearch && (
+          <AdminSearchBar
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-3 pl-4">

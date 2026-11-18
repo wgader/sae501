@@ -134,7 +134,8 @@ final class AccountActivationController extends AbstractController
                         'prenom'         => $user->getPrenom(),
                         'nom'            => $user->getNom(),
                         'nomAssociation' => $user->getAssociation()?->getNom() ?? '',
-                        'loginUrl'       => $this->frontendUrl . '/connexion',
+                        'loginUrl'       => $this->frontendUrl . ($user->getTypeCompte() === 'mairie' ? '/admin' : '/connexion'),
+                        'isAgent'        => $user->getTypeCompte() === 'mairie',
                     ])
             );
         } catch (\Throwable $e) {

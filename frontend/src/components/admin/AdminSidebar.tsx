@@ -15,6 +15,8 @@ import {
   IconCampagne,
 } from '@/components/ui/NavigationBar/NavigationIcon';
 import { signOut } from '@/lib/api/auth';
+import { accessFromRoles, adminHomePath, canOpenAdminPage } from '@/lib/agentAccess';
+import { readSession } from '@/lib/session';
 
 interface AdminSidebarProps {
   onNavigate?: () => void;
@@ -35,6 +37,8 @@ const navItems = [
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const access = accessFromRoles(readSession()?.user.roles ?? []);
+  const visibleItems = navItems.filter((item) => canOpenAdminPage(item.href, access));
 
   const handleLogout = () => {
     void signOut().finally(() => router.replace('/admin'));
@@ -44,9 +48,9 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
     <div className="flex h-full w-full flex-col justify-between overflow-y-auto bg-primary p-5 text-white [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div>
         <Link
-          href="/admin/dashboard"
+          href={adminHomePath(access)}
           onClick={onNavigate}
-          aria-label="Tableau de bord administration"
+          aria-label="Accueil de l’administration"
           className="mb-8 block px-2 pt-2 transition-opacity hover:opacity-90"
         >
           <Image
@@ -61,7 +65,7 @@ export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {
 
         <nav aria-label="Menu principal administration">
           <ul className="flex flex-col gap-2">
-            {navItems.map(({ href, label, icon: Icon }) => {
+            {visibleItems.map(({ href, label, icon: Icon }) => {
               const isActive =
                 pathname === href ||
                 (href !== '/admin/dashboard' && pathname.startsWith(href));

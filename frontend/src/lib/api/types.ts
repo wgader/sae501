@@ -335,6 +335,8 @@ export type AdminAgent = {
   isVerified: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string | null;
+  /** Présent à la création : l'e-mail d'activation est-il parti ? */
+  invitationSent?: boolean;
 };
 
 export type AdminAgentPayload = {
