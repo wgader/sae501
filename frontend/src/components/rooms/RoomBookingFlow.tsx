@@ -6,8 +6,16 @@ import Notice from '@/components/ui/Notice';
 import { IconArrowLeft, IconArrowRight, IconCampagne } from '@/components/ui/icons';
 import RoomBookingDetailView from '@/components/rooms/RoomBookingDetailView';
 import RoomCatalogCard from '@/components/rooms/RoomCatalogCard';
+import RoomFiltersDialog from '@/components/rooms/RoomFiltersDialog';
 import RoomSlotModal from '@/components/rooms/RoomSlotModal';
+import { useRoomSlotAvailability } from '@/hooks/useRoomSlotAvailability';
 import { todayKey } from '@/lib/campaignPlanning';
+import {
+  DEFAULT_ROOM_FILTERS,
+  countActiveRoomFilters,
+  matchesRoomFilters,
+  roomDayKey,
+} from '@/lib/roomFilters';
 import { OccupiedSlot, PublicRoom, getPublicRooms, getRoomAvailability } from '@/lib/api';
 import type { Campaign } from '@/lib/api/types';
 import { readSession } from '@/lib/session';
@@ -62,7 +70,18 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
   const [chosenRoom, setChosenRoom] = useState<PublicRoom | null>(null);
   const [occupiedSlots, setOccupiedSlots] = useState<OccupiedSlot[]>([]);
   const [searchFilter, setSearchFilter] = useState('');
+  const [roomFilters, setRoomFilters] = useState(DEFAULT_ROOM_FILTERS);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [moduleForbidden] = useState(readModuleForbidden);
+
+  // Ponctuel : seules les salles libres sont proposées. En campagne, la mairie arbitre les demandes.
+  const isOneOff = campaign === null;
+  const checkedDay = roomDayKey(selectedDate);
+  const checkedSlot = useMemo(
+    () => (isOneOff && step !== 'slot' ? { day: checkedDay, startHour, endHour } : null),
+    [isOneOff, step, checkedDay, startHour, endHour],
+  );
+  const availability = useRoomSlotAvailability(rooms, checkedSlot);
 
   useEffect(() => {
     let active = true;
@@ -91,17 +110,26 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
     }
   }, []);
 
-  const filteredRooms = useMemo(() => {
+  // Salles compatibles avec le créneau, l'effectif et la recherche, avant les filtres facultatifs.
+  const candidateRooms = useMemo(() => {
     const query = searchFilter.trim().toLowerCase();
-    if (!query) return rooms;
-    return rooms.filter(
-      (room) =>
+    return rooms.filter((room) => {
+      const matchesQuery =
+        !query ||
         room.nom.toLowerCase().includes(query) ||
         (room.description?.toLowerCase().includes(query) ?? false) ||
         room.adresse.toLowerCase().includes(query) ||
-        room.equipementsInclus.some((equipment) => equipment.toLowerCase().includes(query)),
-    );
-  }, [rooms, searchFilter]);
+        room.equipementsInclus.some((equipment) => equipment.toLowerCase().includes(query));
+      const fitsAttendees = attendees === '' || room.capaciteMax >= attendees;
+      const isFree = !isOneOff || (availability.availableRoomIds?.has(room.id) ?? false);
+      return matchesQuery && fitsAttendees && isFree;
+    });
+  }, [rooms, searchFilter, attendees, isOneOff, availability.availableRoomIds]);
+
+  const filteredRooms = useMemo(
+    () => candidateRooms.filter((room) => matchesRoomFilters(room, roomFilters)),
+    [candidateRooms, roomFilters],
+  );
 
   const canBook = enabled && !moduleForbidden;
 
@@ -120,7 +148,22 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
     setStep('booking');
   };
 
-  const roomCountLabel = `${filteredRooms.length} salle${filteredRooms.length > 1 ? 's' : ''}`;
+  const backToRooms = () => {
+    // Une autre association a pu réserver entre-temps : la liste est revérifiée au retour.
+    availability.refresh();
+    setStep('rooms');
+  };
+
+  const plural = filteredRooms.length > 1 ? 's' : '';
+  const roomCountLabel = isOneOff
+    ? `${filteredRooms.length} salle${plural} disponible${plural}`
+    : `${filteredRooms.length} salle${plural}`;
+  const activeFilterCount = countActiveRoomFilters(roomFilters);
+  const filterButtonLabel = activeFilterCount > 0 ? `Filtres (${activeFilterCount})` : 'Filtres';
+  const isLoadingList = loadingRooms || availability.loading;
+  const emptyListMessage = isOneOff
+    ? 'Aucune salle disponible ne correspond à ce créneau et à vos critères.'
+    : 'Aucune salle ne correspond à votre recherche.';
 
   return (
     <div className="space-y-8">
@@ -182,30 +225,51 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
           </header>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <label className="w-full sm:max-w-md">
-              <span className="sr-only">Rechercher une salle ou un équipement</span>
-              <input
-                type="search"
-                placeholder="Rechercher une salle ou un équipement"
-                value={searchFilter}
-                onChange={(event) => setSearchFilter(event.target.value)}
-                className="w-full rounded-control border border-line bg-white px-4 py-3 text-body-sm text-ink placeholder:text-muted outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
-              />
-            </label>
-            <p className="text-body-sm font-bold text-ink">{roomCountLabel}</p>
+            <div className="flex w-full items-center gap-3 sm:max-w-xl">
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">Rechercher une salle ou un équipement</span>
+                <input
+                  type="search"
+                  placeholder="Rechercher une salle ou un équipement"
+                  value={searchFilter}
+                  onChange={(event) => setSearchFilter(event.target.value)}
+                  className="w-full rounded-control border border-line bg-white px-4 py-3 text-body-sm text-ink placeholder:text-muted outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
+                />
+              </label>
+              <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
+                {filterButtonLabel}
+              </Button>
+            </div>
+            <p role="status" className="text-body-sm font-bold text-ink">
+              {isLoadingList ? 'Vérification…' : roomCountLabel}
+            </p>
           </div>
 
-          {loadingRooms && (
+          {availability.failed && (
+            <Notice
+              tone="danger"
+              title="Disponibilités indisponibles"
+              action={
+                <Button variant="secondary" size="sm" onClick={availability.refresh}>
+                  Réessayer
+                </Button>
+              }
+            >
+              Impossible de vérifier les salles libres sur ce créneau.
+            </Notice>
+          )}
+
+          {isLoadingList && (
             <p role="status" className="py-16 text-center text-body-sm text-muted">
               Chargement des salles…
             </p>
           )}
-          {!loadingRooms && filteredRooms.length === 0 && (
+          {!isLoadingList && !availability.failed && filteredRooms.length === 0 && (
             <p className="rounded-card border border-dashed border-line px-6 py-12 text-center text-body-sm text-muted">
-              Aucune salle ne correspond à votre recherche.
+              {emptyListMessage}
             </p>
           )}
-          {!loadingRooms && filteredRooms.length > 0 && (
+          {!isLoadingList && filteredRooms.length > 0 && (
             <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredRooms.map((room) => (
                 <li key={room.id} className="flex">
@@ -226,7 +290,7 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
           initialAttendees={attendees}
           occupiedSlots={occupiedSlots}
           campaignId={campaign?.id ?? null}
-          onBack={() => setStep('rooms')}
+          onBack={backToRooms}
           onRefreshCalendar={() => void fetchAvailability(chosenRoom)}
           onReservationCreated={(slot) => {
             setOccupiedSlots((previous) => [...previous, slot]);
@@ -245,6 +309,14 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
         minDay={minDay}
         maxDay={periodEnd}
         onValidateSlot={handleValidateSlot}
+      />
+
+      <RoomFiltersDialog
+        open={isFiltersOpen}
+        rooms={candidateRooms}
+        filters={roomFilters}
+        onApply={setRoomFilters}
+        onClose={() => setIsFiltersOpen(false)}
       />
     </div>
   );
