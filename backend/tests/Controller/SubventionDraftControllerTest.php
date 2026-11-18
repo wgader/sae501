@@ -63,6 +63,29 @@ final class SubventionDraftControllerTest extends ControllerRouteTestCase
         self::assertSame('0.00', $drafts[0]['lignesBudget'][1]['montant']);
     }
 
+    public function testNewDraftCanStartWithoutBankDetails(): void
+    {
+        $this->authenticateAsMember($this->createAssociation('Association sans RIB'));
+
+        $this->requestJson('POST', '/api/grants', ['intituleProjet' => 'Demande de subvention', 'bic' => '', 'iban' => '']);
+
+        $this->assertResponseStatusCodeSame(201);
+        $draft = $this->responseData();
+        self::assertNull($draft['bic']);
+        self::assertNull($draft['iban']);
+    }
+
+    public function testFilledBankDetailsMustStayValid(): void
+    {
+        $this->authenticateAsMember($this->createAssociation('Association RIB invalide'));
+
+        foreach ([['bic' => 'ABC'], ['iban' => 'FR00']] as $bankDetails) {
+            $this->requestJson('POST', '/api/grants', ['intituleProjet' => 'Demande de subvention', ...$bankDetails]);
+
+            $this->assertResponseStatusCodeSame(422);
+        }
+    }
+
     public function testBalancedBudgetAndPositiveMunicipalGrantAreValidated(): void
     {
         $association = $this->createAssociation('Association budget équilibré');
