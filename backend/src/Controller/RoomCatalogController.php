@@ -15,6 +15,7 @@ final class RoomCatalogController extends AbstractController
 {
     public function __construct(
         private readonly SalleRepository $salleRepository,
+        private readonly RoomReservationService $reservationService,
     ) {
     }
 
@@ -28,6 +29,15 @@ final class RoomCatalogController extends AbstractController
             static fn (Salle $salle): array => self::serializeRoom($salle),
             $rooms,
         ));
+    }
+
+    /**
+     * Règles des réservations ponctuelles : dernier jour réservable, durée maximale, pas des horaires.
+     */
+    #[Route('/api/rooms/booking-rules', name: 'app_room_catalog_booking_rules', methods: ['GET'])]
+    public function bookingRules(): JsonResponse
+    {
+        return $this->json($this->reservationService->oneOffRules());
     }
 
     /**

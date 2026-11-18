@@ -6,9 +6,10 @@ import type { PublicRoom } from '@/lib/api/types';
 import { roomSlotInstant } from '@/lib/roomFilters';
 
 export interface RoomSlot {
-  day: string;
-  startHour: string;
-  endHour: string;
+  startDay: string;
+  endDay: string;
+  startTime: string;
+  endTime: string;
 }
 
 interface AvailabilityResult {
@@ -18,26 +19,22 @@ interface AvailabilityResult {
 
 /**
  * Salles libres sur un créneau, pour les réservations ponctuelles (premier arrivé, premier servi).
- * Sans créneau (`null`), rien n'est vérifié : en campagne, plusieurs associations peuvent demander
- * le même créneau et la mairie arbitre ensuite.
+ * Sans créneau (`null`), rien n'est vérifié et toutes les salles restent proposées.
  */
 export function useRoomSlotAvailability(rooms: PublicRoom[], slot: RoomSlot | null) {
   const [version, setVersion] = useState(0);
   const [result, setResult] = useState<AvailabilityResult | null>(null);
 
-  const day = slot?.day ?? null;
-  const startHour = slot?.startHour ?? null;
-  const endHour = slot?.endHour ?? null;
-  const key = day && startHour && endHour && rooms.length > 0
-    ? `${day}|${startHour}|${endHour}|${rooms.map((room) => room.id).join(',')}|${version}`
+  const start = slot ? roomSlotInstant(slot.startDay, slot.startTime) : null;
+  const end = slot ? roomSlotInstant(slot.endDay, slot.endTime) : null;
+  const key = start && end && rooms.length > 0
+    ? `${start}|${end}|${rooms.map((room) => room.id).join(',')}|${version}`
     : null;
 
   useEffect(() => {
-    if (!key || !day || !startHour || !endHour) return;
+    if (!key || !start || !end) return;
 
     let active = true;
-    const start = roomSlotInstant(day, startHour);
-    const end = roomSlotInstant(day, endHour);
 
     Promise.all(rooms.map((room) => getRoomAvailability(room.id, start, end)))
       .then((responses) => {
@@ -53,7 +50,7 @@ export function useRoomSlotAvailability(rooms: PublicRoom[], slot: RoomSlot | nu
     return () => {
       active = false;
     };
-  }, [key, rooms, day, startHour, endHour]);
+  }, [key, rooms, start, end]);
 
   const refresh = useCallback(() => setVersion((current) => current + 1), []);
   const isCurrent = key !== null && result?.key === key;

@@ -12,6 +12,7 @@ export const dialogVariants = cva(
       size: {
         sm: 'max-w-md',
         md: 'max-w-xl',
+        lg: 'max-w-3xl',
       },
     },
     defaultVariants: {
