@@ -12,6 +12,7 @@ import {
   createRoomReservation,
   getMediaUrl,
 } from '@/lib/api';
+import { roomSlotInstant } from '@/lib/roomFilters';
 
 interface RoomBookingDetailViewProps {
   room: PublicRoom;
@@ -178,8 +179,8 @@ export default function RoomBookingDetailView({
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const startIso = `${dateIso}T${startHour}:00+01:00`;
-    const endIso = `${dateIso}T${endHour}:00+01:00`;
+    const startIso = roomSlotInstant(dateIso, startHour);
+    const endIso = roomSlotInstant(dateIso, endHour);
 
     try {
       const result = await createRoomReservation({
