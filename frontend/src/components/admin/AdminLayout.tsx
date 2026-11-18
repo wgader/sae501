@@ -1,10 +1,12 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import { useSessionKind } from '@/hooks/useSessionKind';
+import { accessFromRoles, adminHomePath, canOpenAdminPage } from '@/lib/agentAccess';
+import { readSession } from '@/lib/session';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -22,6 +24,12 @@ export default function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const sessionKind = useSessionKind();
+  const pathname = usePathname();
+
+  // Un agent ne voit que les pages de ses modules ; l'API applique la même règle.
+  const access = sessionKind === 'admin' ? accessFromRoles(readSession()?.user.roles ?? []) : null;
+  const homePath = access ? adminHomePath(access) : null;
+  const isPageForbidden = access !== null && !canOpenAdminPage(pathname, access) && homePath !== pathname;
 
   useEffect(() => {
     // undefined : rendu serveur, la session n'est pas encore connue.
@@ -29,6 +37,10 @@ export default function AdminLayout({
       router.replace('/admin');
     }
   }, [sessionKind, router]);
+
+  useEffect(() => {
+    if (isPageForbidden && homePath) router.replace(homePath);
+  }, [isPageForbidden, homePath, router]);
 
   useEffect(() => {
     const prevHtmlOverflow = document.documentElement.style.overflow;
@@ -52,7 +64,7 @@ export default function AdminLayout({
     );
   }
 
-  if (sessionKind !== 'admin') {
+  if (sessionKind !== 'admin' || isPageForbidden) {
     return null;
   }
 

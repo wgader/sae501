@@ -203,7 +203,7 @@ export async function activateAccount(token: string, email: string, password: st
     const message = data?.errors?.join(' ') ?? data?.message ?? 'Une erreur est survenue lors de l’activation.';
     throw new ApiError(message, response.status, data);
   }
-  storeSession('association', data.user);
+  storeSession(data.user.typeCompte === 'mairie' ? 'admin' : 'association', data.user);
   return data.user;
 }
 

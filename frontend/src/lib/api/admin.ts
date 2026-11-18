@@ -29,6 +29,10 @@ export function updateAdminAgent(
   });
 }
 
+export function resendAdminAgentInvitation(id: number): Promise<{ message: string }> {
+  return request<{ message: string }>(`/api/admin/agents/${id}/invitation`, { method: 'POST' });
+}
+
 export function deleteAdminAgent(id: number): Promise<void> {
   return request<void>(`/api/admin/agents/${id}`, { method: 'DELETE' });
 }
