@@ -22,6 +22,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 class Materiel
 {
+    public const DEFAULT_MAX_CONSECUTIVE_DAYS = 7;
+    public const MAX_CONSECUTIVE_DAYS_LIMIT = 90;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -51,6 +54,11 @@ class Materiel
     #[Assert\NotNull(message: 'Le stock total est obligatoire.')]
     #[Assert\PositiveOrZero(message: 'Le stock total doit être un entier positif ou nul.')]
     private ?int $stockTotal = 0;
+
+    /** Nombre de jours d’affilée pendant lesquels une association peut emprunter ce matériel. */
+    #[ORM\Column(name: 'max_consecutive_days', options: ['default' => self::DEFAULT_MAX_CONSECUTIVE_DAYS])]
+    #[Assert\Range(min: 1, max: self::MAX_CONSECUTIVE_DAYS_LIMIT)]
+    private int $maxConsecutiveDays = self::DEFAULT_MAX_CONSECUTIVE_DAYS;
 
     #[ORM\Column(name: 'is_archived', options: ['default' => false])]
     private bool $isArchived = false;
@@ -147,6 +155,18 @@ class Materiel
     public function setStockTotal(int $stockTotal): static
     {
         $this->stockTotal = $stockTotal;
+
+        return $this;
+    }
+
+    public function getMaxConsecutiveDays(): int
+    {
+        return $this->maxConsecutiveDays;
+    }
+
+    public function setMaxConsecutiveDays(int $maxConsecutiveDays): static
+    {
+        $this->maxConsecutiveDays = $maxConsecutiveDays;
 
         return $this;
     }
