@@ -75,10 +75,20 @@ export type Equipment = {
   description: string | null;
   consignesUtilisation: string | null;
   stockTotal: number;
+  /** Nombre de jours d'affilée autorisés par la mairie. */
+  maxConsecutiveDays: number;
   isArchived: boolean;
   statut: 'Disponible' | 'Archivé';
   imagePath: string | null;
   createdAt: string | null;
+};
+
+/** Stock engagé et limites d'un équipement, pour construire son calendrier. */
+export type EquipmentOccupancy = {
+  stockTotal: number;
+  maxConsecutiveDays: number;
+  lastDay: string;
+  reservations: { start: string; end: string; quantite: number }[];
 };
 
 export type EquipmentAvailability = Equipment & {

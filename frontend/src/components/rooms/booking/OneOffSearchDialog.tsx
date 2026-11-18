@@ -1,11 +1,11 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
-import SlotPicker from '@/components/rooms/booking/SlotPicker';
+import SlotPicker from '@/components/booking/SlotPicker';
 import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
-import { EMPTY_SLOT, isSlotComplete, normalizeSlot, type AvailabilityContext, type SlotSelection } from '@/lib/roomAvailability';
+import { EMPTY_SLOT, isSlotComplete, normalizeSlot, type AvailabilityContext, type SlotSelection } from '@/lib/bookingAvailability';
 
 export interface OneOffSearch {
   slot: SlotSelection;

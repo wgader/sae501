@@ -123,7 +123,7 @@ export default function AdminEquipmentReservationDetailPage() {
 
   return (
     <AdminLayout>
-      <section className="mx-auto max-w-5xl">
+      <section className="mx-auto max-w-328">
         <nav aria-label="Retour aux demandes" className="mb-6">
           <Link href="/admin/materiel/demandes" className="text-xs font-bold uppercase tracking-label text-primary hover:underline">
             ← Retour aux demandes

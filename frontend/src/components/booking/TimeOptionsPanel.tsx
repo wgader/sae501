@@ -1,7 +1,7 @@
 'use client';
 
 import { cva } from 'class-variance-authority';
-import type { TimeOption } from '@/lib/roomAvailability';
+import type { TimeOption } from '@/lib/bookingAvailability';
 
 interface TimeOptionsPanelProps {
   label: string;
