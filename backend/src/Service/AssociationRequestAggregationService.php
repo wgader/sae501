@@ -78,6 +78,9 @@ final class AssociationRequestAggregationService
         // 1. Subventions
         $subventions = $this->subventionRepository->findByAssociation($association);
         foreach ($subventions as $sub) {
+            if ('Brouillon' === $sub->getStatut()) {
+                continue;
+            }
             $all[] = $this->serializeSubventionSummary($sub);
         }
 

@@ -279,6 +279,45 @@ export type AssociationRequestDetail = AssociationRequestSummary & {
   timeline: RequestTimelineEvent[];
 };
 
+export type GrantBudgetLine = {
+  type: 'depense' | 'recette';
+  categorie: string;
+  intitule: string;
+  montant: string;
+};
+
+export type GrantDraft = {
+  id: number;
+  statut: 'Brouillon';
+  typeSubvention: 'Fonctionnement' | 'Projet';
+  intituleProjet: string;
+  description: string | null;
+  publicCible: string | null;
+  dateDebutProjet: string | null;
+  dateFinProjet: string | null;
+  montantDemande: string;
+  bic: string | null;
+  iban: string | null;
+  anneeExercice: number;
+  budgetValide: boolean;
+  lignesBudget: GrantBudgetLine[];
+};
+
+export type GrantDraftInput = Omit<
+  GrantDraft,
+  'id' | 'statut' | 'anneeExercice' | 'budgetValide'
+>;
+
+export type GrantDocument = {
+  id: number;
+  typeDocument: string;
+  fichierUrl: string;
+  originalName: string;
+  size: number;
+  mimeType: string;
+  createdAt: string | null;
+};
+
 export type EventAnnexFile = {
   id: number;
   originalName: string;

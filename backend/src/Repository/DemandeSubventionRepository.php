@@ -29,5 +29,21 @@ class DemandeSubventionRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return list<DemandeSubvention>
+     */
+    public function findDraftsByAssociation(Association $association): array
+    {
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.association = :association')
+            ->andWhere('d.statut = :status')
+            ->setParameter('association', $association)
+            ->setParameter('status', 'Brouillon')
+            ->orderBy('d.updatedAt', 'DESC')
+            ->addOrderBy('d.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }
 
