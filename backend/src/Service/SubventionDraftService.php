@@ -60,13 +60,18 @@ final class SubventionDraftService
         $iban = $this->optionalString($payload, 'iban', $draft?->getIban());
         if (array_key_exists('bic', $payload)) {
             $bic = is_string($payload['bic']) ? strtoupper(preg_replace('/\s+/', '', $payload['bic'])) : '';
-            if (!preg_match('/^[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?$/', $bic)) {
+            // Un brouillon peut être enregistré avant d'avoir saisi les coordonnées bancaires.
+            if ('' === $bic) {
+                $bic = null;
+            } elseif (!preg_match('/^[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?$/', $bic)) {
                 throw new \InvalidArgumentException('Le BIC doit contenir 8 ou 11 caractères au format bancaire.');
             }
         }
         if (array_key_exists('iban', $payload)) {
             $iban = is_string($payload['iban']) ? strtoupper(preg_replace('/\s+/', '', $payload['iban'])) : '';
-            if (!$this->isValidIban($iban)) {
+            if ('' === $iban) {
+                $iban = null;
+            } elseif (!$this->isValidIban($iban)) {
                 throw new \InvalidArgumentException('L’IBAN est incomplet ou invalide.');
             }
         }
