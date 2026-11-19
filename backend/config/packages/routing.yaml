@@ -1,11 +1,7 @@
-parameters:
-    router_default_uri: 'http://localhost'
-
 framework:
     router:
-        # Configure how to generate URLs in non-HTTP contexts, such as CLI commands.
-        # See https://symfony.com/doc/current/routing.html#generating-urls-in-commands
-        default_uri: '%env(default:router_default_uri:DEFAULT_URI)%'
+        # Adresse publique du site, utilisée pour générer des URL hors requête HTTP (worker, commandes).
+        default_uri: '%env(FRONTEND_URL)%'
 
 
 when@prod:

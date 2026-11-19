@@ -55,15 +55,15 @@ Le développement local se fait depuis la racine du dépôt :
 docker compose up --build
 ```
 
-Le service `backend` expose l'API sur `http://localhost` et la documentation
-OpenAPI sur `http://localhost/api/docs`. Le service utilise FrankenPHP et monte
-`backend/` dans `/app`.
+Le service `app` expose Symfony sur `http://localhost:8000` (documentation OpenAPI :
+`/api/docs`) ; le site passe par `http://localhost:3000`, qui relaie `/api` vers lui. Le
+service utilise FrankenPHP et monte `backend/` dans `/app/backend`.
 
-Pour exécuter une commande dans le conteneur backend :
+Pour exécuter une commande dans le conteneur app :
 
 ```bash
-docker compose exec backend php bin/console about
-docker compose exec backend php bin/console <commande>
+docker compose exec app php bin/console about
+docker compose exec app php bin/console <commande>
 ```
 
 Les variables locales et secrets doivent rester dans `.env.local` ou dans le
@@ -76,8 +76,8 @@ Après une modification d'entité, générer et relire la migration depuis le
 conteneur :
 
 ```bash
-docker compose exec backend php bin/console make:migration --no-interaction
-docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec app php bin/console make:migration --no-interaction
+docker compose exec app php bin/console doctrine:migrations:migrate --no-interaction
 ```
 
 Utiliser les fixtures existantes pour les données de développement et de test.
@@ -88,8 +88,8 @@ Ne pas utiliser `doctrine:schema:update` dans le workflow du projet.
 Depuis la racine :
 
 ```bash
-docker compose exec backend php bin/phpunit
-docker compose exec backend vendor/bin/phpstan analyse
+docker compose exec app php bin/phpunit
+docker compose exec app vendor/bin/phpstan analyse
 ```
 
 Un nouvel endpoint doit avoir des tests fonctionnels couvrant au minimum les
