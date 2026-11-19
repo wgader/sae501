@@ -66,7 +66,6 @@ const moduleItems: NavItemData[] = [
   },
   {
     root: 'evenements',
-    module: 'evenements',
     name: 'Événements',
     icon: <IconEvenement className="h-6 w-6 shrink-0" />,
   },

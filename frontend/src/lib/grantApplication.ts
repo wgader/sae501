@@ -1,4 +1,4 @@
-import type { GrantBudgetLine, GrantDraft, GrantDraftInput } from '@/lib/api';
+import type { AssociationStatus, GrantBudgetLine, GrantDraft, GrantDraftInput, GrantStatus } from '@/lib/api';
 
 export type GrantFormState = {
   typeSubvention: 'Fonctionnement' | 'Projet';
@@ -122,4 +122,24 @@ export function validateGrantForm(form: GrantFormState): GrantFormErrors {
 
 export function formatGrantAmount(value: string): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format((amountToCents(value) ?? 0) / 100);
+}
+
+/** Pastille de statut d'un dossier transmis, sur les couleurs déjà utilisées pour les autres demandes. */
+export function grantStatusBadge(status: GrantStatus): { code: AssociationStatus; label: string } {
+  switch (status) {
+    case 'Validée':
+      return { code: 'VALIDATED', label: 'Validée' };
+    case 'Refusée':
+      return { code: 'REFUSED', label: 'Refusée' };
+    case 'Complément requis':
+    case 'Clôturée':
+      return { code: 'SUSPENDED', label: status };
+    default:
+      return { code: 'PENDING_VALIDATION', label: 'En attente' };
+  }
+}
+
+export function formatGrantDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value));
 }

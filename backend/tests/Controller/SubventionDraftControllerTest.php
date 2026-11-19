@@ -193,6 +193,68 @@ final class SubventionDraftControllerTest extends ControllerRouteTestCase
         self::assertSame($draftId, $document->getLieAId());
     }
 
+    public function testSubmittedGrantLeavesDraftsAndIsPending(): void
+    {
+        $this->authenticateAsMember($this->createAssociation('Association transmission'));
+        $this->requestJson('POST', '/api/grants', $this->projectPayload([]));
+        $draftId = $this->responseData()['id'];
+
+        // Sans pièce justificative, le dossier ne peut pas partir.
+        $this->requestJson('POST', '/api/grants/'.$draftId.'/submit');
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains(['message' => 'Ajoutez au moins une pièce justificative avant de transmettre le dossier.']);
+
+        $this->uploadPdf($draftId);
+        $this->requestJson('POST', '/api/grants/'.$draftId.'/submit');
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains(['statut' => 'En attente']);
+        self::assertArrayNotHasKey('iban', $this->responseData());
+        $this->assertEmailCount(1);
+
+        $this->requestJson('GET', '/api/grants/drafts');
+        self::assertSame([], $this->responseData());
+
+        $this->requestJson('GET', '/api/grants');
+        $submitted = $this->responseData();
+        self::assertCount(1, $submitted);
+        self::assertSame('En attente', $submitted[0]['statut']);
+
+        // Un dossier transmis n'est plus modifiable ni renvoyable.
+        $this->requestJson('PUT', '/api/grants/'.$draftId.'/draft', $this->projectPayload([]));
+        $this->assertResponseStatusCodeSame(409);
+        $this->requestJson('POST', '/api/grants/'.$draftId.'/submit');
+        $this->assertResponseStatusCodeSame(409);
+    }
+
+    public function testSubmitRequiresBankDetailsAndCompleteProject(): void
+    {
+        $this->authenticateAsMember($this->createAssociation('Association incomplète'));
+        $this->requestJson('POST', '/api/grants', array_merge($this->projectPayload([]), ['bic' => '', 'iban' => '']));
+        $draftId = $this->responseData()['id'];
+        $this->uploadPdf($draftId);
+
+        $this->requestJson('POST', '/api/grants/'.$draftId.'/submit');
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains(['message' => 'Renseignez le BIC et l’IBAN avant de transmettre le dossier.']);
+
+        $this->requestJson('PUT', '/api/grants/'.$draftId.'/draft', array_merge($this->projectPayload([]), ['publicCible' => '']));
+        $this->requestJson('POST', '/api/grants/'.$draftId.'/submit');
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertJsonContains(['message' => 'Le public cible est obligatoire.']);
+    }
+
+    private function uploadPdf(int $draftId): void
+    {
+        $this->client->request(
+            'POST',
+            '/api/grants/'.$draftId.'/documents',
+            ['typeDocument' => 'Formulaire Cerfa'],
+            ['file' => $this->fixtures->pdf('cerfa.pdf')],
+            ['HTTP_ACCEPT' => 'application/json', 'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest'],
+        );
+        $this->assertResponseStatusCodeSame(201);
+    }
+
     /**
      * @param list<array{type: string, categorie: string, intitule: string, montant: string}> $lines
      *

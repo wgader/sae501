@@ -1,0 +1,8 @@
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border:1px solid #E5E5E0;">
+  <tr><td style="padding:12px 16px;background:#F4F4F0;font-size:12px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Votre dossier</td></tr>
+  <tr><td style="padding:12px 16px;"><strong>{{ grant.intituleProjet }}</strong><br>{{ grant.typeSubvention }} · exercice {{ grant.anneeExercice }}</td></tr>
+  <tr><td style="padding:0 16px 12px;">Montant demandé : <strong>{{ grant.montantDemande|number_format(2, ',', ' ') }} €</strong></td></tr>
+  {% if grant.montantAccorde is not null %}
+    <tr><td style="padding:0 16px 12px;">Montant accordé : <strong>{{ grant.montantAccorde|number_format(2, ',', ' ') }} €</strong></td></tr>
+  {% endif %}
+</table>

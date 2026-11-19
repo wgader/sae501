@@ -59,6 +59,7 @@ security:
         # Chaque agent n'atteint que les routes de ses modules ; ROLE_ADMIN les hérite toutes.
         - { path: ^/api/admin/(campaigns|campaign-history|room-requests|salles), roles: ROLE_GESTION_SALLE }
         - { path: ^/api/admin/equipment, roles: ROLE_GESTION_MATERIEL }
+        - { path: ^/api/admin/grants, roles: ROLE_GESTION_SUBVENTION }
         - { path: ^/api/admin/associations/\d+/requests/[^/]+/request-documents$, allow_if: "is_granted('ROLE_GESTION_MATERIEL') or is_granted('ROLE_GESTION_SALLE')", methods: [POST] }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
