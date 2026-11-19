@@ -119,28 +119,60 @@ final class SubventionDraftService
         return $draft;
     }
 
-    public function validateBudget(DemandeSubvention $draft): void
+    /**
+     * Transmet le dossier à la mairie : il passe « En attente » et n'est plus modifiable.
+     */
+    public function submit(DemandeSubvention $draft, int $documentCount): void
     {
-        if ('' === trim((string) $draft->getIntituleProjet())) {
-            throw new \InvalidArgumentException('L’intitulé du projet est obligatoire.');
+        $this->assertProjectComplete($draft);
+        if (null === $draft->getBic() || null === $draft->getIban()) {
+            throw new \InvalidArgumentException('Renseignez le BIC et l’IBAN avant de transmettre le dossier.');
         }
-        if ('' === trim((string) $draft->getDescription())) {
-            throw new \InvalidArgumentException('Les objectifs du projet sont obligatoires.');
-        }
-        if ('' === trim((string) $draft->getPublicCible())) {
-            throw new \InvalidArgumentException('Le public cible est obligatoire.');
-        }
-        if (null === $draft->getDateDebutProjet() || null === $draft->getDateFinProjet()) {
-            throw new \InvalidArgumentException('Les dates de début et de fin sont obligatoires.');
-        }
-        if ($draft->getDateFinProjet() < $draft->getDateDebutProjet()) {
-            throw new \InvalidArgumentException('La date de fin doit être postérieure à la date de début.');
+        if ($documentCount < 1) {
+            throw new \InvalidArgumentException('Ajoutez au moins une pièce justificative avant de transmettre le dossier.');
         }
 
+        $draft
+            ->setStatut('En attente')
+            ->setUpdatedAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function getSubmitted(Association $association): array
+    {
+        return array_map(
+            self::serializeSubmitted(...),
+            $this->subventionRepository->findSubmittedByAssociation($association),
+        );
+    }
+
+    /**
+     * Résumé d'un dossier transmis, sans coordonnées bancaires.
+     *
+     * @return array<string, mixed>
+     */
+    public static function serializeSubmitted(DemandeSubvention $grant): array
+    {
+        return [
+            'id' => $grant->getId(),
+            'statut' => $grant->getStatut(),
+            'typeSubvention' => $grant->getTypeSubvention(),
+            'intituleProjet' => $grant->getIntituleProjet(),
+            'montantDemande' => self::normalizeMoney($grant->getMontantDemande() ?? '0'),
+            'montantAccorde' => null !== $grant->getMontantAccorde() ? self::normalizeMoney($grant->getMontantAccorde()) : null,
+            'observations' => $grant->getObservations(),
+            'createdAt' => $grant->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            'updatedAt' => $grant->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    public function validateBudget(DemandeSubvention $draft): void
+    {
+        $this->assertProjectComplete($draft);
         $requestedAmount = self::toCents($draft->getMontantDemande() ?? '');
-        if ($requestedAmount <= 0) {
-            throw new \InvalidArgumentException('Le montant demandé doit être un montant positif.');
-        }
 
         $expenses = 0;
         $revenues = 0;
@@ -213,6 +245,31 @@ final class SubventionDraftService
                 $draft->getLignesBudget()->toArray(),
             ),
         ];
+    }
+
+    /** Champs du projet indispensables avant de valider le budget ou de transmettre le dossier. */
+    private function assertProjectComplete(DemandeSubvention $draft): void
+    {
+        if ('' === trim((string) $draft->getIntituleProjet())) {
+            throw new \InvalidArgumentException('L’intitulé du projet est obligatoire.');
+        }
+        if ('' === trim((string) $draft->getDescription())) {
+            throw new \InvalidArgumentException('Les objectifs du projet sont obligatoires.');
+        }
+        if ('' === trim((string) $draft->getPublicCible())) {
+            throw new \InvalidArgumentException('Le public cible est obligatoire.');
+        }
+        if (null === $draft->getDateDebutProjet() || null === $draft->getDateFinProjet()) {
+            throw new \InvalidArgumentException('Les dates de début et de fin sont obligatoires.');
+        }
+        if ($draft->getDateFinProjet() < $draft->getDateDebutProjet()) {
+            throw new \InvalidArgumentException('La date de fin doit être postérieure à la date de début.');
+        }
+
+        $requestedAmount = self::toCents($draft->getMontantDemande() ?? '');
+        if ($requestedAmount <= 0) {
+            throw new \InvalidArgumentException('Le montant demandé doit être un montant positif.');
+        }
     }
 
     /**

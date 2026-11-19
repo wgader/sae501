@@ -1,5 +1,46 @@
-import { accountRequest } from './client';
-import type { GrantDocument, GrantDraft, GrantDraftInput } from './types';
+import { accountRequest, request } from './client';
+import type {
+  AdminGrantDecision,
+  AdminGrantDetail,
+  AdminGrantFilter,
+  AdminGrantList,
+  GrantDocument,
+  GrantDraft,
+  GrantDraftInput,
+  SubmittedGrant,
+} from './types';
+
+/** Dossiers déjà transmis à la mairie par l'association connectée. */
+export function getSubmittedGrants(): Promise<SubmittedGrant[]> {
+  return accountRequest<SubmittedGrant[]>(
+    '/api/grants',
+    {},
+    'Impossible de récupérer vos demandes transmises.',
+  );
+}
+
+export function submitGrant(id: number): Promise<SubmittedGrant> {
+  return accountRequest<SubmittedGrant>(
+    `/api/grants/${id}/submit`,
+    { method: 'POST' },
+    'Impossible de transmettre le dossier à la mairie.',
+  );
+}
+
+export function getAdminGrants(filter: AdminGrantFilter): Promise<AdminGrantList> {
+  return request<AdminGrantList>(`/api/admin/grants?status=${filter}`);
+}
+
+export function getAdminGrant(id: number): Promise<AdminGrantDetail> {
+  return request<AdminGrantDetail>(`/api/admin/grants/${id}`);
+}
+
+export function decideAdminGrant(id: number, decision: AdminGrantDecision): Promise<AdminGrantDetail> {
+  return request<AdminGrantDetail>(`/api/admin/grants/${id}/decision`, {
+    method: 'PATCH',
+    body: JSON.stringify(decision),
+  });
+}
 
 export function getGrantDrafts(): Promise<GrantDraft[]> {
   return accountRequest<GrantDraft[]>(

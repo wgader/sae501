@@ -9,6 +9,7 @@ use App\Entity\DemandeSubvention;
 use App\Entity\User;
 use App\Repository\DemandeSubventionRepository;
 use App\Service\SubventionDraftDocumentService;
+use App\Service\GrantStatusNotifier;
 use App\Service\SubventionDraftService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -27,7 +28,44 @@ final class SubventionDraftController extends AbstractController
         private readonly SubventionDraftService $draftService,
         private readonly SubventionDraftDocumentService $documentService,
         private readonly DemandeSubventionRepository $subventionRepository,
+        private readonly GrantStatusNotifier $statusNotifier,
     ) {
+    }
+
+    /** Dossiers déjà transmis à la mairie, avec leur statut. */
+    #[Route('', name: 'app_grant_submitted_list', methods: ['GET'])]
+    public function submitted(#[CurrentUser] User $user): JsonResponse
+    {
+        $association = $user->getAssociation();
+        if (null === $association || !$association->isModuleSubventionActif()) {
+            return $this->forbidden();
+        }
+
+        return $this->json($this->draftService->getSubmitted($association));
+    }
+
+    #[Route('/{id}/submit', name: 'app_grant_draft_submit', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function submit(int $id, #[CurrentUser] User $user): JsonResponse
+    {
+        $association = $user->getAssociation();
+        if (null === $association || !$association->isModuleSubventionActif()) {
+            return $this->forbidden();
+        }
+
+        $draft = $this->findOwnedDraft($id, $association);
+        if ($draft instanceof JsonResponse) {
+            return $draft;
+        }
+
+        try {
+            $this->draftService->submit($draft, count($this->documentService->listDocuments($draft)));
+        } catch (\InvalidArgumentException $exception) {
+            return $this->json(['message' => $exception->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $this->statusNotifier->notifySubmitted($draft);
+
+        return $this->json(SubventionDraftService::serializeSubmitted($draft));
     }
 
     #[Route('/drafts', name: 'app_grant_drafts_list', methods: ['GET'])]

@@ -5,13 +5,17 @@ import GrantDocumentsStep from '@/components/subventions/GrantDocumentsStep';
 import GrantDraftList from '@/components/subventions/GrantDraftList';
 import GrantPageHeader from '@/components/subventions/GrantPageHeader';
 import GrantProjectStep from '@/components/subventions/GrantProjectStep';
+import GrantSubmittedList from '@/components/subventions/GrantSubmittedList';
 import Notice from '@/components/ui/Notice';
 import {
   createGrantDraft,
   getGrantDocuments,
   getGrantDrafts,
+  getSubmittedGrants,
+  submitGrant,
   type GrantDocument,
   type GrantDraft,
+  type SubmittedGrant,
   updateGrantDraft,
   uploadGrantDocument,
 } from '@/lib/api';
@@ -30,12 +34,14 @@ const errorMessage = (error: unknown, fallback: string) => (error instanceof Err
 
 export default function GrantApplicationForm() {
   const [drafts, setDrafts] = useState<GrantDraft[]>([]);
+  const [submitted, setSubmitted] = useState<SubmittedGrant[]>([]);
   const [activeDraft, setActiveDraft] = useState<GrantDraft | null>(null);
   const [form, setForm] = useState<GrantFormState>(createEmptyGrantForm);
   const [step, setStep] = useState<Step>('project');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageError, setPageError] = useState('');
   const [documentError, setDocumentError] = useState('');
   const [notice, setNotice] = useState('');
@@ -44,12 +50,14 @@ export default function GrantApplicationForm() {
 
   useEffect(() => {
     let isActive = true;
-    getGrantDrafts()
-      .then((items) => {
-        if (isActive) setDrafts(items);
+    Promise.all([getGrantDrafts(), getSubmittedGrants()])
+      .then(([draftItems, submittedItems]) => {
+        if (!isActive) return;
+        setDrafts(draftItems);
+        setSubmitted(submittedItems);
       })
       .catch((error: unknown) => {
-        if (isActive) setPageError(errorMessage(error, 'Impossible de charger vos brouillons.'));
+        if (isActive) setPageError(errorMessage(error, 'Impossible de charger vos demandes.'));
       })
       .finally(() => {
         if (isActive) setIsLoading(false);
@@ -150,6 +158,23 @@ export default function GrantApplicationForm() {
     }
   };
 
+  const submitDraft = async () => {
+    if (!activeDraft) return;
+    setIsSubmitting(true);
+    clearMessages();
+    try {
+      const sent = await submitGrant(activeDraft.id);
+      setDrafts((current) => current.filter((draft) => draft.id !== sent.id));
+      setSubmitted((current) => [sent, ...current]);
+      backToDrafts();
+      setNotice('Votre dossier a été transmis à la mairie. Il est maintenant en attente de décision.');
+    } catch (error: unknown) {
+      setPageError(errorMessage(error, 'Impossible de transmettre le dossier.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const updateField = (field: keyof GrantFormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
@@ -178,10 +203,13 @@ export default function GrantApplicationForm() {
         {pageError && <Notice tone="danger" className="mt-6">{pageError}</Notice>}
         {notice && <Notice tone="success" className="mt-6">{notice}</Notice>}
 
-        {isLoading && <p role="status" className="py-12 text-center text-sm text-muted">Chargement de vos brouillons…</p>}
+        {isLoading && <p role="status" className="py-12 text-center text-sm text-muted">Chargement de vos demandes…</p>}
 
         {!isLoading && !activeDraft && (
-          <GrantDraftList drafts={drafts} isCreating={isSaving} onCreate={() => void createDraft()} onSelect={openDraft} />
+          <>
+            <GrantDraftList drafts={drafts} isCreating={isSaving} onCreate={() => void createDraft()} onSelect={openDraft} />
+            <GrantSubmittedList grants={submitted} />
+          </>
         )}
 
         {activeDraft && step === 'project' && (
@@ -202,7 +230,9 @@ export default function GrantApplicationForm() {
             documents={documents}
             error={documentError}
             isUploading={isUploading}
+            isSubmitting={isSubmitting}
             onUpload={uploadDocument}
+            onSubmit={() => void submitDraft()}
             onEdit={() => {
               setNotice('');
               setStep('project');

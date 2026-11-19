@@ -8,18 +8,32 @@ interface GrantDocumentsStepProps {
   documents: GrantDocument[];
   error: string;
   isUploading: boolean;
+  isSubmitting: boolean;
   onUpload: (file: File, documentType: string) => Promise<boolean>;
   onEdit: () => void;
   onBack: () => void;
+  onSubmit: () => void;
 }
 
-export default function GrantDocumentsStep({ form, documents, error, isUploading, onUpload, onEdit, onBack }: GrantDocumentsStepProps) {
+export default function GrantDocumentsStep({
+  form,
+  documents,
+  error,
+  isUploading,
+  isSubmitting,
+  onUpload,
+  onEdit,
+  onBack,
+  onSubmit,
+}: GrantDocumentsStepProps) {
+  const canSubmit = documents.length > 0;
+
   return (
     <section aria-labelledby="grant-documents-heading" className="mt-6 rounded-card border border-line bg-white p-6 shadow-xs sm:p-10">
       <header className="border-b border-line pb-5">
         <p className="text-label font-bold uppercase tracking-eyebrow text-muted">Étape 2 sur 2</p>
         <h2 id="grant-documents-heading" className="mt-1 text-2xl font-black tracking-tight text-ink">Pièces justificatives</h2>
-        <p className="mt-1 text-xs text-muted">Votre dossier reste enregistré en brouillon pendant que vous ajoutez vos pièces.</p>
+        <p className="mt-1 text-xs text-muted">Le dossier reste en brouillon tant que vous ne l’avez pas transmis à la mairie.</p>
       </header>
 
       <div className="mt-6 rounded-soft bg-Misty-Rose p-5">
@@ -61,9 +75,23 @@ export default function GrantDocumentsStep({ form, documents, error, isUploading
         )}
       </section>
 
-      <footer className="mt-8 flex flex-wrap justify-between gap-3 border-t border-line pt-6">
-        <Button variant="ghost" onClick={onBack}>Mes demandes</Button>
-        <Button variant="secondary" onClick={onEdit}>Modifier la demande</Button>
+      <section aria-labelledby="grant-submit-heading" className="mt-8 rounded-soft border border-line bg-paper p-5">
+        <h3 id="grant-submit-heading" className="text-sm font-bold text-ink">Transmettre le dossier</h3>
+        <p className="mt-1 text-xs text-muted">
+          {canSubmit
+            ? 'Une fois transmis, le dossier passe « En attente » et ne peut plus être modifié. Vous serez prévenu par e-mail de la décision.'
+            : 'Ajoutez au moins une pièce justificative, par exemple le formulaire Cerfa complété, pour pouvoir transmettre le dossier.'}
+        </p>
+      </section>
+
+      <footer className="mt-8 flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:flex-wrap sm:justify-between">
+        <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Mes demandes</Button>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row">
+          <Button variant="secondary" onClick={onEdit} disabled={isSubmitting} className="w-full sm:w-auto">Modifier la demande</Button>
+          <Button onClick={onSubmit} isLoading={isSubmitting} disabled={!canSubmit || isUploading} className="w-full sm:w-auto">
+            Transmettre à la mairie
+          </Button>
+        </div>
       </footer>
     </section>
   );

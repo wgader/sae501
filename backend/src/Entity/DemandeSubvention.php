@@ -27,6 +27,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class DemandeSubvention
 {
     public const STATUTS = [
+        'En attente',
         'En cours de traitement',
         'Complément requis',
         'Validée',
