@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-/* Résolu là où la classe est utilisée : la police n'est chargée que par la page d'accueil. */
-@theme inline {
-    --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
-}
-
 @theme {
     --font-sans: var(--font-lato), sans-serif;
 
@@ -32,6 +27,10 @@
     --color-module-rooms: var(--Lime-Cream);
     --color-module-equipment: var(--Indigo-Bloom);
     --color-module-events: var(--Mint-Cream);
+
+    /* Couleurs du logo de la ville : le point vert sert de motif de marque */
+    --color-brand-dot: var(--Feytiat-Green);
+    --color-brand-cyan: var(--Feytiat-Cyan);
 
     /* Compatibility aliases for existing classes */
     --color-Primary: var(--Mosaic-Tile);
@@ -113,6 +112,9 @@
     --Mint-Cream: #CFEDE5;
     --Pale-Sage: #E3EFEA;
     --Flush-Mahogany: #CD2429;
+    /* Logo de la ville */
+    --Feytiat-Green: #97BF0D;
+    --Feytiat-Cyan: #00A9B5;
     /* Statuts : demande en attente, module événements */
     --Ochre: #9C7A19;
     --Sand: #D9C2A7;

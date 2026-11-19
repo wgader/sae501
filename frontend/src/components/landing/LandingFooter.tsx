@@ -1,70 +1,42 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import BrandMark from './ui/BrandMark';
 import LandingContainer from './ui/LandingContainer';
-import { CITY_WEBSITE_URL, LANDING_SECTIONS } from './landingContent';
+import { CITY_WEBSITE_URL, LANDING_ANCHORS } from './landingContent';
 
-const FOOTER_COLUMNS: ReadonlyArray<{ title: string; links: ReadonlyArray<{ href: string; label: string; external?: boolean }> }> = [
-  {
-    title: 'Espace associations',
-    links: [
-      { href: '/inscription', label: 'Inscrire mon association' },
-      { href: '/connexion', label: 'Se connecter' },
-      { href: `/#${LANDING_SECTIONS.services}`, label: 'Les démarches' },
-    ],
-  },
-  {
-    title: 'Aide',
-    links: [
-      { href: `/#${LANDING_SECTIONS.faq}`, label: 'Questions fréquentes' },
-      { href: '/contact', label: 'Contacter la mairie' },
-    ],
-  },
-  {
-    title: 'Mairie de Feytiat',
-    links: [
-      { href: CITY_WEBSITE_URL, label: 'Site de la ville', external: true },
-      { href: '/admin', label: 'Accès agents municipaux' },
-    ],
-  },
+const LINKS: ReadonlyArray<{ href: string; label: string; external?: boolean }> = [
+  { href: `/#${LANDING_ANCHORS.modules}`, label: 'Modules' },
+  { href: `/#${LANDING_ANCHORS.faq}`, label: 'Questions' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/admin', label: 'Espace agents' },
+  { href: CITY_WEBSITE_URL, label: 'ville-feytiat.fr', external: true },
 ];
 
 export default function LandingFooter() {
   return (
-    <footer className="bg-ink text-white">
-      <LandingContainer className="grid gap-12 py-16 lg:grid-cols-12">
-        <div className="lg:col-span-5">
-          <BrandMark tone="dark" />
-          <p className="mt-6 max-w-sm text-body-sm leading-copy text-white/60">
-            Le service en ligne de la ville de Feytiat pour accompagner les associations dans leurs démarches.
-          </p>
+    <footer className="border-t border-line bg-white">
+      <LandingContainer className="flex flex-col gap-8 py-10 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <Image src="/assets/logo-feytiat.svg" alt="Ville de Feytiat" width={160} height={33} className="h-7 w-auto" />
+          <span className="text-body-sm text-muted">Espace associations</span>
         </div>
-
-        <nav aria-label="Pied de page" className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:col-span-7">
-          {FOOTER_COLUMNS.map((column) => (
-            <div key={column.title}>
-              <p className="text-label font-bold uppercase tracking-eyebrow text-accent">{column.title}</p>
-              <ul className="mt-5 space-y-3">
-                {column.links.map((link) => (
-                  <li key={link.href}>
-                    {link.external ? (
-                      <a href={link.href} target="_blank" rel="noreferrer" className="text-body-sm text-white/75 transition-colors hover:text-white">
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link href={link.href} className="text-body-sm text-white/75 transition-colors hover:text-white">
-                        {link.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <nav aria-label="Pied de page">
+          <ul className="flex flex-wrap gap-x-6 gap-y-3">
+            {LINKS.map((link) => (
+              <li key={link.href}>
+                {link.external ? (
+                  <a href={link.href} target="_blank" rel="noreferrer" className="text-body-sm font-bold text-muted transition-colors hover:text-ink">
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link href={link.href} className="text-body-sm font-bold text-muted transition-colors hover:text-ink">
+                    {link.label}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
         </nav>
       </LandingContainer>
-      <div className="border-t border-white/10">
-        <LandingContainer className="py-6 text-meta text-white/50">© Ville de Feytiat · Espace associations</LandingContainer>
-      </div>
     </footer>
   );
 }
