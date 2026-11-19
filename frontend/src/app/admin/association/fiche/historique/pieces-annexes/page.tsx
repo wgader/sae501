@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import {
   AnnexesDocumentsHeading,
   AnnexesHeader,
@@ -16,11 +15,14 @@ import {
   type AssociationRequestDetail,
   type RequestType,
 } from '@/lib/api';
+import { useQueryParam } from '@/hooks/useQueryParam';
+import { routes } from '@/lib/routes';
+import { useAssociationContext } from '../../AssociationContext';
 
 export default function AdminAssociationRequestAnnexesPage() {
-  const params = useParams<{ id: string; type: string; requestId: string }>();
-  const associationId = Number(params.id);
-  const type = params.type as RequestType;
+  const { id: associationId } = useAssociationContext();
+  const type = useQueryParam('type') as RequestType;
+  const requestId = useQueryParam('requestId');
   const [detail, setDetail] = useState<AssociationRequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,7 +33,7 @@ export default function AdminAssociationRequestAnnexesPage() {
 
   useEffect(() => {
     let active = true;
-    void getAdminAssociationRequestDetail(associationId, params.requestId, type)
+    void getAdminAssociationRequestDetail(associationId, requestId, type)
       .then((response) => {
         if (active) setDetail(response);
       })
@@ -45,7 +47,7 @@ export default function AdminAssociationRequestAnnexesPage() {
     return () => {
       active = false;
     };
-  }, [associationId, params.requestId, type]);
+  }, [associationId, requestId, type]);
 
   const documents = detail?.documents ?? [];
   const canRequestDocuments = (type === 'materiel' || type === 'salle')
@@ -67,7 +69,7 @@ export default function AdminAssociationRequestAnnexesPage() {
       setFeedback('');
       const response = await requestAdminAssociationDocuments(
         associationId,
-        params.requestId,
+        requestId,
         type,
         [normalizedMissingFile],
         normalizedMessage,
@@ -86,7 +88,7 @@ export default function AdminAssociationRequestAnnexesPage() {
   return (
     <section className="space-y-5" aria-labelledby="annexes-title">
       <nav aria-label="Fil d’Ariane" className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted">
-        <Link href={`/admin/association/${associationId}/historique`} className="text-primary hover:underline">Historique</Link>
+        <Link href={routes.adminAssociation(associationId, 'historique')} className="text-primary hover:underline">Historique</Link>
         <span aria-hidden="true">/</span>
         <span>{detail?.typeLabel ?? 'Dossier'}</span>
         <span aria-hidden="true">/</span>
@@ -103,7 +105,7 @@ export default function AdminAssociationRequestAnnexesPage() {
         <>
           <AnnexesSummary
             title={detail?.intitule ?? 'Dossier'}
-            subtitle={`${detail?.typeLabel ?? type} · Dossier ${detail?.id ?? params.requestId}`}
+            subtitle={`${detail?.typeLabel ?? type} · Dossier ${detail?.id ?? requestId}`}
             badge={`${documents.length} document${documents.length > 1 ? 's' : ''}`}
             items={[
               { label: 'Déposé le', value: detail?.createdAt ? new Date(detail.createdAt).toLocaleDateString('fr-FR') : '—' },

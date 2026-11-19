@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useQueryId } from '@/hooks/useQueryParam';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Button } from '@/components/admin/Button';
 import {
@@ -33,9 +33,8 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
-export default function AdminEventAnnexesPage() {
-  const params = useParams<{ id: string }>();
-  const eventId = Number(params.id);
+function AdminEventAnnexesPageContent() {
+  const eventId = useQueryId();
   const [event, setEvent] = useState<ExternalEvent | null>(null);
   const [missingFile, setMissingFile] = useState('');
   const [message, setMessage] = useState('');
@@ -212,5 +211,14 @@ export default function AdminEventAnnexesPage() {
         )}
       </section>
     </AdminLayout>
+  );
+}
+
+// Lit l'identifiant dans la query string : l'export statique exige une frontière <Suspense>.
+export default function AdminEventAnnexesPage() {
+  return (
+    <Suspense>
+      <AdminEventAnnexesPageContent />
+    </Suspense>
   );
 }

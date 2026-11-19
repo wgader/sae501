@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getAdminAssociationRequests, type AssociationRequestSummary } from '@/lib/api';
 import { useAssociationContext } from '../AssociationContext';
+import { routes } from '@/lib/routes';
 
 export default function AssociationHistoriquePage() {
   const { id } = useAssociationContext();
@@ -52,7 +53,7 @@ export default function AssociationHistoriquePage() {
                   <p className="mt-1 text-xs text-muted">{request.typeLabel} · {request.statut}</p>
                 </div>
                 <Link
-                  href={`/admin/association/${id}/historique/${request.type}/${request.rawId}/pieces-annexes`}
+                  href={routes.adminAssociationRequestAnnexes(id, request.type, request.rawId)}
                   className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
                 >
                   Pièces annexes

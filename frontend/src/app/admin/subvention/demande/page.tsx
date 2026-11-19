@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useQueryId } from '@/hooks/useQueryParam';
+import { Suspense, useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import GrantAssociationCard from '@/components/admin/grant/GrantAssociationCard';
 import GrantDecisionCard from '@/components/admin/grant/GrantDecisionCard';
@@ -19,9 +19,8 @@ type Decision = 'Validée' | 'Refusée';
 
 const errorMessage = (error: unknown, fallback: string) => (error instanceof Error ? error.message : fallback);
 
-export default function AdminGrantDetailPage() {
-  const params = useParams<{ id: string }>();
-  const grantId = Number(params.id);
+function AdminGrantDetailPageContent() {
+  const grantId = useQueryId();
   const [grant, setGrant] = useState<AdminGrantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -145,5 +144,14 @@ export default function AdminGrantDetailPage() {
         )}
       </section>
     </AdminLayout>
+  );
+}
+
+// Lit l'identifiant dans la query string : l'export statique exige une frontière <Suspense>.
+export default function AdminGrantDetailPage() {
+  return (
+    <Suspense>
+      <AdminGrantDetailPageContent />
+    </Suspense>
   );
 }

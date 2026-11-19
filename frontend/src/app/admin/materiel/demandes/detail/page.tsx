@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useQueryId } from '@/hooks/useQueryParam';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import EquipmentRequestAssociationCard from '@/components/admin/equipment/request/EquipmentRequestAssociationCard';
 import EquipmentRequestDecisionCard from '@/components/admin/equipment/request/EquipmentRequestDecisionCard';
@@ -29,9 +29,8 @@ function statusCode(status: AdminEquipmentReservation['statut']) {
         : 'PENDING_VALIDATION';
 }
 
-export default function AdminEquipmentReservationDetailPage() {
-  const params = useParams<{ id: string }>();
-  const reservationId = Number(params.id);
+function AdminEquipmentReservationDetailPageContent() {
+  const reservationId = useQueryId();
   const [reservation, setReservation] = useState<AdminEquipmentReservation | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -161,5 +160,14 @@ export default function AdminEquipmentReservationDetailPage() {
         )}
       </section>
     </AdminLayout>
+  );
+}
+
+// Lit l'identifiant dans la query string : l'export statique exige une frontière <Suspense>.
+export default function AdminEquipmentReservationDetailPage() {
+  return (
+    <Suspense>
+      <AdminEquipmentReservationDetailPageContent />
+    </Suspense>
   );
 }

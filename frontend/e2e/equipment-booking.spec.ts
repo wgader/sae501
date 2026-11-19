@@ -66,7 +66,7 @@ const dayButton = (page: Page, day: number) => page.getByRole('button', { name: 
 test.describe('Réservation de matériel', () => {
     test('Le calendrier respecte le stock et la durée fixée par la mairie', async ({ page }) => {
         await mockApi(page);
-        await page.goto('/materiel/5');
+        await page.goto('/materiel/reserver?id=5');
         await expect(page.getByRole('heading', { name: 'Barnum pliant' })).toBeVisible();
         await expect(page.getByText('3 jours d’affilée maximum')).toBeVisible();
         await page.getByRole('button', { name: 'Mois suivant' }).click();

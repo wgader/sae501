@@ -14,6 +14,7 @@ import {
   IconInfo,
   IconChevronRight,
 } from '@/components/ui/icons';
+import { routes } from '@/lib/routes';
 
 interface AnnuaireCardProps {
   association: Association;
@@ -35,7 +36,7 @@ export default function AnnuaireCard({ association }: AnnuaireCardProps) {
   return (
     <article className="group relative flex h-full flex-col justify-between overflow-hidden rounded-card border border-line bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
       <Link
-        href={`/admin/association/${association.id}`}
+        href={routes.adminAssociation(association.id)}
         className="absolute inset-0 z-10"
         aria-label={`Consulter la fiche de ${association.nom}`}
       >

@@ -1,17 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useQueryId } from '@/hooks/useQueryParam';
+import { Suspense, useEffect, useState } from 'react';
 import EquipmentReservationView from '@/components/equipment/reservation/EquipmentReservationView';
 import Notice from '@/components/ui/Notice';
 import { getPublicEquipment, type Equipment } from '@/lib/api';
 
 type LoadState = { status: 'loading' } | { status: 'missing' } | { status: 'ready'; equipment: Equipment };
 
-export default function EquipmentReservationPage() {
-  const params = useParams<{ id: string }>();
-  const equipmentId = Number(params.id);
+function EquipmentReservationPageContent() {
+  const equipmentId = useQueryId();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   useEffect(() => {
@@ -55,5 +54,14 @@ export default function EquipmentReservationPage() {
         {state.status === 'ready' && <EquipmentReservationView equipment={state.equipment} />}
       </div>
     </main>
+  );
+}
+
+// Lit l'identifiant dans la query string : l'export statique exige une frontière <Suspense>.
+export default function EquipmentReservationPage() {
+  return (
+    <Suspense>
+      <EquipmentReservationPageContent />
+    </Suspense>
   );
 }

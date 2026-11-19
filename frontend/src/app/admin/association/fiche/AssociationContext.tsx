@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useQueryId } from '@/hooks/useQueryParam';
 import {
   type Association,
   type AssociationModule,
@@ -35,10 +36,8 @@ interface AssociationContextValue {
 const AssociationContext = createContext<AssociationContextValue | null>(null);
 
 export function AssociationProvider({ children }: { children: ReactNode }) {
-  const params = useParams();
   const router = useRouter();
-  const idString = params?.id as string;
-  const id = Number(idString);
+  const id = useQueryId();
 
   const [association, setAssociation] = useState<Association | null>(null);
   const [loading, setLoading] = useState(true);

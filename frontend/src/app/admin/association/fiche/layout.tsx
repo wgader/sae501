@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AssociationTopNav from '@/components/admin/association/detail/AssociationTopNav';
 import { AssociationProvider, useAssociationContext } from './AssociationContext';
@@ -63,8 +63,10 @@ function AssociationDetailLayoutContent({ children }: { children: ReactNode }) {
 
 export default function AssociationDetailLayout({ children }: { children: ReactNode }) {
   return (
-    <AssociationProvider>
-      <AssociationDetailLayoutContent>{children}</AssociationDetailLayoutContent>
-    </AssociationProvider>
+    <Suspense>
+      <AssociationProvider>
+        <AssociationDetailLayoutContent>{children}</AssociationDetailLayoutContent>
+      </AssociationProvider>
+    </Suspense>
   );
 }

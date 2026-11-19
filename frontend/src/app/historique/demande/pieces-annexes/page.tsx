@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import RequestAnnexesPage from '@/components/historique/RequestAnnexesPage';
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function HistoriqueAnnexesPage() {
-  return <RequestAnnexesPage />;
+  return (
+    <Suspense>
+      <RequestAnnexesPage />
+    </Suspense>
+  );
 }

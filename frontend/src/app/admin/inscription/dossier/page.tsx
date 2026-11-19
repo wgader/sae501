@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useQueryId } from '@/hooks/useQueryParam';
 import AdminLayout from '@/components/admin/AdminLayout';
 import {
   type Association,
@@ -18,10 +18,8 @@ import InscriptionContactCard from '@/components/admin/inscription/InscriptionCo
 import InscriptionActionBar from '@/components/admin/inscription/InscriptionActionBar';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
-export default function AssociationDetailPage() {
-  const params = useParams();
-  const idString = params?.id as string;
-  const id = Number(idString);
+function AssociationDetailPageContent() {
+  const id = useQueryId();
 
   const [association, setAssociation] = useState<Association | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,5 +180,14 @@ export default function AssociationDetailPage() {
         )}
       </section>
     </AdminLayout>
+  );
+}
+
+// Lit l'identifiant dans la query string : l'export statique exige une frontière <Suspense>.
+export default function AssociationDetailPage() {
+  return (
+    <Suspense>
+      <AssociationDetailPageContent />
+    </Suspense>
   );
 }

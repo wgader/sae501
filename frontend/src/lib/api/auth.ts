@@ -1,4 +1,4 @@
-import { accountRequest, apiFetch, API_URL, ApiError, requestBlob } from './client';
+import { accountRequest, apiFetch, ApiError, requestBlob } from './client';
 import { clearSessions, storeSession, updateSessionLogo, type SessionKind, type SessionUser } from '@/lib/session';
 import type { ExternalEventFile } from './evenements';
 import type {
@@ -128,7 +128,7 @@ export async function registerAssociation(payload: {
   telephone: string;
   cguAccepted: boolean;
 }): Promise<void> {
-  const response = await fetch(`${API_URL}/api/auth/register/association`, {
+  const response = await fetch('/api/auth/register/association', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -149,7 +149,7 @@ export async function registerAssociation(payload: {
 
 /** Appel public (sans session) : renvoie le JSON ou lève une ApiError avec le message du serveur. */
 async function publicAuthRequest<T>(path: string, payload: Record<string, string>, fallbackMessage: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(path, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

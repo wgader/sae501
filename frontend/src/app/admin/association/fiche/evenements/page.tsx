@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getAdminAssociationEvents, type ExternalEvent } from '@/lib/api';
+import { routes } from '@/lib/routes';
+import { useAssociationContext } from '../AssociationContext';
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat('fr-FR', {
@@ -16,8 +17,7 @@ function formatDate(value: string): string {
 }
 
 export default function AssociationEvenementsPage() {
-  const params = useParams<{ id: string }>();
-  const associationId = Number(params.id);
+  const { id: associationId } = useAssociationContext();
   const [events, setEvents] = useState<ExternalEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,7 +64,7 @@ export default function AssociationEvenementsPage() {
                   </p>
                 </div>
                 <Link
-                  href={`/admin/evenements/${event.id}/pieces-annexes`}
+                  href={routes.adminEventAnnexes(event.id)}
                   className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
                 >
                   Pièces annexes
