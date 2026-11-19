@@ -116,37 +116,12 @@ jobs:
       - run: npm run lint --prefix frontend
       - run: npm run build --prefix frontend
 
-  # L’image de production (dépendances sans dev, utilisateur non privilégié) est construite et
-  # démarrée avant la fusion : la CD publie ensuite ce même Dockerfile.
-  backend-image:
-    name: Image backend — build prod + exécution non-root
+  # L’image unique (front exporté + Symfony) est construite, lancée sans root, puis testée de bout
+  # en bout par Playwright : la CD publie ensuite ce même Dockerfile.
+  image:
+    name: Image Docker — non-root + Playwright (Chromium)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Build the production stage
-        run: docker build --file docker/backend/Dockerfile --target prod --tag sae501-backend:ci .
-
-      - name: Run without root and answer the healthcheck
-        run: |
-          docker run --detach --name backend-ci --cap-drop ALL --cap-add NET_BIND_SERVICE \
-            --security-opt no-new-privileges:true sae501-backend:ci
-          test "$(docker exec backend-ci id -u)" != "0"
-          docker exec backend-ci sh -c 'test ! -w /app/src && test ! -w /app/vendor && test -w /app/var && test -w /app/public/uploads'
-          docker exec backend-ci sh -c '! command -v composer'
-          for _ in $(seq 1 30); do
-            docker exec backend-ci curl --fail --silent --output /dev/null http://localhost/healthcheck.php && exit 0
-            sleep 2
-          done
-          docker logs backend-ci
-          exit 1
-
-  e2e:
-    name: Playwright — parcours complets (Chromium)
-    runs-on: ubuntu-latest
-    # Garde-fou : une API indisponible ne doit plus bloquer la CI pendant des dizaines de minutes.
-    timeout-minutes: 25
+    timeout-minutes: 30
     services:
       mysql:
         image: mysql:8.4
@@ -164,21 +139,17 @@ jobs:
           --health-timeout=5s
           --health-retries=10
     env:
-      APP_ENV: dev
       DATABASE_URL: mysql://ci:ci_password@127.0.0.1:3306/sae501_e2e?serverVersion=8.4&charset=utf8mb4
-      # Aucun e-mail réel n’est envoyé et les messages asynchrones sont traités immédiatement.
-      MAILER_DSN: null://null
-      MAILER_FROM: no-reply@example.test
-      MESSENGER_TRANSPORT_DSN: sync://
-      FRONTEND_URL: http://localhost:3000
-      JWT_PASSPHRASE: ''
-      NEXT_PUBLIC_API_URL: http://localhost:8000
       # Comptes de démonstration créés par backend/src/DataFixtures/AppFixtures.php.
       TEST_ADMIN_EMAIL: admin@feytiat.test
       TEST_USER_EMAIL: antonio.alves@feytiat.test
     steps:
       - uses: actions/checkout@v7
 
+      - name: Build the production image
+        run: docker build --target app --tag sae501:ci .
+
+      # Base de démonstration chargée par le PHP du runner : les fixtures ne sont pas dans l’image.
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
@@ -188,14 +159,8 @@ jobs:
       - name: Install backend deps
         run: composer install --working-dir=backend --prefer-dist --no-progress --no-scripts
 
-      - name: Generate disposable JWT keys
-        run: |
-          mkdir -p backend/config/jwt
-          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out backend/config/jwt/private.pem
-          openssl pkey -in backend/config/jwt/private.pem -pubout -out backend/config/jwt/public.pem
-
       # Mot de passe des comptes de démonstration tiré au hasard à chaque exécution, masqué dans les journaux.
-      - name: Generate demo credentials
+      - name: Generate demo credentials and JWT keys
         run: |
           password="Aa1$(openssl rand -hex 16)"
           echo "::add-mask::$password"
@@ -204,23 +169,38 @@ jobs:
             echo "TEST_ADMIN_PASSWORD=$password"
             echo "TEST_USER_PASSWORD=$password"
           } >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/jwt"
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$RUNNER_TEMP/jwt/private.pem"
+          openssl pkey -in "$RUNNER_TEMP/jwt/private.pem" -pubout -out "$RUNNER_TEMP/jwt/public.pem"
+          chmod 0644 "$RUNNER_TEMP/jwt/"*.pem
 
       - name: Prepare the database
+        env:
+          APP_ENV: dev
         run: |
           cd backend
           php bin/console doctrine:migrations:migrate --no-interaction
           php bin/console doctrine:fixtures:load --no-interaction
 
-      # Le serveur intégré de PHP n’expose les variables d’environnement qu’avec variables_order=EGPCS.
-      - name: Start the API
+      # Même durcissement qu’en production : sans root, sans capacités, sans élévation de privilèges.
+      - name: Start the image without root
         run: |
-          cd backend
-          nohup php -d variables_order=EGPCS -S 127.0.0.1:8000 -t public > "$RUNNER_TEMP/api.log" 2>&1 &
-          for i in $(seq 1 30); do
-            curl -sf -o /dev/null http://127.0.0.1:8000/api/docs && exit 0
-            sleep 1
+          docker run --detach --name app --network host \
+            --cap-drop ALL --cap-add NET_BIND_SERVICE --security-opt no-new-privileges:true \
+            -v "$RUNNER_TEMP/jwt:/run/secrets/jwt:ro" \
+            -e SERVER_NAME=:8080 -e APP_SECRET="$(openssl rand -hex 16)" -e DATABASE_URL \
+            -e FRONTEND_URL=http://localhost:8080 -e MAILER_DSN=null://null -e MAILER_FROM=no-reply@example.test \
+            -e MESSENGER_TRANSPORT_DSN=sync:// -e JWT_COOKIE_SECURE=0 -e JWT_PASSPHRASE= \
+            -e JWT_SECRET_KEY=/run/secrets/jwt/private.pem -e JWT_PUBLIC_KEY=/run/secrets/jwt/public.pem \
+            sae501:ci
+          test "$(docker exec app id -u)" != "0"
+          docker exec app sh -c 'test ! -w src && test ! -w vendor && test ! -w public/index.html && test -w var && test -w public/uploads'
+          docker exec app sh -c '! command -v composer'
+          for _ in $(seq 1 30); do
+            curl --fail --silent --output /dev/null http://localhost:8080/healthcheck.php && exit 0
+            sleep 2
           done
-          cat "$RUNNER_TEMP/api.log"
+          docker logs app
           exit 1
 
       - uses: actions/setup-node@v7
@@ -230,7 +210,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci --prefix frontend
-      - run: npm run build --prefix frontend
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -239,8 +218,14 @@ jobs:
       - name: Run Playwright E2E tests
         run: npx playwright test --project=chromium
         working-directory: frontend
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:8080
 
-      - name: Keep the Playwright report and API log
+      - name: Keep the Playwright report and server log
+        if: failure()
+        run: docker logs app > "$RUNNER_TEMP/app.log" 2>&1 || true
+
+      - name: Upload the reports
         if: failure()
         uses: actions/upload-artifact@v7
         with:
@@ -248,7 +233,7 @@ jobs:
           path: |
             frontend/playwright-report
             frontend/test-results
-            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/app.log
           retention-days: 7
 
   security:
@@ -286,16 +271,12 @@ jobs:
           trivy --severity HIGH,CRITICAL --format json --output /repo/security-reports/trivy.json
           trivy --severity CRITICAL --exit-code 1
 
-      - name: Hadolint (Dockerfiles)
+      - name: Hadolint (Dockerfile)
         id: hadolint
         continue-on-error: true
         run: |
-          status=0
-          for name in backend frontend; do
-            docker run --rm -i hadolint/hadolint:v2.15.1-alpine hadolint --no-color --failure-threshold error - \
-              < "docker/$name/Dockerfile" > "security-reports/hadolint-$name.txt" 2>&1 || status=1
-          done
-          exit $status
+          docker run --rm -i hadolint/hadolint:v2.15.1-alpine hadolint --no-color --failure-threshold error - \
+            < Dockerfile > security-reports/hadolint-app.txt 2>&1
 
       # Analyse statique du code (bearer.yml, exceptions justifiées dans bearer.ignore) :
       # rapport complet, échec sur HIGH et CRITICAL.
