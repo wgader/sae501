@@ -91,6 +91,10 @@ final class EquipmentAdministrationController extends AbstractController
             }
         }
 
+        $maxConsecutiveDays = array_key_exists('maxConsecutiveDays', $payload)
+            ? $this->parseMaxConsecutiveDays($payload['maxConsecutiveDays'], $errors)
+            : Materiel::DEFAULT_MAX_CONSECUTIVE_DAYS;
+
         if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
             // Error populated in $errors
         }
@@ -106,6 +110,7 @@ final class EquipmentAdministrationController extends AbstractController
         $materiel->setDescription(isset($payload['description']) && is_string($payload['description']) ? trim($payload['description']) : null);
         $materiel->setConsignesUtilisation(isset($payload['consignesUtilisation']) && is_string($payload['consignesUtilisation']) ? trim($payload['consignesUtilisation']) : null);
         $materiel->setStockTotal((int) $rawStock);
+        $materiel->setMaxConsecutiveDays((int) $maxConsecutiveDays);
         $materiel->setIsArchived(false);
         $materiel->setCreatedAt(new \DateTimeImmutable());
 
@@ -163,6 +168,13 @@ final class EquipmentAdministrationController extends AbstractController
 
         if (array_key_exists('consignesUtilisation', $payload)) {
             $materiel->setConsignesUtilisation(is_string($payload['consignesUtilisation']) ? trim($payload['consignesUtilisation']) : null);
+        }
+
+        if (array_key_exists('maxConsecutiveDays', $payload)) {
+            $maxConsecutiveDays = $this->parseMaxConsecutiveDays($payload['maxConsecutiveDays'], $errors);
+            if ($maxConsecutiveDays !== null) {
+                $materiel->setMaxConsecutiveDays($maxConsecutiveDays);
+            }
         }
 
         if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
@@ -287,6 +299,26 @@ final class EquipmentAdministrationController extends AbstractController
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @param array<string, string> $errors
+     */
+    private function parseMaxConsecutiveDays(mixed $value, array &$errors): ?int
+    {
+        $days = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => Materiel::MAX_CONSECUTIVE_DAYS_LIMIT],
+        ]);
+        if ($days === false) {
+            $errors['maxConsecutiveDays'] = \sprintf(
+                'La durée maximale doit être comprise entre 1 et %d jours.',
+                Materiel::MAX_CONSECUTIVE_DAYS_LIMIT,
+            );
+
+            return null;
+        }
+
+        return $days;
+    }
+
     private function requestPayload(Request $request): array
     {
         if ($request->request->count() > 0) {
@@ -337,6 +369,7 @@ final class EquipmentAdministrationController extends AbstractController
             'description' => $materiel->getDescription(),
             'consignesUtilisation' => $materiel->getConsignesUtilisation(),
             'stockTotal' => $materiel->getStockTotal(),
+            'maxConsecutiveDays' => $materiel->getMaxConsecutiveDays(),
             'isArchived' => $materiel->isArchived(),
             'statut' => $materiel->isArchived() ? 'Archivé' : 'Disponible',
             'imagePath' => $materiel->getImagePath(),

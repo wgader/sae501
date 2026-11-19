@@ -17,6 +17,8 @@ interface ActivationFormProps {
   error: string;
   isLoading: boolean;
   criteria: ReadonlyArray<{ id: string; label: string }>;
+  /** Espace ouvert par ce compte : « association » ou « agent ». */
+  spaceLabel?: string;
   onPasswordChange: (value: string) => void;
   onConfirmChange: (value: string) => void;
   onTogglePassword: () => void;
@@ -27,14 +29,14 @@ interface ActivationFormProps {
 export default function ActivationForm({
   email, password, confirmPassword, showPassword, showConfirm, strength, metCriteria,
   allMet, confirmMatch, error, isLoading, criteria, onPasswordChange, onConfirmChange,
-  onTogglePassword, onToggleConfirm, onSubmit,
+  onTogglePassword, onToggleConfirm, onSubmit, spaceLabel = 'association',
 }: ActivationFormProps) {
   return (
     <section aria-labelledby="form-heading">
       <header className="mb-8">
         <p className="text-label font-bold uppercase tracking-kicker text-primary">Activation de compte</p>
         <h1 id="form-heading" className="mt-2 text-3xl font-black tracking-tight text-ink">Définissez votre mot de passe</h1>
-        <p className="mt-2 text-body-sm leading-copy text-muted">Choisissez un mot de passe sécurisé pour finaliser l&apos;accès à votre espace association.</p>
+        <p className="mt-2 text-body-sm leading-copy text-muted">Choisissez un mot de passe sécurisé pour finaliser l&apos;accès à votre espace {spaceLabel}.</p>
         <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line bg-paper px-3.5 py-1.5 text-xs text-ink"><span className="font-semibold text-muted">Compte :</span><span className="font-bold">{email}</span></p>
       </header>
       <form method="post" className="space-y-6" noValidate onSubmit={onSubmit}>

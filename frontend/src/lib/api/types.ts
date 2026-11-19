@@ -75,10 +75,20 @@ export type Equipment = {
   description: string | null;
   consignesUtilisation: string | null;
   stockTotal: number;
+  /** Nombre de jours d'affilée autorisés par la mairie. */
+  maxConsecutiveDays: number;
   isArchived: boolean;
   statut: 'Disponible' | 'Archivé';
   imagePath: string | null;
   createdAt: string | null;
+};
+
+/** Stock engagé et limites d'un équipement, pour construire son calendrier. */
+export type EquipmentOccupancy = {
+  stockTotal: number;
+  maxConsecutiveDays: number;
+  lastDay: string;
+  reservations: { start: string; end: string; quantite: number }[];
 };
 
 export type EquipmentAvailability = Equipment & {
@@ -279,6 +289,99 @@ export type AssociationRequestDetail = AssociationRequestSummary & {
   timeline: RequestTimelineEvent[];
 };
 
+export type GrantBudgetLine = {
+  type: 'depense' | 'recette';
+  categorie: string;
+  intitule: string;
+  montant: string;
+};
+
+export type GrantDraft = {
+  id: number;
+  statut: 'Brouillon';
+  typeSubvention: 'Fonctionnement' | 'Projet';
+  intituleProjet: string;
+  description: string | null;
+  publicCible: string | null;
+  dateDebutProjet: string | null;
+  dateFinProjet: string | null;
+  montantDemande: string;
+  bic: string | null;
+  iban: string | null;
+  anneeExercice: number;
+  budgetValide: boolean;
+  lignesBudget: GrantBudgetLine[];
+};
+
+export type GrantDraftInput = Omit<
+  GrantDraft,
+  'id' | 'statut' | 'anneeExercice' | 'budgetValide'
+>;
+
+export type GrantDocument = {
+  id: number;
+  typeDocument: string;
+  fichierUrl: string;
+  originalName: string;
+  size: number;
+  mimeType: string;
+  createdAt: string | null;
+};
+
+/** Statuts d'un dossier transmis ; « En cours de traitement » vient des anciennes données. */
+export type GrantStatus = 'En attente' | 'En cours de traitement' | 'Complément requis' | 'Validée' | 'Refusée' | 'Clôturée';
+
+export type SubmittedGrant = {
+  id: number;
+  statut: GrantStatus;
+  typeSubvention: 'Fonctionnement' | 'Projet';
+  intituleProjet: string;
+  montantDemande: string;
+  montantAccorde: string | null;
+  observations: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type AdminGrantFilter = 'pending' | 'validated' | 'refused';
+
+export type AdminGrantSummary = {
+  id: number;
+  statut: GrantStatus;
+  typeSubvention: 'Fonctionnement' | 'Projet';
+  intituleProjet: string;
+  anneeExercice: number;
+  montantDemande: string;
+  montantAccorde: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  association: { id: number | null; nom: string | null };
+};
+
+export type AdminGrantList = {
+  items: AdminGrantSummary[];
+  counts: Record<'all' | AdminGrantFilter, number>;
+};
+
+export type AdminGrantDetail = AdminGrantSummary & {
+  description: string | null;
+  publicCible: string | null;
+  dateDebutProjet: string | null;
+  dateFinProjet: string | null;
+  bic: string | null;
+  iban: string | null;
+  observations: string | null;
+  contact: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
+  lignesBudget: GrantBudgetLine[];
+  documents: GrantDocument[];
+};
+
+export type AdminGrantDecision = {
+  status: 'Validée' | 'Refusée';
+  montantAccorde?: string;
+  message?: string;
+};
+
 export type EventAnnexFile = {
   id: number;
   originalName: string;
@@ -325,6 +428,8 @@ export type AdminAgent = {
   isVerified: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string | null;
+  /** Présent à la création : l'e-mail d'activation est-il parti ? */
+  invitationSent?: boolean;
 };
 
 export type AdminAgentPayload = {

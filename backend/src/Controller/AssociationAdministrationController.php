@@ -175,6 +175,10 @@ final class AssociationAdministrationController extends AbstractController
         if (!is_string($type) || !in_array($type, ['materiel', 'salle'], true)) {
             return $this->json(['message' => 'Le type de demande est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+        // Un agent ne relance que les dossiers de son propre module.
+        if (!$this->isGranted($type === 'materiel' ? 'ROLE_GESTION_MATERIEL' : 'ROLE_GESTION_SALLE')) {
+            return $this->json(['message' => 'Ce dossier ne relève pas de vos modules.'], Response::HTTP_FORBIDDEN);
+        }
         if ($message === '' || mb_strlen($message) > 2000) {
             return $this->json(['message' => 'Le message est obligatoire et limité à 2000 caractères.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }

@@ -44,6 +44,25 @@ final class EquipmentAdministrationControllerTest extends ControllerRouteTestCas
         ]);
     }
 
+    public function testAdminSetsTheMaximumConsecutiveDays(): void
+    {
+        $this->authenticateAsAdmin();
+        $this->requestJson('POST', '/api/admin/equipment', [
+            'designation' => 'Sono',
+            'categorie' => 'sonorisation',
+            'stockTotal' => 2,
+        ]);
+        $equipment = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame(7, $equipment['maxConsecutiveDays']);
+
+        $this->requestJson('PATCH', '/api/admin/equipment/'.$equipment['id'], ['maxConsecutiveDays' => 3]);
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains(['maxConsecutiveDays' => 3]);
+
+        $this->requestJson('PATCH', '/api/admin/equipment/'.$equipment['id'], ['maxConsecutiveDays' => 0]);
+        $this->assertResponseStatusCodeSame(400);
+    }
+
     public function testEquipmentCanBeCreatedAndListed(): void
     {
         $this->authenticateAsAdmin();

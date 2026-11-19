@@ -7,6 +7,7 @@ export * from './api/materiel';
 export * from './api/salles';
 export * from './api/agents';
 export * from './api/campaigns';
+export * from './api/grants';
 export * from './api/contact';
 export * from './api/admin';
 export * from './api/rooms';

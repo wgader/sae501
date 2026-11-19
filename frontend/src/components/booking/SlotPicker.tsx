@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { cva } from 'class-variance-authority';
-import BookingCalendar, { type DayRange } from '@/components/rooms/booking/BookingCalendar';
-import TimeOptionsPanel from '@/components/rooms/booking/TimeOptionsPanel';
+import BookingCalendar, { type DayRange } from '@/components/booking/BookingCalendar';
+import TimeOptionsPanel from '@/components/booking/TimeOptionsPanel';
 import { IconChevronRight } from '@/components/ui/icons';
 import {
   EMPTY_SLOT,
@@ -16,12 +16,15 @@ import {
   getStartOptions,
   type AvailabilityContext,
   type SlotSelection,
-} from '@/lib/roomAvailability';
+} from '@/lib/bookingAvailability';
 
 interface SlotPickerProps {
   slot: SlotSelection;
   context: AvailabilityContext;
   onChange: (slot: SlotSelection) => void;
+  startLabel?: string;
+  endLabel?: string;
+  partialLabel?: string;
 }
 
 type TimeFieldName = 'start' | 'end';
@@ -39,7 +42,14 @@ const timeFieldVariants = cva(
 );
 
 /** Choix des jours puis des horaires, limité à ce que la salle et les règles permettent. */
-export default function SlotPicker({ slot, context, onChange }: SlotPickerProps) {
+export default function SlotPicker({
+  slot,
+  context,
+  onChange,
+  startLabel = 'Début',
+  endLabel = 'Fin',
+  partialLabel = 'Partiellement réservé',
+}: SlotPickerProps) {
   const [openField, setOpenField] = useState<TimeFieldName | null>(null);
   const { rules, today } = context;
 
@@ -49,8 +59,8 @@ export default function SlotPicker({ slot, context, onChange }: SlotPickerProps)
   };
 
   const fields: { name: TimeFieldName; label: string; day: string | null; time: string | null }[] = [
-    { name: 'start', label: 'Début', day: slot.startDay, time: slot.startTime },
-    { name: 'end', label: 'Fin', day: slot.endDay, time: slot.endTime },
+    { name: 'start', label: startLabel, day: slot.startDay, time: slot.startTime },
+    { name: 'end', label: endLabel, day: slot.endDay, time: slot.endTime },
   ];
   const openOptions = openField === 'start' ? getStartOptions(slot, context) : getEndOptions(slot, context);
 
@@ -65,13 +75,14 @@ export default function SlotPicker({ slot, context, onChange }: SlotPickerProps)
         lastDay={rules.lastDay}
         getDayState={(day) => getDayState(day, context)}
         getMaxEndDay={(day) => getMaxEndDay(day, context)}
+        partialLabel={partialLabel.toLowerCase()}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-line pt-4">
         <ul className="flex flex-wrap gap-x-5 gap-y-1 text-meta text-muted">
           <li className="flex items-center gap-2">
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-pill bg-ochre" />
-            Partiellement réservé
+            {partialLabel}
           </li>
           <li className="flex items-center gap-2">
             <span aria-hidden="true" className="font-bold line-through">
@@ -92,7 +103,8 @@ export default function SlotPicker({ slot, context, onChange }: SlotPickerProps)
       </div>
 
       <p className="text-meta text-muted">
-        {rules.maxDays} jours consécutifs maximum · réservable jusqu’au {formatLongDay(rules.lastDay)}.
+        {rules.maxDays > 1 ? `${rules.maxDays} jours consécutifs maximum` : 'Une seule journée'} · réservable jusqu’au{' '}
+        {formatLongDay(rules.lastDay)}.
       </p>
 
       <div className="space-y-3">
@@ -122,7 +134,7 @@ export default function SlotPicker({ slot, context, onChange }: SlotPickerProps)
 
         {openField && (
           <TimeOptionsPanel
-            label={openField === 'start' ? 'Heure de début' : 'Heure de fin'}
+            label={openField === 'start' ? `Heure : ${startLabel}` : `Heure : ${endLabel}`}
             value={openField === 'start' ? slot.startTime : slot.endTime}
             options={openOptions}
             onChange={(time) => onChange(openField === 'start' ? { ...slot, startTime: time } : { ...slot, endTime: time })}

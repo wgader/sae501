@@ -4,6 +4,7 @@ import type {
   AdminEquipmentReservationPage,
   Equipment,
   EquipmentAvailabilityResponse,
+  EquipmentOccupancy,
   EquipmentReservation,
   EquipmentReservationInput,
   StockAdjustment,
@@ -16,6 +17,10 @@ export function getEquipmentAvailability(
 ): Promise<EquipmentAvailabilityResponse> {
   const params = new URLSearchParams({ start, end });
   return accountRequest<EquipmentAvailabilityResponse>(`/api/equipment/availability?${params.toString()}`);
+}
+
+export function getEquipmentOccupancy(equipmentId: number): Promise<EquipmentOccupancy> {
+  return accountRequest<EquipmentOccupancy>(`/api/equipment/${equipmentId}/occupancy`);
 }
 
 export function createEquipmentReservation(

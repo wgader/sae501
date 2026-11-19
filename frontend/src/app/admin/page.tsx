@@ -4,7 +4,8 @@ import { type FormEvent, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { hasSession } from '@/lib/session';
+import { adminHomePathForRoles } from '@/lib/agentAccess';
+import { hasSession, readSession } from '@/lib/session';
 import { signIn } from '@/lib/api/auth';
 
 
@@ -18,7 +19,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     document.title = 'Administration · Connexion | Ville de Feytiat';
     if (hasSession('admin')) {
-      router.replace('/admin/dashboard');
+      router.replace(adminHomePathForRoles(readSession()?.user.roles ?? []));
     }
   }, [router]);
 
@@ -37,7 +38,7 @@ export default function AdminLoginPage() {
 
     try {
       await signIn('admin', identifier, password);
-      router.push('/admin/dashboard');
+      router.push(adminHomePathForRoles(readSession()?.user.roles ?? []));
     } catch (err: unknown) {
       setSubmitError(
         err instanceof Error ? err.message : 'Une erreur est survenue lors de la connexion.',

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Security\SecurityAuditLogger;
+use App\Service\AgentInvitationMailer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,11 +20,13 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 final class AgentAdministrationController extends AbstractController
 {
     private const STATUSES = ['ACTIVE', 'INACTIVE'];
+    private const ADMIN_ROLE = 'ROLE_ADMIN';
 
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly SecurityAuditLogger $audit,
+        private readonly AgentInvitationMailer $invitationMailer,
     ) {
     }
 
@@ -69,7 +72,7 @@ final class AgentAdministrationController extends AbstractController
             return $payload;
         }
 
-        $errors = $this->validateAgentPayload($payload, false);
+        $errors = $this->validateAgentPayload($payload, false, false);
         if ($errors !== []) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -85,7 +88,7 @@ final class AgentAdministrationController extends AbstractController
             ->setPrenom(trim($payload['prenom']))
             ->setTelephone($this->nullableString($payload['telephone'] ?? null))
             ->setTypeCompte('mairie')
-            ->setRoles($payload['roles'] ?? []);
+            ->setRoles(self::normalizeRoles($payload['roles']));
 
         $validationErrors = $this->validateEntity($validator, $agent);
         if ($validationErrors !== []) {
@@ -94,8 +97,35 @@ final class AgentAdministrationController extends AbstractController
 
         $this->entityManager->persist($agent);
         $this->entityManager->flush();
+        $this->audit->rolesChanged($agent, $this->currentAgent(), [], $agent->getRoles());
 
-        return $this->json(self::serializeAgent($agent), Response::HTTP_CREATED);
+        return $this->json(
+            [...self::serializeAgent($agent), 'invitationSent' => $this->invitationMailer->send($agent)],
+            Response::HTTP_CREATED,
+        );
+    }
+
+    /**
+     * Renvoie le lien d'activation d'un agent qui n'a pas encore choisi son mot de passe.
+     */
+    #[Route('/{id<\d+>}/invitation', name: 'admin_agent_invitation', methods: ['POST'])]
+    public function resendInvitation(int $id): JsonResponse
+    {
+        $agent = $this->userRepository->findAgent($id);
+        if (!$agent instanceof User) {
+            return $this->json(['message' => 'Agent introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+        if ($agent->isVerified()) {
+            return $this->json(['message' => 'Ce compte est déjà activé.'], Response::HTTP_CONFLICT);
+        }
+        if ($agent->isInactive()) {
+            return $this->json(['message' => 'Réactivez ce compte avant de renvoyer une invitation.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        if (!$this->invitationMailer->send($agent)) {
+            return $this->json(['message' => 'L’e-mail d’invitation n’a pas pu être envoyé.'], Response::HTTP_BAD_GATEWAY);
+        }
+
+        return $this->json(['message' => 'L’invitation a été renvoyée.']);
     }
 
     #[Route('/{id<\d+>}', name: 'admin_agent_update', methods: ['PATCH'])]
@@ -112,7 +142,7 @@ final class AgentAdministrationController extends AbstractController
             return $payload;
         }
 
-        $errors = $this->validateAgentPayload($payload, true);
+        $errors = $this->validateAgentPayload($payload, true, in_array(self::ADMIN_ROLE, $rolesBefore, true));
         if ($errors !== []) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
@@ -135,10 +165,15 @@ final class AgentAdministrationController extends AbstractController
             $agent->setTelephone($this->nullableString($payload['telephone']));
         }
         if (array_key_exists('roles', $payload)) {
-            if (!$this->canChangeAdministratorRole($agent, $payload['roles'])) {
+            $losesAdministrator = in_array(self::ADMIN_ROLE, $agent->getRoles(), true)
+                && !in_array(self::ADMIN_ROLE, $payload['roles'], true);
+            if ($losesAdministrator && $this->isCurrentAgent($agent)) {
+                return $this->json(['message' => 'Vous ne pouvez pas retirer vos propres droits d’administrateur.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            if ($losesAdministrator && $this->userRepository->countAdministrators() <= 1) {
                 return $this->json(['message' => 'Le dernier administrateur ne peut pas être rétrogradé.'], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
-            $agent->setRoles($payload['roles']);
+            $agent->setRoles(self::normalizeRoles($payload['roles']));
         }
 
         $validationErrors = $this->validateEntity($validator, $agent);
@@ -148,8 +183,7 @@ final class AgentAdministrationController extends AbstractController
 
         $this->entityManager->flush();
         if ($rolesBefore !== $agent->getRoles()) {
-            $actor = $this->getUser();
-            $this->audit->rolesChanged($agent, $actor instanceof User ? $actor : null, $rolesBefore, $agent->getRoles());
+            $this->audit->rolesChanged($agent, $this->currentAgent(), $rolesBefore, $agent->getRoles());
         }
 
         return $this->json(self::serializeAgent($agent));
@@ -173,7 +207,7 @@ final class AgentAdministrationController extends AbstractController
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if ($status === 'INACTIVE' && $this->getUser()?->getUserIdentifier() === $agent->getUserIdentifier()) {
+        if ($status === 'INACTIVE' && $this->isCurrentAgent($agent)) {
             return $this->json(['message' => 'Vous ne pouvez pas désactiver votre propre compte.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -191,7 +225,7 @@ final class AgentAdministrationController extends AbstractController
             return $this->json(['message' => 'Agent introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
-        if ($this->getUser()?->getUserIdentifier() === $agent->getUserIdentifier()) {
+        if ($this->isCurrentAgent($agent)) {
             return $this->json(['message' => 'Vous ne pouvez pas supprimer votre propre compte.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -234,8 +268,12 @@ final class AgentAdministrationController extends AbstractController
         return $payload;
     }
 
-    /** @param array<string, mixed> $payload */
-    private function validateAgentPayload(array $payload, bool $partial): array
+    /**
+     * L'application ne compte qu'un administrateur : ce droit ne s'attribue jamais depuis la gestion des agents.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function validateAgentPayload(array $payload, bool $partial, bool $isAdministrator): array
     {
         $errors = [];
         foreach (['nom', 'prenom', 'email'] as $field) {
@@ -257,9 +295,14 @@ final class AgentAdministrationController extends AbstractController
         if (array_key_exists('telephone', $payload) && $payload['telephone'] !== null && !is_string($payload['telephone'])) {
             $errors['telephone'] = 'Le téléphone est invalide.';
         }
-        if (array_key_exists('roles', $payload)) {
-            if (!is_array($payload['roles']) || array_diff($payload['roles'], User::ROLES_MAIRIE) !== []) {
+        if (!$partial || array_key_exists('roles', $payload)) {
+            $roles = $payload['roles'] ?? null;
+            if (!is_array($roles) || !array_is_list($roles) || array_filter($roles, 'is_string') !== $roles || array_diff($roles, User::ROLES_MAIRIE) !== []) {
                 $errors['roles'] = 'Un ou plusieurs rôles sont invalides.';
+            } elseif (array_diff($roles, ['ROLE_MAIRIE']) === []) {
+                $errors['roles'] = 'Sélectionnez au moins un module.';
+            } elseif (in_array(self::ADMIN_ROLE, $roles, true) && !$isAdministrator) {
+                $errors['roles'] = 'L’application ne compte qu’un seul administrateur.';
             }
         }
 
@@ -282,12 +325,27 @@ final class AgentAdministrationController extends AbstractController
         return $value === null || trim((string) $value) === '' ? null : trim((string) $value);
     }
 
-    private function canChangeAdministratorRole(User $agent, mixed $roles): bool
+    /**
+     * Un administrateur a déjà tous les modules : aucun droit partiel ne reste sur son compte.
+     *
+     * @param list<string> $roles
+     *
+     * @return list<string>
+     */
+    private static function normalizeRoles(array $roles): array
     {
-        if (!is_array($roles) || in_array('ROLE_ADMIN', $roles, true) || !in_array('ROLE_ADMIN', $agent->getRoles(), true)) {
-            return true;
-        }
+        return in_array(self::ADMIN_ROLE, $roles, true) ? [self::ADMIN_ROLE] : array_values(array_unique($roles));
+    }
 
-        return $this->userRepository->countAdministrators() > 1;
+    private function currentAgent(): ?User
+    {
+        $user = $this->getUser();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    private function isCurrentAgent(User $agent): bool
+    {
+        return $this->getUser()?->getUserIdentifier() === $agent->getUserIdentifier();
     }
 }

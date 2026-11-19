@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useId, useMemo, useState, type FormEvent } from 'react';
-import SlotPicker from '@/components/rooms/booking/SlotPicker';
+import SlotPicker from '@/components/booking/SlotPicker';
 import { fieldControlVariants, fieldHintVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
 import Button from '@/components/ui/Button';
 import Notice from '@/components/ui/Notice';
@@ -17,10 +17,11 @@ import {
   formatTime,
   isSlotComplete,
   normalizeSlot,
+  readBookingClock,
   type AvailabilityContext,
   type SlotSelection,
-} from '@/lib/roomAvailability';
-import { roomDayKey, roomSlotInstant } from '@/lib/roomFilters';
+} from '@/lib/bookingAvailability';
+import { roomSlotInstant } from '@/lib/roomFilters';
 
 interface OneOffRoomViewProps {
   room: PublicRoom;
@@ -30,17 +31,12 @@ interface OneOffRoomViewProps {
   onBack: () => void;
 }
 
-function readClock() {
-  const now = new Date();
-  return { today: roomDayKey(now), nowMinutes: now.getHours() * 60 + now.getMinutes() };
-}
-
 /** Fiche d'une salle : disponibilités, choix du créneau et demande de réservation ponctuelle. */
 export default function OneOffRoomView({ room, rules, initialSlot, initialAttendees, onBack }: OneOffRoomViewProps) {
   const motifId = useId();
   const attendeesId = useId();
   const fileId = useId();
-  const [clock] = useState(readClock);
+  const [clock] = useState(readBookingClock);
   const occupancy = useRoomOccupancy(room.id, clock.today, rules.lastDay);
 
   const [rawSlot, setRawSlot] = useState(initialSlot);

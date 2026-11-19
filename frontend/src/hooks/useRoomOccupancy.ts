@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { getRoomAvailability } from '@/lib/api/rooms';
-import { toBusyIntervals, type BusyInterval } from '@/lib/roomAvailability';
+import { toBusyIntervals, type BusyInterval } from '@/lib/bookingAvailability';
 
 interface OccupancyResult {
   key: string;
