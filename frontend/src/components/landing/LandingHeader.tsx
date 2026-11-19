@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { IconClose } from '@/components/ui/icons';
+import BrandMark from './ui/BrandMark';
+import LandingContainer from './ui/LandingContainer';
+import LandingLink from './ui/LandingLink';
+import { LANDING_NAV_LINKS } from './landingContent';
 
 interface LandingHeaderProps {
   isConnected?: boolean;
@@ -10,186 +13,91 @@ interface LandingHeaderProps {
 }
 
 export default function LandingHeader({ isConnected = false, onLogout }: LandingHeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-line bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex h-19 max-w-340 items-center justify-between px-4 sm:px-8 lg:px-12">
-        <Link
-          href="/"
-          className="flex items-center transition-opacity hover:opacity-90"
-          aria-label="Accueil Feytiat - Espace associations"
-        >
-          <div className="w-36 sm:w-40">
-            <Image
-              src="/assets/logo-feytiat.svg"
-              alt="Logo Ville de Feytiat"
-              width={160}
-              height={33}
-              priority
-              className="h-auto w-full object-contain"
-            />
-          </div>
-        </Link>
+    <header className="sticky top-0 z-50 border-b border-line/70 bg-paper/90 backdrop-blur-md">
+      <LandingContainer className="flex h-18 items-center justify-between gap-6">
+        <BrandMark />
 
-        <nav
-          aria-label="Navigation principale de la page"
-          className="hidden items-center gap-8 md:flex lg:gap-10"
-        >
-          <a
-            href="#demarches"
-            className="text-sm font-bold uppercase tracking-label text-ink transition-colors hover:text-primary"
-          >
-            Les démarches
-          </a>
-          <a
-            href="#comment-ca-marche"
-            className="text-sm font-bold uppercase tracking-label text-ink transition-colors hover:text-primary"
-          >
-            Comment ça marche
-          </a>
-          <a
-            href="#faq"
-            className="text-sm font-bold uppercase tracking-label text-ink transition-colors hover:text-primary"
-          >
-            FAQ
-          </a>
+        <nav aria-label="Sections de la page" className="hidden items-center gap-8 lg:flex">
+          {LANDING_NAV_LINKS.map((link) => (
+            <a key={link.href} href={link.href} className="text-body-sm font-bold text-ink/80 transition-colors hover:text-primary">
+              {link.label}
+            </a>
+          ))}
         </nav>
 
-        <nav aria-label="Authentification" className="hidden items-center gap-4 sm:flex lg:gap-6">
+        <div className="hidden items-center gap-2 sm:flex">
           {isConnected ? (
             <>
-              <Link
-                href="/"
-                className="inline-flex h-10.5 items-center justify-center rounded-control bg-primary px-5 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover"
-              >
-                Mon espace
-              </Link>
-              <button
-                type="button"
-                onClick={onLogout}
-                className="text-xs font-bold uppercase tracking-label text-muted underline underline-offset-4 transition-colors hover:text-danger"
-              >
+              <button type="button" onClick={onLogout} className="px-3 text-meta font-bold uppercase tracking-label text-muted transition-colors hover:text-danger">
                 Déconnexion
               </button>
+              <LandingLink href="/" size="md">Mon espace</LandingLink>
             </>
           ) : (
             <>
-              <Link
-                href="/connexion"
-                className="flex h-10.5 items-center text-xs font-bold uppercase tracking-label text-ink transition-colors hover:text-primary"
-              >
-                Connexion
-              </Link>
-              <Link
-                href="/inscription"
-                className="inline-flex h-10.5 items-center justify-center rounded-control bg-primary px-5 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover"
-              >
-                Inscription
-              </Link>
+              <LandingLink href="/connexion" variant="ghost" size="md">Se connecter</LandingLink>
+              <LandingLink href="/inscription" size="md">Inscrire mon association</LandingLink>
             </>
           )}
-        </nav>
-
-        <div className="flex md:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            aria-expanded={mobileMenuOpen}
-            aria-label="Ouvrir le menu de navigation"
-            className="flex size-10 items-center justify-center rounded-lg border border-line text-ink transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-primary"
-          >
-            <div className="relative h-4 w-5">
-              <span
-                className={`absolute left-0 block h-0.5 w-full transform rounded-full bg-ink transition-all duration-300 ${
-                  mobileMenuOpen ? 'top-1.5 rotate-45' : 'top-0'
-                }`}
-              />
-              <span
-                className={`absolute left-0 top-1.5 block h-0.5 w-full rounded-full bg-ink transition-opacity duration-300 ${
-                  mobileMenuOpen ? 'opacity-0' : 'opacity-100'
-                }`}
-              />
-              <span
-                className={`absolute left-0 block h-0.5 w-full transform rounded-full bg-ink transition-all duration-300 ${
-                  mobileMenuOpen ? 'top-1.5 -rotate-45' : 'top-3'
-                }`}
-              />
-            </div>
-          </button>
         </div>
-      </div>
 
-      <div
-        className={`overflow-hidden border-b border-line bg-white transition-all duration-300 ease-in-out md:hidden ${
-          mobileMenuOpen ? 'max-h-96 opacity-100 py-6' : 'max-h-0 opacity-0 py-0'
-        }`}
-      >
-        <nav aria-label="Navigation mobile" className="flex flex-col gap-4 px-6">
-          <a
-            href="#demarches"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-xs font-bold uppercase tracking-label text-ink hover:text-primary"
-          >
-            Les démarches
-          </a>
-          <a
-            href="#comment-ca-marche"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-xs font-bold uppercase tracking-label text-ink hover:text-primary"
-          >
-            Comment ça marche
-          </a>
-          <a
-            href="#faq"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-xs font-bold uppercase tracking-label text-ink hover:text-primary"
-          >
-            FAQ
-          </a>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="landing-mobile-menu"
+          aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          className="flex size-11 items-center justify-center rounded-control border border-line bg-white text-ink lg:hidden"
+        >
+          {menuOpen ? (
+            <IconClose className="size-5" />
+          ) : (
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h10" />
+            </svg>
+          )}
+        </button>
+      </LandingContainer>
 
-          <div className="mt-2 flex flex-col gap-3 border-t border-line pt-4">
-            {isConnected ? (
-              <>
-                <Link
-                  href="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-11 items-center justify-center rounded-control bg-primary text-center text-xs font-bold uppercase tracking-label text-white"
-                >
-                  Mon espace
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onLogout?.();
-                  }}
-                  className="text-center text-xs font-bold uppercase tracking-label text-danger"
-                >
-                  Déconnexion
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/connexion"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-11 items-center justify-center rounded-control border border-line text-center text-xs font-bold uppercase tracking-label text-ink"
-                >
-                  Connexion
-                </Link>
-                <Link
-                  href="/inscription"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-11 items-center justify-center rounded-control bg-primary text-center text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover"
-                >
-                  Inscription
-                </Link>
-              </>
-            )}
-          </div>
-        </nav>
-      </div>
+      {menuOpen && (
+        <div id="landing-mobile-menu" className="border-t border-line bg-paper lg:hidden">
+          <LandingContainer className="py-6">
+            <nav aria-label="Menu mobile" className="flex flex-col">
+              {LANDING_NAV_LINKS.map((link) => (
+                <a key={link.href} href={link.href} onClick={closeMenu} className="border-b border-line py-4 text-body-lg font-bold text-ink">
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+            <div className="mt-6 flex flex-col gap-3 sm:hidden">
+              {isConnected ? (
+                <>
+                  <LandingLink href="/" onClick={closeMenu}>Mon espace</LandingLink>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu();
+                      onLogout?.();
+                    }}
+                    className="py-3 text-meta font-bold uppercase tracking-label text-danger"
+                  >
+                    Déconnexion
+                  </button>
+                </>
+              ) : (
+                <>
+                  <LandingLink href="/inscription" onClick={closeMenu}>Inscrire mon association</LandingLink>
+                  <LandingLink href="/connexion" variant="secondary" onClick={closeMenu}>Se connecter</LandingLink>
+                </>
+              )}
+            </div>
+          </LandingContainer>
+        </div>
+      )}
     </header>
   );
 }

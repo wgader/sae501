@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Résolu là où la classe est utilisée : la police n'est chargée que par la page d'accueil. */
+@theme inline {
+    --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+}
+
 @theme {
     --font-sans: var(--font-lato), sans-serif;
 
@@ -21,6 +26,12 @@
     --color-white: var(--White);
     --color-black: var(--Black);
     --color-grey: var(--Grey);
+
+    /* Couleur de chaque module, identique dans tout l'espace association */
+    --color-module-grants: var(--Misty-Rose);
+    --color-module-rooms: var(--Lime-Cream);
+    --color-module-equipment: var(--Indigo-Bloom);
+    --color-module-events: var(--Mint-Cream);
 
     /* Compatibility aliases for existing classes */
     --color-Primary: var(--Mosaic-Tile);
@@ -70,6 +81,8 @@
     --tracking-title: 0.125rem;
     --tracking-display: -0.03em;
     --leading-copy: 1.6;
+    --leading-display: 1;
+    --leading-heading: 1.06;
 
     /* Reusable decorative dimensions */
     --border-width-ring: 1.625rem;

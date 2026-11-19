@@ -1,43 +1,38 @@
 'use client';
 
-import LandingHeader from './LandingHeader';
-import HeroSection from './HeroSection';
-import DemarchesSection from './DemarchesSection';
-import ParcoursSection from './ParcoursSection';
-import FaqSection from './FaqSection';
+import AudienceSection from './AudienceSection';
+import CommunityBand from './CommunityBand';
 import CtaSection from './CtaSection';
+import FaqSection from './FaqSection';
+import HeroSection from './HeroSection';
 import LandingFooter from './LandingFooter';
+import LandingHeader from './LandingHeader';
+import ProcessSection from './ProcessSection';
+import ServicesSection from './ServicesSection';
+import { displayFont } from './fonts';
 
 interface LandingPageProps {
   isConnected?: boolean;
   onLogout?: () => void;
 }
 
+/** Page d'accueil publique de l'espace associations. */
 export default function LandingPage({ isConnected = false, onLogout }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-white font-sans text-ink antialiased selection:bg-accent selection:text-ink">
-      {/* 1. Navbar */}
+    <div className={`${displayFont.variable} min-h-screen w-full bg-white font-sans text-ink antialiased selection:bg-accent selection:text-ink`}>
+      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-control focus:bg-ink focus:px-4 focus:py-3 focus:text-white">
+        Aller au contenu
+      </a>
       <LandingHeader isConnected={isConnected} onLogout={onLogout} />
-
-      {/* 2. Semantic Main Body */}
-      <main id="main-content">
-        {/* Hero Section */}
+      <main id="contenu">
         <HeroSection />
-
-        {/* Tout au même endroit (4 Demarches Cards) */}
-        <DemarchesSection />
-
-        {/* Un parcours clair (3 Steps Banner) */}
-        <ParcoursSection />
-
-        {/* Questions fréquentes (5 Accordions) */}
+        <ServicesSection />
+        <ProcessSection />
+        <AudienceSection />
+        <CommunityBand />
         <FaqSection />
-
-        {/* Prêt à commencer ? (CTA Banner) */}
         <CtaSection />
       </main>
-
-      {/* 3. Footer */}
       <LandingFooter />
     </div>
   );
