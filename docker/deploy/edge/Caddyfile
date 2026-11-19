@@ -8,8 +8,8 @@
 # Définit (origin_guard), vide sauf derrière Cloudflare ; généré par deploy.sh.
 import /etc/caddy/proxy/guard.caddy
 
-# En-têtes de sécurité ; l’argument est la Content-Security-Policy du site.
-(security_headers) {
+# En-têtes de sécurité communs à la préproduction et à la production.
+(common) {
 	import origin_guard
 	encode zstd gzip
 	header {
@@ -18,8 +18,8 @@ import /etc/caddy/proxy/guard.caddy
 		Referrer-Policy "strict-origin-when-cross-origin"
 		# Le site ne doit jamais être affiché dans un cadre (clickjacking) ni charger de plugin.
 		X-Frame-Options "DENY"
-		# Valeur par défaut : la politique plus complète du site Next.js, si présente, est conservée.
-		?Content-Security-Policy "{args[0]}"
+		# Valeur par défaut : la CSP envoyée par l’application est conservée.
+		?Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		# Aucun indice sur les logiciels en amont (Caddy ajoute « Via » à chaque réponse relayée).
@@ -28,16 +28,6 @@ import /etc/caddy/proxy/guard.caddy
 		-X-Powered-By
 	}
 	log
-}
-
-# Site web (Next.js).
-(common) {
-	import security_headers "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
-}
-
-# API : uniquement du JSON et des fichiers en pièce jointe, aucun contenu actif autorisé.
-(api) {
-	import security_headers "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 }
 
 # Un fichier par environnement, écrit par deploy.sh à partir de son .env.
