@@ -164,7 +164,7 @@ En résumé :
 - seul le proxy d’entrée `docker/deploy/edge` (Caddy, HTTPS automatique) publie 80/443 ; MySQL,
   phpMyAdmin et Mailpit ne sont jamais exposés ;
 - l’image de production tourne sans root (UID 10001), sans dépendances de développement ni
-  Composer, avec seulement `var/`, `public/uploads`, `/data` et `/config` en écriture ; le
+  Composer, avec seulement `var/`, `/data` et `/config` en écriture ; le
   développement utilise l’étape `dev` (`target: dev` dans `docker-compose.yml`) ;
 - le service `worker` (même image) traite la file Messenger et les tâches planifiées
   (`backend/src/Scheduler/MaintenanceSchedule.php`).
@@ -172,7 +172,8 @@ En résumé :
 Les fichiers envoyés sont conservés dans deux volumes Docker nommés, sauvegardés chaque nuit
 par `docker/deploy/backup.sh` :
 
-- `<projet>_backend_uploads` (`/app/backend/public/uploads`) : images publiques des salles et du matériel ;
+- `<projet>_backend_uploads` (`/app/backend/var/media`) : images des salles, du matériel et logos,
+  servies sous `/uploads/...` par Symfony aux seuls comptes autorisés (module ou association) ;
 - `<projet>_backend_private_uploads` (`/app/backend/var/uploads`) : justificatifs et fichiers
   d'événement, servis uniquement par l'API après contrôle d'accès.
 

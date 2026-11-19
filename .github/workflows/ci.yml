@@ -194,7 +194,7 @@ jobs:
             -e JWT_SECRET_KEY=/run/secrets/jwt/private.pem -e JWT_PUBLIC_KEY=/run/secrets/jwt/public.pem \
             sae501:ci
           test "$(docker exec app id -u)" != "0"
-          docker exec app sh -c 'test ! -w src && test ! -w vendor && test ! -w public/index.html && test -w var && test -w public/uploads'
+          docker exec app sh -c 'test ! -w src && test ! -w vendor && test ! -w public && test -w var/media && test -w var/uploads'
           docker exec app sh -c '! command -v composer'
           for _ in $(seq 1 30); do
             curl --fail --silent --output /dev/null http://localhost:8080/healthcheck.php && exit 0

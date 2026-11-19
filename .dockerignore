@@ -6,7 +6,6 @@ frontend/out
 backend/public/bundles
 # Données locales : cache, journaux, fichiers déposés, résultats de tests.
 backend/var
-backend/public/uploads
 frontend/test-results
 frontend/playwright-report
 # Secrets : les clés JWT sont montées en secrets Docker sur le serveur.

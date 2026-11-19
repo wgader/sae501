@@ -63,7 +63,8 @@ services:
       FRANKENPHP_WORKERS: ${FRANKENPHP_WORKERS:-2}
     mem_limit: ${APP_MEM_LIMIT:-512m}
     volumes:
-      - uploads:/app/backend/public/uploads
+      # Images et justificatifs, hors de la racine web : Symfony les sert après contrôle des droits.
+      - uploads:/app/backend/var/media
       - private_uploads:/app/backend/var/uploads
       - caddy_data:/data
       - caddy_config:/config

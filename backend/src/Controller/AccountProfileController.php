@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Service\PublicImageStorage;
+use App\Service\ImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -100,7 +100,7 @@ final class AccountProfileController extends AbstractController
     public function updatePhoto(
         Request $request,
         #[CurrentUser] User $user,
-        PublicImageStorage $imageStorage,
+        ImageStorage $imageStorage,
         EntityManagerInterface $entityManager,
     ): JsonResponse {
         $association = $user->getAssociation();
@@ -132,7 +132,7 @@ final class AccountProfileController extends AbstractController
     #[Route('/photo', name: 'account_profile_photo_delete', methods: ['DELETE'])]
     public function deletePhoto(
         #[CurrentUser] User $user,
-        PublicImageStorage $imageStorage,
+        ImageStorage $imageStorage,
         EntityManagerInterface $entityManager,
     ): JsonResponse {
         $association = $user->getAssociation();

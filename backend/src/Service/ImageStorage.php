@@ -6,10 +6,11 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
- * Images publiques (salles, matériel) servies directement par le serveur web :
- * leur contenu réel est vérifié avant tout enregistrement.
+ * Images des salles, du matériel et des logos d'association. Elles sont rangées hors de la racine
+ * web et servies par MediaController après contrôle des droits ; leur contenu réel est vérifié
+ * avant tout enregistrement. L'adresse enregistrée en base reste /uploads/<dossier>/<fichier>.
  */
-final class PublicImageStorage
+final class ImageStorage
 {
     public const MAX_FILE_SIZE = 5 * 1024 * 1024;
     public const MAX_DIMENSION = 8000;
@@ -24,7 +25,7 @@ final class PublicImageStorage
     ];
 
     public function __construct(
-        #[Autowire('%app.public_upload_directory%')]
+        #[Autowire('%app.image_directory%')]
         private readonly string $uploadDirectory,
         private readonly ?AntivirusScanner $antivirus = null,
     ) {
@@ -62,7 +63,7 @@ final class PublicImageStorage
     }
 
     /**
-     * @return string chemin public, par exemple /uploads/salles/abc.png
+     * @return string adresse de l'image, par exemple /uploads/salles/abc.png
      */
     public function store(UploadedFile $image, string $folder): string
     {
@@ -91,6 +92,21 @@ final class PublicImageStorage
         if (is_file($fullPath) && !unlink($fullPath)) {
             throw new \RuntimeException('Impossible de supprimer l’ancienne image.');
         }
+    }
+
+    /**
+     * Fichier correspondant à une adresse /uploads/<dossier>/<fichier>, ou null s'il n'existe pas.
+     * Le nom est vérifié strictement : aucun chemin ne peut sortir du dossier des images.
+     */
+    public function locate(string $folder, string $filename): ?string
+    {
+        if (1 !== preg_match('/^[a-f0-9]{48}\.(jpg|png|webp)$/', $filename)) {
+            return null;
+        }
+
+        $path = $this->folderDirectory($folder).'/'.$filename;
+
+        return is_file($path) ? $path : null;
     }
 
     private function folderDirectory(string $folder): string

@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
-use App\Service\PublicImageStorage;
+use App\Service\ImageStorage;
 use App\Tests\Fixtures\UploadFixtures;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-final class PublicImageStorageTest extends TestCase
+final class ImageStorageTest extends TestCase
 {
     private UploadFixtures $fixtures;
     private string $uploadDirectory;
-    private PublicImageStorage $storage;
+    private ImageStorage $storage;
 
     protected function setUp(): void
     {
         $this->fixtures = new UploadFixtures();
         $this->uploadDirectory = $this->fixtures->directory().'/public-uploads';
-        $this->storage = new PublicImageStorage($this->uploadDirectory);
+        $this->storage = new ImageStorage($this->uploadDirectory);
     }
 
     protected function tearDown(): void
@@ -86,7 +86,7 @@ final class PublicImageStorageTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('L’image ne doit pas dépasser 5 Mo.');
 
-        $this->storage->store($this->fixtures->sized(PublicImageStorage::MAX_FILE_SIZE + 1, 'photo.png'), 'salles');
+        $this->storage->store($this->fixtures->sized(ImageStorage::MAX_FILE_SIZE + 1, 'photo.png'), 'salles');
     }
 
     public function testRejectedImageIsNeverWritten(): void

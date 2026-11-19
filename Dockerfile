@@ -58,9 +58,9 @@ RUN addgroup -S -g "${APP_GID}" app \
 COPY --from=backend-builder /app/backend ./
 COPY --from=frontend-builder /src/out ./public/
 
-# Seuls le cache, les fichiers déposés et l'état de Caddy restent modifiables.
-RUN mkdir -p var/uploads public/uploads \
- && chown -R "${APP_UID}:${APP_GID}" var public/uploads /data /config
+# Seuls var/ (cache, images, justificatifs) et l'état de Caddy restent modifiables.
+RUN mkdir -p var/media var/uploads \
+ && chown -R "${APP_UID}:${APP_GID}" var /data /config
 
 USER ${APP_UID}:${APP_GID}
 

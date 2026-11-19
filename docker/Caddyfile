@@ -14,18 +14,16 @@
 		-Server
 	}
 
-	@symfony path /api /api/* /bundles/* /healthcheck.php
+	@symfony path /api /api/* /uploads/* /bundles/* /healthcheck.php
 	@legacy_annexes path_regexp legacy ^/historique/([^/]+)/pieces-annexes$
 
 	# Les règles s'appliquent dans l'ordre où elles sont écrites.
 	route {
-		# Justificatifs : uniquement téléchargeables par l'API, après contrôle des droits.
-		respond /uploads/documents/* 404
-
 		# Anciennes adresses déjà envoyées par e-mail.
 		redir @legacy_annexes /historique/demande/pieces-annexes?id={re.legacy.1}&{query} 301
 
-		# /api/* : Symfony, gardé en mémoire par les workers FrankenPHP.
+		# /api/* et les images /uploads/* : Symfony, qui contrôle les droits de chaque compte.
+		# Il reste en mémoire grâce aux workers FrankenPHP.
 		php_server @symfony {
 			worker {
 				file /app/backend/public/index.php
