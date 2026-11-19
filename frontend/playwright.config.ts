@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Sans adresse fournie, les tests lancent next dev ; en CI, ils visent l'image de production.
+const externalBaseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL;
+
 export default defineConfig({
     testDir: './e2e',
     fullyParallel: true,
@@ -10,7 +13,7 @@ export default defineConfig({
     workers: process.env.CI ? 1 : 1,
     reporter: [['html', { open: 'never' }], ['list']],
     use: {
-        baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+        baseURL: externalBaseUrl ?? 'http://localhost:3000',
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
@@ -33,11 +36,12 @@ export default defineConfig({
             use: { ...devices['Pixel 5'] },
         },
     ],
-    webServer: {
-        // En CI, le frontend compilé évite la compilation à la demande de chaque page en mode dev.
-        command: process.env.CI ? 'npm run start' : 'npm run dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
-    },
+    webServer: externalBaseUrl
+        ? undefined
+        : {
+              command: 'npm run dev',
+              url: 'http://localhost:3000',
+              reuseExistingServer: true,
+              timeout: 120000,
+          },
 });

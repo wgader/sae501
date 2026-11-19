@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import {
   AnnexesDocumentsHeading,
@@ -22,6 +22,7 @@ import {
   type EventAnnexFile,
   type RequestDocument,
 } from '@/lib/api';
+import { routes } from '@/lib/routes';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
@@ -109,11 +110,10 @@ function FileList({
 }
 
 export default function RequestAnnexesPage() {
-  const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const type = searchParams.get('type') || 'evenement';
-  const requestId = params.id;
+  const requestId = searchParams.get('id') ?? '';
   const eventId = Number(requestId.replace(/^event-/, ''));
   const isEvent = type === 'evenement' && Number.isInteger(eventId) && eventId > 0;
   const [detail, setDetail] = useState<AssociationRequestDetail | null>(null);
@@ -217,7 +217,7 @@ export default function RequestAnnexesPage() {
         <nav aria-label="Fil d’Ariane" className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted">
           <button
             type="button"
-            onClick={() => router.push(`/historique/${requestId}?type=${type}`)}
+            onClick={() => router.push(routes.request(requestId, type))}
             className="text-primary hover:underline"
           >
             ← Historique

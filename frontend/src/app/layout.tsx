@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Lato } from 'next/font/google';
-import { connection } from 'next/server';
 import './globals.css';
 import AppShell from '@/components/layout/AppShell';
 
@@ -10,11 +9,7 @@ const lato = Lato({
   variable: '--font-lato',
 });
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Rendu à chaque requête : Next.js ne peut poser le nonce de la CSP (voir proxy.ts) que sur une
-  // page rendue à la demande, jamais sur une page générée à l'avance.
-  await connection();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
       <body

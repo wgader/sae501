@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { type Association } from '@/lib/api';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { routes } from '@/lib/routes';
 
 interface AssociationCardProps {
   association: Association;
@@ -25,7 +26,7 @@ export default function AssociationCard({
 
   return (
     <Link
-      href={`/admin/inscription/${association.id}`}
+      href={routes.adminRegistration(association.id)}
       className={`group flex items-center justify-between gap-4 rounded-card border border-line bg-white shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-md ${
         compact ? 'p-4' : 'p-5 sm:p-6'
       } ${className}`}

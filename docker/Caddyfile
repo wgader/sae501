@@ -1,0 +1,43 @@
+{
+	frankenphp
+}
+
+{$SERVER_NAME::80} {
+	root * /app/backend/public
+	encode zstd br gzip
+
+	header {
+		# Complète la CSP inscrite dans chaque page : frame-ancestors n'est pas lu dans une balise <meta>.
+		Content-Security-Policy "frame-ancestors 'none'"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	@symfony path /api /api/* /uploads/* /bundles/* /healthcheck.php
+	@legacy_annexes path_regexp legacy ^/historique/([^/]+)/pieces-annexes$
+
+	# Les règles s'appliquent dans l'ordre où elles sont écrites.
+	route {
+		# Anciennes adresses déjà envoyées par e-mail.
+		redir @legacy_annexes /historique/demande/pieces-annexes?id={re.legacy.1}&{query} 301
+
+		# /api/* et les images /uploads/* : Symfony, qui contrôle les droits de chaque compte.
+		# Il reste en mémoire grâce aux workers FrankenPHP.
+		php_server @symfony {
+			worker {
+				file /app/backend/public/index.php
+				num {$FRANKENPHP_WORKERS:2}
+			}
+		}
+
+		# /* : pages du front exportées par Next.js (/connexion est servi par connexion.html).
+		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
+
+	handle_errors 404 {
+		rewrite * /404.html
+		file_server
+	}
+}

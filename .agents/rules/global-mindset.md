@@ -5,8 +5,8 @@ description: "Règles globales du projet SAE501, architecture, workflow Git et q
 # Projet SAE501 - Plateforme d'échange Associations / Mairie
 
 ## Architecture et Stack
-- **Frontend** : `frontend/` - Next.js 16 (App Router), TypeScript, Tailwind CSS v4. (http://localhost:3000)
-- **Backend** : `backend/` - Symfony 8.1, API Platform, JWT, Doctrine ORM. (http://localhost:80)
+- **Frontend** : `frontend/` - Next.js 16 (App Router), TypeScript, Tailwind CSS v4, exporté en fichiers statiques et servi par Caddy. (dev : http://localhost:3000)
+- **Backend** : `backend/` - Symfony 8.1, API Platform, JWT, Doctrine ORM, joint par le front uniquement via `/api/...`. (dev : http://localhost:8000)
 - **Serveur & Infra** : FrankenPHP, MySQL 8.4, Docker Compose (`docker compose up --build`).
 
 ## Mindset Senior & Anti-Overengineering (KISS)

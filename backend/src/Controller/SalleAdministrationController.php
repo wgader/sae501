@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Salle;
-use App\Service\PublicImageStorage;
+use App\Service\ImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,7 +21,7 @@ final class SalleAdministrationController extends AbstractController
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly PublicImageStorage $imageStorage,
+        private readonly ImageStorage $imageStorage,
     ) {
     }
 

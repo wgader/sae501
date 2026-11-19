@@ -1,14 +1,11 @@
-# Pile de préproduction ou de production : un projet Compose par environnement.
+# Préproduction ou production sur le VPS (un projet Compose par environnement) :
 #
 #   docker compose --env-file .env -f docker-compose.prod.yml up -d
 #
-# Le fichier d’environnement fixe COMPOSE_PROJECT_NAME (sae501-preprod ou sae501-prod) : tous les
-# volumes et réseaux portent ce préfixe explicitement, si bien que les données d’un environnement
-# ne peuvent pas être montées par l’autre, même avec une option -p erronée.
-# Les étiquettes d’images (BACKEND_IMAGE_TAG, FRONTEND_IMAGE_TAG) sont fournies par
-# docker/deploy/deploy.sh ; aucune étiquette mobile comme latest n’est utilisée par défaut.
-# Aucun outil de développement (phpMyAdmin, Mailpit) n’est défini ici, et aucun port n’est publié :
-# seul le proxy d’entrée (docker/deploy/edge) écoute sur 80/443 et joint le réseau edge du projet.
+# Lancé par docker/deploy/deploy.sh, qui fournit APP_IMAGE_TAG. COMPOSE_PROJECT_NAME
+# (sae501-preprod ou sae501-prod) préfixe volumes et réseaux : un environnement ne peut pas
+# monter les données de l'autre. Aucun port n'est publié : le proxy d'entrée (docker/deploy/edge)
+# termine HTTPS et transmet tout le domaine au service app.
 
 name: ${COMPOSE_PROJECT_NAME:?Set COMPOSE_PROJECT_NAME (sae501-preprod or sae501-prod)}
 
@@ -27,15 +24,14 @@ x-hardening: &hardening
   cap_drop:
     - ALL
 
-# Variables lues par Symfony. Chaque service ne reçoit que ce dont il a besoin : le mot de passe
-# root MySQL n’est transmis qu’au conteneur MySQL.
-x-backend-environment: &backend-environment
+x-app-image: &app-image
+  image: ${APP_IMAGE:-ghcr.io/wgader/sae501/app}:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG (deploy.sh does it)}
+
+# Variables de Symfony, communes au site et au worker.
+x-symfony-environment: &symfony-environment
   APP_ENV: prod
-  APP_DEBUG: "0"
   APP_SECRET: ${APP_SECRET:?Set APP_SECRET}
-  # Mots de passe générés en hexadécimal par bootstrap-server.sh : aucun encodage d’URL nécessaire.
   DATABASE_URL: mysql://${MYSQL_USER:?}:${MYSQL_PASSWORD:?}@mysql:3306/${MYSQL_DATABASE:?}?serverVersion=8.4&charset=utf8mb4
-  CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:?Set CORS_ALLOW_ORIGIN}
   FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL}
   MAILER_DSN: ${MAILER_DSN:?Set MAILER_DSN}
   MAILER_FROM: ${MAILER_FROM:?Set MAILER_FROM}
@@ -44,104 +40,50 @@ x-backend-environment: &backend-environment
   JWT_PUBLIC_KEY: /run/secrets/jwt_public_key
   JWT_PASSPHRASE: ${JWT_PASSPHRASE:?}
   JWT_COOKIE_SECURE: "1"
-  # Antivirus des fichiers déposés : vide = désactivé, sinon tcp://clamav:3310 (profil antivirus).
+  # Antivirus des fichiers déposés : vide = désactivé (voir le service clamav).
   CLAMAV_DSN: ${CLAMAV_DSN:-}
-  # Le proxy d’entrée est sur un réseau Docker privé : Symfony lit l’IP du client et le schéma
-  # HTTPS dans X-Forwarded-*, indispensable aux limiteurs de débit par IP.
+  # Le proxy d'entrée est sur un réseau privé : Symfony lit l'IP du visiteur dans X-Forwarded-For.
   SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES:-private_ranges}
 
-x-backend-image: &backend-image
-  image: ${BACKEND_IMAGE:-ghcr.io/wgader/sae501/backend}:${BACKEND_IMAGE_TAG:?Set BACKEND_IMAGE_TAG (deploy.sh does it)}
+x-jwt-secrets: &jwt-secrets
+  secrets:
+    - source: jwt_private_key
+      target: /run/secrets/jwt_private_key
+    - source: jwt_public_key
+      target: /run/secrets/jwt_public_key
 
 services:
-  frontend:
-    <<: *hardening
-    image: ${FRONTEND_IMAGE:-ghcr.io/wgader/sae501/frontend}:${FRONTEND_IMAGE_TAG:?Set FRONTEND_IMAGE_TAG (deploy.sh does it)}
-    # NEXT_PUBLIC_API_URL est figée dans l’image au build (variable GitHub PUBLIC_API_URL de
-    # l’environnement) : elle n’est pas lue à l’exécution.
-    environment:
-      NODE_ENV: production
-      # Plafond du tas V8, cohérent avec la limite mémoire du conteneur.
-      NODE_OPTIONS: --max-old-space-size=${FRONTEND_NODE_HEAP_MB:-192}
-    mem_limit: ${FRONTEND_MEM_LIMIT:-320m}
-    depends_on:
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:3000"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      edge:
-        aliases:
-          - ${COMPOSE_PROJECT_NAME}-frontend
-
-  backend:
-    <<: [*hardening, *backend-image]
-    # Seule capacité conservée : écouter sur le port 80 (fichier frankenphp marqué par setcap).
+  # Caddy + FrankenPHP : pages du front et API Symfony sur le même domaine.
+  app:
+    <<: [*hardening, *app-image, *jwt-secrets]
     cap_add:
       - NET_BIND_SERVICE
     environment:
-      <<: *backend-environment
-      # HTTP seul : TLS est terminé par le proxy d’entrée.
-      SERVER_NAME: ":80"
+      <<: *symfony-environment
       FRANKENPHP_WORKERS: ${FRANKENPHP_WORKERS:-2}
-    mem_limit: ${BACKEND_MEM_LIMIT:-512m}
+    mem_limit: ${APP_MEM_LIMIT:-512m}
     volumes:
-      # Images publiques (salles, matériel) servies par Caddy.
-      - backend_uploads:/app/public/uploads
-      # Justificatifs et fichiers d’événement, hors racine web ; doivent survivre aux redéploiements.
-      - backend_private_uploads:/app/var/uploads
+      # Images et justificatifs, hors de la racine web : Symfony les sert après contrôle des droits.
+      - uploads:/app/backend/var/media
+      - private_uploads:/app/backend/var/uploads
       - caddy_data:/data
       - caddy_config:/config
-    # Fichiers lisibles par le groupe de l’utilisateur du conteneur (voir bootstrap-server.sh).
-    secrets:
-      - source: jwt_private_key
-        target: /run/secrets/jwt_private_key
-      - source: jwt_public_key
-        target: /run/secrets/jwt_public_key
     depends_on:
       mysql:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://localhost/healthcheck.php"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
     networks:
-      default:
-      db_network:
       edge:
         aliases:
-          - ${COMPOSE_PROJECT_NAME}-backend
+          - ${COMPOSE_PROJECT_NAME}-app
+      backend:
+      internet:
 
-  campaign-scheduler:
-    <<: [*hardening, *backend-image]
-    # Chaque minute : statuts des campagnes. Chaque heure : purge des révocations de JWT expirées.
-    command: >-
-      sh -c 'i=0; while true;
-      do php bin/console app:campaigns:synchronize --env=prod --no-interaction;
-      if [ $$((i % 60)) -eq 0 ]; then php bin/console cache:pool:prune --env=prod --no-interaction; fi;
-      i=$$((i + 1)); sleep 60; done'
-    environment: *backend-environment
-    mem_limit: ${SCHEDULER_MEM_LIMIT:-192m}
-    healthcheck:
-      disable: true
-    depends_on:
-      mysql:
-        condition: service_healthy
-    networks:
-      - db_network
-
-  # Traite les messages asynchrones (notifications de réservation) ; redémarre toutes les heures
-  # pour libérer la mémoire et prendre en compte un nouveau déploiement.
-  messenger-worker:
-    <<: [*hardening, *backend-image]
-    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=160M --env=prod --no-interaction
-    environment: *backend-environment
+  # Même image : envoie les notifications en file d'attente et lance les tâches planifiées.
+  # --time-limit le redémarre chaque heure pour libérer la mémoire.
+  worker:
+    <<: [*hardening, *app-image, *jwt-secrets]
+    command: php bin/console messenger:consume async scheduler_default --time-limit=3600 --memory-limit=160M --no-interaction
+    environment: *symfony-environment
     mem_limit: ${WORKER_MEM_LIMIT:-256m}
     healthcheck:
       disable: true
@@ -149,14 +91,12 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      # default : accès sortant vers Brevo ; db_network : accès à MySQL.
-      - default
-      - db_network
+      - backend
+      - internet
 
   mysql:
     image: mysql:8.4
-    # Réglages pour un petit VPS partagé par deux environnements : performance_schema seul coûte
-    # plusieurs centaines de Mo ; le cache InnoDB et les connexions sont dimensionnés pour l’appli.
+    # Réglé pour un petit VPS partagé par la préproduction et la production.
     command:
       - --performance-schema=OFF
       - --innodb-buffer-pool-size=${MYSQL_INNODB_BUFFER_POOL:-128M}
@@ -175,56 +115,51 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-    # Ping en TCP : le serveur temporaire lancé pendant l’initialisation de la base écoute sans
-    # réseau et ne doit pas être considéré comme prêt (il s’arrête juste après).
+    # En TCP : pendant sa première initialisation, MySQL écoute sans réseau et n'est pas encore prêt.
     healthcheck:
       test: ["CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_ROOT_PASSWORD}\" mysqladmin ping --protocol=tcp -h 127.0.0.1 -u root --silent"]
       interval: 10s
       timeout: 5s
-      # La première initialisation de la base peut dépasser deux minutes sur un VPS chargé.
       retries: 10
       start_period: 180s
     networks:
-      - db_network
+      - backend
 
-  # Antivirus facultatif (environ 1 Go de mémoire) : activer avec COMPOSE_PROFILES=antivirus et
-  # CLAMAV_DSN=tcp://clamav:3310 dans .env. Les signatures se mettent à jour d’elles-mêmes
-  # (freshclam) ; aucun port publié.
+  # Antivirus facultatif (environ 1 Go de mémoire) : COMPOSE_PROFILES=antivirus et
+  # CLAMAV_DSN=tcp://clamav:3310 dans .env.
   clamav:
     image: clamav/clamav:1.5.3
     profiles: [antivirus]
     restart: unless-stopped
     mem_limit: ${CLAMAV_MEM_LIMIT:-1536m}
-    # Son contrôle de santé laisse 6 minutes au premier chargement des signatures : le déploiement,
-    # qui attend 5 minutes, échouerait. Pendant ce démarrage, les dépôts sont refusés (« réessayez »).
+    # Le premier chargement des signatures dépasse le délai d'attente du déploiement.
     healthcheck:
       disable: true
     volumes:
       - clamav_data:/var/lib/clamav
     logging: *logging
     networks:
-      - default
+      - backend
+      - internet
 
 networks:
-  # Sortie Internet (Brevo) ; aucun port publié.
-  default:
-    name: ${COMPOSE_PROJECT_NAME}_default
-  # MySQL n’est joignable que depuis ce réseau, sans accès extérieur.
-  db_network:
-    name: ${COMPOSE_PROJECT_NAME}_db
-    internal: true
-  # Réseau partagé avec le proxy d’entrée, propre à cet environnement ; créé par
-  # bootstrap-server.sh ou deploy.sh.
+  # Partagé avec le proxy d'entrée ; créé par deploy.sh.
   edge:
     name: ${COMPOSE_PROJECT_NAME}_edge
     external: true
+  # Sans accès à Internet : seul chemin vers MySQL.
+  backend:
+    name: ${COMPOSE_PROJECT_NAME}_backend
+    internal: true
+  # Sortie vers Internet (Brevo pour les e-mails, mises à jour de l'antivirus).
+  internet:
+    name: ${COMPOSE_PROJECT_NAME}_internet
 
+# Les noms des volumes de données sont ceux des versions précédentes : un déploiement les reprend.
 volumes:
-  clamav_data:
-    name: ${COMPOSE_PROJECT_NAME}_clamav_data
-  backend_uploads:
+  uploads:
     name: ${COMPOSE_PROJECT_NAME}_backend_uploads
-  backend_private_uploads:
+  private_uploads:
     name: ${COMPOSE_PROJECT_NAME}_backend_private_uploads
   caddy_data:
     name: ${COMPOSE_PROJECT_NAME}_caddy_data
@@ -232,6 +167,8 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME}_caddy_config
   mysql_data:
     name: ${COMPOSE_PROJECT_NAME}_mysql_data
+  clamav_data:
+    name: ${COMPOSE_PROJECT_NAME}_clamav_data
 
 secrets:
   jwt_private_key:
