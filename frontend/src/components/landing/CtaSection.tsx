@@ -1,35 +1,28 @@
 import { IconArrowRight } from '@/components/ui/icons';
+import VillageSkyline from './illustrations/VillageSkyline';
+import BrandDot from './ui/BrandDot';
 import LandingContainer from './ui/LandingContainer';
 import LandingLink from './ui/LandingLink';
+import Reveal from './ui/Reveal';
 
-/** Dernier appel à l'action, avant le pied de page. */
+/** Dernier appel à l'action, posé sur la silhouette du bourg. */
 export default function CtaSection() {
   return (
-    <section aria-labelledby="cta-title" className="bg-white pb-20 sm:pb-28">
+    <section aria-labelledby="cta-title" className="bg-white pb-24 sm:pb-32">
       <LandingContainer>
-        <div className="relative isolate overflow-hidden rounded-panel bg-accent px-7 py-14 sm:px-14 sm:py-20">
-          <div aria-hidden="true" className="absolute -top-24 -right-24 -z-10 size-80 rounded-pill border-ring border-white/50" />
-          <div className="grid items-end gap-10 lg:grid-cols-12">
-            <div className="lg:col-span-8">
-              <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Prêt à commencer ?</p>
-              <h2 id="cta-title" className="mt-4 font-display text-4xl leading-heading font-normal tracking-display text-balance text-ink sm:text-6xl">
-                Votre association n’a pas encore son espace&nbsp;?
-              </h2>
-              <p className="mt-5 max-w-xl text-body-lg leading-copy text-ink/75">
-                L’inscription ne demande que quelques informations. La mairie active ensuite votre compte.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 lg:col-span-4 lg:items-end">
-              <LandingLink href="/inscription" className="w-full lg:w-auto">
-                Inscrire mon association
-                <IconArrowRight className="size-4" />
-              </LandingLink>
-              <LandingLink href="/connexion" variant="ghost" className="w-full hover:bg-white/50 lg:w-auto">
-                Se connecter
-              </LandingLink>
-            </div>
+        <Reveal>
+          <div className="relative isolate overflow-hidden rounded-panel bg-primary px-7 pt-16 pb-40 text-center sm:pt-24 sm:pb-56">
+            <h2 id="cta-title" className="mx-auto max-w-2xl text-4xl font-black tracking-heading text-balance text-white sm:text-6xl">
+              Moins de papiers, plus d’asso<BrandDot />
+            </h2>
+            <p className="mx-auto mt-5 max-w-md text-body-lg leading-copy text-white/75">L’inscription prend deux minutes.</p>
+            <LandingLink href="/inscription" variant="secondary" className="mt-9 rounded-pill border-white">
+              Créer le compte de mon asso
+              <IconArrowRight className="size-4" />
+            </LandingLink>
+            <VillageSkyline className="absolute inset-x-0 bottom-0 -z-10 h-36 w-full sm:h-52" />
           </div>
-        </div>
+        </Reveal>
       </LandingContainer>
     </section>
   );
