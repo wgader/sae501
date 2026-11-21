@@ -32,6 +32,30 @@ class ReservationSalleRepository extends ServiceEntityRepository
     }
 
     /**
+     * Réservations de salles acceptées sur les saisons déjà écoulées.
+     *
+     * @return list<ReservationSalle>
+     */
+    public function findHistoricalValidatedByAssociation(
+        Association $association,
+        \DateTimeImmutable $before,
+    ): array {
+        return $this->createQueryBuilder('r')
+            ->addSelect('salle', 'campaign')
+            ->join('r.salle', 'salle')
+            ->leftJoin('r.campaign', 'campaign')
+            ->andWhere('r.association = :association')
+            ->andWhere('r.statut IN (:statuses)')
+            ->andWhere('r.dateDebut < :before')
+            ->setParameter('association', $association)
+            ->setParameter('statuses', ['Validée', 'Clôturée'])
+            ->setParameter('before', $before)
+            ->orderBy('r.dateDebut', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Retourne toutes les réservations actives (hors Refusée) qui chevauchent l'intervalle [start, end].
      *
      * @return list<ReservationSalle>
@@ -53,7 +77,7 @@ class ReservationSalleRepository extends ServiceEntityRepository
             ->setParameter('end', $end)
             ->orderBy('r.dateDebut', 'ASC');
 
-        if ($excludeReservationId !== null) {
+        if (null !== $excludeReservationId) {
             $qb->andWhere('r.id != :excludeId')
                 ->setParameter('excludeId', $excludeReservationId);
         }
