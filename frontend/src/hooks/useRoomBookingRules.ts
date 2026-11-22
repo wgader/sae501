@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getRoomBookingRules } from '@/lib/api/rooms';
 import type { RoomBookingRules } from '@/lib/api/types';
+import { logger } from '@/lib/logger';
 
 /** Règles des réservations ponctuelles ; `failed` si l'API ne les a pas fournies. */
 export function useRoomBookingRules() {
@@ -16,7 +17,7 @@ export function useRoomBookingRules() {
         if (active) setRules(response);
       })
       .catch((err: unknown) => {
-        console.error('Chargement des règles de réservation impossible', err);
+        logger.error('Chargement des règles de réservation impossible', err);
         if (active) setFailed(true);
       });
     return () => {

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { createExternalEvent, uploadExternalEventFile, type ExternalEvent } from '@/lib/api';
 import EventDeclarationForm, { type EventFormFile } from '@/components/events/EventDeclarationForm';
 import EventDeclarationSuccess from '@/components/events/EventDeclarationSuccess';
+import { logger } from '@/lib/logger';
 
 export default function EvenementsPage() {
   const [form, setForm] = useState({
@@ -67,7 +68,7 @@ export default function EvenementsPage() {
       const uploaded = [];
       for (const formFile of files) {
         try { uploaded.push(await uploadExternalEventFile(created.id, formFile.file)); }
-        catch (uploadError) { console.error(`Erreur upload ${formFile.name}:`, uploadError); }
+        catch (uploadError) { logger.error(`Erreur upload ${formFile.name}:`, uploadError); }
       }
       const completeEvent: ExternalEvent = {
         ...created, description: form.description.trim() || undefined,

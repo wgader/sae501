@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button';
 import RequestStatusBadge from './RequestStatusBadge';
 import RequestTypeBadge from './RequestTypeBadge';
 import { routes } from '@/lib/routes';
+import { logger } from '@/lib/logger';
 
 function formatDate(value: string | undefined | null, withTime = false): string {
   if (!value) return '—';
@@ -178,7 +179,7 @@ export default function RequestDetailPage() {
     try {
       setDetail(await getAssociationRequestDetail(id, type));
     } catch (requestError) {
-      console.error(requestError);
+      logger.error('Chargement de la démarche impossible', requestError);
       setError(requestError instanceof Error ? requestError.message : 'Une erreur est survenue.');
     } finally {
       setIsLoading(false);
@@ -211,7 +212,7 @@ export default function RequestDetailPage() {
       setIsCancelOpen(false);
       await loadDetail();
     } catch (requestError) {
-      console.error(requestError);
+      logger.error('Annulation de la réservation impossible', requestError);
       setError(requestError instanceof Error ? requestError.message : 'Impossible d’annuler la réservation.');
       setIsCancelOpen(false);
     } finally {

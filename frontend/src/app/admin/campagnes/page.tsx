@@ -30,6 +30,7 @@ import { getSalles } from '@/lib/api/salles';
 import { getAssociations } from '@/lib/api/associations';
 import { formatInstantDate, slotDate } from '@/lib/campaignDates';
 import type { Campaign, CampaignRequest } from '@/lib/api/types';
+import { logger } from '@/lib/logger';
 
 interface Option {
   id: number;
@@ -94,7 +95,7 @@ export default function AdminCampaignsPage() {
       setCampaigns(data);
       setSelectedId((current) => preferredId ?? current ?? defaultCampaign(data)?.id ?? null);
     } catch (err) {
-      console.error('Chargement des campagnes impossible', err);
+      logger.error('Chargement des campagnes impossible', err);
       setPageError('Impossible de charger les campagnes.');
     } finally {
       setIsLoading(false);
@@ -108,10 +109,10 @@ export default function AdminCampaignsPage() {
         .then((data) =>
           setSalles(data.filter((salle) => salle.isActive && !salle.deletedAt).map(({ id, nom }) => ({ id, nom }))),
         )
-        .catch((err) => console.error('Chargement des salles impossible', err));
+        .catch((err) => logger.error('Chargement des salles impossible', err));
       void getAssociations(1, 'VALIDATED', undefined, false, 100)
         .then((page) => setAssociations(page.items.map(({ id, nom }) => ({ id, nom }))))
-        .catch((err) => console.error('Chargement des associations impossible', err));
+        .catch((err) => logger.error('Chargement des associations impossible', err));
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadCampaigns]);
