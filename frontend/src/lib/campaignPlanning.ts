@@ -125,3 +125,32 @@ export function initialWeek(requests: CampaignRequest[], periodStart: string | n
   const fallback = periodStart && periodStart > today ? periodStart : today;
   return startOfWeek(days('pending')[0] ?? days()[0] ?? fallback);
 }
+
+/** Nombre de demandes simultanées affichées côte à côte dans une colonne du planning. */
+export const PLANNING_MAX_LANES = 3;
+
+export type PlanningOverflow = { key: string; start: number; span: number; lane: number; requests: CampaignRequest[] };
+
+/**
+ * Au-delà de PLANNING_MAX_LANES demandes en même temps, les premières restent visibles et les
+ * autres sont regroupées en une pastille « +N » par créneau, dans le dernier couloir.
+ */
+export function collapseLanes(placed: PlacedDay): { items: PlacedDay['items']; overflow: PlanningOverflow[]; lanes: number } {
+  if (placed.lanes <= PLANNING_MAX_LANES) return { ...placed, overflow: [] };
+
+  const lastLane = PLANNING_MAX_LANES;
+  const visible = placed.items.filter((item) => item.lane < lastLane);
+  const hidden = placed.items.filter((item) => item.lane >= lastLane).sort((a, b) => a.start - b.start);
+  const overflow: PlanningOverflow[] = [];
+  for (const item of hidden) {
+    const current = overflow[overflow.length - 1];
+    if (current && item.start < current.start + current.span) {
+      current.span = Math.max(current.span, item.start + item.span - current.start);
+      current.requests.push(item.request);
+    } else {
+      overflow.push({ key: `overflow-${item.request.id}`, start: item.start, span: item.span, lane: lastLane, requests: [item.request] });
+    }
+  }
+
+  return { items: visible, overflow, lanes: lastLane };
+}

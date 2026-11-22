@@ -21,5 +21,6 @@ framework:
             # En prod avec un worker, décommente la ligne ci-dessous :
             # Symfony\Component\Mailer\Messenger\SendEmailMessage: async
             App\Message\SendRoomReservationNotificationMessage: async
+            App\Message\SendCampaignWishConfirmationMessage: async
             Symfony\Component\Notifier\Message\ChatMessage: async
             Symfony\Component\Notifier\Message\SmsMessage: async

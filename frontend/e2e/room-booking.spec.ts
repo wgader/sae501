@@ -98,14 +98,6 @@ async function mockApi(page: Page, campaignOpen: boolean) {
     return availabilityCalls;
 }
 
-async function chooseSlot(page: Page, attendees: string) {
-    await page.getByRole('button', { name: 'Choisir un créneau' }).click();
-    await page.getByRole('button', { name: 'Mois suivant' }).click();
-    await page.getByRole('button', { name: '15', exact: true }).click();
-    await page.getByLabel('Nombre de personnes').fill(attendees);
-    await page.getByRole('button', { name: 'Valider le créneau' }).click();
-}
-
 test.describe('Choix d’une salle', () => {
     const dayButton = (page: Page, day: number) => page.getByRole('button', { name: new RegExp(` ${day} ${monthLabel}, `) });
 
@@ -154,16 +146,5 @@ test.describe('Choix d’une salle', () => {
         await page.getByRole('button', { name: '18h', exact: true }).click();
         await page.getByRole('button', { name: '10', exact: true }).click();
         await expect(page.getByText('18h10', { exact: true }).first()).toBeVisible();
-    });
-
-    test('En campagne, un créneau déjà demandé reste proposé pour l’arbitrage', async ({ page }) => {
-        const availabilityCalls = await mockApi(page, true);
-        await page.goto('/campagne');
-        await chooseSlot(page, '30');
-
-        await expect(page.getByText('3 salles', { exact: true })).toBeVisible();
-        await expect(page.getByText('Salle déjà réservée')).toBeVisible();
-        await expect(page.getByText('Petite salle libre')).toHaveCount(0);
-        expect(availabilityCalls).toHaveLength(0);
     });
 });

@@ -589,3 +589,70 @@ export type CampaignCurrentResponse = {
   active: boolean;
   campaign: Campaign | null;
 };
+
+/** Vœu récurrent d'une association pour la campagne annuelle des salles. */
+export type CampaignWishStatus = 'En attente d’arbitrage par la mairie' | 'Attribué' | 'Refusé';
+
+export type CampaignWish = {
+  id: number;
+  type: 'RECURRENT';
+  status: CampaignWishStatus;
+  salle: { id: number; nom: string };
+  dayOfWeek: number;
+  dayLabel: string;
+  startTime: string;
+  endTime: string;
+  frequency: 'weekly' | 'biweekly';
+  frequencyLabel: string;
+  activity: string;
+  audience: string;
+  audienceLabel: string;
+  expectedAttendance: number;
+  decisionComment: string | null;
+};
+
+export type CampaignWishSubmission = {
+  id: number;
+  submittedAt: string;
+  wishes: CampaignWish[];
+};
+
+export type MyCampaignWishesResponse = {
+  campaign: Campaign | null;
+  submissions: CampaignWishSubmission[];
+};
+
+export type CampaignWishInput = {
+  salleId: number;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  frequency: string;
+  activity: string;
+  audience: string;
+  expectedAttendance: number;
+};
+
+export type CampaignWishError = { line: number | null; field: string | null; message: string };
+
+/** Vœux d'une campagne côté mairie, regroupés par créneau (même salle, même jour, horaires qui se chevauchent). */
+export type AdminCampaignWish = CampaignWish & {
+  association: { id: number; nom: string };
+  submittedAt: string;
+};
+
+export type AdminCampaignWishGroup = {
+  key: string;
+  salle: { id: number; nom: string; capaciteMax: number | null };
+  dayOfWeek: number;
+  dayLabel: string;
+  startTime: string;
+  endTime: string;
+  disputed: boolean;
+  wishes: AdminCampaignWish[];
+};
+
+export type AdminCampaignWishes = {
+  groups: AdminCampaignWishGroup[];
+  counts: { total: number; pending: number; accepted: number; refused: number; disputed: number };
+};
