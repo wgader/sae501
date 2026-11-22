@@ -17,6 +17,7 @@ import type { Equipment } from '@/lib/api/types';
 import { EMPTY_SLOT, isSlotComplete, normalizeSlot, readBookingClock, type SlotSelection } from '@/lib/bookingAvailability';
 import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
 import { buildEquipmentContext, toEquipmentInstant } from '@/lib/equipmentOccupancy';
+import { logger } from '@/lib/logger';
 
 interface EquipmentReservationViewProps {
   equipment: Equipment;
@@ -72,7 +73,7 @@ export default function EquipmentReservationView({ equipment }: EquipmentReserva
       setIsCreated(true);
       window.scrollTo({ top: 0 });
     } catch (err: unknown) {
-      console.error('Réservation du matériel impossible', err);
+      logger.error('Réservation du matériel impossible', err);
       setError(err instanceof Error ? err.message : 'Impossible de déposer la demande.');
       if (err instanceof ApiError && err.status === 409) {
         occupancy.refresh();

@@ -10,8 +10,8 @@ Internet ──80/443──> sae501-edge (Caddy, TLS Let’s Encrypt)
                        │ réseau sae501-preprod_edge      │ réseau sae501-prod_edge
                        ▼                                 ▼
               sae501-preprod (Compose)          sae501-prod (Compose)
-              frontend · backend                frontend · backend
-              messenger-worker · scheduler      messenger-worker · scheduler
+              app (front + /api)                app (front + /api)
+              worker (file + tâches planif.)    worker (file + tâches planif.)
               mysql (réseau interne)            mysql (réseau interne)
 ```
 
@@ -27,13 +27,15 @@ Internet ──80/443──> sae501-edge (Caddy, TLS Let’s Encrypt)
   Brevo. Les noms des volumes et réseaux sont dérivés de `COMPOSE_PROJECT_NAME` et `deploy.sh`
   refuse un `.env` dont le projet ne correspond pas au dossier.
 - Seul le proxy d’entrée `sae501-edge` publie des ports (80/443). Il est nécessaire parce que les
-  deux environnements partagent la même machine : aucun backend ne peut écouter seul sur 443.
+  deux environnements partagent la même machine : aucun conteneur ne peut écouter seul sur 443.
+  Chaque environnement a un seul domaine : le site et son API (`/api`) y sont servis ensemble par
+  le service `app`.
   La préproduction et la production ne sont jamais sur un même réseau Docker.
 - MySQL est sur un réseau interne sans accès extérieur. phpMyAdmin et Mailpit n’existent que dans
   `docker-compose.yml` (développement) et ne sont jamais déployés.
-- Les images sont publiées sur GHCR avec le SHA du commit comme étiquette (jamais `latest`) :
-  `ghcr.io/wgader/sae501/backend:<sha>` et `ghcr.io/wgader/sae501/frontend:<sha>-<preprod|prod>`
-  (l’URL de l’API est figée dans le bundle Next.js, d’où une image frontend par environnement).
+- Une seule image, publiée sur GHCR avec le SHA du commit comme étiquette (jamais `latest`) :
+  `ghcr.io/wgader/sae501/app:<sha>`. Le front n’appelle que des chemins relatifs (`/api/...`) :
+  la même image sert la préproduction et la production.
 
 Fichiers concernés :
 
@@ -92,8 +94,7 @@ ssh root@<vps>
 ```bash
 DEPLOY_PUBLIC_KEY="$(cat /root/sae501-deploy/sae501_deploy.pub)" \
 ACME_EMAIL=admin@<domaine> \
-PROD_FRONTEND_DOMAIN=www.<domaine> PROD_API_DOMAIN=api.<domaine> \
-PREPROD_FRONTEND_DOMAIN=preprod.<domaine> PREPROD_API_DOMAIN=api.preprod.<domaine> \
+PROD_FRONTEND_DOMAIN=www.<domaine> PREPROD_FRONTEND_DOMAIN=preprod.<domaine> \
 bash /root/sae501-deploy/bootstrap-server.sh
 ```
 
@@ -112,7 +113,7 @@ Le script, idempotent, peut être relancé sans risque. Il :
 6. crée `/srv/sae501/{bin,edge,preprod,prod,backups}` ;
 7. génère sur le serveur, sans jamais les afficher, `APP_SECRET`, les mots de passe MySQL et la
    passphrase JWT de chaque `.env`, puis une clé JWT RSA 4096 chiffrée par environnement
-   (`secrets/jwt/private.pem`, lisible par le seul groupe 10001 de l’image backend) ;
+   (`secrets/jwt/private.pem`, lisible par le seul groupe 10001 de l’image) ;
 8. crée les réseaux `sae501-preprod_edge` et `sae501-prod_edge` ;
 9. installe la sauvegarde quotidienne (`/etc/cron.d/sae501-backup`, 03:17 UTC).
 
@@ -130,8 +131,7 @@ nano /srv/sae501/preprod/.env
 - `MAILER_DSN` : `brevo+api://<clé API Brevo de l’environnement>@default`, ou `null://null`
   tant que Brevo n’est pas configuré ;
 - `MAILER_FROM` : adresse d’expéditeur validée dans Brevo ;
-- les domaines si le script a été lancé sans eux (`FRONTEND_DOMAIN`, `API_DOMAIN`,
-  `FRONTEND_URL`, `CORS_ALLOW_ORIGIN` sous la forme `'^https://www\.<domaine>$'`).
+- le domaine si le script a été lancé sans lui (`FRONTEND_DOMAIN` et `FRONTEND_URL`).
 
 Ne jamais copier ces fichiers hors du serveur ni les coller dans un ticket ou un chat.
 `deploy.sh` refuse de déployer tant qu’une valeur `CHANGE_ME` ou `replace-with` subsiste.
@@ -192,15 +192,14 @@ sur le serveur.
 
 | Variable | Exemple production | Rôle |
 |---|---|---|
-| `PUBLIC_API_URL` | `https://api.<domaine>` | figée dans le bundle frontend ; healthcheck final |
 | `PUBLIC_FRONTEND_URL` | `https://www.<domaine>` | lien de l’environnement GitHub ; healthcheck final |
 | `DEPLOY_PORT` | `22` | facultatif |
 
 ### Activation du déploiement automatique
 
 Tant que la variable de **dépôt** `DEPLOY_ENABLED` (*Settings → Secrets and variables → Actions →
-Variables*) ne vaut pas `true`, un push sur `develop` ou `main` construit, analyse et publie les
-images mais saute le déploiement, sans échec. La définir à `true` une fois le serveur mis en
+Variables*) ne vaut pas `true`, un push sur `develop` ou `main` construit, analyse et publie
+l’image mais saute le déploiement, sans échec. La définir à `true` une fois le serveur mis en
 service et les secrets créés. « Run workflow » déploie dans tous les cas.
 
 Elle doit être créée dans **Repository variables**, pas dans un environnement : GitHub évalue la
@@ -209,8 +208,8 @@ visible et le déploiement serait sauté.
 
 ### Images GHCR
 
-Les paquets `sae501/backend` et `sae501/frontend` sont créés au premier push et restent privés
-(dépôt privé). Le serveur les télécharge avec le jeton éphémère du job, transmis sur l’entrée
+Le paquet `sae501/app` est créé au premier push et reste privé (dépôt privé). Le serveur le
+télécharge avec le jeton éphémère du job, transmis sur l’entrée
 standard de SSH, utilisé dans un dossier Docker temporaire puis supprimé : aucun jeton GHCR n’est
 conservé sur le serveur.
 
@@ -219,24 +218,23 @@ conservé sur le serveur.
 Le workflow `CD` (`.github/workflows/cd.yml`) :
 
 1. détermine l’environnement (`develop` → preprod, `main` → production) ;
-2. construit l’image backend (stage `prod`, sans dépendances de dev, utilisateur non root),
-   l’analyse avec Trivy (échec sur CRITICAL corrigeable) et la publie ;
-3. dans l’environnement GitHub (approbation éventuelle), construit l’image frontend avec
-   `PUBLIC_API_URL`, l’analyse et la publie ;
-4. envoie `docker-compose.prod.yml`, les scripts et le proxy d’entrée dans
+2. construit l’image unique (étape `app` du `Dockerfile` : export du front, dépendances
+   Composer sans dev, utilisateur non root), l’analyse avec Trivy (échec sur CRITICAL
+   corrigeable) et la publie ;
+3. dans l’environnement GitHub (approbation éventuelle), envoie `docker-compose.prod.yml`, les scripts et le proxy d’entrée dans
    `/srv/sae501/.incoming/<env>/`, puis lance `deploy.sh` qui, sous un verrou global :
    - installe ces fichiers ;
    - vérifie le `.env` (projet, valeurs à compléter, domaines) et les clés JWT ;
-   - télécharge les images ;
+   - télécharge l’image ;
    - démarre MySQL et attend qu’il soit prêt ;
    - sauvegarde la base (`backups/<env>/db-pre-deploy-*.sql.gz`) ;
    - exécute `doctrine:migrations:migrate --all-or-nothing` ;
-   - lance `docker compose up -d --wait` (healthchecks de MySQL, du backend et du frontend) ;
+   - lance `docker compose up -d --wait` (healthchecks de MySQL et de l’application) ;
    - met à jour le routage du proxy d’entrée ;
-5. vérifie depuis Internet `PUBLIC_API_URL/healthcheck.php` et `PUBLIC_FRONTEND_URL`.
+4. vérifie depuis Internet `PUBLIC_FRONTEND_URL/healthcheck.php` et `PUBLIC_FRONTEND_URL`.
 
 Les actions GitHub sont figées par SHA de commit ; le workflow n’a aucune permission par défaut
-et seuls les jobs de publication reçoivent `packages: write`.
+et seul le job de publication reçoit `packages: write`.
 
 Déploiement manuel d’une référence (tag `vX.Y.Z`, branche) : *Actions → CD → Run workflow*,
 choisir la référence et l’environnement, laisser `image_tag` vide.
@@ -345,8 +343,8 @@ Restauration (destructive, confirmation `--yes` obligatoire) :
 ```
 
 Le dump contient `DROP DATABASE` puis `CREATE DATABASE` : la base est entièrement remplacée.
-Restaurer de préférence pendant une maintenance (`docker compose stop backend messenger-worker
-campaign-scheduler` dans le dossier de l’environnement), puis relancer `deploy.sh` ou
+Restaurer de préférence pendant une maintenance (`docker compose stop app worker` dans le
+dossier de l’environnement), puis relancer `deploy.sh` ou
 `docker compose up -d`.
 
 **À compléter** : les sauvegardes restent sur le VPS. Elles contiennent des données personnelles
@@ -414,13 +412,41 @@ Le proxy d’entrée est prêt ; le passage se fait sans modifier le code.
      `[email protected]` et ajoute un script sans nonce, bloqué par la CSP : les adresses ne
      s’afficheraient plus (le scan ZAP bloquant le détecte) ;
    - en préproduction, *Cloudflare Access* (Zero Trust, gratuit jusqu’à 50 utilisateurs) peut
-     réserver `dev-feytiat` et `api-dev-feytiat` à l’équipe.
+     réserver `dev-feytiat` à l’équipe.
 6. **Cache** : laisser le comportement par défaut. L’API et les documents privés répondent en
    `Cache-Control: private, no-store` et ne sont jamais mis en cache par Cloudflare.
 
 Contrôle après bascule : `curl -sI https://feytiat.wahelgader.fr` affiche `server: cloudflare` et
 un en-tête `cf-ray` ; une requête directe sur l’IP du VPS
 (`curl -sk --resolve feytiat.wahelgader.fr:443:<IP> https://feytiat.wahelgader.fr`) est coupée.
+
+## 8 ter. Journaux
+
+| Journal | Emplacement | Contenu |
+|---|---|---|
+| Accès (Caddy de l’application) | volume `<projet>_logs`, `caddy/access.log` | une ligne JSON par requête : méthode, chemin, statut, durée, IP réelle (`client_ip`, lue dans `X-Forwarded-For`) |
+| Erreurs (Caddy et PHP) | volume `<projet>_logs`, `caddy/error.log` | démarrage de Caddy, erreurs internes et erreurs PHP, à partir de `WARN` |
+| Application (Symfony) | volume `<projet>_logs`, `prod-AAAA-MM-JJ.log` | connexions et actions de l’audit, avertissements, erreurs ; sans adresse e-mail ni requête SQL |
+| Proxy d’entrée | volume `sae501-edge_data`, `logs/<projet>-access.log` et `logs/error.log` | requêtes HTTPS reçues d’Internet, certificats |
+
+Les fichiers de Caddy tournent à 10 Mo, 5 fichiers gardés au plus pendant 30 jours (720 h) ;
+celui de Symfony change chaque jour et garde 30 jours. Les erreurs de Symfony restent aussi
+visibles avec `docker compose logs`.
+
+Suivre les accès en direct :
+
+```bash
+docker exec sae501-prod-app-1 tail -f var/log/caddy/access.log
+```
+
+Rapport HTML des accès (visiteurs, pages, erreurs) avec GoAccess, qui lit le format de Caddy :
+
+```bash
+docker run --rm -v sae501-prod_logs:/logs:ro -v "$PWD:/out" allinurl/goaccess /logs/caddy/access.log --log-format=CADDY -o /out/rapport.html
+```
+
+Dans le navigateur, le front passe par `src/lib/logger.ts` (niveaux silly, debug, verbose, info,
+warn, error) : à partir de `warn` en production, de `debug` en développement.
 
 ## 7 bis. Copie chiffrée des sauvegardes hors du serveur
 

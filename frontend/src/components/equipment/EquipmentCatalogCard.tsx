@@ -8,6 +8,7 @@ import { IconCampagne, IconMateriel } from '@/components/ui/icons';
 import { Equipment, getMediaUrl } from '@/lib/api';
 import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
 import { cn } from '@/lib/utils';
+import { routes } from '@/lib/routes';
 
 type EquipmentCatalogCardProps = {
   equipment: Equipment;
@@ -16,7 +17,7 @@ type EquipmentCatalogCardProps = {
 
 export default function EquipmentCatalogCard({
   equipment,
-  reserveHref = `/materiel/${equipment.id}`,
+  reserveHref = routes.equipmentBooking(equipment.id),
 }: EquipmentCatalogCardProps) {
   const [hasBrokenImage, setHasBrokenImage] = useState(false);
   const imageUrl = getMediaUrl(equipment.imagePath);

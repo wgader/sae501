@@ -60,8 +60,7 @@ updates:
   # par une PR. Les versions majeures (Node, MySQL, PHP) restent à planifier à la main.
   - package-ecosystem: docker
     directories:
-      - /docker/backend
-      - /docker/frontend
+      - /
     target-branch: develop
     schedule:
       interval: weekly

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Get;
 use App\Repository\ReservationMaterielRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,7 +18,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ReservationMaterielRepository::class)]
 #[ORM\Table(name: 'reservation_materiel')]
 #[ApiResource(
-    security: "is_granted('ROLE_USER')",
+    // Lecture seule et réservée à la mairie : les modifications passent par les contrôleurs métier.
+    operations: [new GetCollection(), new Get()],
+    security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_MATERIEL')",
     paginationItemsPerPage: 20,
     paginationMaximumItemsPerPage: 100,
 )]

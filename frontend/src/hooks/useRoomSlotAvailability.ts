@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getRoomAvailability } from '@/lib/api/rooms';
 import type { PublicRoom } from '@/lib/api/types';
 import { roomSlotInstant } from '@/lib/roomFilters';
+import { logger } from '@/lib/logger';
 
 export interface RoomSlot {
   startDay: string;
@@ -43,7 +44,7 @@ export function useRoomSlotAvailability(rooms: PublicRoom[], slot: RoomSlot | nu
         setResult({ key, availableRoomIds: new Set(free.map((room) => room.id)) });
       })
       .catch((err: unknown) => {
-        console.error('Vérification des disponibilités impossible', err);
+        logger.error('Vérification des disponibilités impossible', err);
         if (active) setResult({ key, availableRoomIds: null });
       });
 

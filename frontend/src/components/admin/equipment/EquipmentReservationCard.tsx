@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { AdminEquipmentReservation } from '@/lib/api';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { routes } from '@/lib/routes';
 
 type Props = { reservation: AdminEquipmentReservation };
 
@@ -24,7 +25,7 @@ export default function EquipmentReservationCard({ reservation }: Props) {
   return (
     <li>
       <Link
-        href={`/admin/materiel/demandes/${reservation.id}`}
+        href={routes.adminEquipmentRequest(reservation.id ?? 0)}
         className="group flex items-center justify-between gap-4 rounded-card border border-line bg-white p-5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-md sm:p-6"
       >
         <span className="min-w-0 flex-1">
