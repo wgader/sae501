@@ -200,6 +200,19 @@ write_edge_proxy() {
   mv "$proxy_dir/guard.caddy.tmp" "$proxy_dir/guard.caddy"
 }
 
+# Vérifie le Caddyfile, les sites des deux environnements et les fichiers du mode Cloudflare
+# avec la même image que le proxy, sans réseau.
+validate_edge() {
+  local image
+  image=$(edge_compose config --images | head -n 1)
+  docker run --rm --network none \
+    -e ACME_EMAIL="$(env_value ACME_EMAIL "$BASE_DIR/edge/.env" 2>/dev/null)" \
+    -v "$BASE_DIR/edge/Caddyfile:/etc/caddy/Caddyfile:ro" \
+    -v "$BASE_DIR/edge/sites:/etc/caddy/sites:ro" \
+    -v "$BASE_DIR/edge/proxy:/etc/caddy/proxy:ro" \
+    "$image" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+}
+
 # Le proxy d’entrée envoie tout le domaine de l’environnement au service app (front et /api).
 update_edge() {
   write_edge_proxy
@@ -225,6 +238,9 @@ $FRONTEND_DOMAIN {
 EOF
   chmod 0644 "$site_file.tmp"
   mv "$site_file.tmp" "$site_file"
+  # Le proxy sert les deux environnements : une configuration invalide les couperait tous les deux.
+  # Elle est donc vérifiée dans un conteneur jetable avant de toucher au proxy en marche.
+  validate_edge || die "configuration du proxy d’entrée invalide : proxy en marche laissé tel quel"
   edge_compose up --detach --wait --wait-timeout 60
   # Le Caddyfile est monté comme fichier unique : install(1) le remplace par un nouvel inode que le
   # conteneur ne voit pas. S'il diffère de celui chargé, on recrée le proxy pour monter le nouveau.
