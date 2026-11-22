@@ -420,6 +420,34 @@ Contrôle après bascule : `curl -sI https://feytiat.wahelgader.fr` affiche `ser
 un en-tête `cf-ray` ; une requête directe sur l’IP du VPS
 (`curl -sk --resolve feytiat.wahelgader.fr:443:<IP> https://feytiat.wahelgader.fr`) est coupée.
 
+## 8 ter. Journaux
+
+| Journal | Emplacement | Contenu |
+|---|---|---|
+| Accès (Caddy de l’application) | volume `<projet>_logs`, `caddy/access.log` | une ligne JSON par requête : méthode, chemin, statut, durée, IP réelle (`client_ip`, lue dans `X-Forwarded-For`) |
+| Erreurs (Caddy et PHP) | volume `<projet>_logs`, `caddy/error.log` | démarrage de Caddy, erreurs internes et erreurs PHP, à partir de `WARN` |
+| Application (Symfony) | volume `<projet>_logs`, `prod-AAAA-MM-JJ.log` | connexions et actions de l’audit, avertissements, erreurs ; sans adresse e-mail ni requête SQL |
+| Proxy d’entrée | volume `sae501-edge_data`, `logs/<projet>-access.log` et `logs/error.log` | requêtes HTTPS reçues d’Internet, certificats |
+
+Les fichiers de Caddy tournent à 10 Mo, 5 fichiers gardés au plus pendant 30 jours (720 h) ;
+celui de Symfony change chaque jour et garde 30 jours. Les erreurs de Symfony restent aussi
+visibles avec `docker compose logs`.
+
+Suivre les accès en direct :
+
+```bash
+docker exec sae501-prod-app-1 tail -f var/log/caddy/access.log
+```
+
+Rapport HTML des accès (visiteurs, pages, erreurs) avec GoAccess, qui lit le format de Caddy :
+
+```bash
+docker run --rm -v sae501-prod_logs:/logs:ro -v "$PWD:/out" allinurl/goaccess /logs/caddy/access.log --log-format=CADDY -o /out/rapport.html
+```
+
+Dans le navigateur, le front passe par `src/lib/logger.ts` (niveaux silly, debug, verbose, info,
+warn, error) : à partir de `warn` en production, de `debug` en développement.
+
 ## 7 bis. Copie chiffrée des sauvegardes hors du serveur
 
 Les sauvegardes quotidiennes restent sur le VPS : si le serveur est perdu, elles le sont aussi.

@@ -62,3 +62,13 @@ when@prod:
                 channels: [deprecation]
                 path: php://stderr
                 formatter: monolog.formatter.json
+            # Journal applicatif sur disque (var/log/prod-AAAA-MM-JJ.log) : connexions, actions
+            # de l'audit, avertissements et erreurs. Un fichier par jour, gardé 30 jours.
+            app_file:
+                type: rotating_file
+                path: '%kernel.logs_dir%/%kernel.environment%.log'
+                level: info
+                max_files: 30
+                # security est exclu : il écrit l'adresse e-mail ; l'audit garde l'identifiant.
+                channels: ["!event", "!doctrine", "!deprecation", "!request", "!cache", "!security"]
+                formatter: monolog.formatter.json

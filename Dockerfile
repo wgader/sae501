@@ -59,7 +59,7 @@ COPY --from=backend-builder /app/backend ./
 COPY --from=frontend-builder /src/out ./public/
 
 # Seuls var/ (cache, images, justificatifs) et l'état de Caddy restent modifiables.
-RUN mkdir -p var/media var/uploads \
+RUN mkdir -p var/media var/uploads var/log/caddy \
  && chown -R "${APP_UID}:${APP_GID}" var /data /config
 
 USER ${APP_UID}:${APP_GID}
