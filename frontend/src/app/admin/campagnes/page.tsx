@@ -10,6 +10,7 @@ import CampaignRequestsSection from '@/components/admin/campaign/CampaignRequest
 import CampaignScheduleDialog from '@/components/admin/campaign/CampaignScheduleDialog';
 import CampaignExportDialog from '@/components/admin/campaign/CampaignExportDialog';
 import CampaignHistory from '@/components/admin/campaign/CampaignHistory';
+import CampaignWishesSection from '@/components/admin/campaign/wishes/CampaignWishesSection';
 import CampaignStateDialog, { type CampaignStateAction } from '@/components/admin/campaign/CampaignStateDialog';
 import CreateCampaignDialog from '@/components/admin/campaign/CreateCampaignDialog';
 import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
@@ -236,6 +237,7 @@ export default function AdminCampaignsPage() {
               actions={actions}
               onFeedback={setFeedback}
             />
+            <CampaignWishesSection campaignId={selectedCampaign.id} onFeedback={setFeedback} />
           </>
         )}
 
