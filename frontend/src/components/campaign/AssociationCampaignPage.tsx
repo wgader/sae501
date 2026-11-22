@@ -7,6 +7,7 @@ import MyCampaignRequests from '@/components/campaign/MyCampaignRequests';
 import Notice from '@/components/ui/Notice';
 import { getMyCampaignRequests } from '@/lib/api/campaigns';
 import type { MyCampaignRequestsResponse } from '@/lib/api/types';
+import { logger } from '@/lib/logger';
 
 /**
  * Campagne annuelle des salles côté association : dépôt des demandes pendant l'ouverture,
@@ -21,7 +22,7 @@ export default function AssociationCampaignPage() {
       setData(await getMyCampaignRequests());
       setError(null);
     } catch (err) {
-      console.error('Chargement de la campagne impossible', err);
+      logger.error('Chargement de la campagne impossible', err);
       setError(err instanceof Error ? err.message : 'Impossible de charger la campagne.');
     }
   }, []);

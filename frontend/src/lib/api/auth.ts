@@ -8,6 +8,7 @@ import type {
   AssociationRequestDetail,
   AssociationRequestsResponse,
 } from './types';
+import { logger } from '@/lib/logger';
 
 export function getAccountProfile(): Promise<AccountProfile> {
   return accountRequest<AccountProfile>(
@@ -212,7 +213,7 @@ export async function signOut(): Promise<void> {
   try {
     await apiFetch('/api/auth/logout', { method: 'POST' });
   } catch (error) {
-    console.error('Déconnexion côté serveur impossible', error);
+    logger.error('Déconnexion côté serveur impossible', error);
   } finally {
     clearSessions();
   }

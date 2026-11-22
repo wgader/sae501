@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState } from 'react';
 import EquipmentReservationView from '@/components/equipment/reservation/EquipmentReservationView';
 import Notice from '@/components/ui/Notice';
 import { getPublicEquipment, type Equipment } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 type LoadState = { status: 'loading' } | { status: 'missing' } | { status: 'ready'; equipment: Equipment };
 
@@ -22,7 +23,7 @@ function EquipmentReservationPageContent() {
         setState(equipment ? { status: 'ready', equipment } : { status: 'missing' });
       })
       .catch((err: unknown) => {
-        console.error('Chargement de l’équipement impossible', err);
+        logger.error('Chargement de l’équipement impossible', err);
         if (active) setState({ status: 'missing' });
       });
     return () => {

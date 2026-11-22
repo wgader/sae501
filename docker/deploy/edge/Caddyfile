@@ -3,6 +3,22 @@
 	email {$ACME_EMAIL}
 	# Proxys de confiance (plages Cloudflare si EDGE_CLOUDFLARE=1), générés par deploy.sh.
 	import /etc/caddy/proxy/global.caddy
+
+	# Journal système du proxy : certificats, erreurs de connexion, à partir de WARN.
+	log {
+		output file /data/logs/error.log {
+			roll_size 10MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format json
+		level WARN
+	}
+}
+
+# Tout accès en HTTP est renvoyé définitivement vers HTTPS (le défi Let's Encrypt reste servi).
+http:// {
+	redir https://{host}{uri} permanent
 }
 
 # Définit (origin_guard), vide sauf derrière Cloudflare ; généré par deploy.sh.
@@ -27,7 +43,6 @@ import /etc/caddy/proxy/guard.caddy
 		-Via
 		-X-Powered-By
 	}
-	log
 }
 
 # Un fichier par environnement, écrit par deploy.sh à partir de son .env.

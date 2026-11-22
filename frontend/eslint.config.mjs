@@ -19,6 +19,13 @@ const eslintConfig = defineConfig([
       "tailwindcss/no-arbitrary-value": "warn",
     },
   },
+  {
+    // Dans l'application, les messages passent par src/lib/logger.ts, qui filtre par niveau.
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-console": "error",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

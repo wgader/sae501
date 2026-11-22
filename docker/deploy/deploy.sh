@@ -209,6 +209,14 @@ update_edge() {
 # Généré par deploy.sh pour $PROJECT à partir de $ENV_FILE : ne pas modifier à la main.
 $FRONTEND_DOMAIN {
 	import common
+	log {
+		output file /data/logs/$PROJECT-access.log {
+			roll_size 10MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format json
+	}
 	# Symfony (limiteurs de connexion) lit l’IP du visiteur dans X-Forwarded-For.
 	reverse_proxy $PROJECT-app:80 {
 		header_up X-Forwarded-For {client_ip}

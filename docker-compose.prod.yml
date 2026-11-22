@@ -66,6 +66,8 @@ services:
       # Images et justificatifs, hors de la racine web : Symfony les sert après contrôle des droits.
       - uploads:/app/backend/var/media
       - private_uploads:/app/backend/var/uploads
+      # Journaux de Caddy (access.log, error.log) et de Symfony, conservés entre deux déploiements.
+      - logs:/app/backend/var/log
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -161,6 +163,8 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME}_backend_uploads
   private_uploads:
     name: ${COMPOSE_PROJECT_NAME}_backend_private_uploads
+  logs:
+    name: ${COMPOSE_PROJECT_NAME}_logs
   caddy_data:
     name: ${COMPOSE_PROJECT_NAME}_caddy_data
   caddy_config:
