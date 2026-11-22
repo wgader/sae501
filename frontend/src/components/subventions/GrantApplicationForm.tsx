@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createGrantDraft,
   getGrantDocuments,
@@ -14,10 +14,10 @@ import {
   updateGrantDraft,
 } from '@/lib/api';
 
-type Step = 'project' | 'documents';
+type TypologieAide = 'Fonctionnement' | 'Projet';
 
 type FormState = {
-  typeSubvention: 'Fonctionnement' | 'Projet';
+  typeSubvention: TypologieAide;
   intituleProjet: string;
   description: string;
   publicCible: string;
@@ -29,6 +29,8 @@ type FormState = {
   lignesBudget: GrantBudgetLine[];
 };
 
+type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 const municipalGrantLine: GrantBudgetLine = {
   type: 'recette',
   categorie: 'subvention_mairie',
@@ -39,7 +41,7 @@ const municipalGrantLine: GrantBudgetLine = {
 function createEmptyForm(): FormState {
   return {
     typeSubvention: 'Projet',
-    intituleProjet: 'Demande de subvention',
+    intituleProjet: '',
     description: '',
     publicCible: '',
     dateDebutProjet: '',
@@ -53,20 +55,20 @@ function createEmptyForm(): FormState {
 
 function formFromDraft(draft: GrantDraft): FormState {
   return {
-    typeSubvention: draft.typeSubvention,
-    intituleProjet: draft.intituleProjet,
+    typeSubvention: draft.typeSubvention === 'Fonctionnement' ? 'Fonctionnement' : 'Projet',
+    intituleProjet: draft.intituleProjet ?? '',
     description: draft.description ?? '',
     publicCible: draft.publicCible ?? '',
     dateDebutProjet: draft.dateDebutProjet ?? '',
     dateFinProjet: draft.dateFinProjet ?? '',
-    montantDemande: draft.montantDemande,
+    montantDemande: draft.montantDemande ?? '',
     bic: draft.bic ?? '',
     iban: draft.iban ?? '',
     lignesBudget: [
       ...(Array.isArray(draft.lignesBudget)
         ? draft.lignesBudget.filter((line) => line.categorie !== 'subvention_mairie')
         : []),
-      { ...municipalGrantLine, montant: draft.montantDemande },
+      { ...municipalGrantLine, montant: draft.montantDemande ?? '0.00' },
     ],
   };
 }
@@ -112,36 +114,52 @@ function isValidIban(value: string): boolean {
   return remainder === 1;
 }
 
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
-}
-
 export default function GrantApplicationForm() {
   const [drafts, setDrafts] = useState<GrantDraft[]>([]);
   const [activeDraft, setActiveDraft] = useState<GrantDraft | null>(null);
   const [form, setForm] = useState<FormState>(createEmptyForm);
-  const [step, setStep] = useState<Step>('project');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingCerfa, setUploadingCerfa] = useState(false);
+  const [uploadingOther, setUploadingOther] = useState(false);
   const [pageError, setPageError] = useState('');
-  const [documentError, setDocumentError] = useState('');
   const [notice, setNotice] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<GrantDocument[]>([]);
-  const [documentType, setDocumentType] = useState('Rapport moral');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileInputKey, setFileInputKey] = useState(0);
+  const [otherDocumentType, setOtherDocumentType] = useState('Rapport moral');
+  const [showDraftList, setShowDraftList] = useState(false);
 
+  // Autosave states
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const formRef = useRef<FormState>(form);
+  const activeDraftRef = useRef<GrantDraft | null>(activeDraft);
+  const isDirtyRef = useRef(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const cerfaFileInputRef = useRef<HTMLInputElement | null>(null);
+  const otherFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    activeDraftRef.current = activeDraft;
+  }, [activeDraft]);
+
+  // Load existing drafts on initial render
   useEffect(() => {
     let active = true;
     getGrantDrafts()
       .then((items) => {
-        if (active) setDrafts(items);
+        if (!active) return;
+        setDrafts(items);
+        if (items.length > 0 && !activeDraftRef.current) {
+          const latest = items[0];
+          setActiveDraft(latest);
+          setForm(formFromDraft(latest));
+        }
       })
       .catch((error: unknown) => {
         console.error('Unable to load grant drafts.', error);
@@ -156,6 +174,7 @@ export default function GrantApplicationForm() {
     };
   }, []);
 
+  // Load documents for active draft
   useEffect(() => {
     if (!activeDraft) return;
 
@@ -166,7 +185,6 @@ export default function GrantApplicationForm() {
       })
       .catch((error: unknown) => {
         console.error('Unable to load grant documents.', error);
-        if (active) setDocumentError(error instanceof Error ? error.message : 'Impossible de charger les justificatifs.');
       });
 
     return () => {
@@ -174,75 +192,217 @@ export default function GrantApplicationForm() {
     };
   }, [activeDraft]);
 
-  const totals = useMemo(() => {
-    let expenses = 0;
-    let revenues = 0;
-    let hasInvalidAmount = false;
-    let hasMissingAmount = false;
-    let hasMissingLabel = false;
+  // Trigger autosave with debounce (Checklist item 3)
+  useEffect(() => {
+    if (!isDirtyRef.current) return;
+    if (!form.intituleProjet.trim()) return;
 
-    for (const line of form.lignesBudget) {
-      const cents = line.categorie === 'subvention_mairie'
-        ? toCents(form.montantDemande)
-        : toCents(line.montant);
-      if (cents === null) {
-        hasInvalidAmount = true;
-        continue;
-      }
-
-      if (line.type === 'depense') expenses += cents;
-      else revenues += cents;
-
-      if (line.categorie !== 'subvention_mairie' && line.intitule.trim() === '') hasMissingLabel = true;
-      if (line.categorie !== 'subvention_mairie' && line.montant.trim() === '') hasMissingAmount = true;
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
     }
 
-    const requestedAmount = toCents(form.montantDemande);
-    return {
-      expenses,
-      revenues,
-      difference: expenses - revenues,
-      balanced: expenses === revenues,
-      hasInvalidAmount,
-      hasMissingAmount,
-      hasMissingLabel,
-      requestedIsValid: requestedAmount !== null && requestedAmount > 0,
+    autosaveTimerRef.current = setTimeout(async () => {
+      const currentForm = formRef.current;
+      const currentDraft = activeDraftRef.current;
+      if (!currentForm.intituleProjet.trim()) return;
+
+      setAutosaveStatus('saving');
+      try {
+        const payload = toPayload(currentForm);
+        const saved = currentDraft
+          ? await updateGrantDraft(currentDraft.id, payload)
+          : await createGrantDraft(payload);
+
+        setActiveDraft(saved);
+        setDrafts((prev) => [saved, ...prev.filter((d) => d.id !== saved.id)]);
+        setAutosaveStatus('saved');
+        const now = new Date();
+        setLastSavedAt(
+          now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        );
+        isDirtyRef.current = false;
+      } catch (err) {
+        console.error('Autosave error:', err);
+        setAutosaveStatus('error');
+      }
+    }, 2000);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
     };
   }, [form]);
+
+  // Separate cerfa from other documents
+  const cerfaDocument = useMemo(() => {
+    return documents.find(
+      (doc) =>
+        doc.typeDocument.toLowerCase().includes('cerfa') ||
+        doc.typeDocument.toLowerCase().includes('formulaire') ||
+        doc.originalName.toLowerCase().includes('cerfa'),
+    );
+  }, [documents]);
+
+  const otherDocuments = useMemo(() => {
+    return documents.filter((doc) => doc.id !== cerfaDocument?.id);
+  }, [documents, cerfaDocument]);
+
+  function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
+    isDirtyRef.current = true;
+    setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  // Checklist Item 2: Strict numerical input controls for positive currency with max 2 decimals
+  function handleAmountChange(rawValue: string) {
+    const trimmed = rawValue.trim();
+    if (trimmed === '') {
+      updateField('montantDemande', '');
+      return;
+    }
+
+    const normalized = trimmed.replace(',', '.');
+    // Only allow positive numbers with up to 2 decimal places
+    if (/^\d+(\.\d{0,2})?$/.test(normalized)) {
+      updateField('montantDemande', trimmed);
+    }
+  }
+
+  function handleAmountKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    // Disallow negative sign, exponential notation, etc.
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
+    }
+  }
 
   function applyDraft(draft: GrantDraft) {
     setActiveDraft(draft);
     setForm(formFromDraft(draft));
-    setStep(draft.budgetValide ? 'documents' : 'project');
     setFieldErrors({});
-    setDocumentError('');
     setPageError('');
-    setNotice('');
-    setSelectedFile(null);
-    setDocuments([]);
+    setNotice(`Brouillon « ${draft.intituleProjet || 'Sans titre'} » chargé.`);
+    setShowDraftList(false);
+    isDirtyRef.current = false;
   }
 
-  async function createDraft(): Promise<GrantDraft | null> {
-    setSaving(true);
+  function startNewDraft() {
+    setActiveDraft(null);
+    setForm(createEmptyForm());
+    setDocuments([]);
+    setFieldErrors({});
+    setPageError('');
+    setNotice('');
+    setShowDraftList(false);
+    isDirtyRef.current = false;
+  }
+
+  async function handleCerfaUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    let targetDraft = activeDraft;
+    if (!targetDraft) {
+      if (!form.intituleProjet.trim()) {
+        setPageError('Veuillez renseigner un nom de demande avant d’ajouter un document.');
+        return;
+      }
+      try {
+        targetDraft = await createGrantDraft(toPayload(form));
+        setActiveDraft(targetDraft);
+        setDrafts((prev) => [targetDraft!, ...prev]);
+      } catch (err) {
+        setPageError(err instanceof Error ? err.message : 'Impossible d’initialiser le brouillon.');
+        return;
+      }
+    }
+
+    setUploadingCerfa(true);
     setPageError('');
     try {
-      const draft = await createGrantDraft(toPayload(createEmptyForm()));
-      setActiveDraft(draft);
-      setDrafts((current) => [draft, ...current]);
-      setForm(createEmptyForm());
-      setStep('project');
-      setDocuments([]);
-      return draft;
-    } catch (error) {
-      console.error('Unable to create grant draft.', error);
-      setPageError(error instanceof Error ? error.message : 'Impossible de créer le brouillon.');
-      return null;
+      const doc = await uploadGrantDocument(targetDraft.id, file, 'Formulaire de subvention');
+      setDocuments((prev) => [...prev.filter((d) => d.id !== cerfaDocument?.id), doc]);
+      setNotice('Formulaire Cerfa téléversé avec succès.');
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Impossible de téléverser le formulaire.');
     } finally {
-      setSaving(false);
+      setUploadingCerfa(false);
+      if (cerfaFileInputRef.current) cerfaFileInputRef.current.value = '';
     }
   }
 
-  async function saveDraft(): Promise<GrantDraft | null> {
+  async function handleOtherDocumentUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    let targetDraft = activeDraft;
+    if (!targetDraft) {
+      if (!form.intituleProjet.trim()) {
+        setPageError('Veuillez renseigner un nom de demande avant d’ajouter un document.');
+        return;
+      }
+      try {
+        targetDraft = await createGrantDraft(toPayload(form));
+        setActiveDraft(targetDraft);
+        setDrafts((prev) => [targetDraft!, ...prev]);
+      } catch (err) {
+        setPageError(err instanceof Error ? err.message : 'Impossible d’initialiser le brouillon.');
+        return;
+      }
+    }
+
+    setUploadingOther(true);
+    setPageError('');
+    try {
+      const doc = await uploadGrantDocument(targetDraft.id, file, otherDocumentType);
+      setDocuments((prev) => [...prev, doc]);
+      setNotice(`Document « ${otherDocumentType} » ajouté avec succès.`);
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Impossible de téléverser le document.');
+    } finally {
+      setUploadingOther(false);
+      if (otherFileInputRef.current) otherFileInputRef.current.value = '';
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const errors: Record<string, string> = {};
+
+    if (!form.intituleProjet.trim()) {
+      errors.intituleProjet = 'Le nom de la demande est obligatoire.';
+    }
+
+    const cents = toCents(form.montantDemande);
+    if (cents === null || cents <= 0) {
+      errors.montantDemande = 'Le montant demandé doit être un montant positif à deux décimales.';
+    } else if (cents > 100_000_000) {
+      errors.montantDemande = 'Le montant demandé dépasse la limite autorisée de 1 000 000 €.';
+    }
+
+    if (!form.bic.trim()) {
+      errors.bic = 'Le BIC est obligatoire.';
+    } else if (!isValidBic(form.bic)) {
+      errors.bic = 'Le BIC doit contenir 8 ou 11 caractères au format bancaire.';
+    }
+
+    if (!form.iban.trim()) {
+      errors.iban = 'L’IBAN est obligatoire.';
+    } else if (!isValidIban(form.iban)) {
+      errors.iban = 'L’IBAN est incomplet ou invalide.';
+    }
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setPageError('Veuillez corriger les champs signalés avant d’envoyer la demande.');
+      return;
+    }
+
     setSaving(true);
     setPageError('');
     setNotice('');
@@ -253,388 +413,554 @@ export default function GrantApplicationForm() {
         : await createGrantDraft(payload);
 
       setActiveDraft(saved);
-      setDrafts((current) => [saved, ...current.filter((draft) => draft.id !== saved.id)]);
-      setNotice('Votre brouillon a été enregistré.');
-      return saved;
+      setDrafts((prev) => [saved, ...prev.filter((d) => d.id !== saved.id)]);
+      isDirtyRef.current = false;
+      setNotice('Votre demande de subvention a été enregistrée et transmise.');
     } catch (error) {
-      console.error('Unable to save grant draft.', error);
-      setPageError(error instanceof Error ? error.message : 'Impossible d’enregistrer le brouillon.');
-      return null;
+      console.error('Submit error:', error);
+      setPageError(error instanceof Error ? error.message : 'Une erreur est survenue lors de l’enregistrement.');
     } finally {
       setSaving(false);
     }
   }
 
-  async function continueToDocuments() {
-    const errors: Record<string, string> = {};
-    if (!form.intituleProjet.trim()) errors.intituleProjet = 'Le nom de la demande est obligatoire.';
-    if (!totals.requestedIsValid) errors.montantDemande = 'Le montant demandé doit être un montant positif.';
-    if (totals.requestedIsValid) {
-      const cents = toCents(form.montantDemande);
-      if (cents !== null && cents > 100_000_000) {
-        errors.montantDemande = 'Le montant demandé dépasse la limite autorisée de 1 000 000 €.';
-      }
-    }
-    if (!form.bic.trim()) errors.bic = 'Le BIC est obligatoire.';
-    else if (!isValidBic(form.bic)) errors.bic = 'Le BIC doit contenir 8 ou 11 caractères au format bancaire.';
-    if (!form.iban.trim()) errors.iban = 'L’IBAN est obligatoire.';
-    else if (!isValidIban(form.iban)) errors.iban = 'L’IBAN est incomplet ou invalide.';
-
-    setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-
-    const saved = await saveDraft();
-    if (saved) {
-      setActiveDraft(saved);
-      setStep('documents');
-      setFieldErrors({});
-      setNotice('Votre demande a été enregistrée. Vous pouvez maintenant ajouter les pièces justificatives.');
-    }
-  }
-
-  async function uploadDocument(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!activeDraft || !selectedFile) {
-      setDocumentError('Sélectionnez un fichier à téléverser.');
-      return;
-    }
-
-    setUploading(true);
-    setDocumentError('');
-    try {
-      const document = await uploadGrantDocument(activeDraft.id, selectedFile, documentType);
-      setDocuments((current) => [...current, document]);
-      setSelectedFile(null);
-      setFileInputKey((current) => current + 1);
-      setNotice('Le justificatif a été téléversé.');
-    } catch (error) {
-      console.error('Unable to upload grant document.', error);
-      setDocumentError(error instanceof Error ? error.message : 'Impossible de téléverser ce justificatif.');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
-    setForm((current) => ({ ...current, [field]: value }));
-    setFieldErrors((current) => {
-      const next = { ...current };
-      delete next[field];
-      return next;
-    });
-  }
-
-  function returnToDraftList() {
-    setActiveDraft(null);
-    setForm(createEmptyForm());
-    setStep('project');
-    setPageError('');
-    setNotice('');
-    setDocumentError('');
-    setDocuments([]);
-  }
-
-  const fieldClass = (field: string) =>
-    `mt-1.5 w-full rounded-control border bg-paper px-4 text-sm text-ink outline-none focus:ring-2 ${
-      fieldErrors[field]
-        ? 'border-danger focus:border-danger focus:ring-danger/20'
-        : 'border-line focus:border-primary focus:ring-primary/20'
-    }`;
-
   if (loading) {
     return (
-      <main className="min-h-screen bg-paper px-5 py-8 sm:px-8 lg:px-12">
-        <p role="status" className="mx-auto max-w-4xl text-sm text-muted">Chargement de vos brouillons…</p>
-      </main>
-    );
-  }
-
-  if (!activeDraft) {
-    return (
-      <main className="min-h-screen bg-paper px-5 py-8 sm:px-8 lg:px-12">
+      <main className="min-h-screen bg-paper px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <button type="button" onClick={() => window.history.back()} className="mb-5 text-xs font-bold uppercase tracking-label text-muted hover:text-primary">
-            ← Retour
-          </button>
-          <header>
-            <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Financer mon projet</p>
-            <h1 className="mt-2 text-3xl font-black tracking-display text-ink sm:text-4xl">Demandes de subvention</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-copy text-muted">
-              Préparez une demande d’aide au fonctionnement ou le financement d’un projet ou événement.
-            </p>
-          </header>
-
-          {pageError && <p role="alert" className="mt-6 rounded-control border border-danger/30 bg-danger/5 p-4 text-sm text-danger">{pageError}</p>}
-
-          <section aria-labelledby="grant-drafts-heading" className="mt-8">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h2 id="grant-drafts-heading" className="text-xl font-bold text-ink">Vos brouillons</h2>
-                <p className="mt-1 text-sm text-muted">Reprenez une demande enregistrée ou commencez-en une nouvelle.</p>
-              </div>
-              <button
-                type="button"
-                onClick={createDraft}
-                disabled={saving}
-                className="inline-flex h-11 items-center justify-center rounded-control bg-primary px-5 text-xs font-bold uppercase tracking-label text-white hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60"
-              >
-                {saving ? 'Création…' : 'Nouvelle demande'}
-              </button>
-            </div>
-
-            {drafts.length > 0 ? (
-              <ul className="mt-5 grid gap-3">
-                {drafts.map((draft) => (
-                  <li key={draft.id}>
-                    <button
-                      type="button"
-                      onClick={() => applyDraft(draft)}
-                      className="flex w-full flex-wrap items-center justify-between gap-4 rounded-card border border-line bg-paper p-5 text-left hover:border-primary"
-                    >
-                      <span>
-                        <span className="block font-bold text-ink">{draft.intituleProjet || 'Demande sans intitulé'}</span>
-                        <span className="mt-1 block text-xs text-muted">
-                          {draft.typeSubvention} · Brouillon
-                        </span>
-                      </span>
-                      <span className="text-xs font-bold uppercase tracking-label text-primary">Reprendre →</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-5 rounded-card border border-dashed border-line bg-paper p-8 text-center text-sm text-muted">
-                Aucun brouillon enregistré pour le moment.
-              </p>
-            )}
-          </section>
+          <p role="status" className="text-sm text-muted">Chargement de votre demande…</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-paper px-5 py-8 sm:px-8 lg:px-12">
+    <main className="min-h-screen bg-paper px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        <button type="button" onClick={returnToDraftList} className="mb-5 text-xs font-bold uppercase tracking-label text-muted hover:text-primary">
-          ← Retour
-        </button>
+        {/* Navigation retour */}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-label text-muted hover:text-ink transition-colors"
+          >
+            <span aria-hidden="true">←</span> RETOUR
+          </button>
 
-        <header>
-          <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Financer mon projet</p>
-          <h1 className="mt-2 text-3xl font-black tracking-display text-ink sm:text-4xl">Demande de subvention</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-copy text-muted">
-            Complétez les informations du dossier. Votre progression reste enregistrée en brouillon.
+          {drafts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowDraftList(!showDraftList)}
+              className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
+            >
+              {showDraftList ? 'Masquer mes brouillons' : `Mes brouillons (${drafts.length})`}
+            </button>
+          )}
+        </div>
+
+        {/* Panneau repliable des brouillons existants */}
+        {showDraftList && (
+          <aside aria-label="Liste des brouillons" className="mt-4 rounded-control border border-line bg-white p-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-label text-ink">Brouillons enregistrés</h3>
+              <button
+                type="button"
+                onClick={startNewDraft}
+                className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
+              >
+                + Nouveau formulaire
+              </button>
+            </div>
+            <ul className="mt-3 divide-y divide-line">
+              {drafts.map((d) => (
+                <li key={d.id} className="flex items-center justify-between py-2 text-sm">
+                  <span className="font-medium text-ink">{d.intituleProjet || 'Demande sans nom'}</span>
+                  <button
+                    type="button"
+                    onClick={() => applyDraft(d)}
+                    className="text-xs font-bold uppercase tracking-label text-primary hover:underline"
+                  >
+                    Reprendre →
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+
+        {/* Header de la page */}
+        <header className="mt-6">
+          <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
+            FINANCER MON PROJET
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-display text-ink sm:text-4xl lg:text-5xl">
+            Demande de subvention
+          </h1>
+          <p className="mt-2 text-sm leading-copy text-muted sm:text-base">
+            Complétez les informations et ajoutez les documents nécessaires à l’étude de votre demande.
           </p>
         </header>
 
-        {pageError && <p role="alert" className="mt-5 rounded-control border border-danger/30 bg-danger/5 p-4 text-sm text-danger">{pageError}</p>}
-        {notice && <p role="status" className="mt-5 rounded-control bg-primary/5 p-4 text-sm text-primary">{notice}</p>}
+        {/* Statuts d'autosave et notifications */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 min-h-6">
+          {autosaveStatus === 'saving' && (
+            <span role="status" className="inline-flex items-center gap-1.5 text-xs text-primary">
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              Enregistrement automatique en cours…
+            </span>
+          )}
+          {autosaveStatus === 'saved' && lastSavedAt && (
+            <span role="status" className="inline-flex items-center gap-1 text-xs text-moss">
+              <span>✓</span> Brouillon enregistré automatiquement à {lastSavedAt}
+            </span>
+          )}
+          {autosaveStatus === 'error' && (
+            <span role="status" className="text-xs text-danger">
+              Erreur d’enregistrement automatique.
+            </span>
+          )}
+        </div>
 
-        {step === 'project' && (
-          <section aria-labelledby="project-heading" className="mt-6 overflow-hidden rounded-card border border-line bg-white shadow-xs">
-            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-5 sm:px-8">
-              <div>
-                <span className="rounded-pill bg-Misty-Rose px-3 py-1 text-caption font-bold uppercase tracking-label text-danger">NOUVEAU</span>
-                <h2 id="project-heading" className="mt-3 text-xl font-bold text-ink">Votre demande</h2>
-                <p className="mt-1 text-sm text-muted">Complétez les informations nécessaires à l’étude de votre demande.</p>
+        {pageError && (
+          <p role="alert" className="mt-4 rounded-control border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
+            {pageError}
+          </p>
+        )}
+        {notice && (
+          <p role="status" className="mt-4 rounded-control border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+            {notice}
+          </p>
+        )}
+
+        {/* Carte blanche principale du formulaire */}
+        <form onSubmit={handleSubmit} className="mt-6 rounded-card border border-line/60 bg-white p-6 shadow-xs sm:p-10 space-y-10">
+
+          {/* SECTION 1: VOTRE DEMANDE */}
+          <section aria-labelledby="section-votre-demande">
+            <span className="inline-flex rounded-pill bg-Misty-Rose px-3 py-1 text-caption font-bold uppercase tracking-label text-danger">
+              {form.typeSubvention === 'Projet' ? 'PROJET' : 'FONCTIONNEMENT'}
+            </span>
+            <h2 id="section-votre-demande" className="mt-3 text-xl font-bold text-ink">
+              Votre demande
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              Donnez un nom clair à votre dossier et précisez son objet.
+            </p>
+
+            {/* Checklist Item 1: Saisie guidée de la typologie d'aide */}
+            <div className="mt-6">
+              <span className="block text-xs font-bold uppercase tracking-label text-ink">
+                Typologie d’aide
+              </span>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => updateField('typeSubvention', 'Projet')}
+                  className={`flex flex-col text-left p-3.5 rounded-control transition-colors ${
+                    form.typeSubvention === 'Projet'
+                      ? 'bg-primary-soft/40 ring-2 ring-primary text-ink'
+                      : 'bg-paper text-muted hover:text-ink'
+                  }`}
+                >
+                  <span className="text-sm font-bold text-ink">Action ou projet ponctuel</span>
+                  <span className="mt-1 text-xs">Événement, action spécifique (Rubrique N° 6 du formulaire).</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => updateField('typeSubvention', 'Fonctionnement')}
+                  className={`flex flex-col text-left p-3.5 rounded-control transition-colors ${
+                    form.typeSubvention === 'Fonctionnement'
+                      ? 'bg-primary-soft/40 ring-2 ring-primary text-ink'
+                      : 'bg-paper text-muted hover:text-ink'
+                  }`}
+                >
+                  <span className="text-sm font-bold text-ink">Aide au fonctionnement</span>
+                  <span className="mt-1 text-xs">Financement régulier des activités courantes de l’association.</span>
+                </button>
               </div>
             </div>
 
-            <div className="grid gap-0">
-              <div className="border-b border-line px-5 py-6 sm:px-8">
-                <label className="block text-xs font-bold uppercase tracking-label text-ink">
-                  Nom de la demande
+            {/* Champ NOM DE LA DEMANDE */}
+            <div className="mt-6">
+              <label htmlFor="intituleProjet" className="block text-xs font-bold uppercase tracking-label text-ink">
+                NOM DE LA DEMANDE
+              </label>
+              <input
+                id="intituleProjet"
+                type="text"
+                value={form.intituleProjet}
+                onChange={(event) => updateField('intituleProjet', event.target.value)}
+                aria-invalid={Boolean(fieldErrors.intituleProjet)}
+                className={`mt-2 h-12 w-full rounded-control bg-paper px-4 text-sm text-ink outline-none transition-colors placeholder:text-muted/60 focus:ring-2 focus:ring-primary/20 ${
+                  fieldErrors.intituleProjet ? 'border border-danger' : 'border border-transparent'
+                }`}
+                placeholder="Exemple : Festival associatif 2025"
+              />
+              {fieldErrors.intituleProjet && (
+                <p role="alert" className="mt-1.5 text-xs text-danger">{fieldErrors.intituleProjet}</p>
+              )}
+            </div>
+
+            {/* Champ MONTANT DE LA SUBVENTION avec restriction monétaire stricte (Checklist item 2) */}
+            <div className="mt-6">
+              <label htmlFor="montantDemande" className="block text-xs font-bold uppercase tracking-label text-ink">
+                MONTANT DE LA SUBVENTION
+              </label>
+              <input
+                id="montantDemande"
+                type="text"
+                inputMode="decimal"
+                value={form.montantDemande}
+                onChange={(event) => handleAmountChange(event.target.value)}
+                onKeyDown={handleAmountKeyDown}
+                aria-invalid={Boolean(fieldErrors.montantDemande)}
+                className={`mt-2 h-12 w-full rounded-control bg-paper px-4 text-sm text-ink outline-none transition-colors placeholder:text-muted/60 focus:ring-2 focus:ring-primary/20 ${
+                  fieldErrors.montantDemande ? 'border border-danger' : 'border border-transparent'
+                }`}
+                placeholder="Exemple : 2500"
+              />
+              {fieldErrors.montantDemande && (
+                <p role="alert" className="mt-1.5 text-xs text-danger">{fieldErrors.montantDemande}</p>
+              )}
+            </div>
+
+            {/* Description du projet */}
+            <div className="mt-6">
+              <label htmlFor="description" className="block text-xs font-bold uppercase tracking-label text-ink">
+                DESCRIPTION DU PROJET OU DES OBJECTIFS
+              </label>
+              <textarea
+                id="description"
+                rows={3}
+                value={form.description}
+                onChange={(event) => updateField('description', event.target.value)}
+                className="mt-2 w-full rounded-control bg-paper p-4 text-sm text-ink outline-none transition-colors placeholder:text-muted/60 focus:ring-2 focus:ring-primary/20 border border-transparent resize-y"
+                placeholder="Décrivez les objectifs, les actions prévues et l'utilité du financement sollicité…"
+              />
+            </div>
+
+            {/* Détails complémentaires si Projet */}
+            {form.typeSubvention === 'Projet' && (
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label htmlFor="publicCible" className="block text-xs font-bold uppercase tracking-label text-ink">
+                    PUBLIC CIBLE
+                  </label>
                   <input
-                    value={form.intituleProjet}
-                    onChange={(event) => updateField('intituleProjet', event.target.value)}
-                    aria-invalid={Boolean(fieldErrors.intituleProjet)}
-                    className={`${fieldClass('intituleProjet')} h-12`}
-                    placeholder="Exemple : Festival associatif 2026"
+                    id="publicCible"
+                    type="text"
+                    value={form.publicCible}
+                    onChange={(event) => updateField('publicCible', event.target.value)}
+                    className="mt-2 h-12 w-full rounded-control bg-paper px-4 text-sm text-ink outline-none transition-colors placeholder:text-muted/60 focus:ring-2 focus:ring-primary/20 border border-transparent"
+                    placeholder="Exemple : Familles, jeunes…"
                   />
-                  {fieldErrors.intituleProjet && <span className="mt-1 block text-xs font-normal text-danger">{fieldErrors.intituleProjet}</span>}
-                </label>
+                </div>
+                <div>
+                  <label htmlFor="dateDebutProjet" className="block text-xs font-bold uppercase tracking-label text-ink">
+                    DATE DE DÉBUT
+                  </label>
+                  <input
+                    id="dateDebutProjet"
+                    type="date"
+                    value={form.dateDebutProjet}
+                    onChange={(event) => updateField('dateDebutProjet', event.target.value)}
+                    className="mt-2 h-12 w-full rounded-control bg-paper px-4 text-sm text-ink outline-none transition-colors focus:ring-2 focus:ring-primary/20 border border-transparent"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dateFinProjet" className="block text-xs font-bold uppercase tracking-label text-ink">
+                    DATE DE FIN
+                  </label>
+                  <input
+                    id="dateFinProjet"
+                    type="date"
+                    value={form.dateFinProjet}
+                    onChange={(event) => updateField('dateFinProjet', event.target.value)}
+                    className="mt-2 h-12 w-full rounded-control bg-paper px-4 text-sm text-ink outline-none transition-colors focus:ring-2 focus:ring-primary/20 border border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* SECTION 2: DOCUMENTS UTILES */}
+          <section aria-labelledby="section-documents-utiles">
+            <span className="inline-flex rounded-pill bg-Lime-Cream px-3 py-1 text-caption font-bold uppercase tracking-label text-ink">
+              RESSOURCES
+            </span>
+            <h2 id="section-documents-utiles" className="mt-3 text-xl font-bold text-ink">
+              Documents utiles
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              Téléchargez les modèles avant de compléter votre dossier.
+            </p>
+
+            <div className="mt-6 grid gap-4">
+              <div className="flex items-center justify-between border-b border-line pb-4">
+                <span className="text-sm font-semibold text-ink">Formulaire de subvention à télécharger</span>
+                <a
+                  href="/assets/cerfa_12156-06-1.pdf"
+                  download
+                  className="inline-flex h-9 items-center rounded-pill bg-black px-5 text-caption font-bold uppercase tracking-label text-white hover:opacity-90 transition-opacity"
+                >
+                  TÉLÉCHARGER
+                </a>
+              </div>
+              <div className="flex items-center justify-between border-b border-line pb-4">
+                <span className="text-sm font-semibold text-ink">Notice</span>
+                <a
+                  href="/assets/notice_5178104-1.pdf"
+                  download
+                  className="inline-flex h-9 items-center rounded-pill bg-black px-5 text-caption font-bold uppercase tracking-label text-white hover:opacity-90 transition-opacity"
+                >
+                  TÉLÉCHARGER
+                </a>
+              </div>
+            </div>
+
+            {/* Cadre d'instructions et Contrat d'engagement républicain demandé par l'utilisateur */}
+            <div className="mt-6 rounded-soft border border-line bg-paper/60 p-5">
+              <h3 className="text-sm font-bold text-ink">Avant de déposer la demande</h3>
+              <div className="mt-3 grid gap-3 text-xs leading-copy text-muted">
+                <p>
+                  La rubrique N° 6 n’est à remplir que si vous sollicitez le financement d’une action ou d’un projet ponctuel, anciennement appelé subvention exceptionnelle.
+                </p>
+                <p>
+                  Accompagnez votre demande d’un RIB et du rapport moral de la dernière assemblée générale. À défaut, fournissez un bilan de votre activité récente.
+                </p>
+                <p>
+                  Pour la partie financière, vous pouvez remplacer les tableaux du dossier par vos propres tableaux de présentation pour la rubrique N° 5, Budget de l’association.
+                </p>
+                <p className="font-semibold text-ink">
+                  Dans tous les cas, remplissez attentivement la rubrique N° 7 et signez la demande.
+                </p>
               </div>
 
-              <div className="border-b border-line px-5 py-6 sm:px-8">
-                <label className="block text-xs font-bold uppercase tracking-label text-ink">
-                  Montant de la subvention demandé à la mairie (€)
-                  <input type="text" inputMode="decimal" value={form.montantDemande} onChange={(event) => updateField('montantDemande', event.target.value)} aria-invalid={Boolean(fieldErrors.montantDemande)} className={`${fieldClass('montantDemande')} h-12`} placeholder="Exemple : 2000,00" />
-                  {fieldErrors.montantDemande && <span className="mt-1 block text-xs font-normal text-danger">{fieldErrors.montantDemande}</span>}
-                </label>
-              </div>
-
-              <section aria-labelledby="resources-heading" className="border-b border-line px-5 py-6 sm:px-8">
-                <span className="rounded-pill bg-Misty-Rose px-3 py-1 text-caption font-bold uppercase tracking-label text-danger">Ressources</span>
-                <h3 id="resources-heading" className="mt-3 text-xl font-bold text-ink">Documents utiles</h3>
-                <p className="mt-1 text-xs text-muted">Téléchargez les modèles avant de compléter votre dossier.</p>
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-ink">Formulaire de subvention à télécharger</p>
-                  <div className="flex items-center gap-3">
-                    <a href="/assets/cerfa_12156-06-1.pdf" download className="inline-flex h-9 items-center rounded-pill bg-black px-4 text-caption font-bold uppercase tracking-label text-white hover:opacity-90">
-                      Télécharger
-                    </a>
-                    <a href="/assets/notice_5178104-1.pdf" download className="text-xs font-bold text-ink hover:text-primary">
-                      Notice
-                    </a>
-                  </div>
-                </div>
-              </section>
-
-              <section aria-labelledby="application-notice-heading" className="border-b border-line px-5 py-6 sm:px-8">
-                <h3 id="application-notice-heading" className="text-sm font-bold text-ink">Avant de déposer la demande</h3>
-                <div className="mt-4 grid gap-4">
-                  <p className="text-sm leading-copy text-muted">
-                    La rubrique N° 6 n’est à remplir que si vous sollicitez le financement d’une action ou d’un projet ponctuel,
-                    anciennement appelé subvention exceptionnelle.
-                  </p>
-                  <p className="text-sm leading-copy text-muted">
-                    Accompagnez votre demande d’un RIB et du rapport moral de la dernière assemblée générale.
-                    À défaut, fournissez un bilan de votre activité récente.
-                  </p>
-                  <p className="text-sm leading-copy text-muted">
-                    Pour la partie financière, vous pouvez remplacer les tableaux du dossier par vos propres tableaux de présentation
-                    pour la rubrique N° 5, Budget de l’association.
-                  </p>
-                  <p className="text-sm font-semibold leading-copy text-ink">
-                    Dans tous les cas, remplissez attentivement la rubrique N° 7 et signez la demande.
-                  </p>
-                </div>
-
-                <div className="mt-5 rounded-soft border border-primary/20 bg-primary/5 p-4">
-                  <p className="text-sm font-bold text-ink">Contrat d’engagement républicain</p>
-                  <p className="mt-2 text-xs leading-copy text-muted">
-                    La loi du 24 août 2021 instaure un contrat d’engagement républicain applicable aux associations ou fondations
-                    qui demandent une subvention, un agrément ou une reconnaissance d’utilité publique.
-                  </p>
-                  <div className="mt-3 grid gap-2">
+              <div className="mt-5 border-t border-line/60 pt-4">
+                <h4 className="text-xs font-bold uppercase tracking-label text-ink">Contrat d’engagement républicain</h4>
+                <p className="mt-1 text-xs leading-copy text-muted">
+                  La loi du 24 août 2021 instaure un contrat d’engagement républicain applicable aux associations ou fondations qui demandent une subvention, un agrément ou une reconnaissance d’utilité publique.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center justify-between gap-3 rounded-control border border-line bg-white p-3">
+                    <span className="text-xs font-medium text-ink">Contrat d’engagement républicain — affiche</span>
                     <a
                       href="https://www.ville-feytiat.fr/wp-content/uploads/2022/09/22-01-Contrat-Engagement-Republicain-affiche.pdf"
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center justify-between gap-3 rounded-soft border border-line bg-white px-4 py-3 text-xs font-bold text-ink hover:border-primary"
+                      className="inline-flex h-8 items-center rounded-pill bg-black px-3 text-micro font-bold uppercase tracking-label text-white hover:opacity-90 transition-opacity shrink-0"
                     >
-                      <span>Contrat d’engagement républicain — affiche</span>
-                      <span className="rounded-pill bg-black px-3 py-1.5 text-caption uppercase text-white">Télécharger</span>
+                      Télécharger
                     </a>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 rounded-control border border-line bg-white p-3">
+                    <span className="text-xs font-medium text-ink">Décret n° 2021-1947 du 31 décembre 2021</span>
                     <a
                       href="https://www.ville-feytiat.fr/wp-content/uploads/2022/09/2021-12-decret-2021-1947-du-31-decembre-2021-_-contrat-dengagement-republicain.pdf"
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center justify-between gap-3 rounded-soft border border-line bg-white px-4 py-3 text-xs font-bold text-ink hover:border-primary"
+                      className="inline-flex h-8 items-center rounded-pill bg-black px-3 text-micro font-bold uppercase tracking-label text-white hover:opacity-90 transition-opacity shrink-0"
                     >
-                      <span>Décret n° 2021-1947 du 31 décembre 2021</span>
-                      <span className="rounded-pill bg-black px-3 py-1.5 text-caption uppercase text-white">Télécharger</span>
+                      Télécharger
                     </a>
                   </div>
                 </div>
-              </section>
-
-              <fieldset className="px-5 py-7 sm:px-8 sm:py-8">
-                <legend className="text-sm font-bold text-ink">Relevé d’identité bancaire (RIB)</legend>
-                <p className="mt-3 text-sm text-muted">Renseignez les coordonnées bancaires de l’association.</p>
-                <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  <label className="block text-xs font-bold text-ink">
-                    BIC
-                    <input
-                      value={form.bic}
-                      onChange={(event) => updateField('bic', normalizeBankingCode(event.target.value))}
-                      aria-invalid={Boolean(fieldErrors.bic)}
-                      className={`${fieldClass('bic')} h-12`}
-                      placeholder="XXXXXFRXX"
-                      maxLength={11}
-                    />
-                    {fieldErrors.bic && <span className="mt-1 block text-xs font-normal text-danger">{fieldErrors.bic}</span>}
-                  </label>
-                  <label className="block text-xs font-bold text-ink">
-                    IBAN
-                    <input
-                      value={form.iban}
-                      onChange={(event) => updateField('iban', normalizeBankingCode(event.target.value))}
-                      aria-invalid={Boolean(fieldErrors.iban)}
-                      className={`${fieldClass('iban')} h-12`}
-                      placeholder="FRXX XXXX XXXX XXXX XXXX XXXX XXX"
-                      maxLength={34}
-                    />
-                    {fieldErrors.iban && <span className="mt-1 block text-xs font-normal text-danger">{fieldErrors.iban}</span>}
-                  </label>
-                </div>
-              </fieldset>
-            </div>
-
-            <div className="flex flex-wrap justify-between gap-3 border-t border-line px-5 py-5 sm:px-8">
-              <p className="self-center text-xs text-muted">Ce formulaire permet de constituer votre demande de subvention.</p>
-              <button type="button" onClick={continueToDocuments} disabled={saving} className="h-11 rounded-control bg-primary px-5 text-xs font-bold uppercase tracking-label text-white hover:bg-primary-hover disabled:opacity-60">
-                {saving ? 'Enregistrement…' : 'Enregistrer'}
-              </button>
+              </div>
             </div>
           </section>
-        )}
 
-        {step === 'documents' && (
-          <section aria-labelledby="documents-heading" className="mt-6 rounded-card border border-line bg-white p-5 sm:p-8">
-            <span className="rounded-pill bg-primary-soft px-3 py-1 text-caption font-bold uppercase tracking-label text-primary">Dossier</span>
-            <h2 id="documents-heading" className="mt-3 text-xl font-bold text-ink">Pièces justificatives</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-copy text-muted">
-              Votre dossier est conservé au statut « Brouillon ». Ajoutez les pièces nécessaires.
+          {/* SECTION 3: PIÈCES JUSTIFICATIVES */}
+          <section aria-labelledby="section-pieces-justificatives">
+            <span className="inline-flex rounded-pill bg-Mint-Cream px-3 py-1 text-caption font-bold uppercase tracking-label text-primary">
+              PIÈCES
+            </span>
+            <h2 id="section-pieces-justificatives" className="mt-3 text-xl font-bold text-ink">
+              Pièces justificatives
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              Vérifiez et complétez les documents si nécessaire.
             </p>
-            <div className="mt-6 rounded-soft border border-primary/20 bg-primary/5 p-5">
-              <p className="font-bold text-ink">Demande enregistrée</p>
-              <p className="mt-1 text-sm text-muted">{form.intituleProjet || 'Demande sans intitulé'} · {formatCurrency(toCents(form.montantDemande) ?? 0)}</p>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {/* Colonne 1: FORMULAIRE DE SUBVENTION */}
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-label text-ink">
+                  FORMULAIRE DE SUBVENTION
+                </span>
+                <div className="mt-2 flex h-12 items-center justify-between rounded-control bg-paper px-4 text-xs">
+                  <span className="truncate font-mono text-muted">
+                    {cerfaDocument ? cerfaDocument.originalName : 'cerfa_12156-06.pdf'}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {cerfaDocument && (
+                      <a
+                        href={getMediaUrl(cerfaDocument.fichierUrl) ?? cerfaDocument.fichierUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Consulter le document"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-control hover:bg-white text-muted hover:text-ink transition-colors"
+                      >
+                        <span aria-hidden="true" className="text-sm">👁</span>
+                        <span className="sr-only">Voir le formulaire de subvention</span>
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      disabled={uploadingCerfa}
+                      onClick={() => cerfaFileInputRef.current?.click()}
+                      className="inline-flex h-8 items-center rounded-control bg-Mint-Cream px-3 text-caption font-bold uppercase tracking-label text-primary hover:bg-Mint-Cream/80 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingCerfa ? 'DÉPÔT…' : cerfaDocument ? 'REMPLACER' : 'DÉPOSER'}
+                    </button>
+                    <input
+                      ref={cerfaFileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={handleCerfaUpload}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Colonne 2: AUTRES DOCUMENTS */}
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-label text-ink">
+                  AUTRES DOCUMENTS
+                </span>
+                <div className="mt-2 flex h-12 items-center justify-between rounded-control bg-paper px-4 text-xs">
+                  <select
+                    value={otherDocumentType}
+                    onChange={(e) => setOtherDocumentType(e.target.value)}
+                    className="bg-transparent font-medium text-ink outline-none cursor-pointer flex-1 truncate pr-2"
+                  >
+                    <option value="Rapport moral">Rapport moral</option>
+                    <option value="Bilan d’activité récente">Bilan d’activité</option>
+                    <option value="Autre justificatif">Autre justificatif</option>
+                  </select>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      disabled={uploadingOther}
+                      onClick={() => otherFileInputRef.current?.click()}
+                      className="inline-flex h-8 items-center rounded-control bg-Mint-Cream px-3 text-caption font-bold uppercase tracking-label text-primary hover:bg-Mint-Cream/80 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingOther ? 'DÉPÔT…' : 'DÉPOSER'}
+                    </button>
+                    <input
+                      ref={otherFileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={handleOtherDocumentUpload}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={uploadDocument} className="mt-6 rounded-soft border border-line p-5">
-              <h3 className="font-bold text-ink">Ajouter un justificatif</h3>
-              <p className="mt-1 text-xs leading-copy text-muted">PDF, JPEG, PNG ou WebP · 10 Mo maximum par fichier.</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="block text-xs font-bold text-ink">
-                  Type de document
-                  <select value={documentType} onChange={(event) => setDocumentType(event.target.value)} className="mt-1.5 h-11 w-full rounded-control border border-line bg-paper px-3 text-sm font-normal outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
-                    <option>Rapport moral</option>
-                    <option>Bilan d’activité récente</option>
-                    <option>Autre justificatif</option>
-                  </select>
-                </label>
-                <label className="block text-xs font-bold text-ink">
-                  Fichier
-                  <input key={fileInputKey} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} className="mt-1.5 block min-h-11 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm font-normal text-ink file:mr-3 file:rounded-control file:border-0 file:bg-primary file:px-3 file:py-2 file:text-xs file:font-bold file:text-white" />
-                </label>
-              </div>
-              {documentError && <p role="alert" className="mt-3 text-sm text-danger">{documentError}</p>}
-              <div className="mt-4 flex justify-end">
-                <button type="submit" disabled={uploading || !selectedFile} className="h-10 rounded-control bg-primary px-4 text-xs font-bold uppercase tracking-label text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
-                  {uploading ? 'Téléversement…' : 'Téléverser le justificatif'}
-                </button>
-              </div>
-            </form>
-
-            <section aria-labelledby="uploaded-documents-heading" className="mt-6">
-              <h3 id="uploaded-documents-heading" className="font-bold text-ink">Documents ajoutés</h3>
-              {documents.length > 0 ? (
-                <ul className="mt-3 divide-y divide-line rounded-soft border border-line px-4">
-                  {documents.map((document) => {
-                    const url = getMediaUrl(document.fichierUrl) ?? document.fichierUrl;
+            {/* Liste des autres documents déposés */}
+            {otherDocuments.length > 0 && (
+              <div className="mt-4 rounded-control border border-line bg-paper/30 p-3">
+                <span className="block text-micro font-bold uppercase tracking-label text-muted">Documents complémentaires ajoutés :</span>
+                <ul className="mt-2 divide-y divide-line/60">
+                  {otherDocuments.map((doc) => {
+                    const url = getMediaUrl(doc.fichierUrl) ?? doc.fichierUrl;
                     return (
-                      <li key={document.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                        <span>
-                          <span className="block text-sm font-semibold text-ink">{document.originalName}</span>
-                          <span className="mt-1 block text-xs text-muted">{document.typeDocument} · {(document.size / (1024 * 1024)).toFixed(2)} Mo</span>
+                      <li key={doc.id} className="flex items-center justify-between py-2 text-xs">
+                        <span className="truncate flex-1 pr-4">
+                          <span className="font-semibold text-ink">{doc.originalName}</span>
+                          <span className="ml-2 text-muted">({doc.typeDocument})</span>
                         </span>
-                        <a href={url} target="_blank" rel="noreferrer" className="text-xs font-bold uppercase tracking-label text-primary hover:underline">Consulter</a>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold uppercase tracking-label text-primary hover:underline"
+                        >
+                          Consulter ↗
+                        </a>
                       </li>
                     );
                   })}
                 </ul>
-              ) : (
-                <p className="mt-3 rounded-soft border border-dashed border-line bg-paper p-4 text-sm text-muted">Aucun justificatif ajouté pour le moment.</p>
-              )}
-            </section>
+              </div>
+            )}
+          </section>
 
-            <div className="mt-8 border-t border-line pt-5">
-              <button type="button" onClick={() => setStep('project')} className="h-11 rounded-control border border-line px-5 text-xs font-bold uppercase tracking-label text-ink hover:bg-paper">← Modifier la demande</button>
+          {/* SECTION 4: RELEVÉ D'IDENTITÉ BANCAIRE (RIB) */}
+          <section aria-labelledby="section-rib">
+            <span className="inline-flex rounded-pill bg-Mint-Cream px-3 py-1 text-caption font-bold uppercase tracking-label text-primary">
+              COORDONNÉES
+            </span>
+            <h2 id="section-rib" className="mt-3 text-xl font-bold text-ink">
+              Relevé d’identité bancaire (RIB)
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              Renseignez les coordonnées de compte de l’association.
+            </p>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="bic" className="block text-xs font-bold uppercase tracking-label text-ink">
+                  BIC
+                </label>
+                <input
+                  id="bic"
+                  type="text"
+                  value={form.bic}
+                  onChange={(event) => updateField('bic', normalizeBankingCode(event.target.value))}
+                  aria-invalid={Boolean(fieldErrors.bic)}
+                  maxLength={11}
+                  className={`mt-2 h-12 w-full rounded-control bg-paper px-4 font-mono text-sm uppercase text-ink outline-none transition-colors placeholder:text-muted/60 focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.bic ? 'border border-danger' : 'border border-transparent'
+                  }`}
+                  placeholder="XXXXXFRXX"
+                />
+                {fieldErrors.bic && (
+                  <p role="alert" className="mt-1.5 text-xs text-danger">{fieldErrors.bic}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="iban" className="block text-xs font-bold uppercase tracking-label text-ink">
+                  IBAN
+                </label>
+                <input
+                  id="iban"
+                  type="text"
+                  value={form.iban}
+                  onChange={(event) => updateField('iban', normalizeBankingCode(event.target.value))}
+                  aria-invalid={Boolean(fieldErrors.iban)}
+                  maxLength={34}
+                  className={`mt-2 h-12 w-full rounded-control bg-paper px-4 font-mono text-sm uppercase text-ink outline-none transition-colors placeholder:text-muted/60 focus:ring-2 focus:ring-primary/20 ${
+                    fieldErrors.iban ? 'border border-danger' : 'border border-transparent'
+                  }`}
+                  placeholder="FRXX XXXX XXXX XXXX XXXX XXXX XXX"
+                />
+                {fieldErrors.iban && (
+                  <p role="alert" className="mt-1.5 text-xs text-danger">{fieldErrors.iban}</p>
+                )}
+              </div>
             </div>
           </section>
-        )}
+
+          {/* SECTION 5: FOOTER AVEC BOUTON ENVOYER */}
+          <footer className="pt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-12 items-center justify-center rounded-control bg-primary px-8 text-xs font-bold uppercase tracking-label text-white hover:bg-primary-hover disabled:cursor-wait disabled:opacity-60 transition-colors shadow-xs shrink-0"
+            >
+              {saving ? 'Enregistrement…' : 'ENVOYER →'}
+            </button>
+            <p className="text-xs text-muted">
+              En envoyant ce formulaire, vous certifiez l’exactitude des informations fournies.
+            </p>
+          </footer>
+
+        </form>
       </div>
     </main>
   );
