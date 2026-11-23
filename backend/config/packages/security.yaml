@@ -36,8 +36,9 @@ security:
                 max_attempts: 5
                 interval: '15 minutes'
 
+        # /uploads : les images ne sont servies qu'aux comptes connectés (MediaController).
         api:
-            pattern: ^/api
+            pattern: ^/(api|uploads)(/|$)
             stateless: true
             user_checker: App\Security\AccountStatusChecker
             jwt: ~
@@ -52,17 +53,13 @@ security:
         - { path: ^/api/auth/password-reset/(request|confirm)$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
-        - { path: ^/api/equipment, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/rooms$, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/salles$, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/campaigns/current, roles: PUBLIC_ACCESS }
         # Chaque agent n'atteint que les routes de ses modules ; ROLE_ADMIN les hérite toutes.
-        - { path: ^/api/admin/(campaigns|campaign-history|room-requests|salles), roles: ROLE_GESTION_SALLE }
+        - { path: ^/api/admin/(campaigns|campaign-history|campaign-wishes|room-requests|salles), roles: ROLE_GESTION_SALLE }
         - { path: ^/api/admin/equipment, roles: ROLE_GESTION_MATERIEL }
         - { path: ^/api/admin/grants, roles: ROLE_GESTION_SUBVENTION }
         - { path: ^/api/admin/associations/\d+/requests/[^/]+/request-documents$, allow_if: "is_granted('ROLE_GESTION_MATERIEL') or is_granted('ROLE_GESTION_SALLE')", methods: [POST] }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/(api|uploads)(/|$), roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:

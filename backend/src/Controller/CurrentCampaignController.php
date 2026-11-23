@@ -8,6 +8,7 @@ use App\Entity\ReservationSalle;
 use App\Entity\User;
 use App\Repository\CampaignRepository;
 use App\Repository\ReservationSalleRepository;
+use App\Security\ModuleVoter;
 use App\Service\CampaignRequestService;
 use App\Service\CampaignService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,7 +19,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/campaigns')]
-#[IsGranted('ROLE_USER')]
+#[IsGranted(ModuleVoter::ROOMS)]
 final class CurrentCampaignController extends AbstractController
 {
     public function __construct(

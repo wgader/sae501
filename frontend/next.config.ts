@@ -1,40 +1,28 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
-// Seules les images de l'API sont optimisées : un motif ouvert ferait de /_next/image un proxy
-// capable de télécharger n'importe quelle image d'Internet.
-const apiUrl = new URL(process.env.NEXT_PUBLIC_API_URL || 'http://localhost');
+const isDev = process.env.NODE_ENV === 'development';
+
+// Adresse de Symfony vue par `next dev` (service `app` de docker-compose.yml).
+const devBackendUrl = process.env.DEV_BACKEND_URL ?? 'http://localhost:8000';
+
 const nextConfig: NextConfig = {
-  output: 'standalone',
-  // N'annonce pas la technologie du serveur (en-tête X-Powered-By).
+  // En production, le site est exporté en fichiers statiques (dossier out/) puis copié dans
+  // backend/public : Caddy les sert, et Symfony ne reçoit que /api.
+  output: isDev ? undefined : 'export',
   poweredByHeader: false,
-  images: {
-    remotePatterns: [
-      { protocol: 'http', hostname: 'localhost' },
-      { protocol: 'http', hostname: '127.0.0.1' },
-      { protocol: apiUrl.protocol === 'https:' ? 'https' : 'http', hostname: apiUrl.hostname },
-    ],
-  },
-  async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
-    return [
-      {
-        source: '/uploads/:path*',
-        destination: `${backendUrl}/uploads/:path*`,
-      },
-    ];
-  },
-  async redirects() {
-    return [
-      { source: '/admin/inscriptions', destination: '/admin/inscription', permanent: true },
-      { source: '/admin/inscriptions/:id', destination: '/admin/inscription/:id', permanent: true },
-      { source: '/admin/associations', destination: '/admin/association', permanent: true },
-      { source: '/admin/salles', destination: '/admin/salle', permanent: true },
-      { source: '/admin/subventions', destination: '/admin/subvention', permanent: true },
-      { source: '/admin/module', destination: '/admin/association', permanent: true },
-      { source: '/admin/modules', destination: '/admin/association', permanent: true },
-      { source: '/admin/agents', destination: '/admin/agent', permanent: true },
-    ];
-  },
+  // Pas de serveur Node pour redimensionner les images : elles sont servies telles quelles.
+  images: { unoptimized: true },
+
+  // En développement seulement, `next dev` relaie vers Symfony les chemins qu'il ne connaît pas,
+  // pour que le code n'appelle jamais que /api/... comme en production.
+  ...(isDev && {
+    async rewrites() {
+      return ['/api/:path*', '/uploads/:path*', '/bundles/:path*'].map((source) => ({
+        source,
+        destination: `${devBackendUrl}${source}`,
+      }));
+    },
+  }),
 };
 
 export default nextConfig;

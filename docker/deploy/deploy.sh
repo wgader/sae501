@@ -3,7 +3,7 @@
 # Appelé par la CD (.github/workflows/cd.yml) par SSH, ou à la main par l’utilisateur de déploiement.
 #
 # Usage :
-#   deploy.sh deploy   <preprod|prod> <backend_tag> <frontend_tag> [options]
+#   deploy.sh deploy   <preprod|prod> <image_tag> [options]
 #   deploy.sh rollback <preprod|prod> [options]
 #   deploy.sh status   <preprod|prod> [options]
 #
@@ -13,9 +13,9 @@
 #   --registry-login    lit deux lignes sur l’entrée standard (utilisateur, jeton) pour ghcr.io ;
 #                       le jeton n’est écrit que dans un dossier temporaire supprimé après le pull
 #
-# Étapes d’un déploiement : pull des images, sauvegarde de la base, migrations Doctrine,
+# Étapes d’un déploiement : pull de l’image, sauvegarde de la base, migrations Doctrine,
 # démarrage avec attente des healthchecks, puis routage par le proxy d’entrée. Si les conteneurs
-# ne deviennent pas sains, les images précédentes sont redémarrées automatiquement (la base n’est
+# ne deviennent pas sains, l’image précédente est redémarrée automatiquement (la base n’est
 # jamais restaurée automatiquement : voir DEPLOYMENT.md, « Retour arrière »).
 set -Eeuo pipefail
 umask 027
@@ -56,10 +56,10 @@ edge_compose() {
 # ── Arguments ─────────────────────────────────────────────────────────────────
 [[ $# -ge 2 ]] || usage
 ACTION=$1; ENVIRONMENT=$2; shift 2
-BACKEND_TAG=""; FRONTEND_TAG=""
+IMAGE_TAG=""
 if [[ "$ACTION" == deploy ]]; then
-  [[ $# -ge 2 ]] || usage
-  BACKEND_TAG=$1; FRONTEND_TAG=$2; shift 2
+  [[ $# -ge 1 ]] || usage
+  IMAGE_TAG=$1; shift
 fi
 
 BASE_DIR=$(cd "$(dirname "$0")/.." && pwd)
@@ -78,7 +78,7 @@ case $ACTION in deploy|rollback|status) ;; *) usage ;; esac
 case $ENVIRONMENT in preprod|prod) ;; *) die "environnement inconnu : $ENVIRONMENT (preprod ou prod)" ;; esac
 readonly TAG_PATTERN='^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$'
 if [[ "$ACTION" == deploy ]]; then
-  [[ "$BACKEND_TAG" =~ $TAG_PATTERN && "$FRONTEND_TAG" =~ $TAG_PATTERN ]] || die "étiquette d’image invalide"
+  [[ "$IMAGE_TAG" =~ $TAG_PATTERN ]] || die "étiquette d’image invalide"
 fi
 
 readonly PROJECT="$PROJECT_PREFIX-$ENVIRONMENT"
@@ -127,22 +127,20 @@ done
 # Les domaines sont recopiés dans la configuration Caddy : seuls des noms DNS sont acceptés.
 readonly DOMAIN_PATTERN='^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
 FRONTEND_DOMAIN=$(env_value FRONTEND_DOMAIN "$ENV_FILE")
-API_DOMAIN=$(env_value API_DOMAIN "$ENV_FILE")
-[[ "$FRONTEND_DOMAIN" =~ $DOMAIN_PATTERN && "$API_DOMAIN" =~ $DOMAIN_PATTERN ]] \
-  || die "FRONTEND_DOMAIN ou API_DOMAIN invalide dans $ENV_FILE"
+[[ "$FRONTEND_DOMAIN" =~ $DOMAIN_PATTERN ]] || die "FRONTEND_DOMAIN invalide dans $ENV_FILE"
 
 # ── Fonctions de déploiement ──────────────────────────────────────────────────
 read_state() {
   local file="$STATE_DIR/$1"
   [[ -f "$file" ]] || return 1
-  BACKEND_IMAGE_TAG=$(env_value BACKEND_IMAGE_TAG "$file")
-  FRONTEND_IMAGE_TAG=$(env_value FRONTEND_IMAGE_TAG "$file")
-  [[ -n "$BACKEND_IMAGE_TAG" && -n "$FRONTEND_IMAGE_TAG" ]]
+  # Un état écrit avant l’image unique (BACKEND_IMAGE_TAG) ne peut pas être redémarré.
+  APP_IMAGE_TAG=$(env_value APP_IMAGE_TAG "$file")
+  [[ -n "$APP_IMAGE_TAG" ]]
 }
 
 write_state() {
   install -d -m 0750 "$STATE_DIR"
-  printf 'BACKEND_IMAGE_TAG=%s\nFRONTEND_IMAGE_TAG=%s\n' "$2" "$3" > "$STATE_DIR/$1.tmp"
+  printf 'APP_IMAGE_TAG=%s\n' "$2" > "$STATE_DIR/$1.tmp"
   mv "$STATE_DIR/$1.tmp" "$STATE_DIR/$1"
 }
 
@@ -154,7 +152,7 @@ ensure_edge_networks() {
 }
 
 start_stack() {
-  export BACKEND_IMAGE_TAG FRONTEND_IMAGE_TAG
+  export APP_IMAGE_TAG
   compose up --detach --remove-orphans --wait --wait-timeout "$WAIT_TIMEOUT"
 }
 
@@ -170,7 +168,7 @@ pull_images() {
       | DOCKER_CONFIG=$docker_config docker login "$REGISTRY" --username "$registry_user" --password-stdin >/dev/null
     unset registry_token
   fi
-  export BACKEND_IMAGE_TAG FRONTEND_IMAGE_TAG
+  export APP_IMAGE_TAG
   if [[ -n "$docker_config" ]]; then
     DOCKER_CONFIG=$docker_config compose pull --quiet
     DOCKER_CONFIG=$docker_config docker logout "$REGISTRY" >/dev/null 2>&1 || true
@@ -202,7 +200,20 @@ write_edge_proxy() {
   mv "$proxy_dir/guard.caddy.tmp" "$proxy_dir/guard.caddy"
 }
 
-# Le proxy d’entrée route les deux domaines de l’environnement vers ses conteneurs.
+# Vérifie le Caddyfile, les sites des deux environnements et les fichiers du mode Cloudflare
+# avec la même image que le proxy, sans réseau.
+validate_edge() {
+  local image
+  image=$(edge_compose config --images | head -n 1)
+  docker run --rm --network none \
+    -e ACME_EMAIL="$(env_value ACME_EMAIL "$BASE_DIR/edge/.env" 2>/dev/null)" \
+    -v "$BASE_DIR/edge/Caddyfile:/etc/caddy/Caddyfile:ro" \
+    -v "$BASE_DIR/edge/sites:/etc/caddy/sites:ro" \
+    -v "$BASE_DIR/edge/proxy:/etc/caddy/proxy:ro" \
+    "$image" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+}
+
+# Le proxy d’entrée envoie tout le domaine de l’environnement au service app (front et /api).
 update_edge() {
   write_edge_proxy
   local site_file="$BASE_DIR/edge/sites/$PROJECT.caddy"
@@ -211,21 +222,25 @@ update_edge() {
 # Généré par deploy.sh pour $PROJECT à partir de $ENV_FILE : ne pas modifier à la main.
 $FRONTEND_DOMAIN {
 	import common
-	reverse_proxy $PROJECT-frontend:3000 {
-		header_up X-Forwarded-For {client_ip}
+	log {
+		output file /data/logs/$PROJECT-access.log {
+			roll_size 10MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format json
 	}
-}
-
-$API_DOMAIN {
-	import api
-	# L’API (limiteurs de connexion) lit l’IP du visiteur dans X-Forwarded-For.
-	reverse_proxy $PROJECT-backend:80 {
+	# Symfony (limiteurs de connexion) lit l’IP du visiteur dans X-Forwarded-For.
+	reverse_proxy $PROJECT-app:80 {
 		header_up X-Forwarded-For {client_ip}
 	}
 }
 EOF
   chmod 0644 "$site_file.tmp"
   mv "$site_file.tmp" "$site_file"
+  # Le proxy sert les deux environnements : une configuration invalide les couperait tous les deux.
+  # Elle est donc vérifiée dans un conteneur jetable avant de toucher au proxy en marche.
+  validate_edge || die "configuration du proxy d’entrée invalide : proxy en marche laissé tel quel"
   edge_compose up --detach --wait --wait-timeout 60
   # Le Caddyfile est monté comme fichier unique : install(1) le remplace par un nouvel inode que le
   # conteneur ne voit pas. S'il diffère de celui chargé, on recrée le proxy pour monter le nouveau.
@@ -241,8 +256,8 @@ EOF
 case $ACTION in
   status)
     if read_state current; then
-      log "$PROJECT : backend $BACKEND_IMAGE_TAG, frontend $FRONTEND_IMAGE_TAG"
-      export BACKEND_IMAGE_TAG FRONTEND_IMAGE_TAG
+      log "$PROJECT : image $APP_IMAGE_TAG"
+      export APP_IMAGE_TAG
       compose ps
     else
       log "$PROJECT : aucun déploiement enregistré"
@@ -251,21 +266,21 @@ case $ACTION in
 
   rollback)
     read_state previous || die "aucune version précédente enregistrée pour $PROJECT"
-    previous_backend=$BACKEND_IMAGE_TAG; previous_frontend=$FRONTEND_IMAGE_TAG
-    log "retour à backend $previous_backend, frontend $previous_frontend (migrations non annulées)"
+    previous=$APP_IMAGE_TAG
+    log "retour à l’image $previous (migrations non annulées)"
     start_stack || die "la version précédente ne démarre pas non plus : voir compose logs"
     if read_state current; then
-      write_state previous "$BACKEND_IMAGE_TAG" "$FRONTEND_IMAGE_TAG"
+      write_state previous "$APP_IMAGE_TAG"
     fi
-    write_state current "$previous_backend" "$previous_frontend"
-    printf '%s rollback backend=%s frontend=%s\n' "$(date -u +%FT%TZ)" "$previous_backend" "$previous_frontend" >> "$STATE_DIR/history"
+    write_state current "$previous"
+    printf '%s rollback image=%s\n' "$(date -u +%FT%TZ)" "$previous" >> "$STATE_DIR/history"
     log "retour arrière terminé"
     ;;
 
   deploy)
     ensure_edge_networks
-    BACKEND_IMAGE_TAG=$BACKEND_TAG; FRONTEND_IMAGE_TAG=$FRONTEND_TAG
-    log "pull des images (backend $BACKEND_TAG, frontend $FRONTEND_TAG)"
+    APP_IMAGE_TAG=$IMAGE_TAG
+    log "pull de l’image $IMAGE_TAG"
     pull_images
 
     log "démarrage de MySQL"
@@ -275,7 +290,7 @@ case $ACTION in
     "$BASE_DIR/bin/backup.sh" db "$ENVIRONMENT" pre-deploy --base-dir "$BASE_DIR"
 
     log "migrations Doctrine"
-    compose run --rm --no-deps -T backend \
+    compose run --rm --no-deps -T app \
       php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
 
     log "démarrage de la nouvelle version"
@@ -283,17 +298,17 @@ case $ACTION in
       log "la nouvelle version n’est pas saine"
       compose ps >&2 || true
       if read_state current; then
-        log "redémarrage de la version précédente (backend $BACKEND_IMAGE_TAG)"
+        log "redémarrage de la version précédente (image $APP_IMAGE_TAG)"
         start_stack || log "la version précédente ne démarre pas non plus"
       fi
       die "déploiement échoué ; base non restaurée (dernière sauvegarde dans $BASE_DIR/backups/$ENVIRONMENT)"
     fi
 
     if read_state current; then
-      write_state previous "$BACKEND_IMAGE_TAG" "$FRONTEND_IMAGE_TAG"
+      write_state previous "$APP_IMAGE_TAG"
     fi
-    write_state current "$BACKEND_TAG" "$FRONTEND_TAG"
-    printf '%s deploy backend=%s frontend=%s\n' "$(date -u +%FT%TZ)" "$BACKEND_TAG" "$FRONTEND_TAG" >> "$STATE_DIR/history"
+    write_state current "$IMAGE_TAG"
+    printf '%s deploy image=%s\n' "$(date -u +%FT%TZ)" "$IMAGE_TAG" >> "$STATE_DIR/history"
 
     log "mise à jour du proxy d’entrée"
     update_edge

@@ -65,8 +65,8 @@ final class AssociationRequestDocumentsNotifier
                         'missingFiles' => $missingFiles,
                         'message' => $message,
                         'documentsUrl' => rtrim($this->frontendUrl, '/')
-                            . '/historique/' . $reservation->getId()
-                            . '/pieces-annexes?type='
+                            . '/historique/demande/pieces-annexes?id=' . $reservation->getId()
+                            . '&type='
                             . ($reservation instanceof ReservationSalle ? 'salle' : 'materiel'),
                     ]),
             );

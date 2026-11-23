@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { sendContactMessage } from '@/lib/api';
 import Button from '@/components/ui/Button';
+import { logger } from '@/lib/logger';
 
 export default function ContactForm() {
   const [nom, setNom] = useState('');
@@ -27,7 +28,7 @@ export default function ContactForm() {
       setMessage('');
       setSent(true);
     } catch (cause) {
-      console.error('Échec de l’envoi du formulaire de contact.', cause);
+      logger.error('Échec de l’envoi du formulaire de contact.', cause);
       setError(
         cause instanceof Error
           ? cause.message

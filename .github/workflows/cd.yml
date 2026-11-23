@@ -38,8 +38,7 @@ jobs:
       server_environment: ${{ steps.resolve.outputs.server_environment }}
       sha: ${{ steps.resolve.outputs.sha }}
       build: ${{ steps.resolve.outputs.build }}
-      backend_image: ${{ steps.resolve.outputs.backend_image }}
-      frontend_image: ${{ steps.resolve.outputs.frontend_image }}
+      image: ${{ steps.resolve.outputs.image }}
     steps:
       - name: Resolve environment and image tag
         id: resolve
@@ -80,15 +79,14 @@ jobs:
             echo "server_environment=$server_environment"
             echo "sha=$sha"
             echo "build=$build"
-            echo "backend_image=ghcr.io/$owner/sae501/backend"
-            echo "frontend_image=ghcr.io/$owner/sae501/frontend"
+            echo "image=ghcr.io/$owner/sae501/app"
           } >> "$GITHUB_OUTPUT"
           echo "Déploiement $environment du commit $sha (construction : $build)" >> "$GITHUB_STEP_SUMMARY"
 
-  # L’image backend ne dépend d’aucune variable d’environnement : elle est construite une fois
-  # par commit, analysée par Trivy, puis publiée sous le SHA du commit (étiquette immuable).
-  backend-image:
-    name: Image backend
+  # L’image ne dépend d’aucun environnement (le front n’appelle que /api) : elle est construite une
+  # fois par commit, analysée par Trivy, puis publiée sous le SHA du commit (étiquette immuable).
+  image:
+    name: Image
     needs: context
     if: needs.context.outputs.build == 'true'
     runs-on: ubuntu-latest
@@ -97,7 +95,7 @@ jobs:
       contents: read
       packages: write
     env:
-      IMAGE: ${{ needs.context.outputs.backend_image }}:${{ needs.context.outputs.sha }}
+      IMAGE: ${{ needs.context.outputs.image }}:${{ needs.context.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -115,13 +113,13 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: docker/backend/Dockerfile
-          target: prod
+          file: Dockerfile
+          target: app
           load: true
           push: false
           tags: ${{ env.IMAGE }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,scope=backend,mode=max
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,scope=app,mode=max
 
       # Une vulnérabilité CRITICAL corrigeable bloque la publication ; HIGH est rapporté.
       - name: Trivy (image)
@@ -130,8 +128,8 @@ jobs:
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
               aquasec/trivy:0.76.2 image --quiet --ignore-unfixed "$@" "$IMAGE"
           }
-          trivy --severity HIGH,CRITICAL --format table > trivy-backend.txt
-          { echo '### Trivy — image backend'; echo '```'; cat trivy-backend.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          trivy --severity HIGH,CRITICAL --format table > trivy.txt
+          { echo '### Trivy — image'; echo '```'; cat trivy.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           trivy --severity CRITICAL --exit-code 1
 
       - name: Push
@@ -139,14 +137,14 @@ jobs:
 
   deploy:
     name: Déploiement ${{ needs.context.outputs.environment }}
-    needs: [context, backend-image]
-    # backend-image est ignoré lors d’un retour arrière : le déploiement continue quand même.
+    needs: [context, image]
+    # image est ignoré lors d’un retour arrière : le déploiement continue quand même.
     # Sur un push, le déploiement n’a lieu que si la variable de dépôt DEPLOY_ENABLED vaut « true » :
     # tant que le serveur n’est pas prêt, la CD construit et analyse les images sans échouer.
     # « Run workflow » déploie toujours, puisqu’il est lancé volontairement.
     if: >-
       always() && needs.context.result == 'success' &&
-      (needs.backend-image.result == 'success' || needs.backend-image.result == 'skipped') &&
+      (needs.image.result == 'success' || needs.image.result == 'skipped') &&
       (github.event_name == 'workflow_dispatch' || vars.DEPLOY_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -159,19 +157,14 @@ jobs:
       name: ${{ needs.context.outputs.environment }}
       url: ${{ vars.PUBLIC_FRONTEND_URL }}
     outputs:
-      frontend_url: ${{ steps.healthcheck.outputs.frontend_url }}
-      api_url: ${{ steps.healthcheck.outputs.api_url }}
+      site_url: ${{ steps.healthcheck.outputs.site_url }}
     permissions:
       contents: read
-      # Publication de l’image frontend, puis pull des images par le serveur avec le jeton du job
-      # (valable uniquement pendant le job).
-      packages: write
+      # Pull de l’image par le serveur avec le jeton du job (valable uniquement pendant le job).
+      packages: read
     env:
       SERVER_ENV: ${{ needs.context.outputs.server_environment }}
       SHA: ${{ needs.context.outputs.sha }}
-      BUILD: ${{ needs.context.outputs.build }}
-      FRONTEND_IMAGE: ${{ needs.context.outputs.frontend_image }}:${{ needs.context.outputs.sha }}-${{ needs.context.outputs.server_environment }}
-      PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
       PUBLIC_FRONTEND_URL: ${{ vars.PUBLIC_FRONTEND_URL }}
       DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
     steps:
@@ -191,7 +184,7 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           missing=""
-          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS DEPLOY_PATH PUBLIC_API_URL; do
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS DEPLOY_PATH PUBLIC_FRONTEND_URL; do
             [ -n "$(printenv "$name")" ] || missing="$missing $name"
           done
           if [ -n "$missing" ]; then
@@ -202,47 +195,7 @@ jobs:
           printf '%s' "$DEPLOY_PATH" | grep -Eq '^/[A-Za-z0-9._/-]+$' || { echo "::error::DEPLOY_PATH doit être un chemin absolu simple"; exit 1; }
           printf '%s' "$DEPLOY_USER" | grep -Eq '^[a-z_][a-z0-9_-]*$' || { echo "::error::DEPLOY_USER invalide"; exit 1; }
           printf '%s' "$DEPLOY_PORT" | grep -Eq '^[0-9]+$' || { echo "::error::DEPLOY_PORT invalide"; exit 1; }
-          printf '%s' "$PUBLIC_API_URL" | grep -Eq '^https://[a-z0-9.-]+$' || { echo "::error::PUBLIC_API_URL doit être https://<domaine> sans chemin"; exit 1; }
-
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-        if: env.BUILD == 'true'
-
-      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
-        if: env.BUILD == 'true'
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # L’URL publique de l’API est figée dans le bundle Next.js : une image par environnement.
-      - name: Build frontend
-        if: env.BUILD == 'true'
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: docker/frontend/Dockerfile
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL }}
-          load: true
-          push: false
-          tags: ${{ env.FRONTEND_IMAGE }}
-          cache-from: type=gha,scope=frontend-${{ env.SERVER_ENV }}
-          cache-to: type=gha,scope=frontend-${{ env.SERVER_ENV }},mode=max
-
-      - name: Trivy (image frontend)
-        if: env.BUILD == 'true'
-        run: |
-          trivy() {
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
-              aquasec/trivy:0.76.2 image --quiet --ignore-unfixed "$@" "$FRONTEND_IMAGE"
-          }
-          trivy --severity HIGH,CRITICAL --format table > trivy-frontend.txt
-          { echo '### Trivy — image frontend'; echo '```'; cat trivy-frontend.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          trivy --severity CRITICAL --exit-code 1
-
-      - name: Push frontend
-        if: env.BUILD == 'true'
-        run: docker push "$FRONTEND_IMAGE"
+          printf '%s' "$PUBLIC_FRONTEND_URL" | grep -Eq '^https://[a-z0-9.-]+$' || { echo "::error::PUBLIC_FRONTEND_URL doit être https://<domaine> sans chemin"; exit 1; }
 
       # L’hôte n’est accepté que si sa clé figure dans DEPLOY_KNOWN_HOSTS (jamais de
       # StrictHostKeyChecking=no) ; la clé privée n’existe que le temps du job.
@@ -290,23 +243,18 @@ jobs:
           incoming="$DEPLOY_PATH/.incoming/$SERVER_ENV"
           # shellcheck disable=SC2029 # chemins et étiquettes validés, développés volontairement ici.
           printf '%s\n%s\n' "$GITHUB_ACTOR" "$REGISTRY_TOKEN" \
-            | ssh deploy-target "bash '$incoming/docker/deploy/deploy.sh' deploy '$SERVER_ENV' '$SHA' '$SHA-$SERVER_ENV' \
+            | ssh deploy-target "bash '$incoming/docker/deploy/deploy.sh' deploy '$SERVER_ENV' '$SHA' \
                 --base-dir '$DEPLOY_PATH' --from '$incoming' --registry-login"
 
       - name: Public healthcheck
         id: healthcheck
         run: |
-          curl --fail --silent --show-error --output /dev/null \
-            --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_API_URL/healthcheck.php"
-          if [ -n "$PUBLIC_FRONTEND_URL" ]; then
+          for path in /healthcheck.php /; do
             curl --fail --silent --show-error --output /dev/null \
-              --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_FRONTEND_URL"
-          fi
+              --retry 10 --retry-delay 6 --retry-all-errors "$PUBLIC_FRONTEND_URL$path"
+          done
           echo "Version $SHA en ligne sur $SERVER_ENV" >> "$GITHUB_STEP_SUMMARY"
-          {
-            echo "frontend_url=$PUBLIC_FRONTEND_URL"
-            echo "api_url=$PUBLIC_API_URL"
-          } >> "$GITHUB_OUTPUT"
+          echo "site_url=$PUBLIC_FRONTEND_URL" >> "$GITHUB_OUTPUT"
 
       - name: Remove SSH material
         if: always()
@@ -323,8 +271,7 @@ jobs:
     timeout-minutes: 20
     permissions: {}
     env:
-      FRONTEND_URL: ${{ needs.deploy.outputs.frontend_url }}
-      API_URL: ${{ needs.deploy.outputs.api_url }}
+      SITE_URL: ${{ needs.deploy.outputs.site_url }}
     steps:
       - name: Baseline scans
         run: |
@@ -333,7 +280,7 @@ jobs:
           # 10202 : formulaires envoyés par l'API (cookie SameSite=Strict + X-Requested-With) ;
           # 90004 : COEP/CORP inutiles sans ressource cross-origin ; 10109 : simple détection d'une SPA ;
           # 10049 et 10015 : pages publiques sans données personnelles en cache ;
-          # 10055 : styles inline de Next.js (les scripts restent protégés par nonce) ;
+          # 10055 : styles inline de Next.js (les scripts restent protégés par leurs empreintes) ;
           # 10050 : fichiers publics /_next/static (nom haché) servis par le cache Cloudflare.
           printf '%s\tIGNORE\t(%s)\n' \
             10202 'Absence of Anti-CSRF Tokens' 90004 'Cross-Origin-Embedder-Policy' \
@@ -348,8 +295,8 @@ jobs:
               zap-baseline.py -t "$2" -m 2 -c rules.tsv -J "zap-$1.json" -r "zap-$1.html" -w "zap-$1.md" \
               || { echo "::error::ZAP ($1) : nouvelle alerte ou scan impossible (code $?)"; failed=1; }
           }
-          scan frontend "$FRONTEND_URL"
-          scan api "$API_URL/api/campaigns/current"
+          scan site "$SITE_URL"
+          scan api "$SITE_URL/api/campaigns/current"
           for report in zap/zap-*.md; do
             [ -f "$report" ] && cat "$report" >> "$GITHUB_STEP_SUMMARY"
           done

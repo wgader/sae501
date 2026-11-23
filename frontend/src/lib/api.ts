@@ -12,3 +12,4 @@ export * from './api/contact';
 export * from './api/admin';
 export * from './api/rooms';
 export * from './api/notifications';
+export * from './api/campaignWishes';

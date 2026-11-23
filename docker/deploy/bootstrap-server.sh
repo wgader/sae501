@@ -5,13 +5,12 @@
 #
 #   sudo DEPLOY_PUBLIC_KEY="ssh-ed25519 AAAA… github-actions-sae501" \
 #        ACME_EMAIL=admin@example.fr \
-#        PROD_FRONTEND_DOMAIN=www.example.fr PROD_API_DOMAIN=api.example.fr \
-#        PREPROD_FRONTEND_DOMAIN=preprod.example.fr PREPROD_API_DOMAIN=api.preprod.example.fr \
+#        PROD_FRONTEND_DOMAIN=www.example.fr PREPROD_FRONTEND_DOMAIN=preprod.example.fr \
 #        bash bootstrap-server.sh
 #
 # Variables (toutes facultatives sauf DEPLOY_PUBLIC_KEY au premier lancement) :
 #   DEPLOY_USER (deploy), BASE_DIR (/srv/sae501), DEPLOY_PUBLIC_KEY, ACME_EMAIL,
-#   PROD_FRONTEND_DOMAIN, PROD_API_DOMAIN, PREPROD_FRONTEND_DOMAIN, PREPROD_API_DOMAIN,
+#   PROD_FRONTEND_DOMAIN, PREPROD_FRONTEND_DOMAIN (le site et son API /api partagent ce domaine),
 #   BACKUP_RETENTION_DAYS (14), HARDEN_SSH (0 ; 1 désactive mots de passe et connexion root par
 #   mot de passe : ne l’activer qu’après avoir vérifié une connexion par clé).
 #
@@ -23,7 +22,7 @@ readonly DEPLOY_USER=${DEPLOY_USER:-deploy}
 readonly BASE_DIR=${BASE_DIR:-/srv/sae501}
 readonly BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-14}
 readonly HARDEN_SSH=${HARDEN_SSH:-0}
-# Doit correspondre à APP_UID/APP_GID de docker/backend/Dockerfile : ce groupe lit les clés JWT.
+# Doit correspondre à APP_UID/APP_GID du Dockerfile : ce groupe lit les clés JWT.
 readonly APP_GID=10001
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 readonly SCRIPT_DIR
@@ -41,7 +40,7 @@ case ${ID:-} in debian|ubuntu) ;; *) die "distribution non prise en charge : ${I
 [[ "$BASE_DIR" =~ ^/[A-Za-z0-9._/-]+$ ]] || die "BASE_DIR doit être un chemin absolu simple"
 
 readonly DOMAIN_PATTERN='^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
-for name in PROD_FRONTEND_DOMAIN PROD_API_DOMAIN PREPROD_FRONTEND_DOMAIN PREPROD_API_DOMAIN; do
+for name in PROD_FRONTEND_DOMAIN PREPROD_FRONTEND_DOMAIN; do
   value=${!name:-}
   [[ -z "$value" || "$value" =~ $DOMAIN_PATTERN ]] || die "$name n’est pas un nom de domaine valide"
 done
@@ -166,18 +165,9 @@ random_hex() { openssl rand -hex 32; }
 
 env_value() { sed -n "s/^$1=//p" "$2" | tail -n 1; }
 
-# Échappe les points d’un domaine pour l’expression régulière CORS.
-cors_regex() { printf "'^https://%s\$'" "${1//./\\.}"; }
-
 write_env_file() {
-  local environment=$1 frontend_domain=$2 api_domain=$3 database=$4 target=$5
-  local cors frontend_url
-  if [[ -n "$frontend_domain" ]]; then
-    cors=$(cors_regex "$frontend_domain"); frontend_url="https://$frontend_domain"
-  else
-    frontend_domain=CHANGE_ME.example.com; cors="'CHANGE_ME'"; frontend_url=https://CHANGE_ME.example.com
-  fi
-  [[ -n "$api_domain" ]] || api_domain=CHANGE_ME.example.com
+  local environment=$1 frontend_domain=$2 database=$3 target=$4
+  [[ -n "$frontend_domain" ]] || frontend_domain=CHANGE_ME.example.com
   # Les secrets sont générés directement dans le fichier, sans passer par l’affichage.
   cat > "$target" <<EOF
 # Généré par bootstrap-server.sh le $(date -u +%F). Ne jamais commiter ni copier ce fichier.
@@ -185,12 +175,7 @@ write_env_file() {
 COMPOSE_PROJECT_NAME=sae501-$environment
 
 FRONTEND_DOMAIN=$frontend_domain
-API_DOMAIN=$api_domain
-FRONTEND_URL=$frontend_url
-CORS_ALLOW_ORIGIN=$cors
-
-BACKEND_IMAGE=ghcr.io/wgader/sae501/backend
-FRONTEND_IMAGE=ghcr.io/wgader/sae501/frontend
+FRONTEND_URL=https://$frontend_domain
 
 APP_SECRET=$(random_hex)
 
@@ -223,7 +208,7 @@ generate_jwt_keys() {
 }
 
 setup_environment() {
-  local environment=$1 frontend_domain=$2 api_domain=$3 database=$4
+  local environment=$1 frontend_domain=$2 database=$3
   local env_dir="$BASE_DIR/$environment" env_file key_dir
   env_file="$env_dir/.env"; key_dir="$env_dir/secrets/jwt"
   log "Environnement $environment"
@@ -232,7 +217,7 @@ setup_environment() {
   install -d -m 0750 -o root -g "$DEPLOY_USER" "$key_dir"
 
   if [[ ! -f "$env_file" ]]; then
-    ( umask 077; write_env_file "$environment" "$frontend_domain" "$api_domain" "$database" "$env_file" )
+    ( umask 077; write_env_file "$environment" "$frontend_domain" "$database" "$env_file" )
     echo "  .env créé avec des secrets aléatoires"
   else
     echo "  .env existant conservé"
@@ -255,8 +240,8 @@ setup_environment() {
   [[ -z "$missing" ]] || echo "  à renseigner dans $env_file : $missing"
 }
 
-setup_environment preprod "${PREPROD_FRONTEND_DOMAIN:-}" "${PREPROD_API_DOMAIN:-}" sae501_preprod
-setup_environment prod "${PROD_FRONTEND_DOMAIN:-}" "${PROD_API_DOMAIN:-}" sae501
+setup_environment preprod "${PREPROD_FRONTEND_DOMAIN:-}" sae501_preprod
+setup_environment prod "${PROD_FRONTEND_DOMAIN:-}" sae501
 
 # ── Proxy d’entrée ────────────────────────────────────────────────────────────
 log "Proxy d’entrée"

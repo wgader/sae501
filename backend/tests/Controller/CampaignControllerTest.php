@@ -94,16 +94,7 @@ final class CampaignControllerTest extends ControllerRouteTestCase
         $this->em->flush();
         static::getContainer()->get(\App\Service\CampaignService::class)->open($campaign);
 
-        $association = (new User())
-            ->setEmail('association-current@example.test')
-            ->setNom('Association')
-            ->setPrenom('Current')
-            ->setTypeCompte('association')
-            ->setRoles(['ROLE_ASSOCIATION'])
-            ->setIsVerified(true);
-        $this->em->persist($association);
-        $this->em->flush();
-        $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$this->jwtManager->create($association));
+        $this->signInAssociationMember(['salles'], 'association-current@example.test');
 
         $this->client->request('GET', '/api/campaigns/current');
 

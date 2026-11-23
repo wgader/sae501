@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { archiveSalle, getSalles, type Salle, updateSalle, updateSalleStatus } from '@/lib/api';
+import { archiveSalle, getMediaUrl, getSalles, type Salle, updateSalle, updateSalleStatus } from '@/lib/api';
 import AdminPanel from '@/components/admin/AdminPanel';
 
 const EQUIPMENT_OPTIONS = [
@@ -330,7 +330,7 @@ export default function SallesList() {
                     <div>
                       {salle.imageUrl && !brokenImageIds.includes(salle.id) ? (
                         <Image
-                          src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost'}${salle.imageUrl}`}
+                          src={getMediaUrl(salle.imageUrl) ?? ''}
                           alt={`Photo de ${salle.nom}`}
                           width={640}
                           height={320}

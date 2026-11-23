@@ -138,7 +138,7 @@ final class SalleAdministrationControllerTest extends ControllerRouteTestCase
 
     private function publicUploadDirectory(): string
     {
-        $directory = static::getContainer()->getParameter('app.public_upload_directory');
+        $directory = static::getContainer()->getParameter('app.image_directory');
         self::assertIsString($directory);
 
         return $directory;
