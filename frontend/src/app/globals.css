@@ -22,16 +22,6 @@
     --color-black: var(--Black);
     --color-grey: var(--Grey);
 
-    /* Couleur de chaque module, identique dans tout l'espace association */
-    --color-module-grants: var(--Misty-Rose);
-    --color-module-rooms: var(--Lime-Cream);
-    --color-module-equipment: var(--Indigo-Bloom);
-    --color-module-events: var(--Mint-Cream);
-
-    /* Couleurs du logo de la ville : le point vert sert de motif de marque */
-    --color-brand-dot: var(--Feytiat-Green);
-    --color-brand-cyan: var(--Feytiat-Cyan);
-
     /* Compatibility aliases for existing classes */
     --color-Primary: var(--Mosaic-Tile);
     --color-Neutral: var(--White);
@@ -80,8 +70,6 @@
     --tracking-title: 0.125rem;
     --tracking-display: -0.03em;
     --leading-copy: 1.6;
-    --leading-display: 1;
-    --leading-heading: 1.06;
 
     /* Reusable decorative dimensions */
     --border-width-ring: 1.625rem;
@@ -112,9 +100,6 @@
     --Mint-Cream: #CFEDE5;
     --Pale-Sage: #E3EFEA;
     --Flush-Mahogany: #CD2429;
-    /* Logo de la ville */
-    --Feytiat-Green: #97BF0D;
-    --Feytiat-Cyan: #00A9B5;
     /* Statuts : demande en attente, module événements */
     --Ochre: #9C7A19;
     --Sand: #D9C2A7;

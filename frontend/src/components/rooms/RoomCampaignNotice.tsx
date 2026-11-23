@@ -61,9 +61,9 @@ export default function RoomCampaignNotice({ state, mode }: RoomCampaignNoticePr
   if (state.active && campaign) {
     return (
       <Notice tone="success" title="La campagne est ouverte">
-        Déposez vos vœux de créneaux réguliers jusqu’au {formatInstant(campaign.closingAt)}
-        {period ? `, pour la saison ${period}` : ''}. Plusieurs associations peuvent demander le même créneau : la
-        mairie les départage lors de l’arbitrage.
+        Déposez vos demandes jusqu’au {formatInstant(campaign.closingAt)}
+        {period ? `, pour des créneaux ${period}` : ''}. Plusieurs associations peuvent demander le même créneau : la
+        mairie les départage lors de la réunion d’arbitrage.
       </Notice>
     );
   }
@@ -71,7 +71,7 @@ export default function RoomCampaignNotice({ state, mode }: RoomCampaignNoticePr
   if (campaign?.status === 'PROGRAMMED') {
     return (
       <Notice tone="info" title="La campagne n’est pas encore ouverte">
-        Le dépôt des vœux est fermé pour l’instant. Il ouvrira le {formatInstant(campaign.openingAt)}
+        Vous pourrez déposer vos demandes à partir du {formatInstant(campaign.openingAt)}
         {period ? `, pour des créneaux ${period}` : ''}.
       </Notice>
     );
@@ -89,8 +89,8 @@ export default function RoomCampaignNotice({ state, mode }: RoomCampaignNoticePr
           </Link>
         }
       >
-        Le dépôt des vœux est fermé depuis le {formatInstant(campaign.closingAt)}. La mairie étudie les vœux reçus et
-        vous informera des créneaux attribués. Pour tout changement, contactez la mairie.
+        Vos demandes ne peuvent plus être modifiées ni annulées : la mairie les étudie et vous informera de ses décisions.
+        Pour tout changement, contactez la mairie.
       </Notice>
     );
   }

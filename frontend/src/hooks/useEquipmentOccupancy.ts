@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getEquipmentOccupancy } from '@/lib/api/materiel';
 import type { EquipmentOccupancy } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 interface OccupancyResult {
   key: string;
@@ -23,7 +22,7 @@ export function useEquipmentOccupancy(equipmentId: number) {
         if (active) setResult({ key, occupancy });
       })
       .catch((err: unknown) => {
-        logger.error('Chargement du calendrier du matériel impossible', err);
+        console.error('Chargement du calendrier du matériel impossible', err);
         if (active) setResult({ key, occupancy: null });
       });
     return () => {

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getRoomAvailability } from '@/lib/api/rooms';
 import { toBusyIntervals, type BusyInterval } from '@/lib/bookingAvailability';
-import { logger } from '@/lib/logger';
 
 interface OccupancyResult {
   key: string;
@@ -23,7 +22,7 @@ export function useRoomOccupancy(roomId: number, firstDay: string, lastDay: stri
         if (active) setResult({ key, busy: toBusyIntervals(response.occupiedSlots ?? []) });
       })
       .catch((err: unknown) => {
-        logger.error('Chargement des disponibilités impossible', err);
+        console.error('Chargement des disponibilités impossible', err);
         if (active) setResult({ key, busy: null });
       });
     return () => {

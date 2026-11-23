@@ -6,7 +6,6 @@ import FormField from '@/components/ui/FormField';
 import BackButton from '@/components/ui/BackButton';
 import Notice from '@/components/ui/Notice';
 import { requestPasswordReset } from '@/lib/api/auth';
-import { logger } from '@/lib/logger';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -27,7 +26,7 @@ export default function ForgotPasswordPage() {
       await requestPasswordReset(email.trim());
       setIsSubmitted(true);
     } catch (err) {
-      logger.error('Demande de réinitialisation impossible', err);
+      console.error('Demande de réinitialisation impossible', err);
       setError(err instanceof Error ? err.message : 'La demande n’a pas pu être envoyée.');
     } finally {
       setIsLoading(false);

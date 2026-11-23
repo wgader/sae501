@@ -7,7 +7,6 @@ import CampaignStatusBadge from '@/components/admin/campaign/CampaignStatusBadge
 import { downloadCampaignPlanning, getCampaignHistory } from '@/lib/api/campaigns';
 import { formatInstantDate } from '@/lib/campaignDates';
 import type { Campaign, CampaignWithTotals } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 interface CampaignHistoryProps {
   /** Campagne affichée au-dessus : exclue de l'historique. */
@@ -30,7 +29,7 @@ export default function CampaignHistory({ currentId, refreshKey, onSelect }: Cam
         if (active) setCampaigns(data);
       })
       .catch((err: unknown) => {
-        logger.error('Chargement de l’historique des campagnes impossible', err);
+        console.error('Chargement de l’historique des campagnes impossible', err);
         if (active) setError('Impossible de charger les campagnes précédentes.');
       });
     return () => {
@@ -46,7 +45,7 @@ export default function CampaignHistory({ currentId, refreshKey, onSelect }: Cam
     try {
       await downloadCampaignPlanning(campaign, { view: 'complet', includeRefused: false });
     } catch (err) {
-      logger.error('Téléchargement du planning impossible', err);
+      console.error('Téléchargement du planning impossible', err);
       setError('Le planning PDF n’a pas pu être téléchargé.');
     } finally {
       setDownloadingId(null);

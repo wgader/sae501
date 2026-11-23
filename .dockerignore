@@ -1,15 +1,17 @@
-# Recréés pendant le build : les copies locales (modules macOS) casseraient l'image Linux.
 backend/vendor
+# Les données d’exécution (cache, logs, uploads privés, base de test) ne doivent jamais entrer dans une image.
+backend/var
+# Les images publiques envoyées vivent dans le volume backend_uploads.
+backend/public/uploads
+# Les clés JWT sont fournies par les secrets Docker.
+backend/config/jwt/*.pem
+# Dépendances et builds locaux du frontend : l’image les recrée (sinon des modules natifs macOS
+# écrasent ceux installés pour Linux et le build échoue).
 frontend/node_modules
 frontend/.next
-frontend/out
-backend/public/bundles
-# Données locales : cache, journaux, fichiers déposés, résultats de tests.
-backend/var
 frontend/test-results
 frontend/playwright-report
-# Secrets : les clés JWT sont montées en secrets Docker sur le serveur.
-backend/config/jwt/*.pem
+# Fichiers locaux pouvant contenir des secrets.
 **/.env.local
 **/.env.*.local
 .git

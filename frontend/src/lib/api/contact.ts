@@ -1,3 +1,4 @@
+import { API_URL } from './client';
 
 export interface ContactMessage {
   nom: string;
@@ -7,7 +8,7 @@ export interface ContactMessage {
 }
 
 export async function sendContactMessage(input: ContactMessage): Promise<void> {
-  const response = await fetch('/api/contact', {
+  const response = await fetch(`${API_URL}/api/contact`, {
     method: 'POST',
     headers: {
       Accept: 'application/json',

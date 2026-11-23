@@ -9,7 +9,7 @@ use App\Exception\StockConflictException;
 use App\Repository\MaterielRepository;
 use App\Repository\StockAdjustmentRepository;
 use App\Service\EquipmentStockService;
-use App\Service\ImageStorage;
+use App\Service\PublicImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -32,7 +32,7 @@ final class EquipmentAdministrationController extends AbstractController
         private readonly StockAdjustmentRepository $stockAdjustmentRepository,
         private readonly EquipmentStockService $stockService,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ImageStorage $imageStorage,
+        private readonly PublicImageStorage $imageStorage,
     ) {
     }
 

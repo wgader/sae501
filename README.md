@@ -7,21 +7,8 @@ Application web full-stack — plateforme de gestion entre associations et mairi
 - **Frontend** — Next.js 16, TypeScript, Tailwind CSS
 - **Backend** — Symfony 8.1, API Platform, FrankenPHP
 - **Base de données** — MySQL 8.4 + phpMyAdmin
-- **Serveur** — FrankenPHP (Caddy intégré) : sert le front exporté et l'API sur le même domaine
-- **Infrastructure** — Docker (une seule image), GitHub Actions CI/CD
-
-## Architecture
-
-Le front Next.js est exporté en fichiers statiques (`output: 'export'`) et copié dans
-`backend/public`. Une seule image Docker, construite en trois étapes (Node, Composer,
-FrankenPHP), contient le tout. Caddy envoie `/api/*` à Symfony et sert les pages pour le reste :
-le front n'appelle que des chemins relatifs (`/api/...`), sans domaine ni port.
-
-```
-navigateur ──► Caddy (FrankenPHP)
-                ├── /api/*  ──► Symfony (workers FrankenPHP) ──► MySQL
-                └── /*      ──► pages exportées de Next.js (backend/public)
-```
+- **Serveur** — FrankenPHP (Caddy intégré, HTTPS automatique)
+- **Infrastructure** — Docker, GitHub Actions CI/CD
 
 ## Prérequis
 
@@ -46,18 +33,18 @@ npm install
 Le backend fournit également PHP CS Fixer via Composer :
 
 ```bash
-docker compose exec app composer install --no-scripts
-docker compose exec app php vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php
+docker compose exec backend composer install --no-scripts
+docker compose exec backend php vendor/bin/php-cs-fixer check --config=.php-cs-fixer.dist.php
 ```
 
-Le service `app` doit être démarré pour exécuter ces commandes et le hook
+Le service `backend` doit être démarré pour exécuter ces commandes et le hook
 `pre-commit`.
 
 Les tests PHPUnit forcent automatiquement l’environnement Symfony `test`, y
 compris lorsque le conteneur Docker utilise `APP_ENV=dev` pour l’application :
 
 ```bash
-docker compose exec app php bin/phpunit
+docker compose exec backend php bin/phpunit
 ```
 
 Les clés JWT de test ne nécessitent aucune configuration : `tests/bootstrap.php`
@@ -73,7 +60,7 @@ pouvait plus construire une base vide : `notification` et `campaign` y étaient
 créées deux fois). Une base neuve se construit avec :
 
 ```bash
-docker compose exec app php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
 ```
 
 Pour une base locale créée avant ce regroupement, une seule fois :
@@ -86,10 +73,10 @@ Pour une base locale créée avant ce regroupement, une seule fois :
   `backend/.env.local` qui n’est jamais versionné.
 
   ```bash
-  docker compose exec app php bin/console doctrine:database:drop --force
-  docker compose exec app php bin/console doctrine:database:create
-  docker compose exec app php bin/console doctrine:migrations:migrate --no-interaction
-  docker compose exec app php bin/console doctrine:fixtures:load --no-interaction
+  docker compose exec backend php bin/console doctrine:database:drop --force
+  docker compose exec backend php bin/console doctrine:database:create
+  docker compose exec backend php bin/console doctrine:migrations:migrate --no-interaction
+  docker compose exec backend php bin/console doctrine:fixtures:load --no-interaction
   ```
 
 - base à conserver : relire d’abord le SQL proposé, qui ne doit contenir aucun
@@ -98,23 +85,19 @@ Pour une base locale créée avant ce regroupement, une seule fois :
   `doctrine:schema:update` (testée sur une copie : aucune ligne modifiée).
 
   ```bash
-  docker compose exec app php bin/console doctrine:schema:update --dump-sql
-  docker compose exec app php bin/console doctrine:schema:update --force
-  docker compose exec app php bin/console doctrine:migrations:version --delete --all --no-interaction
-  docker compose exec app php bin/console doctrine:migrations:version --add --all --no-interaction
-  docker compose exec app php bin/console doctrine:schema:validate
+  docker compose exec backend php bin/console doctrine:schema:update --dump-sql
+  docker compose exec backend php bin/console doctrine:schema:update --force
+  docker compose exec backend php bin/console doctrine:migrations:version --delete --all --no-interaction
+  docker compose exec backend php bin/console doctrine:migrations:version --add --all --no-interaction
+  docker compose exec backend php bin/console doctrine:schema:validate
   ```
 
-| Service              | URL                            |
-|----------------------|--------------------------------|
-| Site (next dev)      | http://localhost:3000          |
-| Symfony seul         | http://localhost:8000          |
-| Documentation API    | http://localhost:8000/api/docs |
-| phpMyAdmin           | http://localhost:8080          |
-| Mailpit              | http://localhost:8025          |
-
-En développement, `next dev` relaie `/api` vers Symfony (rewrites de `frontend/next.config.ts`) :
-le navigateur ne parle qu'au port 3000, comme il ne parle qu'à un domaine en production.
+| Service    | URL                         |
+|------------|-----------------------------|
+| Frontend   | http://localhost:3000       |
+| Backend    | http://localhost:80         |
+| API Docs   | http://localhost/api/docs   |
+| phpMyAdmin | http://localhost:8080       |
 
 ## Structure
 
@@ -130,10 +113,13 @@ SAE501/
 │   │   ├── packages/       # Configuration des bundles
 │   │   └── routes/         # Définition des routes
 │   └── migrations/         # Migrations Doctrine
-├── Dockerfile              # Image unique : Node (export du front), Composer, FrankenPHP
 ├── docker/
-│   ├── Caddyfile           # Routage : /api vers Symfony, le reste vers les pages du front
-│   ├── php.ini             # Configuration PHP
+│   ├── backend/
+│   │   ├── Dockerfile      # FrankenPHP + PHP 8.5
+│   │   ├── Caddyfile       # Configuration Caddy
+│   │   └── php.ini         # Configuration PHP
+│   ├── frontend/
+│   │   └── Dockerfile      # Node.js 26
 │   └── deploy/             # Mise en service du VPS, déploiement, sauvegardes, proxy d’entrée
 ├── .github/
 │   └── workflows/
@@ -163,18 +149,15 @@ En résumé :
   modèles : `.env.preprod.example` et `.env.prod.example` (aucune valeur réelle) ;
 - seul le proxy d’entrée `docker/deploy/edge` (Caddy, HTTPS automatique) publie 80/443 ; MySQL,
   phpMyAdmin et Mailpit ne sont jamais exposés ;
-- l’image de production tourne sans root (UID 10001), sans dépendances de développement ni
-  Composer, avec seulement `var/`, `/data` et `/config` en écriture ; le
-  développement utilise l’étape `dev` (`target: dev` dans `docker-compose.yml`) ;
-- le service `worker` (même image) traite la file Messenger et les tâches planifiées
-  (`backend/src/Scheduler/MaintenanceSchedule.php`).
+- l’image backend de production tourne sans root (UID 10001), sans dépendances de
+  développement ni Composer, avec seulement `var/`, `public/uploads`, `/data` et `/config` en
+  écriture ; le développement utilise le stage `dev` (`target: dev` dans `docker-compose.yml`).
 
 Les fichiers envoyés sont conservés dans deux volumes Docker nommés, sauvegardés chaque nuit
 par `docker/deploy/backup.sh` :
 
-- `<projet>_backend_uploads` (`/app/backend/var/media`) : images des salles, du matériel et logos,
-  servies sous `/uploads/...` par Symfony aux seuls comptes autorisés (module ou association) ;
-- `<projet>_backend_private_uploads` (`/app/backend/var/uploads`) : justificatifs et fichiers
+- `<projet>_backend_uploads` (`/app/public/uploads`) : images publiques des salles et du matériel ;
+- `<projet>_backend_private_uploads` (`/app/var/uploads`) : justificatifs et fichiers
   d'événement, servis uniquement par l'API après contrôle d'accès.
 
 Ces dossiers, `backend/var` et les clés JWT sont exclus du contexte de build
@@ -192,19 +175,19 @@ Configurer aussi SPF, DKIM et DMARC sur le domaine d’envoi (voir DEPLOYMENT.md
 
 Les notifications asynchrones (réservations de salle) passent par la file Doctrine
 `MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0`, consommée en production par
-le service `worker` de `docker-compose.prod.yml`. Les messages en échec sont
+le service `messenger-worker` de `docker-compose.prod.yml`. Les messages en échec sont
 conservés dans la file `failed` :
 
 ```bash
-docker exec sae501-prod-worker-1 php bin/console messenger:failed:show --env=prod
+docker exec sae501-prod-messenger-worker-1 php bin/console messenger:failed:show --env=prod
 ```
 
 ### Tests end-to-end (Playwright)
 
-La CI construit l’image de production, la démarre sans root avec MySQL, les migrations et les
-fixtures, puis exécute les parcours sur Chromium contre cette image, avec les comptes de
-démonstration dont le mot de passe est tiré au hasard à chaque exécution.
-En local, avec `docker compose up` lancé, exporter `TEST_ADMIN_PASSWORD` et
+La CI démarre une pile complète (MySQL, migrations, fixtures, API Symfony et
+frontend compilé) puis exécute les parcours sur Chromium avec les comptes de
+démonstration des fixtures, dont le mot de passe est tiré au hasard à chaque exécution.
+En local, avec l’API et le frontend lancés, exporter `TEST_ADMIN_PASSWORD` et
 `TEST_USER_PASSWORD` (valeur de `FIXTURES_PASSWORD`) puis :
 
 ```bash

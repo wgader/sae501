@@ -7,7 +7,6 @@ import { IconTrash, IconUpload } from '@/components/ui/icons';
 import { deleteAssociationPhoto, uploadAssociationPhoto } from '@/lib/api/auth';
 import { getMediaUrl } from '@/lib/api/client';
 import type { AccountProfile } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 const MAX_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -34,7 +33,7 @@ export default function ProfilePhoto({ logoUrl, initials, editable, onChange }: 
     try {
       onChange(await action());
     } catch (err) {
-      logger.error('Mise à jour de la photo impossible', err);
+      console.error('Mise à jour de la photo impossible', err);
       setError(err instanceof Error ? err.message : 'La photo n’a pas pu être mise à jour.');
     } finally {
       setIsBusy(false);

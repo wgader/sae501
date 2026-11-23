@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   cancelAssociationRequest,
   downloadPrivateDocument,
@@ -12,8 +12,6 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Button from '@/components/ui/Button';
 import RequestStatusBadge from './RequestStatusBadge';
 import RequestTypeBadge from './RequestTypeBadge';
-import { routes } from '@/lib/routes';
-import { logger } from '@/lib/logger';
 
 function formatDate(value: string | undefined | null, withTime = false): string {
   if (!value) return '—';
@@ -163,9 +161,10 @@ function Documents({ documents }: Pick<AssociationRequestDetail, 'documents'>) {
 }
 
 export default function RequestDetailPage() {
+  const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const id = searchParams.get('id') ?? '';
+  const id = params.id;
   const type = searchParams.get('type') || undefined;
   const [detail, setDetail] = useState<AssociationRequestDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +178,7 @@ export default function RequestDetailPage() {
     try {
       setDetail(await getAssociationRequestDetail(id, type));
     } catch (requestError) {
-      logger.error('Chargement de la démarche impossible', requestError);
+      console.error(requestError);
       setError(requestError instanceof Error ? requestError.message : 'Une erreur est survenue.');
     } finally {
       setIsLoading(false);
@@ -212,7 +211,7 @@ export default function RequestDetailPage() {
       setIsCancelOpen(false);
       await loadDetail();
     } catch (requestError) {
-      logger.error('Annulation de la réservation impossible', requestError);
+      console.error(requestError);
       setError(requestError instanceof Error ? requestError.message : 'Impossible d’annuler la réservation.');
       setIsCancelOpen(false);
     } finally {
@@ -268,7 +267,7 @@ export default function RequestDetailPage() {
                     <path d="m15.5 6.5-6.7 6.7a3 3 0 0 0 4.2 4.2l6-6a4.5 4.5 0 0 0-6.4-6.4l-6.7 6.7a6 6 0 1 0 8.5 8.5l5.2-5.2" />
                   </svg>
                 }
-                onClick={() => router.push(routes.requestAnnexes(detail.id, detail.type))}
+                onClick={() => router.push(`/historique/${detail.id}/pieces-annexes?type=${detail.type}`)}
               >
                 Pièces annexes
               </Button>

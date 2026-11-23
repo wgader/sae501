@@ -4,15 +4,13 @@ import { useId, useState, type CSSProperties } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { IconChevronLeft, IconChevronRight, IconWarning } from '@/components/ui/icons';
-import CampaignRequestStatusBadge, { CAMPAIGN_REQUEST_STATUS_LABELS } from '@/components/admin/campaign/CampaignRequestStatusBadge';
-import Dialog from '@/components/ui/Dialog';
+import { CAMPAIGN_REQUEST_STATUS_LABELS } from '@/components/admin/campaign/CampaignRequestStatusBadge';
 import { formatDayLabel, formatSlotTime, slotDate } from '@/lib/campaignDates';
 import {
   PLANNING_FIRST_HOUR,
   PLANNING_HOURS,
   PLANNING_SLOTS,
   addDays,
-  collapseLanes,
   initialWeek,
   monthLabel,
   placeDay,
@@ -118,7 +116,6 @@ export default function CampaignPlanning({ requests, periodStart, salles, onSele
   const [selectedDay, setSelectedDay] = useState(monday);
   const [salleId, setSalleId] = useState('');
   const [showRefused, setShowRefused] = useState(false);
-  const [overflowList, setOverflowList] = useState<CampaignRequest[] | null>(null);
 
   const days = weekDays(monday);
   const visible = requests.filter(
@@ -127,10 +124,10 @@ export default function CampaignPlanning({ requests, periodStart, salles, onSele
       (showRefused || request.status !== 'refused') &&
       (!salleId || String(request.salle.id) === salleId),
   );
-  const columns = days.map((day) => {
-    const placed = placeDay(visible.filter((request) => slotDate(request.dateDebut) === day.key));
-    return { day, placed, shown: collapseLanes(placed) };
-  });
+  const columns = days.map((day) => ({
+    day,
+    placed: placeDay(visible.filter((request) => slotDate(request.dateDebut) === day.key)),
+  }));
   const weekCount = columns.reduce((total, column) => total + column.placed.items.length, 0);
   const today = todayKey();
 
@@ -215,7 +212,7 @@ export default function CampaignPlanning({ requests, periodStart, salles, onSele
 
       <div
         className="overflow-hidden rounded-card border border-line bg-white"
-        style={{ '--planning-columns': columns.map(({ shown }) => `minmax(0, ${shown.lanes}fr)`).join(' ') } as CSSProperties}
+        style={{ '--planning-columns': columns.map(({ placed }) => `minmax(0, ${Math.min(placed.lanes, 3)}fr)`).join(' ') } as CSSProperties}
       >
         <div className="planning-week border-b border-line max-lg:hidden" aria-hidden="true">
           <span />
@@ -261,7 +258,7 @@ export default function CampaignPlanning({ requests, periodStart, salles, onSele
               ))}
             </ol>
 
-            {columns.map(({ day, shown }) => (
+            {columns.map(({ day, placed }) => (
               <ol
                 key={day.key}
                 aria-label={formatDayLabel(day.key)}
@@ -270,26 +267,12 @@ export default function CampaignPlanning({ requests, periodStart, salles, onSele
                   day.key !== selectedDay && 'max-lg:hidden',
                   day.key === today && 'bg-primary-soft/20',
                 )}
-                style={{ '--planning-slots': PLANNING_SLOTS, '--planning-lanes': shown.lanes } as CSSProperties}
+                style={{ '--planning-slots': PLANNING_SLOTS, '--planning-lanes': placed.lanes } as CSSProperties}
               >
-                {shown.overflow.map((chip) => (
-                  <li key={chip.key} className="contents">
-                    <button
-                      type="button"
-                      onClick={() => setOverflowList(chip.requests)}
-                      aria-label={`${chip.requests.length} autres demandes sur ce créneau, afficher la liste`}
-                      className="planning-event m-0.5 flex min-w-0 flex-col items-center justify-center rounded-control bg-ink text-white ring-2 ring-danger transition-colors hover:bg-ink/85 focus-visible:outline-none focus-visible:ring-primary cursor-pointer"
-                      style={{ '--event-start': chip.start, '--event-span': chip.span, '--event-lane': chip.lane } as CSSProperties}
-                    >
-                      <span className="text-body-sm font-black">+{chip.requests.length}</span>
-                      <span className="text-caption font-bold opacity-80">voir</span>
-                    </button>
-                  </li>
-                ))}
-                {shown.items.map(({ request, start, span, lane }) => {
+                {placed.items.map(({ request, start, span, lane }) => {
                   const conflict = request.conflictsWith.length > 0 && request.status !== 'refused';
                   // Plusieurs demandes côte à côte : seule l'heure de début tient sur la largeur.
-                  const compact = shown.lanes > 1;
+                  const compact = placed.lanes > 1;
                   const hours = compact
                     ? formatSlotTime(request.dateDebut)
                     : `${formatSlotTime(request.dateDebut)} – ${formatSlotTime(request.dateFin)}`;
@@ -318,36 +301,6 @@ export default function CampaignPlanning({ requests, periodStart, salles, onSele
           </div>
         </div>
       </div>
-
-      <Dialog
-        open={overflowList !== null}
-        title={`${overflowList?.length ?? 0} autres demandes sur ce créneau`}
-        description="Toutes visent la même plage horaire : ouvrez une demande pour la traiter."
-        onClose={() => setOverflowList(null)}
-      >
-        <ul className="max-h-planning-viewport divide-y divide-line overflow-y-auto custom-scrollbar">
-          {(overflowList ?? []).map((request) => (
-            <li key={request.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setOverflowList(null);
-                  onSelect(request);
-                }}
-                className="flex w-full cursor-pointer items-center justify-between gap-3 px-1 py-3 text-left hover:bg-paper"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-body-sm font-black text-ink">{request.association.nom}</span>
-                  <span className="block truncate text-meta text-muted">
-                    {request.salle.nom} · {formatSlotTime(request.dateDebut)} – {formatSlotTime(request.dateFin)}
-                  </span>
-                </span>
-                <CampaignRequestStatusBadge status={request.status} conflict={request.conflictsWith.length > 0} className="shrink-0" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </Dialog>
     </section>
   );
 }

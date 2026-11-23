@@ -1,29 +1,60 @@
-import { IconArrowRight } from '@/components/ui/icons';
-import VillageSkyline from './illustrations/VillageSkyline';
-import BrandDot from './ui/BrandDot';
-import LandingContainer from './ui/LandingContainer';
-import LandingLink from './ui/LandingLink';
-import Reveal from './ui/Reveal';
+'use client';
 
-/** Dernier appel à l'action, posé sur la silhouette du bourg. */
+import Link from 'next/link';
+
 export default function CtaSection() {
   return (
-    <section aria-labelledby="cta-title" className="bg-white pb-24 sm:pb-32">
-      <LandingContainer>
-        <Reveal>
-          <div className="relative isolate overflow-hidden rounded-panel bg-primary px-7 pt-16 pb-40 text-center sm:pt-24 sm:pb-56">
-            <h2 id="cta-title" className="mx-auto max-w-2xl text-4xl font-black tracking-heading text-balance text-white sm:text-6xl">
-              Moins de papiers, plus d’asso<BrandDot />
-            </h2>
-            <p className="mx-auto mt-5 max-w-md text-body-lg leading-copy text-white/75">L’inscription prend deux minutes.</p>
-            <LandingLink href="/inscription" variant="secondary" className="mt-9 rounded-pill border-white">
-              Créer le compte de mon asso
-              <IconArrowRight className="size-4" />
-            </LandingLink>
-            <VillageSkyline className="absolute inset-x-0 bottom-0 -z-10 h-36 w-full sm:h-52" />
+    <section
+      aria-labelledby="cta-heading"
+      className="py-12 sm:py-16"
+    >
+      <div className="mx-auto max-w-340 px-4 sm:px-8 lg:px-12">
+        <div className="relative overflow-hidden rounded-panel bg-sage px-6 py-10 sm:rounded-panel-soft sm:px-12 sm:py-14 lg:px-16 lg:py-16">
+          <div
+            className="pointer-events-none absolute -bottom-14 -right-14 h-48 w-48 rounded-full border-18 border-white/70"
+            aria-hidden="true"
+          />
+
+          <div className="relative z-10 grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
+            <header className="lg:col-span-7">
+              <p className="text-meta font-bold uppercase tracking-eyebrow text-primary">
+                Prêt à commencer ?
+              </p>
+
+              <h2
+                id="cta-heading"
+                className="mt-2 text-5xl font-black leading-tight tracking-heading text-ink"
+              >
+                Vos projets font<br />
+                vivre Feytiat.
+              </h2>
+            </header>
+
+            <div className="lg:col-span-5">
+              <p className="text-body leading-copy text-ink/85 sm:text-base">
+                Rejoignez l&apos;espace associations et simplifiez vos échanges
+                avec la mairie dès aujourd&apos;hui.
+              </p>
+
+              <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-5">
+                <Link
+                  href="/inscription"
+                  className="inline-flex h-12 items-center justify-center rounded-control bg-primary px-7 text-xs font-bold uppercase tracking-label text-white shadow-xs transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  Créer mon compte
+                </Link>
+
+                <Link
+                  href="/connexion"
+                  className="inline-flex h-12 items-center justify-center rounded-control border border-ink/30 px-6 text-xs font-bold uppercase tracking-label text-ink transition-colors hover:border-ink hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                >
+                  J&apos;ai déjà un compte
+                </Link>
+              </div>
+            </div>
           </div>
-        </Reveal>
-      </LandingContainer>
+        </div>
+      </div>
     </section>
   );
 }

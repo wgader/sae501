@@ -8,10 +8,10 @@ test.describe('Gestion des Inscriptions et Documents', () => {
     test('Traitement d\'une demande d\'inscription (Accepter/Refuser)', async ({ page }) => {
         await page.goto('/admin/inscription');
 
-        await page.waitForSelector('ul li a[href*="/admin/inscription/dossier"], [role="alert"], section p', { timeout: 15000 });
+        await page.waitForSelector('ul li a[href*="/admin/inscription/"], [role="alert"], section p', { timeout: 15000 });
         await page.getByRole('button', { name: /en attente/i }).click();
 
-        const firstLink = page.locator('a[href*="/admin/inscription/dossier"]').first();
+        const firstLink = page.locator('a[href*="/admin/inscription/"]').first();
         await firstLink.waitFor({ state: 'visible', timeout: 15000 });
         await firstLink.click();
 
@@ -33,7 +33,7 @@ test.describe('Gestion des Inscriptions et Documents', () => {
     });
 
     test('Ajout d\'un document justificatif à un dossier', async ({ page }) => {
-        await page.goto('/admin/association/fiche/documents?id=1');
+        await page.goto('/admin/association/1/documents');
 
         await page.waitForSelector('button, [role="alert"]', { timeout: 10000 });
 

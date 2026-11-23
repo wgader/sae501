@@ -10,7 +10,6 @@ import {
   StockCheckResult,
   updateAdminEquipment,
 } from '@/lib/api';
-import { logger } from '@/lib/logger';
 
 interface EquipmentStockModalProps {
   equipment: Equipment;
@@ -58,7 +57,7 @@ export default function EquipmentStockModal({
         setConflict(result);
       }
     } catch (checkError) {
-      logger.error('Erreur lors de la vérification de stock:', checkError);
+      console.error('Erreur lors de la vérification de stock:', checkError);
       setError('La vérification des réservations a échoué. Réessayez avant de valider.');
     } finally {
       setChecking(false);
@@ -124,7 +123,7 @@ export default function EquipmentStockModal({
     try {
       setHistory(await getEquipmentStockAdjustments(equipment.id));
     } catch (historyError) {
-      logger.error('Erreur lors du chargement de l’historique de stock:', historyError);
+      console.error('Erreur lors du chargement de l’historique de stock:', historyError);
       setError('Impossible de charger l’historique des ajustements.');
     } finally {
       setHistoryLoading(false);

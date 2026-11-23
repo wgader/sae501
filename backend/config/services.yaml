@@ -9,8 +9,7 @@
 parameters:
     app.event_upload_directory: '%kernel.project_dir%/var/uploads/events'
     app.private_document_directory: '%kernel.project_dir%/var/uploads/documents'
-    # Images (salles, matériel, logos) : hors de la racine web, servies par MediaController.
-    app.image_directory: '%kernel.project_dir%/var/media'
+    app.public_upload_directory: '%kernel.project_dir%/public/uploads'
     # Cookie de session réservé à HTTPS si JWT_COOKIE_SECURE n’est pas défini.
     app.jwt_cookie_secure_default: '1'
 
@@ -33,4 +32,4 @@ when@test:
     parameters:
         app.event_upload_directory: '%kernel.project_dir%/var/cache/test/uploads/events'
         app.private_document_directory: '%kernel.project_dir%/var/cache/test/uploads/documents'
-        app.image_directory: '%kernel.project_dir%/var/cache/test/media'
+        app.public_upload_directory: '%kernel.project_dir%/var/cache/test/uploads/public'

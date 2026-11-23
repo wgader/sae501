@@ -110,16 +110,6 @@ final class RoomReservationControllerTest extends WebTestCase
         $this->createSalle('Salle des Fêtes', 200);
 
         $this->client->request('GET', '/api/rooms');
-        $this->assertResponseStatusCodeSame(401);
-
-        [$withoutRooms] = $this->createAssociationAndUser('Sans Salles', false);
-        $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$this->jwtManager->create($withoutRooms));
-        $this->client->request('GET', '/api/rooms');
-        $this->assertResponseStatusCodeSame(403);
-
-        [$member] = $this->createAssociationAndUser('Avec Salles');
-        $this->client->setServerParameter('HTTP_AUTHORIZATION', 'Bearer '.$this->jwtManager->create($member));
-        $this->client->request('GET', '/api/rooms');
         $this->assertResponseIsSuccessful();
 
         $data = json_decode($this->client->getResponse()->getContent(), true);

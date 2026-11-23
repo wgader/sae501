@@ -10,7 +10,6 @@ import CampaignRequestStatusBadge, {
 import { cancelAssociationRequest } from '@/lib/api';
 import { formatDayLabel, formatSlotTime, slotDate } from '@/lib/campaignDates';
 import type { CampaignRequest } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 interface MyCampaignRequestsProps {
   requests: CampaignRequest[];
@@ -34,7 +33,7 @@ export default function MyCampaignRequests({ requests, editable, onChanged }: My
       setCancelling(null);
       await onChanged();
     } catch (err) {
-      logger.error('Annulation de la demande impossible', err);
+      console.error('Annulation de la demande impossible', err);
       setError(err instanceof Error ? err.message : 'La demande n’a pas pu être annulée.');
     } finally {
       setIsSubmitting(false);

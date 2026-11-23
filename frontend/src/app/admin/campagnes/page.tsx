@@ -10,7 +10,6 @@ import CampaignRequestsSection from '@/components/admin/campaign/CampaignRequest
 import CampaignScheduleDialog from '@/components/admin/campaign/CampaignScheduleDialog';
 import CampaignExportDialog from '@/components/admin/campaign/CampaignExportDialog';
 import CampaignHistory from '@/components/admin/campaign/CampaignHistory';
-import CampaignWishesSection from '@/components/admin/campaign/wishes/CampaignWishesSection';
 import CampaignStateDialog, { type CampaignStateAction } from '@/components/admin/campaign/CampaignStateDialog';
 import CreateCampaignDialog from '@/components/admin/campaign/CreateCampaignDialog';
 import { fieldControlVariants, fieldLabelVariants } from '@/components/admin/campaign/fieldStyles';
@@ -31,7 +30,6 @@ import { getSalles } from '@/lib/api/salles';
 import { getAssociations } from '@/lib/api/associations';
 import { formatInstantDate, slotDate } from '@/lib/campaignDates';
 import type { Campaign, CampaignRequest } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 interface Option {
   id: number;
@@ -96,7 +94,7 @@ export default function AdminCampaignsPage() {
       setCampaigns(data);
       setSelectedId((current) => preferredId ?? current ?? defaultCampaign(data)?.id ?? null);
     } catch (err) {
-      logger.error('Chargement des campagnes impossible', err);
+      console.error('Chargement des campagnes impossible', err);
       setPageError('Impossible de charger les campagnes.');
     } finally {
       setIsLoading(false);
@@ -110,10 +108,10 @@ export default function AdminCampaignsPage() {
         .then((data) =>
           setSalles(data.filter((salle) => salle.isActive && !salle.deletedAt).map(({ id, nom }) => ({ id, nom }))),
         )
-        .catch((err) => logger.error('Chargement des salles impossible', err));
+        .catch((err) => console.error('Chargement des salles impossible', err));
       void getAssociations(1, 'VALIDATED', undefined, false, 100)
         .then((page) => setAssociations(page.items.map(({ id, nom }) => ({ id, nom }))))
-        .catch((err) => logger.error('Chargement des associations impossible', err));
+        .catch((err) => console.error('Chargement des associations impossible', err));
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadCampaigns]);
@@ -237,7 +235,6 @@ export default function AdminCampaignsPage() {
               actions={actions}
               onFeedback={setFeedback}
             />
-            <CampaignWishesSection campaignId={selectedCampaign.id} onFeedback={setFeedback} />
           </>
         )}
 

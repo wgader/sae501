@@ -22,7 +22,6 @@ import {
   type SlotSelection,
 } from '@/lib/bookingAvailability';
 import { roomSlotInstant } from '@/lib/roomFilters';
-import { logger } from '@/lib/logger';
 
 interface OneOffRoomViewProps {
   room: PublicRoom;
@@ -87,7 +86,7 @@ export default function OneOffRoomView({ room, rules, initialSlot, initialAttend
       setIsCreated(true);
       window.scrollTo({ top: 0 });
     } catch (err: unknown) {
-      logger.error('Réservation de la salle impossible', err);
+      console.error('Réservation de la salle impossible', err);
       const conflict = err instanceof ApiError && err.status === 409;
       setIsConflict(conflict);
       setError(

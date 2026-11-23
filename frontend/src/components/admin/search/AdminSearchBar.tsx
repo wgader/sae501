@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { type Association, getAssociations } from '@/lib/api';
 import AdminSearchDropdown from './AdminSearchDropdown';
-import { routes } from '@/lib/routes';
 
 interface AdminSearchBarProps {
   searchTerm?: string;
@@ -89,7 +88,7 @@ export default function AdminSearchBar({
 
   const handleSelectAssociation = (id: number) => {
     setIsOpen(false);
-    router.push(routes.adminAssociation(id));
+    router.push(`/admin/association/${id}`);
   };
 
   const handleFullSearch = (e?: FormEvent) => {

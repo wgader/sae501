@@ -3,17 +3,13 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Get;
 use App\Repository\DocumentJustificatifRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DocumentJustificatifRepository::class)]
 #[ApiResource(
-    // Lecture seule et réservée à la mairie : les modifications passent par les contrôleurs métier.
-    operations: [new GetCollection(), new Get()],
-    security: "is_granted('ROLE_ADMIN')",
+    security: "is_granted('ROLE_USER')",
     paginationItemsPerPage: 20,
     paginationMaximumItemsPerPage: 100,
 )]

@@ -1,10 +1,11 @@
 import { clearSessions, readSession } from '@/lib/session';
 
-/** Les fichiers déposés sont servis par le même domaine que le site : un chemin relatif suffit. */
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost';
+
 export function getMediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return path.startsWith('/') ? path : `/${path}`;
+  return `${API_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
 export class ApiError extends Error {
@@ -38,7 +39,7 @@ export function apiFetch(path: string, options: RequestInit = {}): Promise<Respo
     headers['Content-Type'] = 'application/json';
   }
 
-  return fetch(path, {
+  return fetch(`${API_URL}${path}`, {
     ...options,
     credentials: 'include',
     headers: { ...headers, ...(options.headers as Record<string, string> | undefined) },

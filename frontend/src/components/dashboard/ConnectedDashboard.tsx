@@ -77,10 +77,9 @@ export default function ConnectedDashboard() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      // Sans le module salles, l'API refuse la campagne : la bannière reste simplement masquée.
-      void getCurrentCampaign()
-        .then(setCampaignState)
-        .catch(() => setCampaignState(null));
+      void getCurrentCampaign().then((res) => {
+        setCampaignState(res);
+      });
     }, 0);
     return () => window.clearTimeout(timeoutId);
   }, []);

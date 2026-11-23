@@ -6,7 +6,6 @@ import RequestFilterBar from './RequestFilterBar';
 import RequestCard from './RequestCard';
 import RequestEmptyState from './RequestEmptyState';
 import Pagination from '@/components/ui/Pagination';
-import { routes } from '@/lib/routes';
 
 export default function HistoriqueDashboard() {
   const router = useRouter();
@@ -141,7 +140,7 @@ export default function HistoriqueDashboard() {
                   key={request.id}
                   request={request}
                   onSelect={(id, type) =>
-                    router.push(routes.request(id, type))
+                    router.push(`/historique/${encodeURIComponent(id)}?type=${encodeURIComponent(type)}`)
                   }
                 />
               ))}

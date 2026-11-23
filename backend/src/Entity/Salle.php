@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Get;
 use App\Repository\SalleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -12,9 +10,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SalleRepository::class)]
 #[ApiResource(
-    // Lecture seule et réservée à la mairie : les modifications passent par les contrôleurs métier.
-    operations: [new GetCollection(), new Get()],
-    security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_SALLE')",
+    security: "is_granted('ROLE_USER')",
     paginationItemsPerPage: 20,
     paginationMaximumItemsPerPage: 100,
 )]

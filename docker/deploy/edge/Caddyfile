@@ -3,29 +3,13 @@
 	email {$ACME_EMAIL}
 	# Proxys de confiance (plages Cloudflare si EDGE_CLOUDFLARE=1), générés par deploy.sh.
 	import /etc/caddy/proxy/global.caddy
-
-	# Journal système du proxy : certificats, erreurs de connexion, à partir de WARN.
-	log {
-		output file /data/logs/error.log {
-			roll_size 10MiB
-			roll_keep 5
-			roll_keep_for 720h
-		}
-		format json
-		level WARN
-	}
-}
-
-# Tout accès en HTTP est renvoyé définitivement vers HTTPS (le défi Let's Encrypt reste servi).
-http:// {
-	redir https://{host}{uri} permanent
 }
 
 # Définit (origin_guard), vide sauf derrière Cloudflare ; généré par deploy.sh.
 import /etc/caddy/proxy/guard.caddy
 
-# En-têtes de sécurité communs à la préproduction et à la production.
-(common) {
+# En-têtes de sécurité ; l’argument est la Content-Security-Policy du site.
+(security_headers) {
 	import origin_guard
 	encode zstd gzip
 	header {
@@ -34,8 +18,8 @@ import /etc/caddy/proxy/guard.caddy
 		Referrer-Policy "strict-origin-when-cross-origin"
 		# Le site ne doit jamais être affiché dans un cadre (clickjacking) ni charger de plugin.
 		X-Frame-Options "DENY"
-		# Valeur par défaut : la CSP envoyée par l’application est conservée.
-		?Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+		# Valeur par défaut : la politique plus complète du site Next.js, si présente, est conservée.
+		?Content-Security-Policy "{args[0]}"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		# Aucun indice sur les logiciels en amont (Caddy ajoute « Via » à chaque réponse relayée).
@@ -43,14 +27,17 @@ import /etc/caddy/proxy/guard.caddy
 		-Via
 		-X-Powered-By
 	}
+	log
 }
 
-# Ancien site des domaines api-… : un environnement déployé avant l'image unique l'importe encore
-# jusqu'à son prochain déploiement. Le proxy est commun aux deux environnements : le retirer trop tôt
-# rendrait toute la configuration invalide.
+# Site web (Next.js).
+(common) {
+	import security_headers "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+}
+
+# API : uniquement du JSON et des fichiers en pièce jointe, aucun contenu actif autorisé.
 (api) {
-	import common
-	header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+	import security_headers "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 }
 
 # Un fichier par environnement, écrit par deploy.sh à partir de son .env.

@@ -380,8 +380,8 @@ final class ExternalEventController extends AbstractController
                         'missingFiles' => $normalizedMissingFiles,
                         'message' => $normalizedMessage,
                         'documentsUrl' => rtrim($this->frontendUrl, '/')
-                            .'/historique/demande/pieces-annexes?id=event-'.$event->getId()
-                            .'&type=evenement',
+                            .'/historique/event-'.$event->getId()
+                            .'/pieces-annexes?type=evenement',
                     ]),
             );
         }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getAccountProfile } from '@/lib/api';
-import { logger } from '@/lib/logger';
 
 export type AssociationModules = {
   subventions: boolean;
@@ -35,7 +34,7 @@ export function useAssociationModules(): AssociationModules | null {
         });
       })
       .catch(() => {
-        logger.error('Impossible de charger les modules de l’association.');
+        console.error('Impossible de charger les modules de l’association.');
         if (active) setModules({ subventions: false, materiel: false, salles: false, evenements: false });
       });
 

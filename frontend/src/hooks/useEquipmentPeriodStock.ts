@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getEquipmentAvailability } from '@/lib/api/materiel';
-import { logger } from '@/lib/logger';
 
 interface StockResult {
   key: string;
@@ -25,7 +24,7 @@ export function useEquipmentPeriodStock(equipmentId: number, start: string | nul
         setResult({ key, available: item?.stockDisponible ?? 0 });
       })
       .catch((err: unknown) => {
-        logger.error('Vérification du stock impossible', err);
+        console.error('Vérification du stock impossible', err);
         if (active) setResult({ key, available: null });
       });
     return () => {

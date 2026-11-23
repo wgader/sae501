@@ -22,7 +22,7 @@ final class AssociationPhotoTest extends ControllerRouteTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->uploadDirectory = (string) static::getContainer()->getParameter('app.image_directory');
+        $this->uploadDirectory = (string) static::getContainer()->getParameter('app.public_upload_directory');
     }
 
     public function testMemberUploadsReplacesAndRemovesThePhoto(): void

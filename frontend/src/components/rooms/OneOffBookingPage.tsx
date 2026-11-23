@@ -25,7 +25,6 @@ import {
 } from '@/lib/bookingAvailability';
 import { DEFAULT_ROOM_FILTERS, countActiveRoomFilters, matchesRoomFilters } from '@/lib/roomFilters';
 import { readSession } from '@/lib/session';
-import { logger } from '@/lib/logger';
 
 const EMPTY_SEARCH: OneOffSearch = { slot: EMPTY_SLOT, attendees: '' };
 
@@ -52,7 +51,7 @@ export default function OneOffBookingPage() {
         if (active) setRooms(list);
       })
       .catch((err: unknown) => {
-        logger.error('Chargement du catalogue des salles impossible', err);
+        console.error('Chargement du catalogue des salles impossible', err);
         if (active) setRoomsFailed(true);
       })
       .finally(() => {

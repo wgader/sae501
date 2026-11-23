@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { acceptRoomRequest, cancelRoomRequest, getRoomRequests, refuseRoomRequest } from '@/lib/api/campaigns';
 import type { CampaignRequest } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 /** Réservations ponctuelles (hors campagne) et décisions de la mairie. */
 export function useRoomRequests() {
@@ -17,7 +16,7 @@ export function useRoomRequests() {
     try {
       setRequests((await getRoomRequests()).requests);
     } catch (err) {
-      logger.error('Chargement des réservations ponctuelles impossible', err);
+      console.error('Chargement des réservations ponctuelles impossible', err);
       setError('Impossible de charger les réservations ponctuelles.');
     } finally {
       setIsLoading(false);

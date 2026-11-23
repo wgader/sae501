@@ -7,7 +7,6 @@ import FormField from '@/components/ui/FormField';
 import Notice from '@/components/ui/Notice';
 import PasswordRequirements, { isPasswordValid } from '@/components/ui/PasswordRequirements';
 import { confirmPasswordReset } from '@/lib/api/auth';
-import { logger } from '@/lib/logger';
 
 const linkClassName =
   'inline-flex h-control-compact items-center justify-center rounded-control bg-primary px-6 text-xs font-bold uppercase tracking-label text-white transition-colors hover:bg-primary-hover';
@@ -68,7 +67,7 @@ export default function ResetPasswordForm() {
       const result = await confirmPasswordReset(token, password);
       setLoginPath(result.loginPath);
     } catch (err) {
-      logger.error('Réinitialisation du mot de passe impossible', err);
+      console.error('Réinitialisation du mot de passe impossible', err);
       setError(err instanceof Error ? err.message : 'Le mot de passe n’a pas pu être modifié.');
     } finally {
       setIsLoading(false);

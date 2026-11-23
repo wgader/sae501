@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { IconChevronLeft } from '@/components/ui/icons';
-import { routes } from '@/lib/routes';
 
 export type AssociationTab = 'INFORMATIONS' | 'DOCUMENTS' | 'HISTORIQUE' | 'ÉVÉNEMENTS';
 
@@ -27,16 +26,17 @@ export default function AssociationTopNav({
   const pathname = usePathname();
 
   const tabs: NavTabItem[] = [
-    { key: 'INFORMATIONS', label: 'INFORMATIONS', href: routes.adminAssociation(id) },
-    { key: 'DOCUMENTS', label: 'DOCUMENTS', href: routes.adminAssociation(id, 'documents') },
-    { key: 'HISTORIQUE', label: 'HISTORIQUE', href: routes.adminAssociation(id, 'historique') },
-    { key: 'ÉVÉNEMENTS', label: 'ÉVÉNEMENTS', href: routes.adminAssociation(id, 'evenements') },
+    { key: 'INFORMATIONS', label: 'INFORMATIONS', href: `/admin/association/${id}` },
+    { key: 'DOCUMENTS', label: 'DOCUMENTS', href: `/admin/association/${id}/documents` },
+    { key: 'HISTORIQUE', label: 'HISTORIQUE', href: `/admin/association/${id}/historique` },
+    { key: 'ÉVÉNEMENTS', label: 'ÉVÉNEMENTS', href: `/admin/association/${id}/evenements` },
   ];
 
-  // L'onglet actif se reconnaît au chemin seul, l'identifiant étant dans la query string.
   const isTabActive = (href: string) => {
-    const path = href.split('?')[0];
-    return path === '/admin/association/fiche' ? pathname === path : pathname.startsWith(path);
+    if (href === `/admin/association/${id}`) {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
   };
 
   return (

@@ -3,7 +3,6 @@ import GrantStatusBadge from '@/components/subventions/GrantStatusBadge';
 import { IconChevronRight, IconSubvention } from '@/components/ui/icons';
 import type { AdminGrantSummary } from '@/lib/api';
 import { formatGrantAmount, formatGrantDate } from '@/lib/grantApplication';
-import { routes } from '@/lib/routes';
 
 export default function GrantRequestCard({ grant }: { grant: AdminGrantSummary }) {
   const date = formatGrantDate(grant.updatedAt ?? grant.createdAt);
@@ -11,7 +10,7 @@ export default function GrantRequestCard({ grant }: { grant: AdminGrantSummary }
   return (
     <li>
       <Link
-        href={routes.adminGrant(grant.id)}
+        href={`/admin/subvention/${grant.id}`}
         className="group flex items-center gap-4 rounded-card border border-line bg-white p-5 shadow-xs transition hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:p-6"
       >
         <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-soft bg-Misty-Rose text-ink sm:flex">

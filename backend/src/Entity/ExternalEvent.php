@@ -3,16 +3,12 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Get;
 use App\Repository\ExternalEventRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ExternalEventRepository::class)]
 #[ApiResource(
-    // Lecture seule et réservée à la mairie : les modifications passent par les contrôleurs métier.
-    operations: [new GetCollection(), new Get()],
-    security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_EVENT')",
+    security: "is_granted('ROLE_USER')",
     paginationItemsPerPage: 20,
     paginationMaximumItemsPerPage: 100,
 )]

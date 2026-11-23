@@ -17,7 +17,6 @@ import {
 import { OccupiedSlot, PublicRoom, getPublicRooms, getRoomAvailability } from '@/lib/api';
 import type { Campaign } from '@/lib/api/types';
 import { readSession } from '@/lib/session';
-import { logger } from '@/lib/logger';
 
 type Step = 'slot' | 'rooms' | 'booking';
 
@@ -80,7 +79,7 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
         if (active) setRooms(list);
       })
       .catch((err: unknown) => {
-        logger.error('Chargement du catalogue des salles impossible', err);
+        console.error('Chargement du catalogue des salles impossible', err);
         if (active) setError('Impossible de charger le catalogue des salles municipales.');
       })
       .finally(() => {
@@ -96,7 +95,7 @@ export default function RoomBookingFlow({ campaign, enabled, onCreated }: RoomBo
       const response = await getRoomAvailability(room.id);
       setOccupiedSlots(response.occupiedSlots ?? []);
     } catch (err: unknown) {
-      logger.error('Chargement des disponibilités impossible', err);
+      console.error('Chargement des disponibilités impossible', err);
     }
   }, []);
 

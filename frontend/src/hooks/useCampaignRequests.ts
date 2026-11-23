@@ -13,7 +13,6 @@ import {
   type CampaignSlotPayload,
 } from '@/lib/api/campaigns';
 import type { CampaignRequest } from '@/lib/api/types';
-import { logger } from '@/lib/logger';
 
 export interface CampaignRequestActions {
   accept: (request: CampaignRequest) => Promise<CampaignRequest>;
@@ -44,7 +43,7 @@ export function useCampaignRequests(campaignId: number | null) {
       const data = await getCampaignRequests(campaignId);
       setRequests(data.requests);
     } catch (err) {
-      logger.error('Chargement des demandes de campagne impossible', err);
+      console.error('Chargement des demandes de campagne impossible', err);
       setError('Impossible de charger les demandes de cette campagne.');
     } finally {
       setIsLoading(false);

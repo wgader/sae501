@@ -53,7 +53,7 @@ select_environment() {
 
 # Seul le service mysql est utilisé : les étiquettes d’images de l’application sont sans effet ici.
 compose() {
-  APP_IMAGE_TAG=unused \
+  BACKEND_IMAGE_TAG=unused FRONTEND_IMAGE_TAG=unused \
     docker compose --project-directory "$ENV_DIR" --env-file "$ENV_DIR/.env" \
     -f "$ENV_DIR/docker-compose.prod.yml" "$@"
 }

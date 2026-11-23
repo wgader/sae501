@@ -12,9 +12,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: StockAdjustmentRepository::class)]
 #[ORM\Table(name: 'stock_adjustment')]
 #[ApiResource(
-    // Lecture seule et réservée à la mairie : les modifications passent par les contrôleurs métier.
-    operations: [new GetCollection(), new Get()],
-    security: "is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_MATERIEL')",
+    operations: [
+        new Get(),
+        new GetCollection(),
+    ],
+    security: "is_granted('ROLE_USER')",
     paginationItemsPerPage: 20,
     paginationMaximumItemsPerPage: 100,
 )]
