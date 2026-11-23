@@ -6,7 +6,9 @@ import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import StatusBadge from '@/components/ui/StatusBadge';
+import Button from '@/components/ui/Button';
 import {
+  downloadEquipmentReservationPdf,
   getAdminEquipmentReservation,
   downloadPrivateDocument,
   requestAdminAssociationDocuments,
@@ -50,6 +52,7 @@ export default function AdminEquipmentReservationDetailPage() {
   const [documentsMessage, setDocumentsMessage] = useState('');
   const [requestingDocuments, setRequestingDocuments] = useState(false);
   const [showDocumentsRequest, setShowDocumentsRequest] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const loadReservation = useCallback(async () => {
     if (!Number.isInteger(reservationId) || reservationId <= 0) {
@@ -93,13 +96,13 @@ export default function AdminEquipmentReservationDetailPage() {
   }
 
   async function handleRequestDocuments(event: React.FormEvent<HTMLFormElement>) {
-      event.preventDefault();
-      if (!reservation?.association.id || !reservation.id || !missingFile.trim() || !documentsMessage.trim()) {
-        setError('Renseignez la pièce manquante et le message de relance.');
-        return;
-      }
+    event.preventDefault();
+    if (!reservation?.association.id || !reservation.id || !missingFile.trim() || !documentsMessage.trim()) {
+      setError('Renseignez la pièce manquante et le message de relance.');
+      return;
+    }
 
-      try {
+    try {
         setRequestingDocuments(true);
         setError('');
         await requestAdminAssociationDocuments(
@@ -121,6 +124,30 @@ export default function AdminEquipmentReservationDetailPage() {
       }
   }
 
+  async function handleDownloadPdf(provisional = false) {
+    if (!reservation?.id) return;
+
+    setIsDownloadingPdf(true);
+    setError('');
+    try {
+      await downloadEquipmentReservationPdf(reservation.id, provisional);
+    } catch (requestError: unknown) {
+      console.error(requestError);
+      setError(requestError instanceof Error
+        ? requestError.message
+        : 'Impossible de télécharger le bon de réservation.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }
+
+  const canDownloadOfficialPdf =
+    reservation?.statut === 'Validée' || reservation?.statut === 'Clôturée';
+  const canDownloadProvisionalPdf =
+    reservation?.statut === 'En attente' ||
+    reservation?.statut === 'En cours de traitement' ||
+    reservation?.statut === 'Complément requis';
+
   return (
     <AdminLayout>
       <section className="mx-auto max-w-5xl">
@@ -134,14 +161,37 @@ export default function AdminEquipmentReservationDetailPage() {
         {feedback && <p className="mb-6 rounded-control border-l-4 border-primary bg-primary-soft p-4 text-xs font-semibold text-primary" role="status">{feedback}</p>}
         {!loading && reservation && (
           <article className="space-y-6">
-            <header className="border-b border-line pb-5">
-              <p className="text-label font-bold uppercase tracking-kicker text-primary">Demande de réservation</p>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-black uppercase tracking-heading text-ink sm:text-3xl">
-                  {reservation.association.nom || 'Association non renseignée'}
-                </h1>
-                <StatusBadge status={statusCode(reservation.statut)} />
+            <header className="flex flex-col justify-between gap-4 border-b border-line pb-5 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-label font-bold uppercase tracking-kicker text-primary">Demande de réservation</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <h1 className="text-2xl font-black uppercase tracking-heading text-ink sm:text-3xl">
+                    {reservation.association.nom || 'Association non renseignée'}
+                  </h1>
+                  <StatusBadge status={statusCode(reservation.statut)} />
+                </div>
               </div>
+              {canDownloadOfficialPdf && (
+                <Button
+                  type="button"
+                  size="md"
+                  isLoading={isDownloadingPdf}
+                  onClick={() => void handleDownloadPdf(false)}
+                >
+                  Télécharger le bon officiel
+                </Button>
+              )}
+              {canDownloadProvisionalPdf && (
+                <Button
+                  type="button"
+                  size="md"
+                  variant="secondary"
+                  isLoading={isDownloadingPdf}
+                  onClick={() => void handleDownloadPdf(true)}
+                >
+                  Télécharger le PDF provisoire
+                </Button>
+              )}
             </header>
 
             <div className="grid gap-6 lg:grid-cols-5">

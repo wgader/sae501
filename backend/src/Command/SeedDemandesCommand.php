@@ -108,6 +108,9 @@ class SeedDemandesCommand extends Command
             $salle1->setCapaciteMax(120);
             $salle1->setAccesPmr(true);
             $salle1->setEquipementsInclus(['Tables', 'Chaises', 'Micro', 'Scène']);
+            $now = new \DateTimeImmutable();
+            $salle1->setCreatedAt($now);
+            $salle1->setUpdatedAt($now);
             $salle1->setIsActive(true);
             $this->em->persist($salle1);
         }
@@ -121,6 +124,9 @@ class SeedDemandesCommand extends Command
             $salle2->setCapaciteMax(250);
             $salle2->setAccesPmr(true);
             $salle2->setEquipementsInclus(['Sonorisation intégrée', 'Éclairage scénique', 'Office traiteur', 'Vidéoprojecteur']);
+            $now = new \DateTimeImmutable();
+            $salle2->setCreatedAt($now);
+            $salle2->setUpdatedAt($now);
             $salle2->setIsActive(true);
             $this->em->persist($salle2);
         }
@@ -192,6 +198,7 @@ class SeedDemandesCommand extends Command
         $sub1->setAnneeExercice(2026);
         $sub1->setStatut('En cours de traitement');
         $sub1->setObservations('Dossier complet transmis en commission culture pour délibération de mai 2026.');
+        $sub1->setCreatedAt(new \DateTimeImmutable('2026-03-01 10:30:00'));
         $this->em->persist($sub1);
         $this->em->flush();
 
@@ -212,6 +219,7 @@ class SeedDemandesCommand extends Command
         $sub2->setAnneeExercice(2025);
         $sub2->setStatut('Validée');
         $sub2->setObservations('Subvention validée par le Conseil Municipal le 14/04/2025 pour un montant de 1 800,00 €. Versement effectué le 02/05/2025.');
+        $sub2->setCreatedAt(new \DateTimeImmutable('2025-01-15 09:00:00'));
         $this->em->persist($sub2);
         $this->em->flush();
 
@@ -231,6 +239,7 @@ class SeedDemandesCommand extends Command
         $sub3->setAnneeExercice(2024);
         $sub3->setStatut('Refusée');
         $sub3->setObservations('Enveloppe d\'investissement communal épuisée sur l\'exercice 2024. Vous êtes invités à reformuler votre demande au titre de l\'exercice suivant.');
+        $sub3->setCreatedAt(new \DateTimeImmutable('2024-05-10 16:00:00'));
         $this->em->persist($sub3);
         $this->em->flush();
 
@@ -247,6 +256,7 @@ class SeedDemandesCommand extends Command
         $sub4->setAnneeExercice(2026);
         $sub4->setStatut('Complément requis');
         $sub4->setObservations('Veuillez fournir les conventions d\'engagement des artistes prévus ainsi que le calendrier précis des interventions en milieu scolaire.');
+        $sub4->setCreatedAt(new \DateTimeImmutable('2026-02-12 11:20:00'));
         $this->em->persist($sub4);
         $this->em->flush();
 

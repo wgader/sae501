@@ -27,6 +27,7 @@ services:
     env_file: .env
     environment:
       APP_ENV: dev
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=8.4&charset=utf8mb4
     volumes:
       - ./backend:/app
       - /app/vendor
@@ -48,6 +49,7 @@ services:
     environment:
       SERVER_NAME: ":80"
       SERVER_ROOT: "/app/public"
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?serverVersion=8.4&charset=utf8mb4
     volumes:
       - ./backend:/app
       - /app/vendor
@@ -62,6 +64,11 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    networks:
+      - app_network
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
     networks:
       - app_network
 

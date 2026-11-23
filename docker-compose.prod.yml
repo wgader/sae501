@@ -37,6 +37,7 @@ x-backend-environment: &backend-environment
   DATABASE_URL: mysql://${MYSQL_USER:?}:${MYSQL_PASSWORD:?}@mysql:3306/${MYSQL_DATABASE:?}?serverVersion=8.4&charset=utf8mb4
   CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:?Set CORS_ALLOW_ORIGIN}
   FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL}
+  GOTENBERG_URL: ${GOTENBERG_URL:-http://gotenberg:3000}
   MAILER_DSN: ${MAILER_DSN:?Set MAILER_DSN}
   MAILER_FROM: ${MAILER_FROM:?Set MAILER_FROM}
   MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=0}
@@ -117,6 +118,13 @@ services:
       edge:
         aliases:
           - ${COMPOSE_PROJECT_NAME}-backend
+
+  gotenberg:
+    <<: *hardening
+    image: gotenberg/gotenberg:8
+    mem_limit: ${GOTENBERG_MEM_LIMIT:-256m}
+    networks:
+      - default
 
   campaign-scheduler:
     <<: [*hardening, *backend-image]

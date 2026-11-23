@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   cancelAssociationRequest,
+  downloadEquipmentReservationPdf,
   downloadPrivateDocument,
   getAssociationRequestDetail,
   type AssociationRequestDetail,
@@ -171,6 +172,7 @@ export default function RequestDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const loadDetail = useCallback(async () => {
     setIsLoading(true);
@@ -219,6 +221,30 @@ export default function RequestDetailPage() {
     }
   };
 
+  const canDownloadPdf = useMemo(
+    () => detail !== null &&
+      detail.type === 'materiel' &&
+      ['Validée', 'Clôturée'].includes(detail.statut ?? ''),
+    [detail],
+  );
+
+  const handleDownloadPdf = async () => {
+    if (!detail?.rawId) return;
+
+    setIsDownloadingPdf(true);
+    setError(null);
+    try {
+      await downloadEquipmentReservationPdf(detail.rawId);
+    } catch (requestError) {
+      console.error(requestError);
+      setError(requestError instanceof Error
+        ? requestError.message
+        : 'Impossible de télécharger le bon de réservation.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328 space-y-8">
@@ -226,10 +252,22 @@ export default function RequestDetailPage() {
           <button type="button" onClick={() => router.push('/historique')} className="text-xs font-bold uppercase tracking-label text-ink hover:text-primary">
             ← Retour à l’historique
           </button>
-          <div>
-            <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Historique des demandes</p>
-            <h1 className="mt-2 text-4xl font-black tracking-display text-ink">Détail de la demande</h1>
-            <p className="mt-2 text-sm text-muted">Retrouvez les informations transmises et suivez le traitement de votre demande.</p>
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Historique des demandes</p>
+              <h1 className="mt-2 text-4xl font-black tracking-display text-ink">Détail de la demande</h1>
+              <p className="mt-2 text-sm text-muted">Retrouvez les informations transmises et suivez le traitement de votre demande.</p>
+            </div>
+            {canDownloadPdf && (
+              <Button
+                type="button"
+                size="md"
+                isLoading={isDownloadingPdf}
+                onClick={() => void handleDownloadPdf()}
+              >
+                Télécharger le bon de réservation
+              </Button>
+            )}
           </div>
         </header>
 
