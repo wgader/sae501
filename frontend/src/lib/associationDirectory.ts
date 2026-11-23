@@ -1,7 +1,7 @@
-import { type Association } from '@/lib/api';
+import { getMediaUrl, type Association } from '@/lib/api';
 
 export interface AssociationCardMeta {
-  imageUrl: string;
+  imageUrl: string | null;
   category: string;
   membersText: string;
 }
@@ -29,7 +29,7 @@ export function getAssociationCardMeta(association: Association): AssociationCar
     : 'non renseigné';
 
   return {
-    imageUrl: association.imageUrl || '',
+    imageUrl: getMediaUrl(association.logoUrl),
     category: category || 'Non renseigné',
     membersText,
   };
