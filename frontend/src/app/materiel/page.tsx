@@ -5,9 +5,10 @@ import EquipmentCatalogCard from '@/components/equipment/EquipmentCatalogCard';
 import EquipmentCatalogFilters from '@/components/equipment/EquipmentCatalogFilters';
 import Notice from '@/components/ui/Notice';
 import { Equipment, getPublicEquipment } from '@/lib/api';
-import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 
 export default function MaterielPage() {
+  const { labelOf } = useEquipmentCategories();
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,16 +49,14 @@ export default function MaterielPage() {
     });
   }, [equipmentList, search, selectedCategory]);
 
+  // Seules les catégories qui contiennent du matériel sont proposées en filtre.
   const categories = useMemo(() => {
-    const values = Array.from(
-      new Set(equipmentList.map((item) => item.categorie.trim()).filter(Boolean)),
-    ).sort((first, second) => first.localeCompare(second, 'fr'));
+    const values = Array.from(new Set(equipmentList.map((item) => item.categorie.trim()).filter(Boolean)))
+      .map((value) => ({ value, label: labelOf(value) }))
+      .sort((first, second) => first.label.localeCompare(second.label, 'fr'));
 
-    return [
-      { value: '', label: 'Toutes les catégories' },
-      ...values.map((value) => ({ value, label: getEquipmentCategoryLabel(value) })),
-    ];
-  }, [equipmentList]);
+    return [{ value: '', label: 'Toutes les catégories' }, ...values];
+  }, [equipmentList, labelOf]);
 
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">

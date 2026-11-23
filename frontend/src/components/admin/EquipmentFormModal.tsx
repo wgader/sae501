@@ -6,9 +6,12 @@ import {
   ApiError,
   createAdminEquipment,
   Equipment,
+  getEquipmentSettings,
   getMediaUrl,
   updateAdminEquipment,
 } from '@/lib/api';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
+import { logger } from '@/lib/logger';
 
 interface EquipmentFormModalProps {
   isOpen: boolean;
@@ -18,7 +21,6 @@ interface EquipmentFormModalProps {
   onError: (message: string) => void;
 }
 
-const DEFAULT_CATEGORY = 'mobilier';
 const DEFAULT_STOCK = 10;
 const DEFAULT_MAX_DAYS = 7;
 const MAX_DAYS_LIMIT = 90;
@@ -31,7 +33,8 @@ export default function EquipmentFormModal({
   onError,
 }: EquipmentFormModalProps) {
   const [designation, setDesignation] = useState(editingItem?.designation ?? '');
-  const [category, setCategory] = useState(editingItem?.categorie ?? DEFAULT_CATEGORY);
+  const { categories } = useEquipmentCategories();
+  const [category, setCategory] = useState(editingItem?.categorie ?? '');
   const [reference, setReference] = useState(editingItem?.referenceInterne ?? '');
   const [description, setDescription] = useState(editingItem?.description ?? '');
   const [instructions, setInstructions] = useState(editingItem?.consignesUtilisation ?? '');
@@ -41,6 +44,20 @@ export default function EquipmentFormModal({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Un nouvel équipement reprend la durée de prêt réglée par la mairie, modifiable ici.
+  useEffect(() => {
+    if (editingItem) return;
+    let active = true;
+    getEquipmentSettings()
+      .then((settings) => {
+        if (active) setMaxDays((current) => (current === DEFAULT_MAX_DAYS ? settings.defaultMaxDays : current));
+      })
+      .catch((error: unknown) => logger.warn('Durée de prêt par défaut indisponible', error));
+    return () => {
+      active = false;
+    };
+  }, [editingItem]);
 
   useEffect(() => {
     return () => {
@@ -162,12 +179,16 @@ export default function EquipmentFormModal({
                 onChange={(event) => setCategory(event.target.value)}
                 className="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
               >
-                <option value="mobilier">Mobilier</option>
-                <option value="sonorisation">Sonorisation</option>
-                <option value="barnums">Barnums</option>
-                <option value="eclairage">Éclairage</option>
-                <option value="autre">Autre</option>
+                <option value="" disabled>
+                  Choisir une catégorie
+                </option>
+                {categories.map(({ code, label }) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
               </select>
+              {errors.categorie && <p className="mt-1 text-xs text-danger">{errors.categorie}</p>}
             </div>
 
             <div>

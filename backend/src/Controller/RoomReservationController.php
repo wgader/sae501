@@ -9,6 +9,7 @@ use App\Entity\ReservationSalle;
 use App\Entity\User;
 use App\Exception\RoomBookingClosedException;
 use App\Exception\RoomReservationConflictException;
+use App\Service\AppSettingsService;
 use App\Service\RoomReservationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,6 +27,7 @@ final class RoomReservationController extends AbstractController
     public function __construct(
         private readonly RoomReservationService $reservationService,
         private readonly EntityManagerInterface $entityManager,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -146,7 +148,7 @@ final class RoomReservationController extends AbstractController
             );
 
             return $this->json(
-                self::serializeReservation($reservation),
+                $this->serializeReservation($reservation),
                 Response::HTTP_CREATED,
             );
         } catch (RoomBookingClosedException $exception) {
@@ -184,7 +186,7 @@ final class RoomReservationController extends AbstractController
     /**
      * @return array<string, mixed>
      */
-    public static function serializeReservation(ReservationSalle $reservation): array
+    private function serializeReservation(ReservationSalle $reservation): array
     {
         $salle = $reservation->getSalle();
 
@@ -197,7 +199,7 @@ final class RoomReservationController extends AbstractController
             'capaciteAttendue' => $reservation->getCapaciteAttendue(),
             'createdAt' => $reservation->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'campaignId' => $reservation->getCampaign()?->getId(),
-            'salle' => $salle !== null ? RoomCatalogController::serializeRoom($salle) : null,
+            'salle' => $salle !== null ? RoomCatalogController::serializeRoom($salle, $this->settings->current()) : null,
             'message' => 'Votre demande de réservation a bien été enregistrée et est en attente de validation par la mairie.',
         ];
     }

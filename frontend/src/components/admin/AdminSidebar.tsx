@@ -13,6 +13,7 @@ import {
   IconAssociation,
   IconAgent,
   IconCampagne,
+  IconReglages,
 } from '@/components/ui/NavigationBar/NavigationIcon';
 import { signOut } from '@/lib/api/auth';
 import { accessFromRoles, adminHomePath, canOpenAdminPage } from '@/lib/agentAccess';
@@ -32,6 +33,7 @@ const navItems = [
   { label: 'Campagnes', href: '/admin/campagnes', icon: IconCampagne },
   { label: 'Agent', href: '/admin/agent', icon: IconAgent },
   { label: 'Événements', href: '/admin/evenements', icon: IconHistorique },
+  { label: 'Réglages', href: '/admin/reglages', icon: IconReglages },
 ];
 
 export default function AdminSidebar({ onNavigate }: AdminSidebarProps) {

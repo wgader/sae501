@@ -88,6 +88,11 @@ export type EquipmentOccupancy = {
   stockTotal: number;
   maxConsecutiveDays: number;
   lastDay: string;
+  /** Horaires du service de prêt (HH:mm), réglés par la mairie. */
+  deskOpening: string;
+  deskClosing: string;
+  pickupLocation: string | null;
+  maxQuantityPerRequest: number | null;
   reservations: { start: string; end: string; quantite: number }[];
 };
 
@@ -655,4 +660,45 @@ export type AdminCampaignWishGroup = {
 export type AdminCampaignWishes = {
   groups: AdminCampaignWishGroup[];
   counts: { total: number; pending: number; accepted: number; refused: number; disputed: number };
+};
+
+/** Modification des réglages : date et agent, pour savoir qui a changé quoi. */
+export type SettingsAudit = {
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
+export type RoomSettings = SettingsAudit & {
+  openingHour: number;
+  closingHour: number;
+  oneOffMaxDays: number;
+  limits: { oneOffMaxDays: number };
+};
+
+export type RoomSettingsInput = Pick<RoomSettings, 'openingHour' | 'closingHour' | 'oneOffMaxDays'>;
+
+export type EquipmentSettings = SettingsAudit & {
+  /** Heures du service de prêt (HH:mm) : retrait et restitution se font dans ce créneau. */
+  deskOpening: string;
+  deskClosing: string;
+  pickupLocation: string | null;
+  /** null : seul le stock limite la quantité demandée. */
+  maxQuantityPerRequest: number | null;
+  defaultMaxDays: number;
+  limits: { maxQuantityPerRequest: number; defaultMaxDays: number; pickupLocation: number };
+};
+
+export type EquipmentSettingsInput = Pick<
+  EquipmentSettings,
+  'deskOpening' | 'deskClosing' | 'pickupLocation' | 'maxQuantityPerRequest' | 'defaultMaxDays'
+>;
+
+export type EquipmentCategory = {
+  code: string;
+  label: string;
+};
+
+export type AdminEquipmentCategory = EquipmentCategory & {
+  id: number;
+  equipmentCount: number;
 };

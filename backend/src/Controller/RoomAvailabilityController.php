@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Repository\AssociationRepository;
 use App\Repository\ReservationSalleRepository;
 use App\Repository\SalleRepository;
+use App\Service\AppSettingsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ final class RoomAvailabilityController extends AbstractController
         private readonly SalleRepository $salleRepository,
         private readonly ReservationSalleRepository $reservationSalleRepository,
         private readonly AssociationRepository $associationRepository,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -108,7 +110,7 @@ final class RoomAvailabilityController extends AbstractController
         }, $reservations);
 
         return $this->json([
-            'room' => RoomCatalogController::serializeRoom($salle),
+            'room' => RoomCatalogController::serializeRoom($salle, $this->settings->current()),
             'start' => $startDate->format(\DateTimeInterface::ATOM),
             'end' => $endDate->format(\DateTimeInterface::ATOM),
             'occupiedSlots' => $occupiedSlots,
