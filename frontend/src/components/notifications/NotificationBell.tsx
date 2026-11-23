@@ -18,9 +18,15 @@ const bellVariants = cva('z-50', {
   },
 });
 
+const notificationItemVariants = cva('block w-full cursor-pointer rounded-soft p-3 text-left hover:bg-primary-soft', {
+  variants: {
+    read: { true: 'bg-paper', false: 'bg-primary-soft' },
+  },
+});
+
 interface NotificationBellProps extends VariantProps<typeof bellVariants> {
-  /** Écran ouvert au clic sur une notification. */
-  resolveHref: (notification: AssociationNotification) => string;
+  /** Écran ouvert au clic ; null quand la notification n'a pas de page dédiée. */
+  resolveHref: (notification: AssociationNotification) => string | null;
 }
 
 /** Cloche des notifications de l'application, côté association comme côté mairie. */
@@ -87,14 +93,31 @@ export default function NotificationBell({ resolveHref, placement = 'floating' }
             <p className="mt-4 text-sm text-muted">Aucune notification.</p>
           ) : (
             <ul className="mt-3 space-y-2">
-              {notifications.slice(0, 5).map((notification) => (
-                <li key={notification.id}>
-                  <Link href={resolveHref(notification)} onClick={() => void handleOpen(notification)} className={`block rounded-soft p-3 text-left hover:bg-primary-soft ${notification.read_at ? 'bg-paper' : 'bg-primary-soft'}`}>
+              {notifications.slice(0, 5).map((notification) => {
+                const href = resolveHref(notification);
+                const itemClassName = notificationItemVariants({ read: Boolean(notification.read_at) });
+                const content = (
+                  <>
                     <p className="text-xs font-bold text-ink">{notification.title}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-muted">{notification.message}</p>
-                  </Link>
-                </li>
-              ))}
+                  </>
+                );
+
+                // Sans page dédiée, le clic marque la notification comme lue et laisse l'utilisateur où il est.
+                return (
+                  <li key={notification.id}>
+                    {href ? (
+                      <Link href={href} onClick={() => void handleOpen(notification)} className={itemClassName}>
+                        {content}
+                      </Link>
+                    ) : (
+                      <button type="button" onClick={() => void handleOpen(notification)} className={itemClassName}>
+                        {content}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </aside>

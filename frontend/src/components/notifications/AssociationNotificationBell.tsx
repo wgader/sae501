@@ -4,8 +4,8 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import type { AssociationNotification } from '@/lib/api';
 import { routes } from '@/lib/routes';
 
-function notificationHref(notification: AssociationNotification): string {
-  if (!notification.event_id) return '/historique';
+function notificationHref(notification: AssociationNotification): string | null {
+  if (!notification.event_id) return null;
   if (notification.type === 'EVENT_FILES_REQUESTED') {
     return routes.requestAnnexes(`event-${notification.event_id}`, 'evenement');
   }
@@ -21,7 +21,7 @@ function notificationHref(notification: AssociationNotification): string {
   if (notification.type === 'MATERIEL_DOCUMENTS_REQUESTED' || notification.type === 'REQUEST_DOCUMENTS_REQUESTED') {
     return routes.requestAnnexes(notification.event_id, 'materiel');
   }
-  return '/historique';
+  return null;
 }
 
 export default function AssociationNotificationBell() {
