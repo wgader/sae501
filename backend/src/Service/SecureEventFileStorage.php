@@ -104,6 +104,15 @@ final class SecureEventFileStorage
         return false;
     }
 
+    /** Supprime un fichier d’annexe ; un chemin inconnu ou hors du dossier est ignoré. */
+    public function delete(string $relativePath): void
+    {
+        $absolutePath = $this->resolve($relativePath);
+        if (null !== $absolutePath && !unlink($absolutePath)) {
+            throw new \RuntimeException('Impossible de supprimer l’annexe.');
+        }
+    }
+
     public function resolve(string $relativePath): ?string
     {
         $baseDirectory = realpath($this->uploadDirectory);
