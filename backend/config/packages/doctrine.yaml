@@ -10,6 +10,8 @@ doctrine:
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
+        # Génération du schéma par l’API d’édition de DBAL (obligatoire à partir de Doctrine ORM 4).
+        use_schema_editor_api: true
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
