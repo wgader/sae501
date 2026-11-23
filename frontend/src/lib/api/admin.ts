@@ -3,10 +3,15 @@ import type {
   AdminAgent,
   AdminAgentsResponse,
   AdminAgentPayload,
+  AdminDashboard,
   AssociationRequestDetail,
   AssociationRequestsResponse,
 } from './types';
 import type { ExternalEvent } from './evenements';
+
+export function getAdminDashboard(): Promise<AdminDashboard> {
+  return request<AdminDashboard>('/api/admin/dashboard');
+}
 
 export function getAdminAgents(): Promise<AdminAgentsResponse> {
   return request<AdminAgentsResponse>('/api/admin/agents?page=1&itemsPerPage=50');
