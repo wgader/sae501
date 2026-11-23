@@ -703,3 +703,36 @@ export type AdminEquipmentCategory = EquipmentCategory & {
   id: number;
   equipmentCount: number;
 };
+
+/** Accueil de l'administration : ce qui attend une décision, l'agenda et la campagne. */
+export type AdminDashboardPending = {
+  registrations: number;
+  grants: number;
+  rooms: number;
+  equipment: number;
+  events: number;
+};
+
+export type AdminDashboardAgendaItem = {
+  type: 'room' | 'equipment' | 'event';
+  id: number;
+  title: string;
+  place: string | null;
+  association: string | null;
+  startsAt: string;
+};
+
+export type AdminDashboard = {
+  pending: AdminDashboardPending;
+  totals: { associations: number; rooms: number; equipment: number };
+  latestRegistrations: { id: number; nom: string; createdAt: string | null; contact: string | null }[];
+  agenda: AdminDashboardAgendaItem[];
+  campaign: {
+    id: number;
+    seasonLabel: string | null;
+    status: 'PROGRAMMED' | 'ACTIVE';
+    openingAt: string | null;
+    closingAt: string | null;
+    pendingWishes: number;
+  } | null;
+};
