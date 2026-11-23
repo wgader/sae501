@@ -79,6 +79,22 @@ final class AssociationPhotoTest extends ControllerRouteTestCase
         self::assertTrue($this->client->getResponse()->headers->has('Retry-After'));
     }
 
+    public function testAdministrationSeesThePhotoChosenByTheAssociation(): void
+    {
+        $this->authenticateMember();
+        $this->upload($this->file('logo.png', base64_decode(self::PNG)));
+        $logoUrl = $this->response()['logoUrl'];
+        $associationId = $this->em->getRepository(Association::class)->findOneBy(['nom' => 'Club photo'])?->getId();
+
+        $this->authenticateAsAdmin();
+        $this->client->request('GET', '/api/admin/associations/'.$associationId);
+        $this->assertResponseIsSuccessful();
+        self::assertSame($logoUrl, $this->response()['logoUrl']);
+
+        $this->client->request('GET', '/api/admin/associations');
+        self::assertSame($logoUrl, $this->response()['items'][0]['logoUrl']);
+    }
+
     public function testUploadRequiresAuthentication(): void
     {
         $this->upload($this->file('logo.png', base64_decode(self::PNG)));

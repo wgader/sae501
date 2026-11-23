@@ -537,6 +537,8 @@ final class AssociationAdministrationController extends AbstractController
             'id' => $association->getId(),
             'nom' => $association->getNom(),
             'nombreMembres' => $association->getNombreMembres(),
+            // Photo de profil choisie par l’association (chemin public /uploads/associations/…).
+            'logoUrl' => $association->getLogoUrl(),
             'statut' => $association->getStatut(),
             'permissions' => $permissions,
             'createdAt' => $association->getCreatedAt()?->format(\DateTimeInterface::ATOM),

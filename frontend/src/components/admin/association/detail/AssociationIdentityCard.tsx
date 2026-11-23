@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { type Association } from '@/lib/api';
+import { getMediaUrl, type Association } from '@/lib/api';
 import {
   IconMembres,
   IconCategorie,
@@ -15,6 +15,7 @@ interface AssociationIdentityCardProps {
 
 export default function AssociationIdentityCard({ association }: AssociationIdentityCardProps) {
   const [imageError, setImageError] = useState(false);
+  const imageUrl = getMediaUrl(association.logoUrl);
 
   const membersText =
     typeof association.nombreMembres === 'number' && association.nombreMembres > 0
@@ -26,9 +27,9 @@ export default function AssociationIdentityCard({ association }: AssociationIden
   return (
     <article className="overflow-hidden rounded-card border border-line bg-white shadow-xs">
       <figure className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-primary-soft sm:h-52">
-        {!imageError && association.imageUrl ? (
+        {!imageError && imageUrl ? (
           <Image
-            src={association.imageUrl}
+            src={imageUrl}
             alt={`Photo de l'association ${association.nom}`}
             fill
             sizes="(max-width: 1024px) 100vw, 60vw"

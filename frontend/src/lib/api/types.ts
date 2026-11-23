@@ -22,7 +22,8 @@ export type Association = {
   contact?: AssociationContact | null;
   nombreMembres?: number | null;
   categorie?: string | null;
-  imageUrl?: string | null;
+  /** Photo de profil déposée par l'association, chemin public /uploads/associations/…. */
+  logoUrl?: string | null;
   documents?: AssociationDocument[];
 };
 
