@@ -30,7 +30,7 @@ const dashboardCards: DashboardActionCardProps[] = [
       </>
     ),
     description: "Déposez votre dossier et suivez l'avancement de votre demande.",
-    bgClass: 'bg-rose-100',
+    module: 'grants',
     href: '/subventions',
   },
   {
@@ -42,7 +42,7 @@ const dashboardCards: DashboardActionCardProps[] = [
       </>
     ),
     description: 'Trouvez un espace municipal adapté à vos réunions et à vos événements.',
-    bgClass: 'bg-accent',
+    module: 'rooms',
     href: '/salles',
   },
   {
@@ -54,8 +54,7 @@ const dashboardCards: DashboardActionCardProps[] = [
       </>
     ),
     description: 'Réservez le matériel dont votre association a besoin pour ses projets.',
-    bgClass: 'bg-indigo',
-    isDark: true,
+    module: 'equipment',
     href: '/materiel',
   },
   {
@@ -67,7 +66,7 @@ const dashboardCards: DashboardActionCardProps[] = [
       </>
     ),
     description: 'Informez la mairie de votre évènement et transmettez les documents utiles.',
-    bgClass: 'bg-primary-soft',
+    module: 'events',
     href: '/evenements',
   },
 ];
@@ -160,16 +159,7 @@ export default function ConnectedDashboard() {
             className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
           >
             {dashboardCards.map((card) => (
-              <DashboardActionCard
-                key={card.step}
-                step={card.step}
-                tag={card.tag}
-                title={card.title}
-                description={card.description}
-                bgClass={card.bgClass}
-                isDark={card.isDark}
-                href={card.href}
-              />
+              <DashboardActionCard key={card.step} {...card} />
             ))}
           </nav>
         </section>

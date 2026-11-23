@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import ModulePageHeader from '@/components/ui/ModulePageHeader';
+import { EQUIPMENT_STEPS } from '@/lib/moduleGuides';
 import EquipmentCatalogCard from '@/components/equipment/EquipmentCatalogCard';
 import EquipmentCatalogFilters from '@/components/equipment/EquipmentCatalogFilters';
 import Notice from '@/components/ui/Notice';
@@ -62,19 +64,12 @@ export default function MaterielPage() {
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328 space-y-8">
-        <header className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-label font-bold uppercase tracking-eyebrow text-primary">
-              S&apos;équiper
-            </p>
-            <h1 className="mt-2 text-4xl font-black tracking-display text-ink">
-              Demande de matériel
-            </h1>
-            <p className="mt-2 max-w-2xl text-body leading-copy text-muted">
-              Consultez les équipements municipaux disponibles au prêt pour vos manifestations et événements associatifs.
-            </p>
-          </div>
-        </header>
+        <ModulePageHeader
+          module="equipment"
+          title="Demande de matériel"
+          lead="La mairie prête gratuitement son matériel aux associations pour leurs manifestations : tables, barnums, sonorisation, signalétique…"
+          steps={EQUIPMENT_STEPS}
+        />
 
         <EquipmentCatalogFilters
           search={search}

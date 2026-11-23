@@ -1,5 +1,7 @@
 'use client';
 
+import ModulePageHeader from '@/components/ui/ModulePageHeader';
+import { ROOM_BOOKING_STEPS } from '@/lib/moduleGuides';
 import { useEffect, useMemo, useState } from 'react';
 import OneOffRoomView from '@/components/rooms/booking/OneOffRoomView';
 import OneOffSearchDialog, { type OneOffSearch } from '@/components/rooms/booking/OneOffSearchDialog';
@@ -134,15 +136,18 @@ export default function OneOffBookingPage() {
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328 space-y-8">
-        <header>
-          <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Salles municipales</p>
-          <h1 className="mt-1 text-3xl font-black tracking-display text-ink sm:text-4xl">Réserver une salle</h1>
-          <p className="mt-2 max-w-2xl text-body-sm text-muted">
-            Premier arrivé, premier servi : le créneau est bloqué pour votre association dès votre demande, en attendant la
-            confirmation de la mairie.
-            {rules && ` Réservable jusqu’au ${formatLongDay(rules.lastDay)}.`}
-          </p>
-        </header>
+        <ModulePageHeader
+          module="rooms"
+          title="Réserver une salle"
+          lead="Pour une réunion, une assemblée générale ou un évènement ponctuel. Premier arrivé, premier servi : les créneaux réguliers de la saison passent, eux, par la campagne annuelle."
+          steps={ROOM_BOOKING_STEPS}
+        >
+          {rules && (
+            <p className="mt-4 inline-flex rounded-pill bg-white/70 px-3.5 py-1.5 text-meta font-bold">
+              Réservable jusqu’au {formatLongDay(rules.lastDay)}
+            </p>
+          )}
+        </ModulePageHeader>
 
         {showCampaignNotice && campaignState && <RoomCampaignNotice state={campaignState} mode="one-off" />}
 

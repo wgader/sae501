@@ -101,7 +101,7 @@ export default function AdminLayout({
           />
         </header>
 
-        <main className="flex-1 overflow-y-auto rounded-tl-panel sm:rounded-tl-panel-soft bg-white p-6 sm:p-8 lg:p-8 xl:p-10 shadow-xs">
+        <main className="flex-1 overflow-y-auto bg-white p-6 sm:p-8 lg:p-8 xl:p-10 shadow-xs">
           {children}
         </main>
       </div>
