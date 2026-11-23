@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import GrantDocumentsStep from '@/components/subventions/GrantDocumentsStep';
 import GrantDraftList from '@/components/subventions/GrantDraftList';
-import GrantPageHeader from '@/components/subventions/GrantPageHeader';
+import ModulePageHeader from '@/components/ui/ModulePageHeader';
+import { GRANT_STEPS } from '@/lib/moduleGuides';
 import GrantProjectStep from '@/components/subventions/GrantProjectStep';
 import GrantSubmittedList from '@/components/subventions/GrantSubmittedList';
 import Notice from '@/components/ui/Notice';
@@ -191,13 +192,15 @@ export default function GrantApplicationForm() {
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328">
-        <GrantPageHeader
+        <ModulePageHeader
+          module="grants"
           title={activeDraft ? 'Demande de subvention' : 'Demandes de subvention'}
-          description={
+          lead={
             activeDraft
-              ? 'Complétez les informations de votre dossier pour la mairie.'
-              : 'Préparez une demande d’aide au fonctionnement ou le financement d’un projet.'
+              ? 'Complétez votre dossier étape par étape : vous pouvez le quitter et le reprendre, il reste en brouillon jusqu’à l’envoi.'
+              : 'Sollicitez une aide de la mairie pour le fonctionnement de votre association ou pour financer un projet.'
           }
+          steps={GRANT_STEPS}
         />
 
         {pageError && <Notice tone="danger" className="mt-6">{pageError}</Notice>}
