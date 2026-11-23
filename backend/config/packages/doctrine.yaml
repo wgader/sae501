@@ -10,8 +10,9 @@ doctrine:
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
-        # Génération du schéma par l’API d’édition de DBAL (obligatoire à partir de Doctrine ORM 4).
-        use_schema_editor_api: true
+        # L’API d’édition de DBAL ne nomme pas les clés étrangères : les migrations générées ne
+        # pourraient plus être annulées. Elle reste réservée aux tests (voir when@test).
+        use_schema_editor_api: false
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
@@ -27,6 +28,9 @@ when@test:
     doctrine:
         dbal:
             url: 'sqlite:///%kernel.project_dir%/var/test.db'
+        # Les tests recréent le schéma avec SchemaTool, qui exige cette API à partir de Doctrine ORM 4.
+        orm:
+            use_schema_editor_api: true
 
 when@prod:
     doctrine:

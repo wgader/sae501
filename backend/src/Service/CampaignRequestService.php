@@ -34,6 +34,7 @@ final class CampaignRequestService
         private readonly EntityManagerInterface $entityManager,
         private readonly ReservationSalleRepository $reservationRepository,
         private readonly RoomReservationDecisionNotifier $notifier,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -216,11 +217,12 @@ final class CampaignRequestService
         }
         $startHour = (int) $start->format('G');
         $endMinutes = (int) $end->format('G') * 60 + (int) $end->format('i');
-        if ($startHour < RoomReservationService::OPENING_HOUR || $endMinutes > RoomReservationService::CLOSING_HOUR * 60) {
+        $settings = $this->settings->current();
+        if ($startHour < $settings->getRoomOpeningHour() || $endMinutes > $settings->getRoomClosingHour() * 60) {
             throw new \InvalidArgumentException(\sprintf(
                 'Les salles sont ouvertes de %dh à %dh.',
-                RoomReservationService::OPENING_HOUR,
-                RoomReservationService::CLOSING_HOUR,
+                $settings->getRoomOpeningHour(),
+                $settings->getRoomClosingHour(),
             ));
         }
         if (null !== $expectedCapacity && null !== $salle->getCapaciteMax() && $expectedCapacity > $salle->getCapaciteMax()) {

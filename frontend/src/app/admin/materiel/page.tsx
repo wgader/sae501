@@ -13,11 +13,13 @@ import Button from '@/components/ui/Button';
 import Notice from '@/components/ui/Notice';
 import { IconPlus } from '@/components/ui/icons';
 import { Equipment, deleteAdminEquipment, getAdminEquipment } from '@/lib/api';
-import { EQUIPMENT_CATEGORIES } from '@/lib/equipmentCategories';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 
 type Feedback = { tone: 'success' | 'danger'; message: string };
 
 export default function AdminMaterielPage() {
+  const { categories } = useEquipmentCategories();
+  const categoryOptions = categories.map(({ code, label }) => ({ value: code, label }));
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +121,7 @@ export default function AdminMaterielPage() {
           search={search}
           category={selectedCategory}
           status={statusFilter}
-          categories={EQUIPMENT_CATEGORIES}
+          categories={categoryOptions}
           onSearch={setSearch}
           onCategory={setSelectedCategory}
           onStatus={setStatusFilter}

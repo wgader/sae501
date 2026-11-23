@@ -8,6 +8,7 @@ use App\Entity\Materiel;
 use App\Entity\User;
 use App\Repository\ReservationMaterielRepository;
 use App\Service\EquipmentAvailabilityService;
+use App\Service\AppSettingsService;
 use App\Service\EquipmentReservationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,7 @@ final class EquipmentAvailabilityController extends AbstractController
     public function __construct(
         private readonly EquipmentAvailabilityService $availabilityService,
         private readonly ReservationMaterielRepository $reservationRepository,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -46,11 +48,16 @@ final class EquipmentAvailabilityController extends AbstractController
 
         $now = new \DateTimeImmutable();
         $lastDay = $now->modify(EquipmentReservationService::BOOKING_HORIZON);
+        $settings = $this->settings->current();
 
         return $this->json([
             'stockTotal' => $materiel->getStockTotal(),
             'maxConsecutiveDays' => $materiel->getMaxConsecutiveDays(),
             'lastDay' => $lastDay->format('Y-m-d'),
+            'deskOpening' => $settings->getEquipmentDeskOpening(),
+            'deskClosing' => $settings->getEquipmentDeskClosing(),
+            'pickupLocation' => $settings->getEquipmentPickupLocation(),
+            'maxQuantityPerRequest' => $settings->getEquipmentMaxQuantityPerRequest(),
             'reservations' => array_map(
                 static fn (array $period): array => [
                     'start' => $period['start']->format(\DateTimeInterface::ATOM),

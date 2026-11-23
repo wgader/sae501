@@ -42,8 +42,8 @@ test.describe('Droits des agents', () => {
 
         await page.waitForURL(/\/admin\/materiel$/);
         const menu = page.getByRole('navigation', { name: 'Menu principal administration' });
-        await expect(menu.getByRole('link', { name: 'Matériel' })).toBeVisible();
-        await expect(menu.getByRole('link')).toHaveCount(1);
+        // Ses pages : le matériel et les réglages de ce module.
+        await expect(menu.getByRole('link')).toHaveText(['Matériel', 'Réglages']);
     });
 
     test('Un nouvel agent peut recevoir tous les modules sans devenir administrateur', async ({ page }) => {

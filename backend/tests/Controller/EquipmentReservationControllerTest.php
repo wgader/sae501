@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\AppSettings;
 use App\Entity\Association;
 use App\Entity\Materiel;
 use App\Entity\ReservationMateriel;
@@ -29,6 +30,35 @@ final class EquipmentReservationControllerTest extends ControllerRouteTestCase
         $this->reserve($equipment, '+10 days 09:00', '+11 days 18:00');
 
         $this->assertResponseStatusCodeSame(201);
+    }
+
+    public function testPickupAndReturnFollowTheLendingDeskHours(): void
+    {
+        $this->authenticateMember();
+        $equipment = $this->createEquipment();
+        $settings = (new AppSettings());
+        $settings->updateEquipment('09:00', '12:00', 'Services techniques', 2, 7);
+        $this->em->persist($settings);
+        $this->em->flush();
+
+        $this->reserve($equipment, '+10 days 08:30', '+11 days 11:00');
+        $this->assertResponseStatusCodeSame(422);
+        self::assertSame('Le retrait se fait entre 09h00 et 12h00.', $this->message());
+
+        $this->reserve($equipment, '+10 days 09:00', '+11 days 14:00');
+        $this->assertResponseStatusCodeSame(422);
+        self::assertSame('La restitution se fait entre 09h00 et 12h00.', $this->message());
+
+        $this->reserve($equipment, '+10 days 09:00', '+11 days 12:00', quantity: 3);
+        $this->assertResponseStatusCodeSame(422);
+        self::assertStringContainsString('2 unités par équipement', $this->message());
+
+        $this->reserve($equipment, '+10 days 09:00', '+11 days 12:00', quantity: 2);
+        $this->assertResponseStatusCodeSame(201);
+
+        $this->client->request('GET', '/api/equipment/'.$equipment->getId().'/occupancy');
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertSame(['09:00', '12:00', 'Services techniques', 2], [$data['deskOpening'], $data['deskClosing'], $data['pickupLocation'], $data['maxQuantityPerRequest']]);
     }
 
     public function testReservationCannotStartMoreThanAYearAhead(): void
@@ -112,13 +142,15 @@ final class EquipmentReservationControllerTest extends ControllerRouteTestCase
         return $equipment;
     }
 
-    private function reserve(Materiel $equipment, string $start, string $end): void
+    /** Les heures sont celles du formulaire, en heure de Paris. */
+    private function reserve(Materiel $equipment, string $start, string $end, int $quantity = 1): void
     {
+        $paris = new \DateTimeZone('Europe/Paris');
         $this->requestJson('POST', '/api/equipment/reservations', [
             'motifEvenement' => 'Fête de quartier',
-            'dateRetrait' => (new \DateTimeImmutable($start))->format(\DateTimeInterface::ATOM),
-            'dateRestitution' => (new \DateTimeImmutable($end))->format(\DateTimeInterface::ATOM),
-            'lignes' => [['materielId' => $equipment->getId(), 'quantite' => 1]],
+            'dateRetrait' => (new \DateTimeImmutable($start, $paris))->format(\DateTimeInterface::ATOM),
+            'dateRestitution' => (new \DateTimeImmutable($end, $paris))->format(\DateTimeInterface::ATOM),
+            'lignes' => [['materielId' => $equipment->getId(), 'quantite' => $quantity]],
         ]);
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Service\AppSettingsService;
+use App\Service\EquipmentCategoryService;
 use App\Entity\Materiel;
 use App\Entity\StockAdjustment;
 use App\Entity\User;
@@ -33,6 +35,8 @@ final class EquipmentAdministrationController extends AbstractController
         private readonly EquipmentStockService $stockService,
         private readonly EntityManagerInterface $entityManager,
         private readonly ImageStorage $imageStorage,
+        private readonly EquipmentCategoryService $categories,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -79,6 +83,8 @@ final class EquipmentAdministrationController extends AbstractController
         $categorie = trim((string) ($payload['categorie'] ?? ''));
         if ($categorie === '') {
             $errors['categorie'] = 'La catégorie est obligatoire.';
+        } elseif (!$this->categories->exists($categorie)) {
+            $errors['categorie'] = 'Cette catégorie n’existe pas : choisissez-en une dans la liste.';
         }
 
         $rawStock = $payload['stockTotal'] ?? $payload['quantiteTotale'] ?? null;
@@ -93,7 +99,7 @@ final class EquipmentAdministrationController extends AbstractController
 
         $maxConsecutiveDays = array_key_exists('maxConsecutiveDays', $payload)
             ? $this->parseMaxConsecutiveDays($payload['maxConsecutiveDays'], $errors)
-            : Materiel::DEFAULT_MAX_CONSECUTIVE_DAYS;
+            : $this->settings->current()->getEquipmentDefaultMaxDays();
 
         if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
             // Error populated in $errors
@@ -152,6 +158,8 @@ final class EquipmentAdministrationController extends AbstractController
             $categorie = trim((string) $payload['categorie']);
             if ($categorie === '') {
                 $errors['categorie'] = 'La catégorie ne peut pas être vide.';
+            } elseif ($categorie !== $materiel->getCategorie() && !$this->categories->exists($categorie)) {
+                $errors['categorie'] = 'Cette catégorie n’existe pas : choisissez-en une dans la liste.';
             } else {
                 $materiel->setCategorie($categorie);
             }

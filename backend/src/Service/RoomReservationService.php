@@ -23,10 +23,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class RoomReservationService
 {
-    public const OPENING_HOUR = 8;
-    public const CLOSING_HOUR = 23;
-    /** Durée maximale d’une réservation ponctuelle, en jours consécutifs. */
-    public const ONE_OFF_MAX_DAYS = 3;
+    // Horaires d’ouverture et durée maximale d’une réservation ponctuelle : réglages de la mairie.
     public const SLOT_STEP_MINUTES = 10;
     public const SLOT_MIN_MINUTES = 30;
 
@@ -37,6 +34,7 @@ final class RoomReservationService
         private readonly MessageBusInterface $messageBus,
         private readonly CampaignRepository $campaignRepository,
         private readonly CampaignService $campaignService,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -221,11 +219,11 @@ final class RoomReservationService
 
         return [
             'lastDay' => $this->oneOffLastDay($now),
-            'maxDays' => self::ONE_OFF_MAX_DAYS,
+            'maxDays' => $this->settings->current()->getRoomOneOffMaxDays(),
             'stepMinutes' => self::SLOT_STEP_MINUTES,
             'minMinutes' => self::SLOT_MIN_MINUTES,
-            'openingTime' => \sprintf('%02d:00', self::OPENING_HOUR),
-            'closingTime' => \sprintf('%02d:00', self::CLOSING_HOUR),
+            'openingTime' => \sprintf('%02d:00', $this->settings->current()->getRoomOpeningHour()),
+            'closingTime' => \sprintf('%02d:00', $this->settings->current()->getRoomClosingHour()),
             'blockedPeriods' => $blockedPeriods,
         ];
     }
@@ -304,28 +302,30 @@ final class RoomReservationService
         if (!$isOneOff && $days > 1) {
             throw new \InvalidArgumentException('La réservation doit s’effectuer sur une même journée civile.');
         }
-        if ($days > self::ONE_OFF_MAX_DAYS) {
+        $settings = $this->settings->current();
+        if ($days > $settings->getRoomOneOffMaxDays()) {
             throw new \InvalidArgumentException(\sprintf(
-                'Une réservation ponctuelle dure au plus %d jours consécutifs.',
-                self::ONE_OFF_MAX_DAYS,
+                'Une réservation ponctuelle dure au plus %d jour%s consécutif%2$s.',
+                $settings->getRoomOneOffMaxDays(),
+                $settings->getRoomOneOffMaxDays() > 1 ? 's' : '',
             ));
         }
 
-        $opening = self::OPENING_HOUR * 60;
-        $closing = self::CLOSING_HOUR * 60;
+        $opening = $settings->getRoomOpeningHour() * 60;
+        $closing = $settings->getRoomClosingHour() * 60;
         $startMinutes = (int) $start->format('H') * 60 + (int) $start->format('i');
         $endMinutes = (int) $end->format('H') * 60 + (int) $end->format('i');
 
         if ($startMinutes < $opening || $startMinutes >= $closing) {
             throw new \InvalidArgumentException(\sprintf(
                 'La salle n’ouvre qu’à %02dh00. Veuillez choisir un horaire de début valide.',
-                self::OPENING_HOUR,
+                $settings->getRoomOpeningHour(),
             ));
         }
         if ($endMinutes <= $opening || $endMinutes > $closing) {
             throw new \InvalidArgumentException(\sprintf(
                 'La salle ferme à %02dh00. Veuillez choisir un horaire de fin valide.',
-                self::CLOSING_HOUR,
+                $settings->getRoomClosingHour(),
             ));
         }
         if (0 !== $startMinutes % self::SLOT_STEP_MINUTES || 0 !== $endMinutes % self::SLOT_STEP_MINUTES) {

@@ -30,6 +30,7 @@ final class CampaignWishService
         private readonly CampaignRepository $campaignRepository,
         private readonly CampaignService $campaignService,
         private readonly MessageBusInterface $messageBus,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -124,6 +125,13 @@ final class CampaignWishService
             $fail('startTime', 'les horaires doivent être au format HH:mm.');
         } elseif ($end <= $start) {
             $fail('endTime', 'l’heure de fin doit être après l’heure de début.');
+        } else {
+            $settings = $this->settings->current();
+            $opening = $settings->getRoomOpeningHour() * 60;
+            $closing = $settings->getRoomClosingHour() * 60;
+            if (AppSettingsService::toMinutes($start) < $opening || AppSettingsService::toMinutes($end) > $closing) {
+                $fail('startTime', sprintf('les salles sont ouvertes de %dh à %dh.', $settings->getRoomOpeningHour(), $settings->getRoomClosingHour()));
+            }
         }
 
         $frequency = $line['frequency'] ?? null;

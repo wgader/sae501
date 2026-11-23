@@ -5,7 +5,7 @@ import { cva } from 'class-variance-authority';
 import Button from '@/components/ui/Button';
 import { IconMateriel } from '@/components/ui/icons';
 import { Equipment, getMediaUrl } from '@/lib/api';
-import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 
 interface EquipmentAdminCardProps {
   item: Equipment;
@@ -31,6 +31,7 @@ const statUnitClassName = 'text-meta font-bold text-muted';
 
 /** Fiche d'un équipement du parc : photo, stock, durée d'emprunt et actions de gestion. */
 export default function EquipmentAdminCard({ item, hasBrokenImage, onBrokenImage, onAdjust, onEdit, onArchive }: EquipmentAdminCardProps) {
+  const { labelOf } = useEquipmentCategories();
   const imageUrl = getMediaUrl(item.imagePath);
 
   return (
@@ -53,7 +54,7 @@ export default function EquipmentAdminCard({ item, hasBrokenImage, onBrokenImage
         )}
         <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
           <span className="rounded-pill bg-white px-3 py-1 text-caption font-bold uppercase tracking-label text-primary shadow-xs">
-            {getEquipmentCategoryLabel(item.categorie)}
+            {labelOf(item.categorie)}
           </span>
           <span className={statusVariants({ archived: item.isArchived })}>{item.statut}</span>
         </div>

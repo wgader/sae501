@@ -9,5 +9,5 @@ parameters:
             message: '#Method App\\Kernel::getAllowedEnvs\(\) is unused#'
             reportUnmatched: false
         - '#Property App\\Entity\\Association::\$id \(int\|null\) is never assigned int#'
-        - '#Property App\\Entity\\(DemandeStatusHistory|DemandeSubvention|DemandeSubventionLigneBudget|DocumentJustificatif|CampaignWish|CampaignWishSubmission|ExternalEventFile|Materiel|Notification|ReservationMateriel|ReservationMaterielLigne|ReservationSalle|Salle|StockAdjustment)::\$id \(int\|null\) is never assigned int#'
+        - '#Property App\\Entity\\(AppSettings|DemandeStatusHistory|EquipmentCategory|DemandeSubvention|DemandeSubventionLigneBudget|DocumentJustificatif|CampaignWish|CampaignWishSubmission|ExternalEventFile|Materiel|Notification|ReservationMateriel|ReservationMaterielLigne|ReservationSalle|Salle|StockAdjustment)::\$id \(int\|null\) is never assigned int#'
         - '#Property App\\Entity\\Materiel::\$stockTotal \(int\|null\) is never assigned null#'

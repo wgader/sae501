@@ -17,12 +17,14 @@ final class EquipmentReservationService
 {
     /** Horizon de réservation, repris par le calendrier. */
     public const BOOKING_HORIZON = '+1 year';
+    private const LOCAL_TIMEZONE = 'Europe/Paris';
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly MaterielRepository $materielRepository,
         private readonly ReservationMaterielRepository $reservationRepository,
         private readonly EquipmentReservationStatusNotifier $statusNotifier,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -55,6 +57,8 @@ final class EquipmentReservationService
         if ($lines === []) {
             throw new \InvalidArgumentException('La réservation doit contenir au moins un équipement.');
         }
+        $this->assertDeskHours($start, $end);
+        $this->assertQuantities($lines);
 
         $ids = array_map(static fn (array $line): int => $line['materielId'], $lines);
         if (count($ids) !== count(array_unique($ids))) {
@@ -152,5 +156,47 @@ final class EquipmentReservationService
         $lastDay = new \DateTimeImmutable($end->format('Y-m-d'));
 
         return (int) $firstDay->diff($lastDay)->days + 1;
+    }
+
+    /** Le retrait et la restitution se font aux heures du service de prêt, en heure de Paris. */
+    private function assertDeskHours(\DateTimeImmutable $start, \DateTimeImmutable $end): void
+    {
+        $settings = $this->settings->current();
+        $opening = AppSettingsService::toMinutes($settings->getEquipmentDeskOpening());
+        $closing = AppSettingsService::toMinutes($settings->getEquipmentDeskClosing());
+        $zone = new \DateTimeZone(self::LOCAL_TIMEZONE);
+
+        foreach (['Le retrait' => $start, 'La restitution' => $end] as $moment => $instant) {
+            $local = $instant->setTimezone($zone);
+            $minutes = (int) $local->format('G') * 60 + (int) $local->format('i');
+            if ($minutes < $opening || $minutes > $closing) {
+                throw new \InvalidArgumentException(\sprintf(
+                    '%s se fait entre %s et %s.',
+                    $moment,
+                    str_replace(':', 'h', $settings->getEquipmentDeskOpening()),
+                    str_replace(':', 'h', $settings->getEquipmentDeskClosing()),
+                ));
+            }
+        }
+    }
+
+    /**
+     * @param list<array{materielId: int, quantite: int}> $lines
+     */
+    private function assertQuantities(array $lines): void
+    {
+        $max = $this->settings->current()->getEquipmentMaxQuantityPerRequest();
+        foreach ($lines as $line) {
+            if ($line['quantite'] < 1) {
+                throw new \InvalidArgumentException('La quantité demandée doit être d’au moins 1.');
+            }
+            if ($max !== null && $line['quantite'] > $max) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'La mairie limite chaque demande à %d unité%s par équipement.',
+                    $max,
+                    $max > 1 ? 's' : '',
+                ));
+            }
+        }
     }
 }
