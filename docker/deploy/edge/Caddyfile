@@ -45,13 +45,5 @@ import /etc/caddy/proxy/guard.caddy
 	}
 }
 
-# Ancien site des domaines api-… : un environnement déployé avant l'image unique l'importe encore
-# jusqu'à son prochain déploiement. Le proxy est commun aux deux environnements : le retirer trop tôt
-# rendrait toute la configuration invalide.
-(api) {
-	import common
-	header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
-}
-
 # Un fichier par environnement, écrit par deploy.sh à partir de son .env.
 import sites/*.caddy
