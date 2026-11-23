@@ -21,6 +21,7 @@ interface EquipmentFormModalProps {
   onError: (message: string) => void;
 }
 
+const PREFERRED_CATEGORY = 'mobilier';
 const DEFAULT_STOCK = 10;
 const DEFAULT_MAX_DAYS = 7;
 const MAX_DAYS_LIMIT = 90;
@@ -34,7 +35,10 @@ export default function EquipmentFormModal({
 }: EquipmentFormModalProps) {
   const [designation, setDesignation] = useState(editingItem?.designation ?? '');
   const { categories } = useEquipmentCategories();
-  const [category, setCategory] = useState(editingItem?.categorie ?? '');
+  const [chosenCategory, setCategory] = useState(editingItem?.categorie ?? '');
+  // Nouvel équipement : « Mobilier » est proposé d'office, sinon la première catégorie réglée.
+  const defaultCategory = categories.find(({ code }) => code === PREFERRED_CATEGORY)?.code ?? categories[0]?.code ?? '';
+  const category = chosenCategory || defaultCategory;
   const [reference, setReference] = useState(editingItem?.referenceInterne ?? '');
   const [description, setDescription] = useState(editingItem?.description ?? '');
   const [instructions, setInstructions] = useState(editingItem?.consignesUtilisation ?? '');
