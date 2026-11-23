@@ -10,12 +10,14 @@ use App\Repository\ReservationMaterielRepository;
 use App\Repository\ReservationSalleRepository;
 use App\Repository\ExternalEventRepository;
 use App\Entity\ExternalEvent;
+use App\Service\AssociationDeletionService;
 use App\Service\AssociationStatusNotifier;
 use App\Service\AssociationRequestAggregationService;
 use App\Service\AssociationRequestDocumentsNotifier;
 use App\Service\PrivateDocumentStorage;
 use App\Entity\DocumentJustificatif;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -42,6 +44,8 @@ final class AssociationAdministrationController extends AbstractController
         private readonly AssociationRequestAggregationService $requestAggregationService,
         private readonly AssociationRequestDocumentsNotifier $requestDocumentsNotifier,
         private readonly PrivateDocumentStorage $documentStorage,
+        private readonly AssociationDeletionService $deletionService,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -334,25 +338,14 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         try {
-            foreach ($association->getUsers() as $user) {
-                $user->setAssociation(null);
-                $this->entityManager->remove($user);
-            }
-
-            foreach ($association->getDocumentJustificatifs() as $doc) {
-                if ($doc->getFichierUrl()) {
-                    $this->documentStorage->delete($doc->getFichierUrl());
-                }
-                $this->entityManager->remove($doc);
-            }
-
-            $this->entityManager->remove($association);
-            $this->entityManager->flush();
-
-            return $this->json(null, Response::HTTP_NO_CONTENT);
+            $this->deletionService->delete($association);
         } catch (\Throwable $e) {
+            $this->logger->error('Suppression de l’association impossible', ['associationId' => $id, 'exception' => $e]);
+
             return $this->json(['message' => 'Erreur lors de la suppression de l’association.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/{id<\d+>}/documents', name: 'admin_association_document_create', methods: ['POST'])]
