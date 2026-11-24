@@ -5,11 +5,12 @@ import SettingsCard from '@/components/admin/settings/SettingsCard';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import Notice from '@/components/ui/Notice';
-import { IconPlus } from '@/components/ui/icons';
+import { IconArrowRight, IconPlus } from '@/components/ui/icons';
 import { getAdminLegal, updateAdminLegal } from '@/lib/api';
 import type { LegalContent, LegalSection } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formFieldInputVariants, formFieldLabelVariants } from '@/components/ui/FormField';
+import { formatLegalSectionTitle } from '@/lib/legal';
 
 type Feedback = { tone: 'success' | 'danger'; message: string } | null;
 
@@ -126,6 +127,15 @@ export default function LegalSettingsPanel() {
     setSections(sections.filter((_, i) => i !== index));
   };
 
+  const moveSection = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= sections.length) return;
+
+    const nextSections = [...sections];
+    [nextSections[index], nextSections[targetIndex]] = [nextSections[targetIndex], nextSections[index]];
+    setSections(nextSections);
+  };
+
   return (
     <div className="space-y-8">
       {feedback && <Notice tone={feedback.tone}>{feedback.message}</Notice>}
@@ -198,7 +208,9 @@ export default function LegalSettingsPanel() {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-ink">Articles et paragraphes</h4>
-                  <p className="text-xs text-muted">Structurez le contenu en plusieurs sections numérotées.</p>
+                  <p className="text-xs text-muted">
+                    Déplacez les sections pour choisir leur ordre ; leur numérotation suivra automatiquement.
+                  </p>
                 </div>
                 <Button type="button" onClick={openAddSection} className="gap-2 text-xs" rightIcon={<IconPlus className="h-4 w-4" />}>
                   Ajouter une section
@@ -214,12 +226,32 @@ export default function LegalSettingsPanel() {
                   {sections.map((sec, idx) => (
                     <div key={idx} className="p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="space-y-1 min-w-0 flex-1">
-                        <h5 className="font-bold text-sm text-ink">{sec.title}</h5>
+                        <h5 className="font-bold text-sm text-ink">{formatLegalSectionTitle(sec.title, idx)}</h5>
                         <p className="whitespace-pre-line text-xs text-muted leading-relaxed line-clamp-3">
                           {sec.text}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-0">
+                          <button
+                            type="button"
+                            onClick={() => moveSection(idx, -1)}
+                            disabled={idx === 0}
+                            aria-label={`Déplacer « ${formatLegalSectionTitle(sec.title, idx)} » vers le haut`}
+                            className="p-1 text-muted transition-colors hover:text-primary focus-visible:rounded-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <IconArrowRight className="-rotate-90 h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveSection(idx, 1)}
+                            disabled={idx === sections.length - 1}
+                            aria-label={`Déplacer « ${formatLegalSectionTitle(sec.title, idx)} » vers le bas`}
+                            className="p-1 text-muted transition-colors hover:text-primary focus-visible:rounded-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <IconArrowRight className="rotate-90 h-4 w-4" />
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => openEditSection(idx)}
@@ -271,7 +303,7 @@ export default function LegalSettingsPanel() {
               required
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
-              placeholder="Ex : 1. Objet ou 2. Données personnelles"
+              placeholder="Ex. Objet (la numérotation suit automatiquement l’ordre des sections)"
               className={cn(formFieldInputVariants(), 'w-full')}
             />
           </label>

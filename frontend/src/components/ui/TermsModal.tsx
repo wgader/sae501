@@ -5,6 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { getPublicLegal } from '@/lib/api';
 import type { LegalContent } from '@/lib/api/types';
+import { formatLegalSectionTitle } from '@/lib/legal';
 
 export const termsModalOverlayVariants = cva(
   'fixed inset-0 z-10 flex items-center justify-center bg-ink/50 px-5 py-8',
@@ -125,7 +126,7 @@ export default function TermsModal({
           {activeLastUpdated && <p>Dernière mise à jour : {activeLastUpdated}</p>}
           {activeSections.map((section, idx) => (
             <div key={idx}>
-              <h3 className="mb-1 font-bold text-ink">{section.title}</h3>
+              <h3 className="mb-1 font-bold text-ink">{formatLegalSectionTitle(section.title, idx)}</h3>
               <p className="whitespace-pre-line">{section.text}</p>
             </div>
           ))}

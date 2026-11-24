@@ -5,7 +5,7 @@ import SettingsCard from '@/components/admin/settings/SettingsCard';
 import Button from '@/components/ui/Button';
 import Dialog from '@/components/ui/Dialog';
 import Notice from '@/components/ui/Notice';
-import { IconPlus } from '@/components/ui/icons';
+import { IconArrowRight, IconPlus } from '@/components/ui/icons';
 import {
   createAdminFaq,
   deleteAdminFaq,
@@ -15,12 +15,17 @@ import {
 import type { FaqItem } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { formFieldInputVariants, formFieldLabelVariants } from '@/components/ui/FormField';
+import { LANDING_FAQ_LIMIT } from '@/components/landing/landingContent';
 
 type Feedback = { tone: 'success' | 'danger'; message: string } | null;
+
+const sortFaqItems = (items: FaqItem[]) =>
+  [...items].sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id);
 
 export default function FaqSettingsPanel() {
   const [faqItems, setFaqItems] = useState<FaqItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reordering, setReordering] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
   // Modale édition / création
@@ -36,7 +41,7 @@ export default function FaqSettingsPanel() {
     try {
       setLoading(true);
       const data = await getAdminFaq();
-      setFaqItems(data);
+      setFaqItems(sortFaqItems(data));
     } catch {
       setFeedback({ tone: 'danger', message: 'Erreur lors du chargement des questions de la FAQ.' });
     } finally {
@@ -48,7 +53,7 @@ export default function FaqSettingsPanel() {
     let active = true;
     getAdminFaq()
       .then((data) => {
-        if (active) setFaqItems(data);
+        if (active) setFaqItems(sortFaqItems(data));
       })
       .catch(() => {
         if (active) setFeedback({ tone: 'danger', message: 'Erreur lors du chargement des questions de la FAQ.' });
@@ -60,7 +65,6 @@ export default function FaqSettingsPanel() {
       active = false;
     };
   }, []);
-
 
   const openCreateModal = () => {
     setEditingItem(null);
@@ -74,6 +78,41 @@ export default function FaqSettingsPanel() {
     setQuestion(item.question);
     setAnswer(item.answer);
     setIsModalOpen(true);
+  };
+
+  const moveFaqItem = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= faqItems.length || reordering) return;
+
+    const reorderedItems = [...faqItems];
+    [reorderedItems[index], reorderedItems[targetIndex]] = [reorderedItems[targetIndex], reorderedItems[index]];
+    setReordering(true);
+
+    try {
+      const results = await Promise.allSettled(
+        reorderedItems.map((item, position) => updateAdminFaq(item.id, { displayOrder: position + 1 })),
+      );
+      const failedUpdate = results.find((result) => result.status === 'rejected');
+      if (failedUpdate?.status === 'rejected') throw failedUpdate.reason;
+
+      setFaqItems(reorderedItems.map((item, position) => ({ ...item, displayOrder: position + 1 })));
+      setFeedback({ tone: 'success', message: 'Ordre des questions mis à jour.' });
+    } catch (err: unknown) {
+      setFeedback({
+        tone: 'danger',
+        message: err instanceof Error ? err.message : 'Erreur lors du changement de l’ordre des questions.',
+      });
+      try {
+        setFaqItems(sortFaqItems(await getAdminFaq()));
+      } catch {
+        setFeedback({
+          tone: 'danger',
+          message: 'L’ordre n’a pas pu être confirmé. Rechargez les questions avant de continuer.',
+        });
+      }
+    } finally {
+      setReordering(false);
+    }
   };
 
   const handleSave = async (e: FormEvent) => {
@@ -123,8 +162,10 @@ export default function FaqSettingsPanel() {
         description="Gérez les questions et réponses présentées aux associations et au public sur la page d'accueil."
       >
         <div className="mb-4 flex justify-between items-center">
-          <p className="text-sm text-muted">Ces questions sont visibles par tous les visiteurs sur le portail d&apos;accueil.</p>
-          <Button onClick={openCreateModal} className="gap-2 text-xs" rightIcon={<IconPlus className="h-4 w-4" />}>
+          <p className="text-sm text-muted">
+            Seules les {LANDING_FAQ_LIMIT} premières questions (selon leur ordre) sont affichées sur l&apos;accueil.
+          </p>
+          <Button onClick={openCreateModal} disabled={reordering} className="gap-2 text-xs" rightIcon={<IconPlus className="h-4 w-4" />}>
             Ajouter une question
           </Button>
         </div>
@@ -137,16 +178,40 @@ export default function FaqSettingsPanel() {
           </p>
         ) : (
           <div className="divide-y divide-line rounded-soft border border-line bg-white">
-            {faqItems.map((item) => (
+            {faqItems.map((item, index) => (
               <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="space-y-1 min-w-0 flex-1">
                   <h4 className="font-bold text-ink text-sm">{item.question}</h4>
                   <p className="text-xs text-muted leading-relaxed line-clamp-3">{item.answer}</p>
+                  <p className="text-xs text-muted">
+                    {index < LANDING_FAQ_LIMIT ? 'Affichée sur l’accueil' : 'Au-delà de la limite d’affichage'}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-0">
+                    <button
+                      type="button"
+                      onClick={() => void moveFaqItem(index, -1)}
+                      disabled={reordering || index === 0}
+                      aria-label={`Déplacer « ${item.question} » vers le haut`}
+                      className="p-1 text-muted transition-colors hover:text-primary focus-visible:rounded-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <IconArrowRight className="-rotate-90 h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void moveFaqItem(index, 1)}
+                      disabled={reordering || index === faqItems.length - 1}
+                      aria-label={`Déplacer « ${item.question} » vers le bas`}
+                      className="p-1 text-muted transition-colors hover:text-primary focus-visible:rounded-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <IconArrowRight className="rotate-90 h-4 w-4" />
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => openEditModal(item)}
+                    disabled={reordering}
                     className="text-xs font-semibold text-primary hover:underline"
                   >
                     Modifier
@@ -154,6 +219,7 @@ export default function FaqSettingsPanel() {
                   <button
                     type="button"
                     onClick={() => setDeleteTarget(item)}
+                    disabled={reordering}
                     className="text-xs font-semibold text-danger hover:underline ml-2"
                   >
                     Supprimer

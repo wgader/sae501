@@ -9,18 +9,25 @@ import BrandDot from './ui/BrandDot';
 import LandingContainer from './ui/LandingContainer';
 import Reveal from './ui/Reveal';
 import SectionTitle from './ui/SectionTitle';
-import { LANDING_ANCHORS, LANDING_FAQ } from './landingContent';
+import { LANDING_ANCHORS, LANDING_FAQ, LANDING_FAQ_LIMIT } from './landingContent';
 
 /** Questions fréquentes en accordéons natifs, dynamisées via l'espace admin avec repli statique. */
 export default function FaqSection() {
-  const [items, setItems] = useState<Array<{ question: string; answer: string }>>([...LANDING_FAQ]);
+  const [items, setItems] = useState<Array<{ question: string; answer: string }>>(
+    [...LANDING_FAQ].slice(0, LANDING_FAQ_LIMIT),
+  );
 
   useEffect(() => {
     let active = true;
     getPublicFaq()
       .then((data: FaqItem[]) => {
         if (active && data.length > 0) {
-          setItems(data.map((item) => ({ question: item.question, answer: item.answer })));
+          setItems(
+            [...data]
+              .sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id)
+              .slice(0, LANDING_FAQ_LIMIT)
+              .map((item) => ({ question: item.question, answer: item.answer })),
+          );
         }
       })
       .catch(() => {

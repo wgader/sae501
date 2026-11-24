@@ -8,6 +8,7 @@ import LandingFooter from '@/components/landing/LandingFooter';
 import Notice from '@/components/ui/Notice';
 import { getPublicLegal } from '@/lib/api';
 import type { LegalContent } from '@/lib/api/types';
+import { formatLegalSectionTitle } from '@/lib/legal';
 
 export default function CguPage() {
   const [content, setContent] = useState<LegalContent | null>(null);
@@ -65,7 +66,7 @@ export default function CguPage() {
               <div className="mt-8 space-y-6">
                 {content.sections.map((section, idx) => (
                   <section key={idx} className="space-y-2">
-                    <h2 className="text-lg font-bold text-ink">{section.title}</h2>
+                    <h2 className="text-lg font-bold text-ink">{formatLegalSectionTitle(section.title, idx)}</h2>
                     <p className="whitespace-pre-line text-sm leading-relaxed text-muted">{section.text}</p>
                   </section>
                 ))}
