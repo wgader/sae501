@@ -47,16 +47,16 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->setFirstResult(($page - 1) * $itemsPerPage)
             ->setMaxResults($itemsPerPage);
 
-        if ($status === 'ACTIVE') {
+        if ('ACTIVE' === $status) {
             $queryBuilder->andWhere('user.inactivatedAt IS NULL');
-        } elseif ($status === 'INACTIVE') {
+        } elseif ('INACTIVE' === $status) {
             $queryBuilder->andWhere('user.inactivatedAt IS NOT NULL');
         }
 
-        if ($search !== null && $search !== '') {
+        if (null !== $search && '' !== $search) {
             $queryBuilder
                 ->andWhere('LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search OR LOWER(user.email) LIKE :search')
-                ->setParameter('search', '%' . mb_strtolower($search) . '%');
+                ->setParameter('search', '%'.mb_strtolower($search).'%');
         }
 
         return $queryBuilder->getQuery()->getResult();
@@ -70,16 +70,16 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->andWhere('user.deletedAt IS NULL')
             ->setParameter('associationRole', '%ROLE_ASSOCIATION%');
 
-        if ($status === 'ACTIVE') {
+        if ('ACTIVE' === $status) {
             $queryBuilder->andWhere('user.inactivatedAt IS NULL');
-        } elseif ($status === 'INACTIVE') {
+        } elseif ('INACTIVE' === $status) {
             $queryBuilder->andWhere('user.inactivatedAt IS NOT NULL');
         }
 
-        if ($search !== null && $search !== '') {
+        if (null !== $search && '' !== $search) {
             $queryBuilder
                 ->andWhere('LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search OR LOWER(user.email) LIKE :search')
-                ->setParameter('search', '%' . mb_strtolower($search) . '%');
+                ->setParameter('search', '%'.mb_strtolower($search).'%');
         }
 
         return (int) $queryBuilder->getQuery()->getSingleScalarResult();
@@ -119,7 +119,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->andWhere('LOWER(user.email) = LOWER(:email)')
             ->setParameter('email', trim($email));
 
-        if ($userId !== null) {
+        if (null !== $userId) {
             $queryBuilder
                 ->andWhere('user.id != :userId')
                 ->setParameter('userId', $userId);

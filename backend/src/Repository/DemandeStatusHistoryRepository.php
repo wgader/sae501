@@ -31,4 +31,3 @@ class DemandeStatusHistoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 }
-

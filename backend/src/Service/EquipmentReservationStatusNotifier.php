@@ -37,13 +37,13 @@ final class EquipmentReservationStatusNotifier
 
         $this->sendToAssociation(
             $reservation,
-            $status === 'Validée'
+            'Validée' === $status
                 ? 'Votre demande de matériel a été acceptée — Mairie de Feytiat'
                 : 'Votre demande de matériel a été refusée — Mairie de Feytiat',
-            $status === 'Validée'
+            'Validée' === $status
                 ? 'emails/equipment_reservation_validated.html.twig'
                 : 'emails/equipment_reservation_refused.html.twig',
-            $status === 'Refusée' ? ['noteInterne' => $reservation->getNoteInterne()] : [],
+            'Refusée' === $status ? ['noteInterne' => $reservation->getNoteInterne()] : [],
         );
     }
 
@@ -57,7 +57,7 @@ final class EquipmentReservationStatusNotifier
         array $extraContext,
     ): void {
         $association = $reservation->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return;
         }
 
@@ -69,7 +69,7 @@ final class EquipmentReservationStatusNotifier
 
         foreach ($association->getUsers() as $user) {
             $email = $user->getEmail();
-            if ($email === null || trim($email) === '') {
+            if (null === $email || '' === trim($email)) {
                 continue;
             }
 

@@ -46,7 +46,7 @@ final class AccountProfileController extends AbstractController
         $errors = [];
 
         if (array_key_exists('email', $payload)) {
-            if (!is_string($payload['email']) || trim($payload['email']) === '') {
+            if (!is_string($payload['email']) || '' === trim($payload['email'])) {
                 $errors['email'] = "L'adresse email est obligatoire.";
             } else {
                 $user->setEmail(trim($payload['email']));
@@ -54,15 +54,15 @@ final class AccountProfileController extends AbstractController
         }
 
         if (array_key_exists('telephone', $payload)) {
-            if ($payload['telephone'] !== null && !is_string($payload['telephone'])) {
+            if (null !== $payload['telephone'] && !is_string($payload['telephone'])) {
                 $errors['telephone'] = 'Le numéro de téléphone est invalide.';
             } else {
                 $telephone = is_string($payload['telephone']) ? trim($payload['telephone']) : null;
-                $user->setTelephone($telephone === '' ? null : $telephone);
+                $user->setTelephone('' === $telephone ? null : $telephone);
             }
         }
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(
                 ['message' => 'Données invalides.', 'errors' => $errors],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -80,7 +80,7 @@ final class AccountProfileController extends AbstractController
             $errors[$violation->getPropertyPath()] = $violation->getMessage();
         }
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(
                 ['message' => 'Données invalides.', 'errors' => $errors],
                 Response::HTTP_UNPROCESSABLE_ENTITY,

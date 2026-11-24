@@ -37,12 +37,12 @@ class MaterielRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('m');
 
-        if ($category !== null && $category !== '') {
+        if (null !== $category && '' !== $category) {
             $qb->andWhere('m.categorie = :category')
                 ->setParameter('category', $category);
         }
 
-        if ($isArchived !== null) {
+        if (null !== $isArchived) {
             $qb->andWhere('m.isArchived = :isArchived')
                 ->setParameter('isArchived', $isArchived);
         }
@@ -54,6 +54,7 @@ class MaterielRepository extends ServiceEntityRepository
 
     /**
      * @param list<int> $ids
+     *
      * @return list<Materiel>
      */
     public function findForReservationUpdate(array $ids): array

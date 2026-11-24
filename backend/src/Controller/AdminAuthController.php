@@ -49,12 +49,12 @@ final class AdminAuthController extends AbstractController
         RateLimiterFactory $ipLimiter,
         SecurityAuditLogger $audit,
     ): JsonResponse {
-        $data     = json_decode($request->getContent(), true);
-        $email    = trim((string) ($data['email'] ?? ''));
+        $data = json_decode($request->getContent(), true);
+        $email = trim((string) ($data['email'] ?? ''));
         $password = (string) ($data['password'] ?? '');
 
         // ── Champs obligatoires ───────────────────────────────────────────────
-        if ($email === '' || $password === '') {
+        if ('' === $email || '' === $password) {
             return $this->json(
                 ['message' => 'Identifiant et mot de passe requis.'],
                 Response::HTTP_BAD_REQUEST
@@ -81,7 +81,7 @@ final class AdminAuthController extends AbstractController
         // → évite l'énumération d'emails (user enumeration attack)
         $user = $userRepository->findOneBy(['email' => $email]);
 
-        if ($user === null || !$passwordHasher->isPasswordValid($user, $password)) {
+        if (null === $user || !$passwordHasher->isPasswordValid($user, $password)) {
             // Seuls les échecs sont comptés.
             $accountLimit->consume();
             $ipLimit->consume();
@@ -97,8 +97,8 @@ final class AdminAuthController extends AbstractController
         if (
             $user->isDeleted()
             || !$user->isVerified()
-            || $user->getInactivatedAt() !== null
-            || array_intersect(User::ROLES_MAIRIE, $user->getRoles()) === []
+            || null !== $user->getInactivatedAt()
+            || [] === array_intersect(User::ROLES_MAIRIE, $user->getRoles())
         ) {
             $audit->loginFailed($email, 'mairie', 'not_allowed');
 

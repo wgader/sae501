@@ -26,7 +26,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class SeedDemandesCommand extends Command
 {
     public function __construct(
-        private readonly EntityManagerInterface $em
+        private readonly EntityManagerInterface $em,
     ) {
         parent::__construct();
     }
@@ -47,23 +47,24 @@ class SeedDemandesCommand extends Command
 
         /** @var Association|null $association */
         $association = null;
-        if ($assoId !== null) {
+        if (null !== $assoId) {
             $association = $assoRepo->find((int) $assoId);
         }
 
-        if ($association === null) {
-            $association = $assoRepo->findOneBy(['nom' => 'Feytiat Culture']) ?? $assoRepo->findOneBy([]) ;
+        if (null === $association) {
+            $association = $assoRepo->findOneBy(['nom' => 'Feytiat Culture']) ?? $assoRepo->findOneBy([]);
         }
 
-        if ($association === null) {
+        if (null === $association) {
             $io->error("Aucune association trouvée en base. Veuillez d'abord inscrire une association.");
+
             return Command::FAILURE;
         }
 
         $io->title(sprintf("Génération de démarches de test pour l'association : %s (ID %d)", $association->getNom(), $association->getId()));
 
         if ($input->getOption('clean')) {
-            $io->section("Nettoyage des démarches existantes...");
+            $io->section('Nettoyage des démarches existantes...');
             $this->cleanExistingRequests($association);
         }
 
@@ -74,15 +75,15 @@ class SeedDemandesCommand extends Command
         $materiels = $this->ensureMateriels();
 
         // 3. Subventions
-        $io->section("Création des demandes de subvention...");
+        $io->section('Création des demandes de subvention...');
         $this->seedSubventions($association);
 
         // 4. Réservations Matériel
-        $io->section("Création des réservations de matériel...");
+        $io->section('Création des réservations de matériel...');
         $this->seedMaterielReservations($association, $materiels);
 
         // 5. Réservations Salle
-        $io->section("Création des réservations de salle...");
+        $io->section('Création des réservations de salle...');
         $this->seedSalleReservations($association, $salles);
 
         $this->em->flush();
@@ -101,7 +102,7 @@ class SeedDemandesCommand extends Command
         $result = [];
 
         $salle1 = $salleRepo->findOneBy(['nom' => 'Salle Municipale']);
-        if ($salle1 === null) {
+        if (null === $salle1) {
             $salle1 = new Salle();
             $salle1->setNom('Salle Municipale');
             $salle1->setAdresse('Place de la Mairie, 87220 Feytiat');
@@ -114,7 +115,7 @@ class SeedDemandesCommand extends Command
         $result['municipale'] = $salle1;
 
         $salle2 = $salleRepo->findOneBy(['nom' => 'Espace Georges Brassens']);
-        if ($salle2 === null) {
+        if (null === $salle2) {
             $salle2 = new Salle();
             $salle2->setNom('Espace Georges Brassens');
             $salle2->setAdresse('Avenue des Sports, 87220 Feytiat');
@@ -138,7 +139,7 @@ class SeedDemandesCommand extends Command
         $result = [];
 
         $chaise = $matRepo->findOneBy(['designation' => 'Chaise']) ?? $matRepo->findOneBy(['designation' => 'Chaise pliante']);
-        if ($chaise === null) {
+        if (null === $chaise) {
             $chaise = new Materiel();
             $chaise->setDesignation('Chaise pliante');
             $chaise->setCategorie('Mobilier');
@@ -148,7 +149,7 @@ class SeedDemandesCommand extends Command
         $result['chaise'] = $chaise;
 
         $table = $matRepo->findOneBy(['designation' => 'Table pliante (6 pers.)']);
-        if ($table === null) {
+        if (null === $table) {
             $table = new Materiel();
             $table->setDesignation('Table pliante (6 pers.)');
             $table->setCategorie('Mobilier');
@@ -158,7 +159,7 @@ class SeedDemandesCommand extends Command
         $result['table'] = $table;
 
         $sono = $matRepo->findOneBy(['designation' => 'Système sonorisation portable']);
-        if ($sono === null) {
+        if (null === $sono) {
             $sono = new Materiel();
             $sono->setDesignation('Système sonorisation portable');
             $sono->setCategorie('Audiovisuel');
@@ -168,7 +169,7 @@ class SeedDemandesCommand extends Command
         $result['sono'] = $sono;
 
         $video = $matRepo->findOneBy(['designation' => 'Vidéoprojecteur HD + Écran']);
-        if ($video === null) {
+        if (null === $video) {
             $video = new Materiel();
             $video->setDesignation('Vidéoprojecteur HD + Écran');
             $video->setCategorie('Audiovisuel');
@@ -187,7 +188,7 @@ class SeedDemandesCommand extends Command
         $sub1->setAssociation($association);
         $sub1->setIntituleProjet('Organisation du Festival Culturel de Printemps 2026');
         $sub1->setTypeSubvention('Projet');
-        $sub1->setDescription("Financement des artistes, de la régie technique et de la communication de la 5ème édition du Festival de Printemps de Feytiat.");
+        $sub1->setDescription('Financement des artistes, de la régie technique et de la communication de la 5ème édition du Festival de Printemps de Feytiat.');
         $sub1->setMontantDemande('3500.00');
         $sub1->setAnneeExercice(2026);
         $sub1->setStatut('En cours de traitement');
@@ -206,7 +207,7 @@ class SeedDemandesCommand extends Command
         $sub2->setAssociation($association);
         $sub2->setIntituleProjet('Subvention de fonctionnement annuelle 2025');
         $sub2->setTypeSubvention('Fonctionnement');
-        $sub2->setDescription("Aide au fonctionnement récurrent : assurances, adhésions fédérales et fournitures pédagogiques.");
+        $sub2->setDescription('Aide au fonctionnement récurrent : assurances, adhésions fédérales et fournitures pédagogiques.');
         $sub2->setMontantDemande('2000.00');
         $sub2->setMontantAccorde('1800.00');
         $sub2->setAnneeExercice(2025);
@@ -226,7 +227,7 @@ class SeedDemandesCommand extends Command
         $sub3->setAssociation($association);
         $sub3->setIntituleProjet('Achat d\'équipements pour ateliers de théâtre jeunesse');
         $sub3->setTypeSubvention('Investissement');
-        $sub3->setDescription("Acquisition de costumes et décors modulaires pour les ateliers de pratique théâtrale.");
+        $sub3->setDescription('Acquisition de costumes et décors modulaires pour les ateliers de pratique théâtrale.');
         $sub3->setMontantDemande('4200.00');
         $sub3->setAnneeExercice(2024);
         $sub3->setStatut('Refusée');
@@ -242,7 +243,7 @@ class SeedDemandesCommand extends Command
         $sub4->setAssociation($association);
         $sub4->setIntituleProjet('Résidences d\'artistes et médiation culturelle');
         $sub4->setTypeSubvention('Projet');
-        $sub4->setDescription("Accueil de trois artistes en résidence et ateliers ouverts aux écoles de la commune.");
+        $sub4->setDescription('Accueil de trois artistes en résidence et ateliers ouverts aux écoles de la commune.');
         $sub4->setMontantDemande('2800.00');
         $sub4->setAnneeExercice(2026);
         $sub4->setStatut('Complément requis');
@@ -412,7 +413,7 @@ class SeedDemandesCommand extends Command
         string $label,
         string $commentaire,
         string $auteur,
-        \DateTimeImmutable $createdAt
+        \DateTimeImmutable $createdAt,
     ): void {
         $history = new DemandeStatusHistory(
             $demandeType,
@@ -432,7 +433,7 @@ class SeedDemandesCommand extends Command
         int $id,
         string $titre,
         string $url,
-        string $description
+        string $description,
     ): void {
         $doc = new DocumentJustificatif();
         $doc->setAssociation($association);
@@ -473,4 +474,3 @@ class SeedDemandesCommand extends Command
             ->execute();
     }
 }
-

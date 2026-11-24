@@ -38,7 +38,7 @@ final class AgentAdministrationController extends AbstractController
         $status = $request->query->get('status');
         $search = $request->query->get('q');
 
-        if ($status !== null && !in_array($status, self::STATUSES, true)) {
+        if (null !== $status && !in_array($status, self::STATUSES, true)) {
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -73,12 +73,12 @@ final class AgentAdministrationController extends AbstractController
         }
 
         $errors = $this->validateAgentPayload($payload, false, false);
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $email = mb_strtolower(trim($payload['email']));
-        if ($this->userRepository->findOneBy(['email' => $email]) !== null) {
+        if (null !== $this->userRepository->findOneBy(['email' => $email])) {
             return $this->json(['message' => 'Cette adresse email est déjà utilisée.'], Response::HTTP_CONFLICT);
         }
 
@@ -91,7 +91,7 @@ final class AgentAdministrationController extends AbstractController
             ->setRoles(self::normalizeRoles($payload['roles']));
 
         $validationErrors = $this->validateEntity($validator, $agent);
-        if ($validationErrors !== []) {
+        if ([] !== $validationErrors) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $validationErrors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -143,14 +143,14 @@ final class AgentAdministrationController extends AbstractController
         }
 
         $errors = $this->validateAgentPayload($payload, true, in_array(self::ADMIN_ROLE, $rolesBefore, true));
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (array_key_exists('email', $payload)) {
             $email = mb_strtolower(trim($payload['email']));
             $existing = $this->userRepository->findOneBy(['email' => $email]);
-            if ($existing !== null && $existing->getId() !== $agent->getId()) {
+            if (null !== $existing && $existing->getId() !== $agent->getId()) {
                 return $this->json(['message' => 'Cette adresse email est déjà utilisée.'], Response::HTTP_CONFLICT);
             }
             $agent->setEmail($email);
@@ -177,7 +177,7 @@ final class AgentAdministrationController extends AbstractController
         }
 
         $validationErrors = $this->validateEntity($validator, $agent);
-        if ($validationErrors !== []) {
+        if ([] !== $validationErrors) {
             return $this->json(['message' => 'Les données envoyées sont invalides.', 'errors' => $validationErrors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -207,11 +207,11 @@ final class AgentAdministrationController extends AbstractController
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if ($status === 'INACTIVE' && $this->isCurrentAgent($agent)) {
+        if ('INACTIVE' === $status && $this->isCurrentAgent($agent)) {
             return $this->json(['message' => 'Vous ne pouvez pas désactiver votre propre compte.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $agent->setInactivatedAt($status === 'INACTIVE' ? new \DateTimeImmutable() : null);
+        $agent->setInactivatedAt('INACTIVE' === $status ? new \DateTimeImmutable() : null);
         $this->entityManager->flush();
 
         return $this->json(self::serializeAgent($agent));
@@ -261,7 +261,7 @@ final class AgentAdministrationController extends AbstractController
     private function decodePayload(Request $request): array|JsonResponse
     {
         $payload = json_decode($request->getContent(), true);
-        if (!is_array($payload) || json_last_error() !== JSON_ERROR_NONE) {
+        if (!is_array($payload) || JSON_ERROR_NONE !== json_last_error()) {
             return $this->json(['message' => 'Le corps de la requête est invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -278,7 +278,7 @@ final class AgentAdministrationController extends AbstractController
         $errors = [];
         foreach (['nom', 'prenom', 'email'] as $field) {
             if (!$partial || array_key_exists($field, $payload)) {
-                if (!is_string($payload[$field] ?? null) || trim($payload[$field]) === '') {
+                if (!is_string($payload[$field] ?? null) || '' === trim($payload[$field])) {
                     $errors[$field] = 'Ce champ est obligatoire.';
                 }
             }
@@ -292,14 +292,14 @@ final class AgentAdministrationController extends AbstractController
                 $errors[$field] = 'Ce champ ne peut pas dépasser 100 caractères.';
             }
         }
-        if (array_key_exists('telephone', $payload) && $payload['telephone'] !== null && !is_string($payload['telephone'])) {
+        if (array_key_exists('telephone', $payload) && null !== $payload['telephone'] && !is_string($payload['telephone'])) {
             $errors['telephone'] = 'Le téléphone est invalide.';
         }
         if (!$partial || array_key_exists('roles', $payload)) {
             $roles = $payload['roles'] ?? null;
-            if (!is_array($roles) || !array_is_list($roles) || array_filter($roles, 'is_string') !== $roles || array_diff($roles, User::ROLES_MAIRIE) !== []) {
+            if (!is_array($roles) || !array_is_list($roles) || array_filter($roles, 'is_string') !== $roles || [] !== array_diff($roles, User::ROLES_MAIRIE)) {
                 $errors['roles'] = 'Un ou plusieurs rôles sont invalides.';
-            } elseif (array_diff($roles, ['ROLE_MAIRIE']) === []) {
+            } elseif ([] === array_diff($roles, ['ROLE_MAIRIE'])) {
                 $errors['roles'] = 'Sélectionnez au moins un module.';
             } elseif (in_array(self::ADMIN_ROLE, $roles, true) && !$isAdministrator) {
                 $errors['roles'] = 'L’application ne compte qu’un seul administrateur.';
@@ -322,7 +322,7 @@ final class AgentAdministrationController extends AbstractController
 
     private function nullableString(mixed $value): ?string
     {
-        return $value === null || trim((string) $value) === '' ? null : trim((string) $value);
+        return null === $value || '' === trim((string) $value) ? null : trim((string) $value);
     }
 
     /**

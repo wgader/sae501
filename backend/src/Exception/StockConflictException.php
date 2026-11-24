@@ -30,4 +30,3 @@ class StockConflictException extends \RuntimeException
         return $this->maxBooked;
     }
 }
-

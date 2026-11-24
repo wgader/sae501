@@ -42,7 +42,7 @@ final class CampaignWishService
     {
         $this->campaignService->synchronize($now);
         $campaign = $this->campaignRepository->findCurrent($now, 'salle');
-        if (null === $campaign || ($campaign->getClosingAt() !== null && $campaign->getClosingAt() < $now)) {
+        if (null === $campaign || (null !== $campaign->getClosingAt() && $campaign->getClosingAt() < $now)) {
             throw new RoomBookingClosedException('La période de dépôt des vœux est terminée ou n’a pas encore commencé.');
         }
 
@@ -69,7 +69,7 @@ final class CampaignWishService
         $errors = [];
         $wishes = [];
         foreach (array_values($lines) as $index => $line) {
-            $wish = $this->buildWish(is_array($line) ? $line : [], $index + 1, $errors);
+            $wish = $this->buildWish($campaign, is_array($line) ? $line : [], $index + 1, $errors);
             if (null !== $wish) {
                 foreach ($wishes as $previousIndex => $previous) {
                     if ($wish->overlaps($previous)) {
@@ -96,10 +96,10 @@ final class CampaignWishService
     }
 
     /**
-     * @param array<string, mixed>                                              $line
+     * @param array<string, mixed>                                             $line
      * @param list<array{line: int|null, field: string|null, message: string}> $errors
      */
-    private function buildWish(array $line, int $number, array &$errors): ?CampaignWish
+    private function buildWish(Campaign $campaign, array $line, int $number, array &$errors): ?CampaignWish
     {
         $fail = static function (string $field, string $message) use (&$errors, $number): void {
             $errors[] = ['line' => $number, 'field' => $field, 'message' => sprintf('Vœu %d : %s', $number, $message)];
@@ -115,6 +115,24 @@ final class CampaignWishService
         $day = filter_var($line['dayOfWeek'] ?? null, FILTER_VALIDATE_INT);
         if (false === $day || !isset(CampaignWish::DAYS[$day])) {
             $fail('dayOfWeek', 'choisissez un jour de la semaine.');
+        }
+
+        $startDate = null;
+        $rawStartDate = $line['startDate'] ?? null;
+        if (!is_string($rawStartDate) || 1 !== preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawStartDate)) {
+            $fail('startDate', 'choisissez une date de début.');
+        } else {
+            try {
+                $startDate = new \DateTimeImmutable($rawStartDate);
+            } catch (\Exception) {
+                $fail('startDate', 'la date de début est invalide.');
+            }
+            if (null !== $startDate && false === $campaign->coversDay($startDate)) {
+                $fail('startDate', 'la date doit être dans la période réservable.');
+            }
+            if (null !== $startDate && false !== $day && (int) $startDate->format('N') !== (int) $day) {
+                $fail('dayOfWeek', 'le jour doit correspondre à la date de début.');
+            }
         }
 
         $start = $line['startTime'] ?? null;
@@ -160,7 +178,11 @@ final class CampaignWishService
             return null;
         }
 
-        return new CampaignWish($salle, (int) $day, (string) $start, (string) $end, (string) $frequency, $activity, (string) $audience, (int) $attendance);
+        if (null === $startDate) {
+            return null;
+        }
+
+        return new CampaignWish($salle, (int) $day, $startDate, (string) $start, (string) $end, (string) $frequency, $activity, (string) $audience, (int) $attendance);
     }
 
     /**
@@ -174,6 +196,7 @@ final class CampaignWishService
             'status' => $wish->getStatus(),
             'salle' => ['id' => $wish->getSalle()?->getId(), 'nom' => $wish->getSalle()?->getNom()],
             'dayOfWeek' => $wish->getDayOfWeek(),
+            'startDate' => $wish->getStartDate()->format('Y-m-d'),
             'dayLabel' => CampaignWish::DAYS[$wish->getDayOfWeek()] ?? '',
             'startTime' => $wish->getStartTime(),
             'endTime' => $wish->getEndTime(),

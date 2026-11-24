@@ -59,7 +59,7 @@ final class SalleAdministrationControllerTest extends ControllerRouteTestCase
         $this->assertSame('Salle polyvalente', $room['nom']);
         $this->assertSame(80, $room['capaciteMax']);
 
-        $this->client->request('DELETE', '/api/admin/salles/' . $room['id']);
+        $this->client->request('DELETE', '/api/admin/salles/'.$room['id']);
 
         $this->assertResponseIsSuccessful();
         $this->assertJsonContains([
@@ -80,7 +80,7 @@ final class SalleAdministrationControllerTest extends ControllerRouteTestCase
         ]);
         $room = json_decode((string) $this->client->getResponse()->getContent(), true);
 
-        $this->requestJson('PATCH', '/api/admin/salles/' . $room['id'] . '/status', [
+        $this->requestJson('PATCH', '/api/admin/salles/'.$room['id'].'/status', [
             'isActive' => 'yes',
         ]);
 

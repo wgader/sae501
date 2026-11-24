@@ -83,12 +83,14 @@ final class NotificationController extends AbstractController
         }
 
         $updated = $this->notificationRepository->markAllAsRead($user);
+
         return $this->json(['updated' => $updated, 'unreadCount' => 0]);
     }
 
     private function getAuthenticatedUser(): User|JsonResponse
     {
         $user = $this->getUser();
+
         return $user instanceof User
             ? $user
             : $this->json(['message' => 'Utilisateur non authentifié.'], Response::HTTP_UNAUTHORIZED);

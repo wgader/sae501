@@ -5,8 +5,8 @@ namespace App\Repository;
 use App\Entity\Association;
 use App\Entity\Materiel;
 use App\Entity\ReservationMateriel;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -92,16 +92,16 @@ class ReservationMaterielRepository extends ServiceEntityRepository
         ?string $status,
         ?string $search,
     ): void {
-        if ($status !== null) {
+        if (null !== $status) {
             $queryBuilder
                 ->andWhere('r.statut = :status')
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && trim($search) !== '') {
+        if (null !== $search && '' !== trim($search)) {
             $queryBuilder
                 ->andWhere('LOWER(r.motifEvenement) LIKE :search OR LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
-                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+                ->setParameter('search', '%'.strtolower(trim($search)).'%');
         }
     }
 

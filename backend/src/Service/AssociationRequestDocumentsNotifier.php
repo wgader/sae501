@@ -30,7 +30,7 @@ final class AssociationRequestDocumentsNotifier
         string $message,
     ): void {
         $association = $reservation->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             return;
         }
 
@@ -46,7 +46,7 @@ final class AssociationRequestDocumentsNotifier
                 $reservation->getId(),
             );
 
-            if ($user->getEmail() === null || trim($user->getEmail()) === '') {
+            if (null === $user->getEmail() || '' === trim($user->getEmail())) {
                 continue;
             }
 
@@ -65,9 +65,9 @@ final class AssociationRequestDocumentsNotifier
                         'missingFiles' => $missingFiles,
                         'message' => $message,
                         'documentsUrl' => rtrim($this->frontendUrl, '/')
-                            . '/historique/demande/pieces-annexes?id=' . $reservation->getId()
-                            . '&type='
-                            . ($reservation instanceof ReservationSalle ? 'salle' : 'materiel'),
+                            .'/historique/demande/pieces-annexes?id='.$reservation->getId()
+                            .'&type='
+                            .($reservation instanceof ReservationSalle ? 'salle' : 'materiel'),
                     ]),
             );
         }

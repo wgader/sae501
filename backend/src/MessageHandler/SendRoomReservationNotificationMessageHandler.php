@@ -21,4 +21,3 @@ final class SendRoomReservationNotificationMessageHandler
         $this->notifier->notifySubmitted($message->reservationSalleId);
     }
 }
-

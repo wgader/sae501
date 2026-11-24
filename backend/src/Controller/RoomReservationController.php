@@ -53,15 +53,15 @@ final class RoomReservationController extends AbstractController
     private function submit(Request $request, User $user, bool $forCampaign): JsonResponse
     {
         $association = $user->getAssociation();
-        if ($association === null) {
+        if (null === $association) {
             // Permet à un compte agent/admin de tester ou réserver pour une association
-            if ($this->isGranted('ROLE_ADMIN') || $user->getTypeCompte() === 'mairie') {
+            if ($this->isGranted('ROLE_ADMIN') || 'mairie' === $user->getTypeCompte()) {
                 $association = $this->entityManager->getRepository(Association::class)->findOneBy(['statut' => 'VALIDATED'])
                     ?? $this->entityManager->getRepository(Association::class)->findOneBy([]);
             }
         }
 
-        if ($association === null) {
+        if (null === $association) {
             return $this->json(
                 ['message' => 'Votre compte n’est rattaché à aucune association.'],
                 Response::HTTP_FORBIDDEN,
@@ -69,7 +69,7 @@ final class RoomReservationController extends AbstractController
         }
 
         // Vérification d'activation du module Salles pour les associations
-        if ($user->getTypeCompte() !== 'mairie' && !$this->isGranted('ROLE_ADMIN') && !$association->isModuleSalleActif()) {
+        if ('mairie' !== $user->getTypeCompte() && !$this->isGranted('ROLE_ADMIN') && !$association->isModuleSalleActif()) {
             return $this->json(
                 ['message' => 'Le module salles n’est pas activé pour votre association.'],
                 Response::HTTP_FORBIDDEN,
@@ -79,7 +79,7 @@ final class RoomReservationController extends AbstractController
         $payload = $this->resolvePayload($request);
 
         $salleId = filter_var($payload['salleId'] ?? null, FILTER_VALIDATE_INT);
-        if ($salleId === false || $salleId <= 0) {
+        if (false === $salleId || $salleId <= 0) {
             return $this->json(
                 ['message' => 'Le paramètre salleId est obligatoire et doit être un entier positif.'],
                 Response::HTTP_BAD_REQUEST,
@@ -87,7 +87,7 @@ final class RoomReservationController extends AbstractController
         }
 
         $motif = $payload['motifEvenement'] ?? null;
-        if (!is_string($motif) || trim($motif) === '') {
+        if (!is_string($motif) || '' === trim($motif)) {
             return $this->json(
                 ['message' => 'Le motif de l’événement est obligatoire.'],
                 Response::HTTP_BAD_REQUEST,
@@ -97,7 +97,7 @@ final class RoomReservationController extends AbstractController
         $startStr = $payload['dateDebut'] ?? null;
         $endStr = $payload['dateFin'] ?? null;
 
-        if (!is_string($startStr) || trim($startStr) === '' || !is_string($endStr) || trim($endStr) === '') {
+        if (!is_string($startStr) || '' === trim($startStr) || !is_string($endStr) || '' === trim($endStr)) {
             return $this->json(
                 ['message' => 'Les horaires de début et de fin sont obligatoires.'],
                 Response::HTTP_BAD_REQUEST,
@@ -115,7 +115,7 @@ final class RoomReservationController extends AbstractController
         }
 
         $capaciteAttendue = null;
-        if (isset($payload['capaciteAttendue']) && $payload['capaciteAttendue'] !== '') {
+        if (isset($payload['capaciteAttendue']) && '' !== $payload['capaciteAttendue']) {
             $validatedCapacity = filter_var($payload['capaciteAttendue'], FILTER_VALIDATE_INT);
             if (!is_int($validatedCapacity)) {
                 return $this->json(
@@ -127,7 +127,7 @@ final class RoomReservationController extends AbstractController
         }
 
         $justificatif = $request->files->get('justificatif') ?? $request->files->get('document');
-        if ($justificatif !== null && !$justificatif instanceof UploadedFile) {
+        if (null !== $justificatif && !$justificatif instanceof UploadedFile) {
             return $this->json(
                 ['message' => 'Le fichier justificatif transmis est invalide.'],
                 Response::HTTP_BAD_REQUEST,
@@ -177,6 +177,7 @@ final class RoomReservationController extends AbstractController
         $contentType = (string) $request->headers->get('CONTENT_TYPE', '');
         if (str_contains($contentType, 'application/json')) {
             $decoded = json_decode($request->getContent(), true);
+
             return is_array($decoded) ? $decoded : [];
         }
 
@@ -199,7 +200,7 @@ final class RoomReservationController extends AbstractController
             'capaciteAttendue' => $reservation->getCapaciteAttendue(),
             'createdAt' => $reservation->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'campaignId' => $reservation->getCampaign()?->getId(),
-            'salle' => $salle !== null ? RoomCatalogController::serializeRoom($salle, $this->settings->current()) : null,
+            'salle' => null !== $salle ? RoomCatalogController::serializeRoom($salle, $this->settings->current()) : null,
             'message' => 'Votre demande de réservation a bien été enregistrée et est en attente de validation par la mairie.',
         ];
     }

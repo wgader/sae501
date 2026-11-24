@@ -39,7 +39,7 @@ class AssociationStatusProcessor implements ProcessorInterface
         $result = $this->persistProcessor->process($data, $operation, $uriVariables, $context);
 
         // Send email if status changed to VALIDATED or REFUSED
-        if ($associationToNotify !== null && $newStatus !== null) {
+        if (null !== $associationToNotify && null !== $newStatus) {
             $this->statusNotifier->notify($associationToNotify, $newStatus);
         }
 

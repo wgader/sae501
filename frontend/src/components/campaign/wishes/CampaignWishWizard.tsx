@@ -23,6 +23,7 @@ import {
   type WishField,
 } from '@/lib/campaignWishes';
 import { logger } from '@/lib/logger';
+import { useRoomBookingRules } from '@/hooks/useRoomBookingRules';
 
 type Step = 'edit' | 'recap' | 'done';
 
@@ -43,6 +44,7 @@ export default function CampaignWishWizard({ campaign, onSubmitted, onClosed }: 
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<CampaignWishSubmission | null>(null);
+  const { rules: roomRules } = useRoomBookingRules();
 
   useEffect(() => {
     let active = true;
@@ -58,8 +60,11 @@ export default function CampaignWishWizard({ campaign, onSubmitted, onClosed }: 
   }, []);
 
   const errors = useMemo(
-    () => Object.fromEntries(wishes.map((wish) => [wish.key, { ...validateWish(wish, rooms), ...serverErrors[wish.key] }])),
-    [wishes, rooms, serverErrors],
+    () => Object.fromEntries(wishes.map((wish) => [
+      wish.key,
+      { ...validateWish(wish, rooms, campaign.periodStart, campaign.periodEnd), ...serverErrors[wish.key] },
+    ])),
+    [wishes, rooms, serverErrors, campaign.periodStart, campaign.periodEnd],
   );
   const overlaps = useMemo(() => overlappingWishes(wishes), [wishes]);
   const hasErrors = overlaps.size > 0 || Object.values(errors).some((wishErrors) => Object.keys(wishErrors).length > 0);
@@ -166,6 +171,9 @@ export default function CampaignWishWizard({ campaign, onSubmitted, onClosed }: 
                 overlaps={overlaps.has(wish.key)}
                 showErrors={showErrors}
                 canRemove={wishes.length > 1}
+                periodStart={campaign.periodStart ?? null}
+                periodEnd={campaign.periodEnd ?? null}
+                roomRules={roomRules}
                 onChange={(field, value) => update(wish.key, field, value)}
                 onRemove={() => setWishes((current) => current.filter((item) => item.key !== wish.key))}
               />

@@ -53,7 +53,7 @@ class ReservationSalleRepository extends ServiceEntityRepository
             ->setParameter('end', $end)
             ->orderBy('r.dateDebut', 'ASC');
 
-        if ($excludeReservationId !== null) {
+        if (null !== $excludeReservationId) {
             $qb->andWhere('r.id != :excludeId')
                 ->setParameter('excludeId', $excludeReservationId);
         }
