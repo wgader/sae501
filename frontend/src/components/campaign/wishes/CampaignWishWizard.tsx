@@ -176,7 +176,7 @@ export default function CampaignWishWizard({ campaign, onSubmitted, onClosed }: 
               variant="secondary"
               disabled={wishes.length >= MAX_WISHES}
               onClick={() => setWishes((current) => [...current, emptyWish()])}
-              leftIcon={<IconPlus className="h-4 w-4" />}
+              rightIcon={<IconPlus className="h-4 w-4" />}
             >
               Ajouter un vœu
             </Button>

@@ -170,7 +170,7 @@ export default function CampaignRequestsSection({
               </button>
             ))}
           </div>
-          <Button size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setSlotDialog({ mode: 'add' })}>
+          <Button size="sm" rightIcon={<IconPlus className="h-4 w-4" />} onClick={() => setSlotDialog({ mode: 'add' })}>
             Ajouter un créneau
           </Button>
         </div>

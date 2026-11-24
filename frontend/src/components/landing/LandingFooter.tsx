@@ -6,10 +6,13 @@ import { CITY_WEBSITE_URL, LANDING_ANCHORS } from './landingContent';
 const LINKS: ReadonlyArray<{ href: string; label: string; external?: boolean }> = [
   { href: `/#${LANDING_ANCHORS.modules}`, label: 'Modules' },
   { href: `/#${LANDING_ANCHORS.faq}`, label: 'Questions' },
+  { href: '/cgu', label: 'CGU' },
+  { href: '/mentions-legales', label: 'Mentions légales' },
   { href: '/contact', label: 'Contact' },
   { href: '/admin', label: 'Espace agents' },
   { href: CITY_WEBSITE_URL, label: 'ville-feytiat.fr', external: true },
 ];
+
 
 export default function LandingFooter() {
   return (

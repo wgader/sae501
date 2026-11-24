@@ -66,6 +66,16 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   return readJson<T>(response, 'Une erreur est survenue.');
 }
 
+/** Appel public : aucune vérification ni redirection liée à une session locale. */
+export async function publicRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  defaultErrorMessage = 'Une erreur est survenue.',
+): Promise<T> {
+  const response = await apiFetch(path, options);
+  return readJson<T>(response, defaultErrorMessage);
+}
+
 /** Appel de l'espace association : sans session, retour à la connexion association. */
 export async function accountRequest<T>(
   path: string,
