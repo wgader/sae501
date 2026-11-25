@@ -143,8 +143,8 @@ export default function EquipmentCategoriesPanel() {
           </div>
           <Button type="submit" disabled={busy}>
             <span className="inline-flex items-center gap-2">
-              <IconPlus />
               Ajouter
+              <IconPlus />
             </span>
           </Button>
         </form>

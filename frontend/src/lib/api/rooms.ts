@@ -1,4 +1,4 @@
-import { request } from './client';
+import { publicRequest, request } from './client';
 import type {
   CreateRoomReservationInput,
   PublicRoom,
@@ -8,11 +8,11 @@ import type {
 } from './types';
 
 export function getPublicRooms(): Promise<PublicRoom[]> {
-  return request<PublicRoom[]>('/api/rooms');
+  return publicRequest<PublicRoom[]>('/api/rooms');
 }
 
 export function getRoomBookingRules(): Promise<RoomBookingRules> {
-  return request<RoomBookingRules>('/api/rooms/booking-rules');
+  return publicRequest<RoomBookingRules>('/api/rooms/booking-rules');
 }
 
 export function getRoomAvailability(
@@ -24,7 +24,7 @@ export function getRoomAvailability(
   if (start) params.set('start', start);
   if (end) params.set('end', end);
   const query = params.toString() ? `?${params.toString()}` : '';
-  return request<RoomAvailabilityResponse>(`/api/rooms/${roomId}/availability${query}`);
+  return publicRequest<RoomAvailabilityResponse>(`/api/rooms/${roomId}/availability${query}`);
 }
 
 export function createRoomReservation(

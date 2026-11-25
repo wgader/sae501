@@ -1,4 +1,4 @@
-import { accountRequest, apiFetch, request, ApiError } from './client';
+import { accountRequest, publicRequest, request } from './client';
 import type {
   AdminEquipmentReservation,
   AdminEquipmentReservationPage,
@@ -103,10 +103,9 @@ export function deleteAdminEquipment(id: number): Promise<{ message: string; equ
   });
 }
 export async function getPublicEquipment(): Promise<Equipment[]> {
-  // Catalogue public : la session (cookie) n'est envoyée que si elle existe.
-  const response = await apiFetch('/api/equipment');
-  if (!response.ok) {
-    throw new ApiError('Impossible de charger le catalogue de matériel.', response.status);
-  }
-  return response.json();
+  return publicRequest<Equipment[]>(
+    '/api/equipment',
+    {},
+    'Impossible de charger le catalogue de matériel.',
+  );
 }

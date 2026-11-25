@@ -1,8 +1,11 @@
 'use client';
 
-import type { HTMLAttributes } from 'react';
+import { useEffect, useState, type HTMLAttributes } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { getPublicLegal } from '@/lib/api';
+import type { LegalContent } from '@/lib/api/types';
+import { formatLegalSectionTitle } from '@/lib/legal';
 
 export const termsModalOverlayVariants = cva(
   'fixed inset-0 z-10 flex items-center justify-center bg-ink/50 px-5 py-8',
@@ -64,6 +67,28 @@ export default function TermsModal({
   contentClassName,
   ...props
 }: TermsModalDataProps & TermsModalProps) {
+  const [data, setData] = useState<LegalContent | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getPublicLegal('cgu')
+      .then((res) => {
+        if (active && res && res.sections.length > 0) {
+          setData(res);
+        }
+      })
+      .catch(() => {
+        // Garder les valeurs par défaut
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activeTitle = data?.title ?? title;
+  const activeSubtitle = data?.subtitle ?? subtitle;
+  const activeLastUpdated = data?.lastUpdated ?? lastUpdated;
+  const activeSections = data?.sections ?? sections;
   return (
     <div
       className={cn(termsModalOverlayVariants(), className)}
@@ -81,10 +106,10 @@ export default function TermsModal({
         <div className="mb-7 flex items-start justify-between gap-6 border-b border-line pb-5">
           <div>
             <p className="mb-2 text-caption font-bold uppercase tracking-kicker text-moss">
-              {subtitle}
+              {activeSubtitle}
             </p>
             <h2 id="terms-title" className="text-2xl font-black uppercase tracking-heading sm:text-3xl">
-              {title}
+              {activeTitle}
             </h2>
           </div>
           <button
@@ -98,14 +123,15 @@ export default function TermsModal({
         </div>
 
         <div className="space-y-6 text-sm leading-6 text-moss">
-          <p>Dernière mise à jour : {lastUpdated}</p>
-          {sections.map((section) => (
-            <div key={section.title}>
-              <h3 className="mb-1 font-bold text-ink">{section.title}</h3>
-              <p>{section.text}</p>
+          {activeLastUpdated && <p>Dernière mise à jour : {activeLastUpdated}</p>}
+          {activeSections.map((section, idx) => (
+            <div key={idx}>
+              <h3 className="mb-1 font-bold text-ink">{formatLegalSectionTitle(section.title, idx)}</h3>
+              <p className="whitespace-pre-line">{section.text}</p>
             </div>
           ))}
         </div>
+
 
         <button
           className="mt-8 w-full bg-ink px-5 py-3.5 text-xs font-bold uppercase tracking-label text-white transition hover:bg-moss cursor-pointer"

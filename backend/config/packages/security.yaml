@@ -53,6 +53,7 @@ security:
         - { path: ^/api/auth/password-reset/(request|confirm)$, roles: PUBLIC_ACCESS, methods: [POST] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api/contact$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api/public(/|$), roles: PUBLIC_ACCESS }
         # Chaque agent n'atteint que les routes de ses modules ; ROLE_ADMIN les hérite toutes.
         - { path: ^/api/admin/(campaigns|campaign-history|campaign-wishes|room-requests|salles), roles: ROLE_GESTION_SALLE }
         - { path: ^/api/admin/equipment, roles: ROLE_GESTION_MATERIEL }

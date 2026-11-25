@@ -736,3 +736,42 @@ export type AdminDashboard = {
     pendingWishes: number;
   } | null;
 };
+
+export type FaqItem = {
+  id: number;
+  question: string;
+  answer: string;
+  displayOrder: number;
+};
+
+export type LegalSection = {
+  title: string;
+  text: string;
+};
+
+export type LegalContent = {
+  id: number;
+  type: 'cgu' | 'mentions_legales';
+  title: string;
+  subtitle: string | null;
+  lastUpdated: string | null;
+  sections: LegalSection[];
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+};
+
+export type GrantDocumentType = {
+  id: number;
+  label: string;
+  isRequired: boolean;
+  displayOrder: number;
+};
+
+export type GrantResource = {
+  id: number;
+  label: string;
+  url: string;
+  isExternal: boolean;
+  displayOrder: number;
+};
+
