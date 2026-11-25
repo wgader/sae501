@@ -10,12 +10,15 @@ export const AGENT_MODULES: ReadonlyArray<{ id: AssociationModule; title: string
 ];
 
 /** Pages de l'administration ouvertes à un agent selon ses modules ; les autres sont réservées aux administrateurs. */
-const MODULE_PAGES: ReadonlyArray<{ path: string; module: AssociationModule }> = [
-  { path: '/admin/salle', module: 'salles' },
-  { path: '/admin/campagnes', module: 'salles' },
-  { path: '/admin/materiel', module: 'materiel' },
-  { path: '/admin/subvention', module: 'subventions' },
-  { path: '/admin/evenements', module: 'evenements' },
+const MODULE_PAGES: ReadonlyArray<{ path: string; modules: AssociationModule[] }> = [
+  { path: '/admin/salle', modules: ['salles'] },
+  { path: '/admin/campagnes', modules: ['salles'] },
+  { path: '/admin/materiel', modules: ['materiel'] },
+  { path: '/admin/subvention', modules: ['subventions'] },
+  { path: '/admin/evenements', modules: ['evenements'] },
+  // Chaque agent y règle seulement les modules qu'il gère.
+  { path: '/admin/reglages', modules: ['salles', 'materiel', 'subventions'] },
+
 ];
 
 export interface AgentAccess {
@@ -37,13 +40,13 @@ export function accessFromRoles(roles: string[]): AgentAccess {
 export function canOpenAdminPage(pathname: string, access: AgentAccess): boolean {
   if (access.isAdmin) return true;
   const page = MODULE_PAGES.find(({ path }) => pathname === path || pathname.startsWith(`${path}/`));
-  return page !== undefined && access.modules.includes(page.module);
+  return page !== undefined && page.modules.some((module) => access.modules.includes(module));
 }
 
 /** Page d'arrivée : le tableau de bord pour un administrateur, le premier module pour un agent. */
 export function adminHomePath(access: AgentAccess): string {
   if (access.isAdmin) return '/admin/dashboard';
-  return MODULE_PAGES.find(({ module }) => access.modules.includes(module))?.path ?? '/admin/dashboard';
+  return MODULE_PAGES.find(({ modules }) => modules.some((module) => access.modules.includes(module)))?.path ?? '/admin/dashboard';
 }
 
 /** Page d'arrivée du compte connecté, sans passer par une page qu'il ne peut pas ouvrir. */

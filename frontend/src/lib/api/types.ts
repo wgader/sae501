@@ -22,7 +22,8 @@ export type Association = {
   contact?: AssociationContact | null;
   nombreMembres?: number | null;
   categorie?: string | null;
-  imageUrl?: string | null;
+  /** Photo de profil déposée par l'association, chemin public /uploads/associations/…. */
+  logoUrl?: string | null;
   documents?: AssociationDocument[];
 };
 
@@ -88,6 +89,11 @@ export type EquipmentOccupancy = {
   stockTotal: number;
   maxConsecutiveDays: number;
   lastDay: string;
+  /** Horaires du service de prêt (HH:mm), réglés par la mairie. */
+  deskOpening: string;
+  deskClosing: string;
+  pickupLocation: string | null;
+  maxQuantityPerRequest: number | null;
   reservations: { start: string; end: string; quantite: number }[];
 };
 
@@ -598,11 +604,12 @@ export type CampaignWish = {
   type: 'RECURRENT';
   status: CampaignWishStatus;
   salle: { id: number; nom: string };
+  startDate?: string;
   dayOfWeek: number;
   dayLabel: string;
   startTime: string;
   endTime: string;
-  frequency: 'weekly' | 'biweekly';
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
   frequencyLabel: string;
   activity: string;
   audience: string;
@@ -624,6 +631,7 @@ export type MyCampaignWishesResponse = {
 
 export type CampaignWishInput = {
   salleId: number;
+  startDate: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -655,4 +663,165 @@ export type AdminCampaignWishGroup = {
 export type AdminCampaignWishes = {
   groups: AdminCampaignWishGroup[];
   counts: { total: number; pending: number; accepted: number; refused: number; disputed: number };
+};
+
+/** Modification des réglages : date et agent, pour savoir qui a changé quoi. */
+export type SettingsAudit = {
+  updatedAt: string | null;
+  updatedBy: string | null;
+};
+
+export type RoomSettings = SettingsAudit & {
+  openingHour: number;
+  closingHour: number;
+  oneOffMaxDays: number;
+  limits: { oneOffMaxDays: number };
+};
+
+export type RoomSettingsInput = Pick<RoomSettings, 'openingHour' | 'closingHour' | 'oneOffMaxDays'>;
+
+export type EquipmentSettings = SettingsAudit & {
+  /** Heures du service de prêt (HH:mm) : retrait et restitution se font dans ce créneau. */
+  deskOpening: string;
+  deskClosing: string;
+  pickupLocation: string | null;
+  /** null : seul le stock limite la quantité demandée. */
+  maxQuantityPerRequest: number | null;
+  defaultMaxDays: number;
+  limits: { maxQuantityPerRequest: number; defaultMaxDays: number; pickupLocation: number };
+};
+
+export type EquipmentSettingsInput = Pick<
+  EquipmentSettings,
+  'deskOpening' | 'deskClosing' | 'pickupLocation' | 'maxQuantityPerRequest' | 'defaultMaxDays'
+>;
+
+export type EquipmentCategory = {
+  code: string;
+  label: string;
+};
+
+export type AdminEquipmentCategory = EquipmentCategory & {
+  id: number;
+  equipmentCount: number;
+};
+
+/** Accueil de l'administration : ce qui attend une décision, l'agenda et la campagne. */
+export type AdminDashboardPending = {
+  registrations: number;
+  grants: number;
+  rooms: number;
+  equipment: number;
+  events: number;
+};
+
+export type AdminDashboardAgendaItem = {
+  type: 'room' | 'equipment' | 'event';
+  id: number;
+  title: string;
+  place: string | null;
+  association: string | null;
+  startsAt: string;
+};
+
+export type AdminDashboard = {
+  pending: AdminDashboardPending;
+  totals: { associations: number; rooms: number; equipment: number };
+  latestRegistrations: { id: number; nom: string; createdAt: string | null; contact: string | null }[];
+  agenda: AdminDashboardAgendaItem[];
+  campaign: {
+    id: number;
+    seasonLabel: string | null;
+    status: 'PROGRAMMED' | 'ACTIVE';
+    openingAt: string | null;
+    closingAt: string | null;
+    pendingWishes: number;
+  } | null;
+};
+
+export type FaqItem = {
+  id: number;
+  question: string;
+  answer: string;
+  displayOrder: number;
+};
+
+export type LegalSection = {
+  title: string;
+  text: string;
+};
+
+export type LegalContent = {
+  id: number;
+  type: 'cgu' | 'mentions_legales';
+  title: string;
+  subtitle: string | null;
+  lastUpdated: string | null;
+  sections: LegalSection[];
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+};
+
+export type GrantDocumentType = {
+  id: number;
+  label: string;
+  isRequired: boolean;
+  displayOrder: number;
+};
+
+export type GrantResource = {
+  id: number;
+  label: string;
+  url: string;
+  isExternal: boolean;
+  displayOrder: number;
+};
+
+
+/* ── Historique des attributions (GET /api/schedules/history) ──────────────── */
+
+export type ScheduleRoomAttribution = {
+  type: 'salle';
+  id: number;
+  statut: string | null;
+  motifEvenement: string | null;
+  campagne: string | null;
+  start: string;
+  end: string;
+  hours: number;
+  salle: { id: number; nom: string | null };
+};
+
+export type ScheduleEquipmentAttribution = {
+  type: 'materiel';
+  id: number;
+  statut: string | null;
+  motifEvenement: string | null;
+  start: string;
+  end: string;
+  lignes: { materielId: number; designation: string | null; quantite: number }[];
+};
+
+export type ScheduleAttribution = ScheduleRoomAttribution | ScheduleEquipmentAttribution;
+
+export type ScheduleHistoryYear = {
+  year: number;
+  roomReservationCount: number;
+  roomHoursGranted: number;
+  equipmentReservationCount: number;
+  equipmentQuantity: number;
+  rooms: { id: number; nom: string | null; reservationCount: number; hours: number }[];
+  equipment: { id: number; designation: string | null; reservationCount: number; quantity: number }[];
+  attributions: ScheduleAttribution[];
+};
+
+export type ScheduleHistory = {
+  association: { id: number; nom: string | null };
+  totals: {
+    roomReservationCount: number;
+    roomHoursGranted: number;
+    equipmentReservationCount: number;
+    equipmentQuantity: number;
+  };
+  years: ScheduleHistoryYear[];
 };

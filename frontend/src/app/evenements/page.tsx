@@ -1,5 +1,7 @@
 'use client';
 
+import ModulePageHeader from '@/components/ui/ModulePageHeader';
+import { EVENT_STEPS } from '@/lib/moduleGuides';
 import { useState, type FormEvent } from 'react';
 import { createExternalEvent, uploadExternalEventFile, type ExternalEvent } from '@/lib/api';
 import EventDeclarationForm, { type EventFormFile } from '@/components/events/EventDeclarationForm';
@@ -95,7 +97,13 @@ export default function EvenementsPage() {
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328">
-        <header className="rounded-card bg-primary-soft px-6 py-6 sm:px-8 sm:py-7"><p className="text-label font-bold uppercase tracking-eyebrow text-primary">Espace associations · Organiser</p><h1 className="mt-2 text-4xl font-black tracking-display text-ink">Déclarer un évènement</h1><p className="mt-1 text-sm text-muted">Informez la mairie de votre évènement et transmettez les documents utiles.</p></header>
+        <ModulePageHeader
+          module="events"
+          title="Déclarer un évènement"
+          lead="Prévenez la mairie de toute manifestation organisée par votre association sur la commune, dès que la date est fixée."
+          steps={EVENT_STEPS}
+          className="mb-8"
+        />
         {successEvent ? <EventDeclarationSuccess event={successEvent} onReset={handleReset} /> : <EventDeclarationForm {...form} files={files} isDragging={isDragging} isSubmitting={isSubmitting} error={error} onTitleChange={(value) => updateField('title', value)} onEventTypeChange={(value) => updateField('eventType', value)} onDescriptionChange={(value) => updateField('description', value)} onStartDateChange={(value) => updateField('startDate', value)} onStartTimeChange={(value) => updateField('startTime', value)} onEndDateChange={(value) => updateField('endDate', value)} onEndTimeChange={(value) => updateField('endTime', value)} onLocationChange={(value) => updateField('location', value)} onContactNameChange={(value) => updateField('contactName', value)} onContactEmailChange={(value) => updateField('contactEmail', value)} onContactPhoneChange={(value) => updateField('contactPhone', value)} onFileAdd={handleFileAdd} onFileRemove={(id) => setFiles((current) => current.filter((file) => file.id !== id))} onDragStateChange={setIsDragging} onSubmit={handleSubmit} />}
       </div>
     </main>

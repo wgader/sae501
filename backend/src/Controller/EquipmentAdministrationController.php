@@ -8,6 +8,8 @@ use App\Entity\User;
 use App\Exception\StockConflictException;
 use App\Repository\MaterielRepository;
 use App\Repository\StockAdjustmentRepository;
+use App\Service\AppSettingsService;
+use App\Service\EquipmentCategoryService;
 use App\Service\EquipmentStockService;
 use App\Service\ImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,8 +20,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/admin/equipment')]
 #[IsGranted(new Expression("is_granted('ROLE_ADMIN') or is_granted('ROLE_GESTION_MATERIEL')"))]
@@ -33,6 +35,8 @@ final class EquipmentAdministrationController extends AbstractController
         private readonly EquipmentStockService $stockService,
         private readonly EntityManagerInterface $entityManager,
         private readonly ImageStorage $imageStorage,
+        private readonly EquipmentCategoryService $categories,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -42,7 +46,7 @@ final class EquipmentAdministrationController extends AbstractController
         $category = $request->query->get('category');
         $archivedParam = $request->query->get('archived');
         $isArchived = null;
-        if ($archivedParam !== null) {
+        if (null !== $archivedParam) {
             $isArchived = filter_var($archivedParam, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         }
 
@@ -72,17 +76,19 @@ final class EquipmentAdministrationController extends AbstractController
         $errors = [];
 
         $designation = trim((string) ($payload['designation'] ?? ''));
-        if ($designation === '') {
+        if ('' === $designation) {
             $errors['designation'] = 'La désignation du matériel est obligatoire.';
         }
 
         $categorie = trim((string) ($payload['categorie'] ?? ''));
-        if ($categorie === '') {
+        if ('' === $categorie) {
             $errors['categorie'] = 'La catégorie est obligatoire.';
+        } elseif (!$this->categories->exists($categorie)) {
+            $errors['categorie'] = 'Cette catégorie n’existe pas : choisissez-en une dans la liste.';
         }
 
         $rawStock = $payload['stockTotal'] ?? $payload['quantiteTotale'] ?? null;
-        if ($rawStock === null || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
+        if (null === $rawStock || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
             $errors['stockTotal'] = 'Le stock doit être un entier positif ou nul.';
         } else {
             $stock = (int) $rawStock;
@@ -93,20 +99,20 @@ final class EquipmentAdministrationController extends AbstractController
 
         $maxConsecutiveDays = array_key_exists('maxConsecutiveDays', $payload)
             ? $this->parseMaxConsecutiveDays($payload['maxConsecutiveDays'], $errors)
-            : Materiel::DEFAULT_MAX_CONSECUTIVE_DAYS;
+            : $this->settings->current()->getEquipmentDefaultMaxDays();
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
+        if (null !== $image && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
             // Error populated in $errors
         }
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(['message' => 'Données invalides.', 'errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
         $materiel = new Materiel();
         $materiel->setDesignation($designation);
         $materiel->setCategorie($categorie);
-        $materiel->setReferenceInterne(isset($payload['referenceInterne']) && is_string($payload['referenceInterne']) && trim($payload['referenceInterne']) !== '' ? trim($payload['referenceInterne']) : null);
+        $materiel->setReferenceInterne(isset($payload['referenceInterne']) && is_string($payload['referenceInterne']) && '' !== trim($payload['referenceInterne']) ? trim($payload['referenceInterne']) : null);
         $materiel->setDescription(isset($payload['description']) && is_string($payload['description']) ? trim($payload['description']) : null);
         $materiel->setConsignesUtilisation(isset($payload['consignesUtilisation']) && is_string($payload['consignesUtilisation']) ? trim($payload['consignesUtilisation']) : null);
         $materiel->setStockTotal((int) $rawStock);
@@ -121,7 +127,7 @@ final class EquipmentAdministrationController extends AbstractController
         try {
             $this->entityManager->flush();
         } catch (\Throwable $e) {
-            if ($imagePath !== null) {
+            if (null !== $imagePath) {
                 $this->imageStorage->delete($imagePath, self::IMAGE_FOLDER);
             }
             throw $e;
@@ -141,7 +147,7 @@ final class EquipmentAdministrationController extends AbstractController
 
         if (array_key_exists('designation', $payload)) {
             $designation = trim((string) $payload['designation']);
-            if ($designation === '') {
+            if ('' === $designation) {
                 $errors['designation'] = 'La désignation du matériel ne peut pas être vide.';
             } else {
                 $materiel->setDesignation($designation);
@@ -150,8 +156,10 @@ final class EquipmentAdministrationController extends AbstractController
 
         if (array_key_exists('categorie', $payload)) {
             $categorie = trim((string) $payload['categorie']);
-            if ($categorie === '') {
+            if ('' === $categorie) {
                 $errors['categorie'] = 'La catégorie ne peut pas être vide.';
+            } elseif ($categorie !== $materiel->getCategorie() && !$this->categories->exists($categorie)) {
+                $errors['categorie'] = 'Cette catégorie n’existe pas : choisissez-en une dans la liste.';
             } else {
                 $materiel->setCategorie($categorie);
             }
@@ -159,7 +167,7 @@ final class EquipmentAdministrationController extends AbstractController
 
         if (array_key_exists('referenceInterne', $payload)) {
             $ref = is_string($payload['referenceInterne']) ? trim($payload['referenceInterne']) : null;
-            $materiel->setReferenceInterne($ref !== '' ? $ref : null);
+            $materiel->setReferenceInterne('' !== $ref ? $ref : null);
         }
 
         if (array_key_exists('description', $payload)) {
@@ -172,12 +180,12 @@ final class EquipmentAdministrationController extends AbstractController
 
         if (array_key_exists('maxConsecutiveDays', $payload)) {
             $maxConsecutiveDays = $this->parseMaxConsecutiveDays($payload['maxConsecutiveDays'], $errors);
-            if ($maxConsecutiveDays !== null) {
+            if (null !== $maxConsecutiveDays) {
                 $materiel->setMaxConsecutiveDays($maxConsecutiveDays);
             }
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
+        if (null !== $image && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
             // Error populated in $errors
         }
 
@@ -185,7 +193,7 @@ final class EquipmentAdministrationController extends AbstractController
         $reason = null;
         if (array_key_exists('stockTotal', $payload) || array_key_exists('quantiteTotale', $payload)) {
             $rawStock = $payload['stockTotal'] ?? $payload['quantiteTotale'];
-            if ($rawStock === null || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
+            if (null === $rawStock || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
                 $errors['stockTotal'] = 'Le stock doit être un entier positif ou nul.';
             } else {
                 $stock = (int) $rawStock;
@@ -204,7 +212,7 @@ final class EquipmentAdministrationController extends AbstractController
             }
         }
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(['message' => 'Données invalides.', 'errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
@@ -212,12 +220,12 @@ final class EquipmentAdministrationController extends AbstractController
             $oldImage = $materiel->getImagePath();
             $newImage = $this->imageStorage->store($image, self::IMAGE_FOLDER);
             $materiel->setImagePath($newImage);
-            if ($oldImage !== null) {
+            if (null !== $oldImage) {
                 $this->imageStorage->delete($oldImage, self::IMAGE_FOLDER);
             }
         }
 
-        if ($stockToUpdate !== null) {
+        if (null !== $stockToUpdate) {
             try {
                 $this->stockService->adjustStock($materiel, $stockToUpdate, $reason, $agent, $force);
             } catch (StockConflictException $conflictException) {
@@ -228,7 +236,6 @@ final class EquipmentAdministrationController extends AbstractController
                     'conflictingReservations' => $conflictException->getConflicts(),
                 ], Response::HTTP_CONFLICT);
             }
-
         } else {
             $this->entityManager->flush();
         }
@@ -264,7 +271,7 @@ final class EquipmentAdministrationController extends AbstractController
         $payload = $this->requestPayload($request);
         $rawStock = $payload['stockTotal'] ?? $payload['quantiteTotale'] ?? $request->query->get('quantity');
 
-        if ($rawStock === null || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
+        if (null === $rawStock || (!is_int($rawStock) && !ctype_digit((string) $rawStock))) {
             return $this->json(['message' => 'Le stock doit être un entier positif ou nul.'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -307,7 +314,7 @@ final class EquipmentAdministrationController extends AbstractController
         $days = filter_var($value, FILTER_VALIDATE_INT, [
             'options' => ['min_range' => 1, 'max_range' => Materiel::MAX_CONSECUTIVE_DAYS_LIMIT],
         ]);
-        if ($days === false) {
+        if (false === $days) {
             $errors['maxConsecutiveDays'] = \sprintf(
                 'La durée maximale doit être comprise entre 1 et %d jours.',
                 Materiel::MAX_CONSECUTIVE_DAYS_LIMIT,
@@ -326,7 +333,7 @@ final class EquipmentAdministrationController extends AbstractController
         }
 
         $content = $request->getContent();
-        if ($content === '') {
+        if ('' === $content) {
             return [];
         }
 

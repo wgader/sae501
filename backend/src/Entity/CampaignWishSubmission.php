@@ -52,14 +52,36 @@ class CampaignWishSubmission
         $this->wishes = new ArrayCollection();
     }
 
-    public function getId(): ?int { return $this->id; }
-    public function getCampaign(): ?Campaign { return $this->campaign; }
-    public function getAssociation(): ?Association { return $this->association; }
-    public function getSubmittedBy(): ?User { return $this->submittedBy; }
-    public function getSubmittedAt(): \DateTimeImmutable { return $this->submittedAt; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getCampaign(): ?Campaign
+    {
+        return $this->campaign;
+    }
+
+    public function getAssociation(): ?Association
+    {
+        return $this->association;
+    }
+
+    public function getSubmittedBy(): ?User
+    {
+        return $this->submittedBy;
+    }
+
+    public function getSubmittedAt(): \DateTimeImmutable
+    {
+        return $this->submittedAt;
+    }
 
     /** @return Collection<int, CampaignWish> */
-    public function getWishes(): Collection { return $this->wishes; }
+    public function getWishes(): Collection
+    {
+        return $this->wishes;
+    }
 
     public function addWish(CampaignWish $wish): static
     {

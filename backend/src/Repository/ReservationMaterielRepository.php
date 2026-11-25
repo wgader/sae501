@@ -5,8 +5,8 @@ namespace App\Repository;
 use App\Entity\Association;
 use App\Entity\Materiel;
 use App\Entity\ReservationMateriel;
-use Doctrine\ORM\QueryBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -28,6 +28,26 @@ class ReservationMaterielRepository extends ServiceEntityRepository
             ->andWhere('r.association = :association')
             ->setParameter('association', $association)
             ->orderBy('r.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Attributions de matériel acceptées (passées et à venir), de la plus récente à la plus ancienne.
+     *
+     * @return list<ReservationMateriel>
+     */
+    public function findGrantedByAssociation(Association $association): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('lignes', 'materiel')
+            ->innerJoin('r.lignes', 'lignes')
+            ->innerJoin('lignes.materiel', 'materiel')
+            ->andWhere('r.association = :association')
+            ->andWhere('r.statut IN (:statuses)')
+            ->setParameter('association', $association)
+            ->setParameter('statuses', ['Validée', 'Clôturée', 'Matériel restitué'])
+            ->orderBy('r.dateRetrait', 'DESC')
             ->getQuery()
             ->getResult();
     }
@@ -92,16 +112,16 @@ class ReservationMaterielRepository extends ServiceEntityRepository
         ?string $status,
         ?string $search,
     ): void {
-        if ($status !== null) {
+        if (null !== $status) {
             $queryBuilder
                 ->andWhere('r.statut = :status')
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && trim($search) !== '') {
+        if (null !== $search && '' !== trim($search)) {
             $queryBuilder
                 ->andWhere('LOWER(r.motifEvenement) LIKE :search OR LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
-                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+                ->setParameter('search', '%'.strtolower(trim($search)).'%');
         }
     }
 

@@ -6,7 +6,7 @@ Le backend est une API REST Symfony 8.1 servie par FrankenPHP dans Docker.
 
 - **PHP** : 8.4 ou supérieur.
 - **API** : API Platform 4.3 pour exposer les ressources et documenter les endpoints.
-- **Persistance** : Doctrine ORM 3.7 avec MySQL 8.4.
+- **Persistance** : Doctrine ORM 3.8 avec MySQL 8.4.
 - **Authentification** : JWT via LexikJWTAuthenticationBundle.
 - **Validation et sérialisation** : composants Symfony Validator et Serializer.
 - **Asynchrone et notifications** : composants Symfony Messenger et Mailer lorsque le besoin le justifie.

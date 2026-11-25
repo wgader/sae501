@@ -37,12 +37,12 @@ class MaterielRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('m');
 
-        if ($category !== null && $category !== '') {
+        if (null !== $category && '' !== $category) {
             $qb->andWhere('m.categorie = :category')
                 ->setParameter('category', $category);
         }
 
-        if ($isArchived !== null) {
+        if (null !== $isArchived) {
             $qb->andWhere('m.isArchived = :isArchived')
                 ->setParameter('isArchived', $isArchived);
         }
@@ -54,6 +54,7 @@ class MaterielRepository extends ServiceEntityRepository
 
     /**
      * @param list<int> $ids
+     *
      * @return list<Materiel>
      */
     public function findForReservationUpdate(array $ids): array
@@ -65,5 +66,29 @@ class MaterielRepository extends ServiceEntityRepository
             ->getQuery()
             ->setLockMode(LockMode::PESSIMISTIC_WRITE)
             ->getResult();
+    }
+
+    public function countByCategory(string $code): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->andWhere('m.categorie = :code')
+            ->setParameter('code', $code)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function findDistinctCategories(): array
+    {
+        /** @var list<array{categorie: string}> $rows */
+        $rows = $this->createQueryBuilder('m')
+            ->select('DISTINCT m.categorie')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(static fn (array $row): string => $row['categorie'], $rows);
     }
 }

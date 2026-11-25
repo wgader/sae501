@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Entity\ReservationSalle;
-use App\Entity\User;
 use App\Repository\ReservationSalleRepository;
 use App\Repository\UserRepository;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -26,13 +24,13 @@ final class RoomReservationStatusNotifier
     public function notifySubmitted(int $reservationSalleId): void
     {
         $reservation = $this->reservationSalleRepository->find($reservationSalleId);
-        if ($reservation === null) {
+        if (null === $reservation) {
             return;
         }
 
         $association = $reservation->getAssociation();
         $salle = $reservation->getSalle();
-        if ($association === null || $salle === null) {
+        if (null === $association || null === $salle) {
             return;
         }
 
@@ -45,7 +43,7 @@ final class RoomReservationStatusNotifier
         // 1. Envoi de l'accusé de réception à l'association
         foreach ($association->getUsers() as $user) {
             $email = $user->getEmail();
-            if ($email === null || trim($email) === '') {
+            if (null === $email || '' === trim($email)) {
                 continue;
             }
 
@@ -70,7 +68,7 @@ final class RoomReservationStatusNotifier
         $agents = $this->userRepository->findMunicipalAgentsForRooms();
         foreach ($agents as $agent) {
             $email = $agent->getEmail();
-            if ($email === null || trim($email) === '') {
+            if (null === $email || '' === trim($email)) {
                 continue;
             }
 
@@ -92,4 +90,3 @@ final class RoomReservationStatusNotifier
         }
     }
 }
-

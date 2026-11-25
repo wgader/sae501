@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/Button';
 import { IconCampagne, IconMateriel } from '@/components/ui/icons';
 import { Equipment, getMediaUrl } from '@/lib/api';
-import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 import { cn } from '@/lib/utils';
 import { routes } from '@/lib/routes';
 
@@ -19,6 +19,7 @@ export default function EquipmentCatalogCard({
   equipment,
   reserveHref = routes.equipmentBooking(equipment.id),
 }: EquipmentCatalogCardProps) {
+  const { labelOf } = useEquipmentCategories();
   const [hasBrokenImage, setHasBrokenImage] = useState(false);
   const imageUrl = getMediaUrl(equipment.imagePath);
   const units = `${equipment.stockTotal} unité${equipment.stockTotal > 1 ? 's' : ''}`;
@@ -43,7 +44,7 @@ export default function EquipmentCatalogCard({
           </div>
         )}
         <span className="absolute left-3 top-3 rounded-pill bg-white px-3 py-1 text-caption font-bold uppercase tracking-label text-primary shadow-xs">
-          {getEquipmentCategoryLabel(equipment.categorie)}
+          {labelOf(equipment.categorie)}
         </span>
       </div>
 

@@ -9,7 +9,6 @@ use App\Entity\DocumentJustificatif;
 use App\Entity\User;
 use App\Tests\Fixtures\UploadFixtures;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class SubventionDraftControllerTest extends ControllerRouteTestCase
 {

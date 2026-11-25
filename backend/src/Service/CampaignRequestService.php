@@ -34,6 +34,7 @@ final class CampaignRequestService
         private readonly EntityManagerInterface $entityManager,
         private readonly ReservationSalleRepository $reservationRepository,
         private readonly RoomReservationDecisionNotifier $notifier,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -216,19 +217,12 @@ final class CampaignRequestService
         }
         $startHour = (int) $start->format('G');
         $endMinutes = (int) $end->format('G') * 60 + (int) $end->format('i');
-        if ($startHour < RoomReservationService::OPENING_HOUR || $endMinutes > RoomReservationService::CLOSING_HOUR * 60) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Les salles sont ouvertes de %dh à %dh.',
-                RoomReservationService::OPENING_HOUR,
-                RoomReservationService::CLOSING_HOUR,
-            ));
+        $settings = $this->settings->current();
+        if ($startHour < $settings->getRoomOpeningHour() || $endMinutes > $settings->getRoomClosingHour() * 60) {
+            throw new \InvalidArgumentException(\sprintf('Les salles sont ouvertes de %dh à %dh.', $settings->getRoomOpeningHour(), $settings->getRoomClosingHour()));
         }
         if (null !== $expectedCapacity && null !== $salle->getCapaciteMax() && $expectedCapacity > $salle->getCapaciteMax()) {
-            throw new \InvalidArgumentException(\sprintf(
-                'L’effectif attendu (%d personnes) dépasse la capacité de cette salle (%d personnes).',
-                $expectedCapacity,
-                $salle->getCapaciteMax(),
-            ));
+            throw new \InvalidArgumentException(\sprintf('L’effectif attendu (%d personnes) dépasse la capacité de cette salle (%d personnes).', $expectedCapacity, $salle->getCapaciteMax()));
         }
     }
 
@@ -243,16 +237,7 @@ final class CampaignRequestService
             return;
         }
 
-        throw new RoomReservationConflictException(
-            'Ce créneau chevauche une réservation déjà acceptée dans cette salle.',
-            array_map(static fn (ReservationSalle $r): array => [
-                'id' => $r->getId(),
-                'association' => $r->getAssociation()?->getNom(),
-                'start' => $r->getDateDebut()?->format(\DateTimeInterface::ATOM),
-                'end' => $r->getDateFin()?->format(\DateTimeInterface::ATOM),
-                'statut' => $r->getStatut(),
-            ], $conflicts),
-        );
+        throw new RoomReservationConflictException('Ce créneau chevauche une réservation déjà acceptée dans cette salle.', array_map(static fn (ReservationSalle $r): array => ['id' => $r->getId(), 'association' => $r->getAssociation()?->getNom(), 'start' => $r->getDateDebut()?->format(\DateTimeInterface::ATOM), 'end' => $r->getDateFin()?->format(\DateTimeInterface::ATOM), 'statut' => $r->getStatut()], $conflicts));
     }
 
     private function cleanReason(?string $reason): ?string

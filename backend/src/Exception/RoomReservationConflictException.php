@@ -26,4 +26,3 @@ final class RoomReservationConflictException extends \RuntimeException
         return $this->conflicts;
     }
 }
-

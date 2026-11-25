@@ -14,8 +14,8 @@ import { useEquipmentOccupancy } from '@/hooks/useEquipmentOccupancy';
 import { useEquipmentPeriodStock } from '@/hooks/useEquipmentPeriodStock';
 import { ApiError, createEquipmentReservation } from '@/lib/api';
 import type { Equipment } from '@/lib/api/types';
-import { EMPTY_SLOT, isSlotComplete, normalizeSlot, readBookingClock, type SlotSelection } from '@/lib/bookingAvailability';
-import { getEquipmentCategoryLabel } from '@/lib/equipmentCategories';
+import { EMPTY_SLOT, formatTime, isSlotComplete, normalizeSlot, readBookingClock, type SlotSelection } from '@/lib/bookingAvailability';
+import { useEquipmentCategories } from '@/hooks/useEquipmentCategories';
 import { buildEquipmentContext, toEquipmentInstant } from '@/lib/equipmentOccupancy';
 import { logger } from '@/lib/logger';
 
@@ -28,6 +28,7 @@ export default function EquipmentReservationView({ equipment }: EquipmentReserva
   const motifId = useId();
   const [clock] = useState(readBookingClock);
   const occupancy = useEquipmentOccupancy(equipment.id);
+  const { labelOf } = useEquipmentCategories();
 
   const [rawSlot, setRawSlot] = useState<SlotSelection>(EMPTY_SLOT);
   const [requestedQuantity, setRequestedQuantity] = useState(1);
@@ -47,7 +48,8 @@ export default function EquipmentReservationView({ equipment }: EquipmentReserva
   const end = isSlotComplete(slot) ? toEquipmentInstant(slot.endDay, slot.endTime) : null;
   const stock = useEquipmentPeriodStock(equipment.id, start, end, stockVersion);
 
-  const maximum = stock.available ?? 0;
+  const requestLimit = occupancy.occupancy?.maxQuantityPerRequest ?? null;
+  const maximum = Math.min(stock.available ?? 0, requestLimit ?? Number.POSITIVE_INFINITY);
   const quantity = Math.max(1, Math.min(requestedQuantity, maximum));
   const hasStock = stock.available !== null && stock.available > 0;
   const canSubmit = isSlotComplete(slot) && hasStock && motif.trim().length > 0 && !stock.loading && !isSubmitting;
@@ -115,7 +117,7 @@ export default function EquipmentReservationView({ equipment }: EquipmentReserva
           <IconArrowLeft />
           Tout le matériel
         </Link>
-        <p className="mt-4 text-label font-bold uppercase tracking-eyebrow text-primary">{getEquipmentCategoryLabel(equipment.categorie)}</p>
+        <p className="mt-4 text-label font-bold uppercase tracking-eyebrow text-primary">{labelOf(equipment.categorie)}</p>
         <h1 className="mt-1 text-3xl font-black tracking-display text-ink sm:text-4xl">{equipment.designation}</h1>
         <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-body-sm text-muted">
           <li className="flex items-center gap-1.5">
@@ -150,6 +152,12 @@ export default function EquipmentReservationView({ equipment }: EquipmentReserva
                 ? 'Vérification des disponibilités…'
                 : 'Touchez le jour de retrait, puis le jour de restitution.'}
             </p>
+            {occupancy.occupancy && (
+              <p className="-mt-3 mb-5 text-body-sm text-ink">
+                Service de prêt ouvert de {formatTime(occupancy.occupancy.deskOpening)} à {formatTime(occupancy.occupancy.deskClosing)}
+                {occupancy.occupancy.pickupLocation && <> · {occupancy.occupancy.pickupLocation}</>}
+              </p>
+            )}
             {occupancy.failed && (
               <Notice
                 tone="danger"
@@ -182,6 +190,9 @@ export default function EquipmentReservationView({ equipment }: EquipmentReserva
                   {stock.failed && 'Stock impossible à vérifier.'}
                   {stock.available !== null && `${stock.available} disponible${stock.available > 1 ? 's' : ''} sur cette période`}
                 </p>
+                {requestLimit !== null && stock.available !== null && stock.available > requestLimit && (
+                  <p className="mt-1 text-meta text-muted">La mairie limite chaque demande à {requestLimit} unité{requestLimit > 1 ? 's' : ''}.</p>
+                )}
               </div>
               {hasStock && <EquipmentQuantitySelector quantity={quantity} maximum={maximum} onChange={setRequestedQuantity} />}
             </div>

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Entity\Materiel;
 use App\Repository\MaterielRepository;
 use App\Repository\ReservationMaterielRepository;
 
@@ -38,9 +37,7 @@ final class EquipmentAvailabilityService
         }
 
         if ($end <= $start) {
-            throw new \InvalidArgumentException(
-                'La date de restitution doit être postérieure à la date de retrait.',
-            );
+            throw new \InvalidArgumentException('La date de restitution doit être postérieure à la date de retrait.');
         }
 
         $engagedByEquipment = [];
@@ -52,7 +49,7 @@ final class EquipmentAvailabilityService
         foreach ($this->materielRepository->findAvailableForCatalog() as $equipment) {
             $id = $equipment->getId();
             $stockTotal = $equipment->getStockTotal() ?? 0;
-            $stockEngage = $id !== null ? ($engagedByEquipment[$id] ?? 0) : 0;
+            $stockEngage = null !== $id ? ($engagedByEquipment[$id] ?? 0) : 0;
 
             $availability[] = [
                 'id' => $id,

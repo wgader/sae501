@@ -13,3 +13,6 @@ export * from './api/admin';
 export * from './api/rooms';
 export * from './api/notifications';
 export * from './api/campaignWishes';
+export * from './api/settings';
+export * from './api/content';
+export * from './api/scheduleHistory';

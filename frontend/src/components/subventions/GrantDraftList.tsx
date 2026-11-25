@@ -18,7 +18,7 @@ export default function GrantDraftList({ drafts, isCreating, onCreate, onSelect 
           <h2 id="grant-drafts-heading" className="text-2xl font-black tracking-tight text-ink">Vos brouillons</h2>
           <p className="mt-1 text-xs text-muted">Reprenez une demande enregistrée ou commencez-en une nouvelle.</p>
         </div>
-        <Button onClick={onCreate} isLoading={isCreating} leftIcon={<IconPlus className="h-4 w-4" />}>
+        <Button onClick={onCreate} isLoading={isCreating} rightIcon={<IconPlus className="h-4 w-4" />}>
           Nouvelle demande
         </Button>
       </header>

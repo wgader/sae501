@@ -1,16 +1,21 @@
-import { IconDownload } from '@/components/ui/icons';
+'use client';
 
-const RESOURCES = [
-  { label: 'Formulaire de subvention (Cerfa)', href: '/assets/cerfa_12156-06-1.pdf', isExternal: false },
-  { label: 'Notice du formulaire', href: '/assets/notice_5178104-1.pdf', isExternal: false },
+import { useEffect, useState } from 'react';
+import { IconDownload } from '@/components/ui/icons';
+import { getPublicGrantResources } from '@/lib/api';
+import type { GrantResource } from '@/lib/api/types';
+
+const FALLBACK_RESOURCES: Array<{ label: string; url: string; isExternal: boolean }> = [
+  { label: 'Formulaire de subvention (Cerfa)', url: '/assets/cerfa_12156-06-1.pdf', isExternal: false },
+  { label: 'Notice du formulaire', url: '/assets/notice_5178104-1.pdf', isExternal: false },
   {
     label: 'Contrat d’engagement républicain, affiche',
-    href: 'https://www.ville-feytiat.fr/wp-content/uploads/2022/09/22-01-Contrat-Engagement-Republicain-affiche.pdf',
+    url: 'https://www.ville-feytiat.fr/wp-content/uploads/2022/09/22-01-Contrat-Engagement-Republicain-affiche.pdf',
     isExternal: true,
   },
   {
     label: 'Décret n° 2021-1947 du 31 décembre 2021',
-    href: 'https://www.ville-feytiat.fr/wp-content/uploads/2022/09/2021-12-decret-2021-1947-du-31-decembre-2021-_-contrat-dengagement-republicain.pdf',
+    url: 'https://www.ville-feytiat.fr/wp-content/uploads/2022/09/2021-12-decret-2021-1947-du-31-decembre-2021-_-contrat-dengagement-republicain.pdf',
     isExternal: true,
   },
 ];
@@ -23,16 +28,34 @@ const INSTRUCTIONS = [
 
 /** Modèles à télécharger et consignes de la mairie, affichés à côté du formulaire. */
 export default function GrantResourcesPanel() {
+  const [resources, setResources] = useState<Array<{ label: string; url: string; isExternal: boolean }>>(FALLBACK_RESOURCES);
+
+  useEffect(() => {
+    let active = true;
+    getPublicGrantResources()
+      .then((data: GrantResource[]) => {
+        if (active && data.length > 0) {
+          setResources(data.map((r) => ({ label: r.label, url: r.url, isExternal: r.isExternal })));
+        }
+      })
+      .catch(() => {
+        // Fallback silencieux
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <aside aria-labelledby="grant-resources-heading" className="space-y-6 rounded-card bg-Misty-Rose p-6 sm:p-8">
       <section>
         <h2 id="grant-resources-heading" className="text-base font-black text-ink">Documents utiles</h2>
         <p className="mt-1 text-xs leading-copy text-ink/70">Téléchargez les modèles avant de compléter votre dossier.</p>
         <ul className="mt-4 space-y-2">
-          {RESOURCES.map((resource) => (
-            <li key={resource.href}>
+          {resources.map((resource) => (
+            <li key={resource.url}>
               <a
-                href={resource.href}
+                href={resource.url}
                 {...(resource.isExternal ? { target: '_blank', rel: 'noreferrer' } : { download: true })}
                 className="flex items-center justify-between gap-3 rounded-soft bg-white px-4 py-3 text-xs font-bold text-ink transition hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\DocumentJustificatif;
 use App\Entity\ReservationMateriel;
 use App\Entity\ReservationMaterielLigne;
-use App\Entity\DocumentJustificatif;
-use App\Service\EquipmentReservationAdministrationService;
 use App\Repository\DocumentJustificatifRepository;
 use App\Repository\ReservationMaterielRepository;
+use App\Service\EquipmentReservationAdministrationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -93,7 +93,7 @@ final class EquipmentReservationAdministrationController extends AbstractControl
     {
         $association = $reservation->getAssociation();
         $contact = $association?->getUsers()->first();
-        $contact = $contact === false ? null : $contact;
+        $contact = false === $contact ? null : $contact;
 
         return [
             'id' => $reservation->getId(),
@@ -145,7 +145,7 @@ final class EquipmentReservationAdministrationController extends AbstractControl
         return [
             'id' => $document->getId(),
             'typeDocument' => $document->getTypeDocument(),
-            'fichierUrl' => $document->getId() !== null ? '/api/documents/' . $document->getId() . '/download' : null,
+            'fichierUrl' => null !== $document->getId() ? '/api/documents/'.$document->getId().'/download' : null,
             'isVerified' => (bool) ($metadata['verified'] ?? false),
             'size' => (int) ($metadata['size'] ?? 0),
             'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),

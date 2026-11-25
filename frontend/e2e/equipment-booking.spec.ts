@@ -32,7 +32,10 @@ const USER = {
     modules: { subventions: true, materiel: true, salles: true, evenements: true },
 };
 
-async function mockApi(page: Page) {
+type DeskSettings = { deskOpening: string; deskClosing: string; pickupLocation: string | null; maxQuantityPerRequest: number | null };
+const DEFAULT_DESK: DeskSettings = { deskOpening: '08:00', deskClosing: '19:00', pickupLocation: null, maxQuantityPerRequest: null };
+
+async function mockApi(page: Page, desk: DeskSettings = DEFAULT_DESK) {
     await page.addInitScript((user) => {
         localStorage.setItem('session', JSON.stringify({ kind: 'association', user }));
     }, USER);
@@ -48,6 +51,7 @@ async function mockApi(page: Page) {
                 stockTotal: 2,
                 maxConsecutiveDays: 3,
                 lastDay: '2099-12-31',
+                ...desk,
                 reservations: [
                     { start: `${monthKey}-15T09:00:00`, end: `${monthKey}-15T17:00:00`, quantite: 2 },
                     { start: `${monthKey}-20T09:00:00`, end: `${monthKey}-20T17:00:00`, quantite: 1 },
@@ -86,5 +90,20 @@ test.describe('Réservation de matériel', () => {
         await expect(page.getByText('1 disponible sur cette période')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Augmenter la quantité' })).toBeDisabled();
         await expect(page.getByRole('button', { name: 'Valider la demande' })).toBeDisabled();
+    });
+
+    test('Les horaires, le lieu et la quantité suivent les réglages de la mairie', async ({ page }) => {
+        await mockApi(page, { deskOpening: '09:00', deskClosing: '12:00', pickupLocation: 'Centre technique municipal', maxQuantityPerRequest: 1 });
+        await page.goto('/materiel/reserver?id=5');
+
+        await expect(page.getByText('Service de prêt ouvert de 09h00 à 12h00 · Centre technique municipal')).toBeVisible();
+        await page.getByRole('button', { name: 'Mois suivant' }).click();
+        await dayButton(page, 3).click();
+        await dayButton(page, 4).click();
+
+        // Le créneau proposé reste dans les horaires du service : retrait à l'ouverture, restitution à la fermeture.
+        const recap = page.getByRole('complementary').filter({ hasText: 'Récapitulatif' });
+        await expect(recap.getByText(/à 09h00$/)).toBeVisible();
+        await expect(recap.getByText(/à 12h00$/)).toBeVisible();
     });
 });

@@ -6,11 +6,11 @@ namespace App\Controller;
 
 use App\Entity\Association;
 use App\Entity\ReservationSalle;
-use App\Entity\Salle;
 use App\Entity\User;
 use App\Repository\AssociationRepository;
 use App\Repository\ReservationSalleRepository;
 use App\Repository\SalleRepository;
+use App\Service\AppSettingsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +26,7 @@ final class RoomAvailabilityController extends AbstractController
         private readonly SalleRepository $salleRepository,
         private readonly ReservationSalleRepository $reservationSalleRepository,
         private readonly AssociationRepository $associationRepository,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -37,12 +38,12 @@ final class RoomAvailabilityController extends AbstractController
         #[CurrentUser] User $user,
     ): JsonResponse {
         $association = $user->getAssociation();
-        if ($association === null && ($this->isGranted('ROLE_ADMIN') || $user->getTypeCompte() === 'mairie')) {
+        if (null === $association && ($this->isGranted('ROLE_ADMIN') || 'mairie' === $user->getTypeCompte())) {
             $association = $this->associationRepository->findOneBy(['statut' => 'VALIDATED'])
                 ?? $this->associationRepository->findOneBy([]);
         }
 
-        if ($association !== null && $user->getTypeCompte() !== 'mairie' && !$this->isGranted('ROLE_ADMIN') && !$association->isModuleSalleActif()) {
+        if (null !== $association && 'mairie' !== $user->getTypeCompte() && !$this->isGranted('ROLE_ADMIN') && !$association->isModuleSalleActif()) {
             return $this->json(
                 ['message' => 'Le module salles n’est pas activé pour votre association.'],
                 Response::HTTP_FORBIDDEN,
@@ -50,7 +51,7 @@ final class RoomAvailabilityController extends AbstractController
         }
 
         $salle = $this->salleRepository->find($id);
-        if ($salle === null || !$salle->isActive() || $salle->getDeletedAt() !== null) {
+        if (null === $salle || !$salle->isActive() || null !== $salle->getDeletedAt()) {
             return $this->json(
                 ['message' => 'La salle demandée est introuvable ou indisponible.'],
                 Response::HTTP_NOT_FOUND,
@@ -61,11 +62,11 @@ final class RoomAvailabilityController extends AbstractController
         $endQuery = $request->query->get('end');
 
         try {
-            $startDate = is_string($startQuery) && trim($startQuery) !== ''
+            $startDate = is_string($startQuery) && '' !== trim($startQuery)
                 ? new \DateTimeImmutable($startQuery)
                 : (new \DateTimeImmutable('first day of this month 00:00:00'));
 
-            $endDate = is_string($endQuery) && trim($endQuery) !== ''
+            $endDate = is_string($endQuery) && '' !== trim($endQuery)
                 ? new \DateTimeImmutable($endQuery)
                 : (new \DateTimeImmutable('last day of next month 23:59:59'));
         } catch (\Exception) {
@@ -108,11 +109,10 @@ final class RoomAvailabilityController extends AbstractController
         }, $reservations);
 
         return $this->json([
-            'room' => RoomCatalogController::serializeRoom($salle),
+            'room' => RoomCatalogController::serializeRoom($salle, $this->settings->current()),
             'start' => $startDate->format(\DateTimeInterface::ATOM),
             'end' => $endDate->format(\DateTimeInterface::ATOM),
             'occupiedSlots' => $occupiedSlots,
         ]);
     }
 }
-

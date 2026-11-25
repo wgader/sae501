@@ -4,8 +4,8 @@ namespace App\EventSubscriber;
 
 use App\Entity\User;
 use App\Security\SessionCookie;
-use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\Materiel;
 use App\Entity\User;
 use App\Repository\ReservationMaterielRepository;
+use App\Service\AppSettingsService;
 use App\Service\EquipmentAvailabilityService;
 use App\Service\EquipmentReservationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,6 +25,7 @@ final class EquipmentAvailabilityController extends AbstractController
     public function __construct(
         private readonly EquipmentAvailabilityService $availabilityService,
         private readonly ReservationMaterielRepository $reservationRepository,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -34,7 +36,7 @@ final class EquipmentAvailabilityController extends AbstractController
     public function occupancy(Materiel $materiel, #[CurrentUser] User $user): JsonResponse
     {
         $association = $user->getAssociation();
-        if ($association === null || !$association->isModuleMaterielActif()) {
+        if (null === $association || !$association->isModuleMaterielActif()) {
             return $this->json(
                 ['message' => 'Le module matériel n’est pas activé pour votre association.'],
                 Response::HTTP_FORBIDDEN,
@@ -46,11 +48,16 @@ final class EquipmentAvailabilityController extends AbstractController
 
         $now = new \DateTimeImmutable();
         $lastDay = $now->modify(EquipmentReservationService::BOOKING_HORIZON);
+        $settings = $this->settings->current();
 
         return $this->json([
             'stockTotal' => $materiel->getStockTotal(),
             'maxConsecutiveDays' => $materiel->getMaxConsecutiveDays(),
             'lastDay' => $lastDay->format('Y-m-d'),
+            'deskOpening' => $settings->getEquipmentDeskOpening(),
+            'deskClosing' => $settings->getEquipmentDeskClosing(),
+            'pickupLocation' => $settings->getEquipmentPickupLocation(),
+            'maxQuantityPerRequest' => $settings->getEquipmentMaxQuantityPerRequest(),
             'reservations' => array_map(
                 static fn (array $period): array => [
                     'start' => $period['start']->format(\DateTimeInterface::ATOM),
@@ -69,7 +76,7 @@ final class EquipmentAvailabilityController extends AbstractController
     ): JsonResponse {
         $association = $user->getAssociation();
 
-        if ($association === null || !$association->isModuleMaterielActif()) {
+        if (null === $association || !$association->isModuleMaterielActif()) {
             return $this->json(
                 ['message' => 'Le module matériel n’est pas activé pour votre association.'],
                 Response::HTTP_FORBIDDEN,
@@ -79,7 +86,7 @@ final class EquipmentAvailabilityController extends AbstractController
         $start = $request->query->get('start');
         $end = $request->query->get('end');
 
-        if (!is_string($start) || !is_string($end) || trim($start) === '' || trim($end) === '') {
+        if (!is_string($start) || !is_string($end) || '' === trim($start) || '' === trim($end)) {
             return $this->json(
                 ['message' => 'Les paramètres start et end sont obligatoires.'],
                 Response::HTTP_BAD_REQUEST,

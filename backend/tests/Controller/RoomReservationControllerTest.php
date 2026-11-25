@@ -22,6 +22,7 @@ final class RoomReservationControllerTest extends WebTestCase
     private KernelBrowser $client;
     private EntityManagerInterface $em;
     private JWTTokenManagerInterface $jwtManager;
+
     protected function setUp(): void
     {
         $this->client = static::createClient();
@@ -63,7 +64,7 @@ final class RoomReservationControllerTest extends WebTestCase
         $this->em->persist($asso);
 
         $user = new User();
-        $user->setEmail(strtolower(str_replace(' ', '', $nomAsso)) . '@example.com');
+        $user->setEmail(strtolower(str_replace(' ', '', $nomAsso)).'@example.com');
         $user->setNom('Dupont');
         $user->setPrenom('Alice');
         $user->setTypeCompte('association');
@@ -97,9 +98,9 @@ final class RoomReservationControllerTest extends WebTestCase
     private function requestWithAuth(User $user, string $method, string $uri, array $body = []): void
     {
         $token = $this->jwtManager->create($user);
-        $content = $body !== [] ? json_encode($body) : null;
+        $content = [] !== $body ? json_encode($body) : null;
         $this->client->request($method, $uri, [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
             'CONTENT_TYPE' => 'application/json',
             'HTTP_ACCEPT' => 'application/json',
         ], $content);
@@ -133,7 +134,7 @@ final class RoomReservationControllerTest extends WebTestCase
     public function testAvailabilityRequiresAuthentication(): void
     {
         $salle = $this->createSalle('Gymnase');
-        $this->client->request('GET', '/api/rooms/' . $salle->getId() . '/availability');
+        $this->client->request('GET', '/api/rooms/'.$salle->getId().'/availability');
         $this->assertResponseStatusCodeSame(401);
     }
 
@@ -142,7 +143,7 @@ final class RoomReservationControllerTest extends WebTestCase
         [$user] = $this->createAssociationAndUser('Club Théâtre', false);
         $salle = $this->createSalle('Salle Jean Jaurès');
 
-        $this->requestWithAuth($user, 'GET', '/api/rooms/' . $salle->getId() . '/availability');
+        $this->requestWithAuth($user, 'GET', '/api/rooms/'.$salle->getId().'/availability');
         $this->assertResponseStatusCodeSame(403);
     }
 
@@ -165,7 +166,7 @@ final class RoomReservationControllerTest extends WebTestCase
         $this->requestWithAuth(
             $user,
             'GET',
-            '/api/rooms/' . $salle->getId() . '/availability?start=2026-11-01T00:00:00Z&end=2026-11-30T23:59:59Z',
+            '/api/rooms/'.$salle->getId().'/availability?start=2026-11-01T00:00:00Z&end=2026-11-30T23:59:59Z',
         );
 
         $this->assertResponseIsSuccessful();

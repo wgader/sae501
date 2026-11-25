@@ -20,6 +20,10 @@ interface BookingCalendarProps {
   getMaxEndDay: (startDay: string) => string;
   /** Libellé lu par les lecteurs d'écran pour un jour entamé. */
   partialLabel?: string;
+  recurrenceFrequency?: string;
+  recurrenceStart?: string | null;
+  singleMonth?: boolean;
+  singleSelection?: boolean;
 }
 
 const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -52,6 +56,7 @@ const dayVariants = cva(
       tone: {
         selected: 'cursor-pointer bg-primary text-white',
         available: 'cursor-pointer text-ink hover:bg-white hover:ring-2 hover:ring-primary',
+        recurring: 'cursor-pointer bg-primary-soft text-primary ring-1 ring-primary',
         beyondLimit: 'cursor-pointer text-muted/50 hover:bg-paper',
         struck: 'cursor-not-allowed text-muted/50 line-through',
         past: 'cursor-not-allowed text-muted/30',
@@ -87,6 +92,10 @@ export default function BookingCalendar({
   getDayState,
   getMaxEndDay,
   partialLabel = STATE_LABELS.partial,
+  recurrenceFrequency,
+  recurrenceStart,
+  singleMonth = false,
+  singleSelection = false,
 }: BookingCalendarProps) {
   const firstMonth = firstDay.slice(0, 7);
   const lastMonth = lastDay.slice(0, 7);
@@ -98,14 +107,32 @@ export default function BookingCalendar({
   const previewEnd = isChoosingEnd && maxEnd && hoveredDay && hoveredDay > (value.start ?? '') && hoveredDay <= maxEnd
     ? hoveredDay
     : value.end;
-  const months = month < lastMonth ? [month, shiftMonth(month, 1)] : [month];
+  const months = !singleMonth && month < lastMonth ? [month, shiftMonth(month, 1)] : [month];
 
   const pick = (day: string) => {
+    if (singleSelection) {
+      onChange({ start: day, end: day });
+      return;
+    }
     if (isChoosingEnd && maxEnd && value.start && day > value.start && day <= maxEnd) {
       onChange({ start: value.start, end: day });
       return;
     }
     onChange({ start: day, end: day });
+  };
+
+  const isRecurringOccurrence = (day: string) => {
+    if (!recurrenceStart || !recurrenceFrequency || day < recurrenceStart) return false;
+    const start = new Date(`${recurrenceStart}T12:00:00Z`);
+    const current = new Date(`${day}T12:00:00Z`);
+    if (recurrenceFrequency === 'daily') return true;
+    if (recurrenceFrequency === 'weekly') return current.getUTCDay() === start.getUTCDay();
+    if (recurrenceFrequency === 'biweekly') {
+      const elapsedDays = Math.round((current.getTime() - start.getTime()) / 86_400_000);
+      return elapsedDays >= 0 && elapsedDays % 14 === 0;
+    }
+    if (recurrenceFrequency === 'monthly') return day.slice(8) === recurrenceStart.slice(8);
+    return false;
   };
 
   const renderDay = (day: string) => {
@@ -121,8 +148,9 @@ export default function BookingCalendar({
       else band = 'middle';
     }
 
-    let tone: 'selected' | 'available' | 'beyondLimit' | 'struck' | 'past' = 'available';
+    let tone: 'selected' | 'available' | 'recurring' | 'beyondLimit' | 'struck' | 'past' = 'available';
     if (isEdge) tone = 'selected';
+    else if (isRecurringOccurrence(day)) tone = 'recurring';
     else if (state === 'full' || state === 'blocked') tone = 'struck';
     else if (state === 'unavailable') tone = 'past';
     else if (maxEnd && value.start && day > maxEnd) tone = 'beyondLimit';

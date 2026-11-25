@@ -3,19 +3,19 @@
 namespace App\Controller;
 
 use App\Entity\Association;
-use App\Entity\ReservationMateriel;
-use App\Entity\ReservationSalle;
+use App\Entity\DocumentJustificatif;
+use App\Entity\ExternalEvent;
 use App\Repository\AssociationRepository;
+use App\Repository\ExternalEventRepository;
 use App\Repository\ReservationMaterielRepository;
 use App\Repository\ReservationSalleRepository;
-use App\Repository\ExternalEventRepository;
-use App\Entity\ExternalEvent;
-use App\Service\AssociationStatusNotifier;
+use App\Service\AssociationDeletionService;
 use App\Service\AssociationRequestAggregationService;
 use App\Service\AssociationRequestDocumentsNotifier;
+use App\Service\AssociationStatusNotifier;
 use App\Service\PrivateDocumentStorage;
-use App\Entity\DocumentJustificatif;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,7 +23,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-
 
 #[Route('/api/admin/associations')]
 #[IsGranted('ROLE_MAIRIE')]
@@ -42,6 +41,8 @@ final class AssociationAdministrationController extends AbstractController
         private readonly AssociationRequestAggregationService $requestAggregationService,
         private readonly AssociationRequestDocumentsNotifier $requestDocumentsNotifier,
         private readonly PrivateDocumentStorage $documentStorage,
+        private readonly AssociationDeletionService $deletionService,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -52,16 +53,16 @@ final class AssociationAdministrationController extends AbstractController
             $page = max(1, $request->query->getInt('page', 1));
             $itemsPerPage = min(50, max(1, $request->query->getInt('itemsPerPage', 10)));
             $status = $request->query->get('status');
-            if ($status === '') {
+            if ('' === $status) {
                 $status = null;
             }
 
-            if ($status !== null && !in_array($status, self::STATUSES, true)) {
+            if (null !== $status && !in_array($status, self::STATUSES, true)) {
                 return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_BAD_REQUEST);
             }
 
             $search = $request->query->get('q');
-            if (is_string($search) && trim($search) === '') {
+            if (is_string($search) && '' === trim($search)) {
                 $search = null;
             }
 
@@ -149,7 +150,7 @@ final class AssociationAdministrationController extends AbstractController
             is_string($type) ? $type : null,
         );
 
-        if ($detail === null) {
+        if (null === $detail) {
             return $this->json(['message' => 'Dossier introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
@@ -176,26 +177,26 @@ final class AssociationAdministrationController extends AbstractController
             return $this->json(['message' => 'Le type de demande est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
         // Un agent ne relance que les dossiers de son propre module.
-        if (!$this->isGranted($type === 'materiel' ? 'ROLE_GESTION_MATERIEL' : 'ROLE_GESTION_SALLE')) {
+        if (!$this->isGranted('materiel' === $type ? 'ROLE_GESTION_MATERIEL' : 'ROLE_GESTION_SALLE')) {
             return $this->json(['message' => 'Ce dossier ne relève pas de vos modules.'], Response::HTTP_FORBIDDEN);
         }
-        if ($message === '' || mb_strlen($message) > 2000) {
+        if ('' === $message || mb_strlen($message) > 2000) {
             return $this->json(['message' => 'Le message est obligatoire et limité à 2000 caractères.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        if (!is_array($missingFiles) || $missingFiles === []) {
+        if (!is_array($missingFiles) || [] === $missingFiles) {
             return $this->json(['message' => 'Au moins une pièce manquante doit être indiquée.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $normalizedFiles = [];
         foreach ($missingFiles as $missingFile) {
-            if (!is_string($missingFile) || trim($missingFile) === '') {
+            if (!is_string($missingFile) || '' === trim($missingFile)) {
                 return $this->json(['message' => 'Chaque pièce manquante doit être renseignée.'], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             $normalizedFiles[] = mb_substr(trim($missingFile), 0, 150);
         }
 
         $numericId = (int) preg_replace('/\D/', '', $requestId);
-        $reservation = $type === 'materiel'
+        $reservation = 'materiel' === $type
             ? $this->materielRepository->find($numericId)
             : $this->salleRepository->find($numericId);
         if (!$reservation || $reservation->getAssociation()?->getId() !== $association->getId()) {
@@ -237,12 +238,12 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         $status = $payload['status'] ?? null;
-        if ($status !== null && (!is_string($status) || !in_array($status, self::STATUSES, true))) {
+        if (null !== $status && (!is_string($status) || !in_array($status, self::STATUSES, true))) {
             return $this->json(['message' => 'Le statut demandé est invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $permissions = $payload['permissions'] ?? null;
-        if ($permissions !== null) {
+        if (null !== $permissions) {
             if (!is_array($permissions)) {
                 return $this->json(['message' => 'Les permissions doivent être un tableau.'], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
@@ -256,11 +257,11 @@ final class AssociationAdministrationController extends AbstractController
         try {
             $previousStatus = $association->getStatut();
 
-            if ($status !== null) {
+            if (null !== $status) {
                 $association->setStatut($status);
             }
 
-            if ($permissions !== null) {
+            if (null !== $permissions) {
                 $association->setModuleSubventionActif(in_array('subventions', $permissions, true));
                 $association->setModuleMaterielActif(in_array('materiel', $permissions, true));
                 $association->setModuleSalleActif(in_array('salles', $permissions, true));
@@ -270,11 +271,11 @@ final class AssociationAdministrationController extends AbstractController
             $this->entityManager->persist($association);
             $this->entityManager->flush();
 
-            $needsActivationEmail = $status === 'VALIDATED'
+            $needsActivationEmail = 'VALIDATED' === $status
                 && (
                     $previousStatus !== $status
                     || $association->getUsers()->exists(
-                        static fn (int $_index, \App\Entity\User $user): bool => !$user->isVerified() && $user->getActivationToken() === null
+                        static fn (int $_index, \App\Entity\User $user): bool => !$user->isVerified() && null === $user->getActivationToken()
                     )
                 );
             if ($needsActivationEmail) {
@@ -334,25 +335,14 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         try {
-            foreach ($association->getUsers() as $user) {
-                $user->setAssociation(null);
-                $this->entityManager->remove($user);
-            }
-
-            foreach ($association->getDocumentJustificatifs() as $doc) {
-                if ($doc->getFichierUrl()) {
-                    $this->documentStorage->delete($doc->getFichierUrl());
-                }
-                $this->entityManager->remove($doc);
-            }
-
-            $this->entityManager->remove($association);
-            $this->entityManager->flush();
-
-            return $this->json(null, Response::HTTP_NO_CONTENT);
+            $this->deletionService->delete($association);
         } catch (\Throwable $e) {
+            $this->logger->error('Suppression de l’association impossible', ['associationId' => $id, 'exception' => $e]);
+
             return $this->json(['message' => 'Erreur lors de la suppression de l’association.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/{id<\d+>}/documents', name: 'admin_association_document_create', methods: ['POST'])]
@@ -422,7 +412,7 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         $doc = $this->entityManager->getRepository(DocumentJustificatif::class)->find($docId);
-        if (!$doc || $doc->getAssociation()?->getId() !== $association->getId() || $doc->getDeletedAt() !== null) {
+        if (!$doc || $doc->getAssociation()?->getId() !== $association->getId() || null !== $doc->getDeletedAt()) {
             return $this->json(['message' => 'Document introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
@@ -432,7 +422,7 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         try {
-            if (isset($payload['typeDocument']) && is_string($payload['typeDocument']) && trim($payload['typeDocument']) !== '') {
+            if (isset($payload['typeDocument']) && is_string($payload['typeDocument']) && '' !== trim($payload['typeDocument'])) {
                 $doc->setTypeDocument(trim($payload['typeDocument']));
             }
 
@@ -465,7 +455,7 @@ final class AssociationAdministrationController extends AbstractController
         }
 
         $doc = $this->entityManager->getRepository(DocumentJustificatif::class)->find($docId);
-        if (!$doc || $doc->getAssociation()?->getId() !== $association->getId() || $doc->getDeletedAt() !== null) {
+        if (!$doc || $doc->getAssociation()?->getId() !== $association->getId() || null !== $doc->getDeletedAt()) {
             return $this->json(['message' => 'Document introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
@@ -478,7 +468,6 @@ final class AssociationAdministrationController extends AbstractController
             return $this->json(['message' => 'Erreur lors de la suppression du document.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * @return array<string, mixed>
@@ -496,7 +485,7 @@ final class AssociationAdministrationController extends AbstractController
         return [
             'id' => $doc->getId(),
             'typeDocument' => $doc->getTypeDocument(),
-            'fichierUrl' => $doc->getId() !== null ? '/api/documents/' . $doc->getId() . '/download' : null,
+            'fichierUrl' => null !== $doc->getId() ? '/api/documents/'.$doc->getId().'/download' : null,
             'isVerified' => (bool) ($meta['verified'] ?? false),
             'size' => (int) ($meta['size'] ?? 0),
             'originalName' => $meta['originalName'] ?? $doc->getTypeDocument(),
@@ -528,7 +517,7 @@ final class AssociationAdministrationController extends AbstractController
 
         $documents = [];
         foreach ($association->getDocumentJustificatifs() as $doc) {
-            if ($doc->getDeletedAt() === null) {
+            if (null === $doc->getDeletedAt()) {
                 $documents[] = self::serializeDocument($doc);
             }
         }
@@ -537,6 +526,8 @@ final class AssociationAdministrationController extends AbstractController
             'id' => $association->getId(),
             'nom' => $association->getNom(),
             'nombreMembres' => $association->getNombreMembres(),
+            // Photo de profil choisie par l’association (chemin public /uploads/associations/…).
+            'logoUrl' => $association->getLogoUrl(),
             'statut' => $association->getStatut(),
             'permissions' => $permissions,
             'createdAt' => $association->getCreatedAt()?->format(\DateTimeInterface::ATOM),

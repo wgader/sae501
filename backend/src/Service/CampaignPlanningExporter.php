@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Campaign;
-use App\Entity\ReservationSalle;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;

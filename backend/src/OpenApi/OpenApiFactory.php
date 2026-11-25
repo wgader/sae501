@@ -8,12 +8,14 @@ use ApiPlatform\OpenApi\OpenApi;
 
 final class OpenApiFactory implements OpenApiFactoryInterface
 {
-    public function __construct(private readonly OpenApiFactoryInterface $decorated) {}
+    public function __construct(private readonly OpenApiFactoryInterface $decorated)
+    {
+    }
 
     public function __invoke(array $context = []): OpenApi
     {
         $openApi = ($this->decorated)($context);
-        $paths  = $openApi->getPaths();
+        $paths = $openApi->getPaths();
 
         $paths->addPath('/api/auth/register/association', new Model\PathItem(
             post: new Model\Operation(
@@ -26,11 +28,11 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                         'required' => ['nomAssociation', 'nom', 'prenom', 'email', 'cguAccepted'],
                         'properties' => [
                             'nomAssociation' => ['type' => 'string', 'example' => 'Foot Club Nord'],
-                            'nom'            => ['type' => 'string', 'example' => 'Dupont'],
-                            'prenom'         => ['type' => 'string', 'example' => 'Jean'],
-                            'email'          => ['type' => 'string', 'format' => 'email'],
-                            'telephone'      => ['type' => 'string', 'example' => '0612345678'],
-                            'cguAccepted'    => ['type' => 'boolean'],
+                            'nom' => ['type' => 'string', 'example' => 'Dupont'],
+                            'prenom' => ['type' => 'string', 'example' => 'Jean'],
+                            'email' => ['type' => 'string', 'format' => 'email'],
+                            'telephone' => ['type' => 'string', 'example' => '0612345678'],
+                            'cguAccepted' => ['type' => 'boolean'],
                         ],
                     ])),
                 ])),
@@ -54,7 +56,7 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                         'type' => 'object',
                         'required' => ['token', 'password'],
                         'properties' => [
-                            'token'    => ['type' => 'string'],
+                            'token' => ['type' => 'string'],
                             'password' => ['type' => 'string', 'example' => 'MonMdp123!'],
                         ],
                     ])),
@@ -119,7 +121,7 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                     'application/json' => new Model\MediaType(schema: new \ArrayObject([
                         'type' => 'object',
                         'properties' => [
-                            'status'      => ['type' => 'string', 'enum' => ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED']],
+                            'status' => ['type' => 'string', 'enum' => ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED', 'SUSPENDED']],
                             'permissions' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['subventions', 'materiel', 'salles']]],
                         ],
                     ])),

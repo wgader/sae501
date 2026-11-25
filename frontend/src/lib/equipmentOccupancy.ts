@@ -3,9 +3,6 @@ import type { EquipmentOccupancy, RoomBookingRules } from '@/lib/api/types';
 import type { AvailabilityContext, BusyInterval } from '@/lib/bookingAvailability';
 import { roomDayKey } from '@/lib/roomFilters';
 
-const OPENING_TIME = '08:00';
-const CLOSING_TIME = '19:00';
-
 function engagedByDay(occupancy: EquipmentOccupancy): Map<string, number> {
   const engaged = new Map<string, number>();
 
@@ -29,15 +26,15 @@ export function buildEquipmentContext(
     maxDays: occupancy.maxConsecutiveDays,
     stepMinutes: 30,
     minMinutes: 30,
-    openingTime: OPENING_TIME,
-    closingTime: CLOSING_TIME,
+    openingTime: occupancy.deskOpening,
+    closingTime: occupancy.deskClosing,
     blockedPeriods: [],
   };
 
   const busy: BusyInterval[] = [];
   const limitedDays = new Set<string>();
   engagedByDay(occupancy).forEach((quantity, day) => {
-    if (quantity >= occupancy.stockTotal) busy.push({ start: `${day}T${OPENING_TIME}`, end: `${day}T${CLOSING_TIME}` });
+    if (quantity >= occupancy.stockTotal) busy.push({ start: `${day}T${occupancy.deskOpening}`, end: `${day}T${occupancy.deskClosing}` });
     else limitedDays.add(day);
   });
 

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Entity\AppSettings;
 use App\Entity\Salle;
 use App\Repository\SalleRepository;
 use App\Security\ModuleVoter;
+use App\Service\AppSettingsService;
 use App\Service\RoomReservationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +21,7 @@ final class RoomCatalogController extends AbstractController
     public function __construct(
         private readonly SalleRepository $salleRepository,
         private readonly RoomReservationService $reservationService,
+        private readonly AppSettingsService $settings,
     ) {
     }
 
@@ -29,7 +32,7 @@ final class RoomCatalogController extends AbstractController
         $rooms = $this->salleRepository->findAvailableForCatalog();
 
         return $this->json(array_map(
-            static fn (Salle $salle): array => self::serializeRoom($salle),
+            fn (Salle $salle): array => self::serializeRoom($salle, $this->settings->current()),
             $rooms,
         ));
     }
@@ -46,7 +49,7 @@ final class RoomCatalogController extends AbstractController
     /**
      * @return array<string, mixed>
      */
-    public static function serializeRoom(Salle $salle): array
+    public static function serializeRoom(Salle $salle, AppSettings $settings): array
     {
         return [
             'id' => $salle->getId(),
@@ -58,8 +61,8 @@ final class RoomCatalogController extends AbstractController
             'accesPmr' => $salle->isAccesPmr(),
             'equipementsInclus' => $salle->getEquipementsInclus(),
             'horairesOuverture' => [
-                'debut' => sprintf('%02d:00', RoomReservationService::OPENING_HOUR),
-                'fin' => sprintf('%02d:00', RoomReservationService::CLOSING_HOUR),
+                'debut' => sprintf('%02d:00', $settings->getRoomOpeningHour()),
+                'fin' => sprintf('%02d:00', $settings->getRoomClosingHour()),
             ],
             'isActive' => $salle->isActive(),
         ];

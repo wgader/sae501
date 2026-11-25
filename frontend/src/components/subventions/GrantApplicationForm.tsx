@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import GrantAutosaveStatus from '@/components/subventions/GrantAutosaveStatus';
 import GrantDocumentsStep from '@/components/subventions/GrantDocumentsStep';
 import GrantDraftList from '@/components/subventions/GrantDraftList';
-import GrantPageHeader from '@/components/subventions/GrantPageHeader';
+import ModulePageHeader from '@/components/ui/ModulePageHeader';
+import { GRANT_STEPS } from '@/lib/moduleGuides';
 import GrantProjectStep from '@/components/subventions/GrantProjectStep';
 import GrantSubmittedList from '@/components/subventions/GrantSubmittedList';
 import Notice from '@/components/ui/Notice';
+import { useGrantAutosave } from '@/hooks/useGrantAutosave';
 import {
   createGrantDraft,
   getGrantDocuments,
@@ -32,6 +35,9 @@ type Step = 'project' | 'documents';
 
 const errorMessage = (error: unknown, fallback: string) => (error instanceof Error ? error.message : fallback);
 
+/** Montant en euros, positif, deux décimales au plus : la saisie refuse tout autre caractère. */
+const AMOUNT_INPUT = /^\d*(?:[.,]\d{0,2})?$/;
+
 export default function GrantApplicationForm() {
   const [drafts, setDrafts] = useState<GrantDraft[]>([]);
   const [submitted, setSubmitted] = useState<SubmittedGrant[]>([]);
@@ -47,6 +53,19 @@ export default function GrantApplicationForm() {
   const [notice, setNotice] = useState('');
   const [fieldErrors, setFieldErrors] = useState<GrantFormErrors>({});
   const [documents, setDocuments] = useState<GrantDocument[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const keepSavedDraft = useCallback((saved: GrantDraft) => {
+    setActiveDraft(saved);
+    setDrafts((current) => [saved, ...current.filter((draft) => draft.id !== saved.id)]);
+    setIsDirty(false);
+  }, []);
+  const autosave = useGrantAutosave({
+    draftId: step === 'project' ? (activeDraft?.id ?? null) : null,
+    form,
+    isDirty,
+    onSaved: keepSavedDraft,
+  });
 
   useEffect(() => {
     let isActive = true;
@@ -99,6 +118,7 @@ export default function GrantApplicationForm() {
     setForm(grantFormFromDraft(draft));
     setStep(draft.budgetValide ? 'documents' : 'project');
     setDocuments([]);
+    setIsDirty(false);
   };
 
   const createDraft = async () => {
@@ -122,8 +142,7 @@ export default function GrantApplicationForm() {
     setNotice('');
     try {
       const saved = await updateGrantDraft(activeDraft.id, grantPayloadFromForm(form));
-      setActiveDraft(saved);
-      setDrafts((current) => [saved, ...current.filter((draft) => draft.id !== saved.id)]);
+      keepSavedDraft(saved);
       setNotice(successMessage);
       return true;
     } catch (error: unknown) {
@@ -176,6 +195,8 @@ export default function GrantApplicationForm() {
   };
 
   const updateField = (field: keyof GrantFormState, value: string) => {
+    if (field === 'montantDemande' && !AMOUNT_INPUT.test(value.trim())) return;
+    setIsDirty(true);
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
   };
@@ -186,22 +207,26 @@ export default function GrantApplicationForm() {
     setForm(createEmptyGrantForm());
     setStep('project');
     setDocuments([]);
+    setIsDirty(false);
   };
 
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328">
-        <GrantPageHeader
+        <ModulePageHeader
+          module="grants"
           title={activeDraft ? 'Demande de subvention' : 'Demandes de subvention'}
-          description={
+          lead={
             activeDraft
-              ? 'Complétez les informations de votre dossier pour la mairie.'
-              : 'Préparez une demande d’aide au fonctionnement ou le financement d’un projet.'
+              ? 'Complétez votre dossier étape par étape : vous pouvez le quitter et le reprendre, il reste en brouillon jusqu’à l’envoi.'
+              : 'Sollicitez une aide de la mairie pour le fonctionnement de votre association ou pour financer un projet.'
           }
+          steps={GRANT_STEPS}
         />
 
         {pageError && <Notice tone="danger" className="mt-6">{pageError}</Notice>}
         {notice && <Notice tone="success" className="mt-6">{notice}</Notice>}
+        {activeDraft && step === 'project' && <GrantAutosaveStatus status={autosave.status} savedAt={autosave.savedAt} />}
 
         {isLoading && <p role="status" className="py-12 text-center text-sm text-muted">Chargement de vos demandes…</p>}
 

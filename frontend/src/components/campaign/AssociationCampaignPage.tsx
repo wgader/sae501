@@ -1,5 +1,7 @@
 'use client';
 
+import ModulePageHeader from '@/components/ui/ModulePageHeader';
+import { CAMPAIGN_STEPS } from '@/lib/moduleGuides';
 import { useCallback, useEffect, useState } from 'react';
 import RoomCampaignNotice from '@/components/rooms/RoomCampaignNotice';
 import MyCampaignRequests from '@/components/campaign/MyCampaignRequests';
@@ -45,16 +47,12 @@ export default function AssociationCampaignPage() {
   return (
     <main className="min-h-screen bg-white px-6 py-8 sm:px-10 lg:px-14 lg:py-10">
       <div className="mx-auto max-w-328 space-y-10">
-        <header className="border-b border-line pb-6">
-          <p className="text-label font-bold uppercase tracking-eyebrow text-primary">Salles municipales</p>
-          <h1 className="mt-1 text-3xl font-black tracking-display text-ink sm:text-4xl">
-            {campaign ? campaign.seasonLabel : 'Campagne des salles'}
-          </h1>
-          <p className="mt-2 max-w-2xl text-body-sm text-muted">
-            Une fois par an, la mairie ouvre une campagne pour attribuer les créneaux réguliers de la saison. Indiquez vos
-            vœux : la mairie les arbitre ensuite avec ceux de toutes les associations.
-          </p>
-        </header>
+        <ModulePageHeader
+          module="rooms"
+          title={campaign ? campaign.seasonLabel : 'Campagne des salles'}
+          lead="Une fois par an, la mairie attribue les créneaux réguliers de la saison (entraînements, répétitions, réunions). Déposez vos vœux pendant la campagne : ils sont arbitrés avec ceux de toutes les associations."
+          steps={CAMPAIGN_STEPS}
+        />
 
         {error && <Notice tone="danger">{error}</Notice>}
 

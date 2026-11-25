@@ -14,9 +14,9 @@ final class ContactControllerTest extends ControllerRouteTestCase
             ->expects(self::once())
             ->method('send')
             ->with(self::callback(static function (Email $email): bool {
-                return $email->getTo()[0]->getAddress() === 'contact@ville-feytiat.fr'
-                    && $email->getReplyTo()[0]->getAddress() === 'association@example.fr'
-                    && $email->getSubject() === '[Contact site] Question sur les salles'
+                return 'contact@ville-feytiat.fr' === $email->getTo()[0]->getAddress()
+                    && 'association@example.fr' === $email->getReplyTo()[0]->getAddress()
+                    && '[Contact site] Question sur les salles' === $email->getSubject()
                     && str_contains($email->getTextBody() ?? '', 'Pouvez-vous me renseigner ?');
             }));
         static::getContainer()->set(MailerInterface::class, $mailer);

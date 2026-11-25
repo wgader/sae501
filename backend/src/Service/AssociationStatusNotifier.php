@@ -44,11 +44,11 @@ final class AssociationStatusNotifier
 
         // Envoie un email à chaque utilisateur rattaché à l'association
         foreach ($association->getUsers() as $user) {
-            if ($user->getEmail() === null) {
+            if (null === $user->getEmail()) {
                 continue;
             }
 
-            if ($status === 'VALIDATED') {
+            if ('VALIDATED' === $status) {
                 $this->sendValidatedEmail($association, $user, $modules);
             } else {
                 $this->sendRefusedEmail($association, $user);
@@ -77,11 +77,11 @@ final class AssociationStatusNotifier
                 ->subject('Votre inscription a été validée — Mairie de Feytiat')
                 ->htmlTemplate('emails/association_validated.html.twig')
                 ->context([
-                    'prenom'         => $user->getPrenom(),
-                    'nom'            => $user->getNom(),
+                    'prenom' => $user->getPrenom(),
+                    'nom' => $user->getNom(),
                     'nomAssociation' => $association->getNom(),
-                    'modules'        => $modules,
-                    'activationUrl'  => $this->frontendUrl . '/activer-compte#token=' . rawurlencode($token) . '&ref=' . rawurlencode(base64_encode((string) $user->getEmail())),
+                    'modules' => $modules,
+                    'activationUrl' => $this->frontendUrl.'/activer-compte#token='.rawurlencode($token).'&ref='.rawurlencode(base64_encode((string) $user->getEmail())),
                 ]),
         );
     }
@@ -98,8 +98,8 @@ final class AssociationStatusNotifier
                 ->subject('Votre inscription a été refusée — Mairie de Feytiat')
                 ->htmlTemplate('emails/association_refused.html.twig')
                 ->context([
-                    'prenom'         => $user->getPrenom(),
-                    'nom'            => $user->getNom(),
+                    'prenom' => $user->getPrenom(),
+                    'nom' => $user->getNom(),
                     'nomAssociation' => $association->getNom(),
                 ]),
         );
@@ -126,6 +126,7 @@ final class AssociationStatusNotifier
         if ($association->isModuleEvenementActif()) {
             $modules[] = 'Événements';
         }
+
         return $modules;
     }
 }
