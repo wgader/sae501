@@ -17,8 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -74,10 +74,10 @@ final class AccountActivationController extends AbstractController
             return $this->json(['message' => 'Corps de la requête invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $token    = $data['token']    ?? null;
+        $token = $data['token'] ?? null;
         $password = $data['password'] ?? null;
 
-        if (!is_string($token) || !is_string($password) || $token === '' || $password === '') {
+        if (!is_string($token) || !is_string($password) || '' === $token || '' === $password) {
             return $this->json(['message' => 'Les champs "token" et "password" sont requis.'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -87,7 +87,7 @@ final class AccountActivationController extends AbstractController
             ?? $this->userRepository->findOneBy(['activationToken' => $token]);
 
         // ── Compte déjà activé : cas distinct pour un message clair ───────────
-        if ($user !== null && $user->isVerified()) {
+        if (null !== $user && $user->isVerified()) {
             return $this->json(
                 ['message' => 'Ce compte est déjà activé. Connectez-vous directement.'],
                 Response::HTTP_CONFLICT
@@ -96,8 +96,8 @@ final class AccountActivationController extends AbstractController
 
         // Token inconnu ou expiré → même message (anti-énumération)
         if (
-            $user === null
-            || $user->getActivationTokenExpiresAt() === null
+            null === $user
+            || null === $user->getActivationTokenExpiresAt()
             || $user->getActivationTokenExpiresAt() < new \DateTimeImmutable()
         ) {
             return $this->json(
@@ -108,7 +108,7 @@ final class AccountActivationController extends AbstractController
 
         // ── Validation du mot de passe ────────────────────────────────────────
         $errors = $passwordPolicy->violations($password);
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(['errors' => $errors], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -131,16 +131,16 @@ final class AccountActivationController extends AbstractController
                     ->subject('Votre compte est activé — Mairie de Feytiat')
                     ->htmlTemplate('emails/account_activated.html.twig')
                     ->context([
-                        'prenom'         => $user->getPrenom(),
-                        'nom'            => $user->getNom(),
+                        'prenom' => $user->getPrenom(),
+                        'nom' => $user->getNom(),
                         'nomAssociation' => $user->getAssociation()?->getNom() ?? '',
-                        'loginUrl'       => $this->frontendUrl . ($user->getTypeCompte() === 'mairie' ? '/admin' : '/connexion'),
-                        'isAgent'        => $user->getTypeCompte() === 'mairie',
+                        'loginUrl' => $this->frontendUrl.('mairie' === $user->getTypeCompte() ? '/admin' : '/connexion'),
+                        'isAgent' => 'mairie' === $user->getTypeCompte(),
                     ])
             );
         } catch (\Throwable $e) {
             $this->logger->error('account_activation: email de confirmation non envoyé', [
-                'user'      => $user->getId(),
+                'user' => $user->getId(),
                 'exception' => $e->getMessage(),
             ]);
         }
@@ -148,7 +148,7 @@ final class AccountActivationController extends AbstractController
         // ── Auto-login : session ouverte par cookie HttpOnly ──────────────────
         return $sessionCookie->open($this->json([
             'message' => 'Votre compte a été activé avec succès.',
-            'user'    => SessionCookie::profile($user),
+            'user' => SessionCookie::profile($user),
         ]), $user);
     }
 
@@ -181,19 +181,19 @@ final class AccountActivationController extends AbstractController
         $user = $this->userRepository->findOneBy(['email' => trim($data['email'])]);
 
         if (
-            $user === null
+            null === $user
             || $user->isVerified()
-            || $user->getTypeCompte() !== 'association'
+            || 'association' !== $user->getTypeCompte()
             || $user->isDeleted()
-            || $user->getAssociation() === null
-            || $user->getAssociation()->getStatut() !== 'VALIDATED'
+            || null === $user->getAssociation()
+            || 'VALIDATED' !== $user->getAssociation()->getStatut()
         ) {
             return $genericResponse;
         }
 
         // Rate limiting : token émis il y a moins d'1h → pas de renvoi
         $expiresAt = $user->getActivationTokenExpiresAt();
-        if ($expiresAt !== null && $expiresAt > new \DateTimeImmutable('+71 hours')) {
+        if (null !== $expiresAt && $expiresAt > new \DateTimeImmutable('+71 hours')) {
             return $genericResponse;
         }
 
@@ -204,7 +204,7 @@ final class AccountActivationController extends AbstractController
         $this->entityManager->flush();
 
         $association = $user->getAssociation();
-        $modules     = AssociationStatusNotifier::buildModulesList($association);
+        $modules = AssociationStatusNotifier::buildModulesList($association);
 
         $this->mailer->send(
             (new TemplatedEmail())
@@ -213,11 +213,11 @@ final class AccountActivationController extends AbstractController
                 ->subject('Activez votre compte — Mairie de Feytiat')
                 ->htmlTemplate('emails/association_validated.html.twig')
                 ->context([
-                    'prenom'         => $user->getPrenom(),
-                    'nom'            => $user->getNom(),
+                    'prenom' => $user->getPrenom(),
+                    'nom' => $user->getNom(),
                     'nomAssociation' => $association->getNom(),
-                    'modules'        => $modules,
-                    'activationUrl'  => $this->frontendUrl . '/activer-compte#token=' . rawurlencode($token) . '&ref=' . rawurlencode(base64_encode((string) $user->getEmail())),
+                    'modules' => $modules,
+                    'activationUrl' => $this->frontendUrl.'/activer-compte#token='.rawurlencode($token).'&ref='.rawurlencode(base64_encode((string) $user->getEmail())),
                 ])
         );
 

@@ -604,11 +604,12 @@ export type CampaignWish = {
   type: 'RECURRENT';
   status: CampaignWishStatus;
   salle: { id: number; nom: string };
+  startDate?: string;
   dayOfWeek: number;
   dayLabel: string;
   startTime: string;
   endTime: string;
-  frequency: 'weekly' | 'biweekly';
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
   frequencyLabel: string;
   activity: string;
   audience: string;
@@ -630,6 +631,7 @@ export type MyCampaignWishesResponse = {
 
 export type CampaignWishInput = {
   salleId: number;
+  startDate: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;

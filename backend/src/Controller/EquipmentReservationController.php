@@ -31,7 +31,7 @@ final class EquipmentReservationController extends AbstractController
         #[CurrentUser] User $user,
     ): JsonResponse {
         $association = $user->getAssociation();
-        if ($association === null || !$association->isModuleMaterielActif()) {
+        if (null === $association || !$association->isModuleMaterielActif()) {
             return $this->json(
                 ['message' => 'Le module matériel n’est pas activé pour votre association.'],
                 Response::HTTP_FORBIDDEN,
@@ -64,7 +64,7 @@ final class EquipmentReservationController extends AbstractController
     private function requiredString(array $payload, string $key): string
     {
         $value = $payload[$key] ?? null;
-        if (!is_string($value) || trim($value) === '') {
+        if (!is_string($value) || '' === trim($value)) {
             throw new \InvalidArgumentException(sprintf('Le champ "%s" est obligatoire.', $key));
         }
 

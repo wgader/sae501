@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Association;
-use App\Entity\Materiel;
 use App\Entity\ReservationMateriel;
 use App\Entity\ReservationMaterielLigne;
 use App\Exception\EquipmentReservationConflictException;
@@ -38,7 +37,7 @@ final class EquipmentReservationService
         \DateTimeImmutable $end,
         array $lines,
     ): ReservationMateriel {
-        if ($motif === '') {
+        if ('' === $motif) {
             throw new \InvalidArgumentException("Le motif de l'événement est obligatoire.");
         }
 
@@ -47,14 +46,12 @@ final class EquipmentReservationService
             throw new \InvalidArgumentException('La date de retrait ne peut pas être passée.');
         }
         if ($end <= $start) {
-            throw new \InvalidArgumentException(
-                'La date de restitution doit être postérieure à la date de retrait.',
-            );
+            throw new \InvalidArgumentException('La date de restitution doit être postérieure à la date de retrait.');
         }
         if ($start > $now->modify(self::BOOKING_HORIZON)) {
             throw new \InvalidArgumentException('Le matériel se réserve au plus un an à l’avance.');
         }
-        if ($lines === []) {
+        if ([] === $lines) {
             throw new \InvalidArgumentException('La réservation doit contenir au moins un équipement.');
         }
         $this->assertDeskHours($start, $end);
@@ -73,7 +70,7 @@ final class EquipmentReservationService
             $equipment = $this->materielRepository->findForReservationUpdate($ids);
             $equipmentById = [];
             foreach ($equipment as $item) {
-                if ($item->getId() !== null) {
+                if (null !== $item->getId()) {
                     $equipmentById[$item->getId()] = $item;
                 }
             }
@@ -87,11 +84,7 @@ final class EquipmentReservationService
                     throw new \InvalidArgumentException('Un équipement sélectionné n’est plus disponible.');
                 }
                 if (self::countDays($start, $end) > $item->getMaxConsecutiveDays()) {
-                    throw new \InvalidArgumentException(\sprintf(
-                        '« %s » se réserve pour %d jour(s) d’affilée au maximum.',
-                        $item->getDesignation(),
-                        $item->getMaxConsecutiveDays(),
-                    ));
+                    throw new \InvalidArgumentException(\sprintf('« %s » se réserve pour %d jour(s) d’affilée au maximum.', $item->getDesignation(), $item->getMaxConsecutiveDays()));
                 }
             }
 
@@ -113,11 +106,8 @@ final class EquipmentReservationService
                 }
             }
 
-            if ($conflicts !== []) {
-                throw new EquipmentReservationConflictException(
-                    'Le stock disponible a changé. Ajustez les quantités ou les dates.',
-                    $conflicts,
-                );
+            if ([] !== $conflicts) {
+                throw new EquipmentReservationConflictException('Le stock disponible a changé. Ajustez les quantités ou les dates.', $conflicts);
             }
 
             $reservation = (new ReservationMateriel())
@@ -170,12 +160,7 @@ final class EquipmentReservationService
             $local = $instant->setTimezone($zone);
             $minutes = (int) $local->format('G') * 60 + (int) $local->format('i');
             if ($minutes < $opening || $minutes > $closing) {
-                throw new \InvalidArgumentException(\sprintf(
-                    '%s se fait entre %s et %s.',
-                    $moment,
-                    str_replace(':', 'h', $settings->getEquipmentDeskOpening()),
-                    str_replace(':', 'h', $settings->getEquipmentDeskClosing()),
-                ));
+                throw new \InvalidArgumentException(\sprintf('%s se fait entre %s et %s.', $moment, str_replace(':', 'h', $settings->getEquipmentDeskOpening()), str_replace(':', 'h', $settings->getEquipmentDeskClosing())));
             }
         }
     }
@@ -190,12 +175,8 @@ final class EquipmentReservationService
             if ($line['quantite'] < 1) {
                 throw new \InvalidArgumentException('La quantité demandée doit être d’au moins 1.');
             }
-            if ($max !== null && $line['quantite'] > $max) {
-                throw new \InvalidArgumentException(\sprintf(
-                    'La mairie limite chaque demande à %d unité%s par équipement.',
-                    $max,
-                    $max > 1 ? 's' : '',
-                ));
+            if (null !== $max && $line['quantite'] > $max) {
+                throw new \InvalidArgumentException(\sprintf('La mairie limite chaque demande à %d unité%s par équipement.', $max, $max > 1 ? 's' : ''));
             }
         }
     }

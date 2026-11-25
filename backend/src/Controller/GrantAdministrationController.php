@@ -185,7 +185,7 @@ final class GrantAdministrationController extends AbstractController
         return [
             'id' => $document->getId(),
             'typeDocument' => $document->getTypeDocument(),
-            'fichierUrl' => null !== $document->getId() ? '/api/documents/' . $document->getId() . '/download' : null,
+            'fichierUrl' => null !== $document->getId() ? '/api/documents/'.$document->getId().'/download' : null,
             'size' => (int) ($metadata['size'] ?? 0),
             'originalName' => $metadata['originalName'] ?? $document->getTypeDocument(),
             'mimeType' => $metadata['mimeType'] ?? 'application/pdf',

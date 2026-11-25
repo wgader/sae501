@@ -118,7 +118,7 @@ final class CampaignWishAdministrationControllerTest extends ControllerRouteTest
     {
         $association = (new Association())->setNom($club)->setStatut('VALIDATED')->setModuleSalleActif(true);
         $this->em->persist($association);
-        $wish = new CampaignWish($salle, $day, $start, $end, 'weekly', 'Entraînement', 'youth', 20);
+        $wish = new CampaignWish($salle, $day, new \DateTimeImmutable('2027-09-01'), $start, $end, 'weekly', 'Entraînement', 'youth', 20);
         $submission = (new CampaignWishSubmission($campaign, $association, null))->addWish($wish);
         $this->em->persist($submission);
         $this->em->flush();

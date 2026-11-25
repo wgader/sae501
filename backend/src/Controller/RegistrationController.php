@@ -73,7 +73,7 @@ class RegistrationController extends AbstractController
         // ── Vérification des champs obligatoires ──────────────────────────────
         $required = ['nomAssociation', 'nom', 'prenom', 'email', 'cguAccepted'];
         foreach ($required as $field) {
-            if (!array_key_exists($field, $data) || ($data[$field] === '' || $data[$field] === null)) {
+            if (!array_key_exists($field, $data) || ('' === $data[$field] || null === $data[$field])) {
                 return $this->json(
                     ['errors' => [$field => 'Ce champ est obligatoire.']],
                     Response::HTTP_BAD_REQUEST
@@ -82,7 +82,7 @@ class RegistrationController extends AbstractController
         }
 
         // ── CGU obligatoirement acceptées ─────────────────────────────────────
-        if ($data['cguAccepted'] !== true) {
+        if (true !== $data['cguAccepted']) {
             return $this->json(
                 ['errors' => ['cguAccepted' => 'Vous devez accepter les CGU.']],
                 Response::HTTP_BAD_REQUEST
@@ -131,7 +131,7 @@ class RegistrationController extends AbstractController
             $errors[$error->getPropertyPath()] = $error->getMessage();
         }
         foreach ($validator->validate($association) as $error) {
-            $errors['association.' . $error->getPropertyPath()] = $error->getMessage();
+            $errors['association.'.$error->getPropertyPath()] = $error->getMessage();
         }
 
         if (!empty($errors)) {

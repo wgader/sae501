@@ -21,12 +21,12 @@ final class EquipmentReservationAdministrationService
             throw new \InvalidArgumentException('Le statut demandé est invalide.');
         }
 
-        if ($reservation->getStatut() !== 'En attente') {
+        if ('En attente' !== $reservation->getStatut()) {
             throw new \DomainException('Seules les demandes en attente peuvent être traitées.');
         }
 
         $reservation->setStatut($status);
-        $reservation->setNoteInterne($noteInterne !== null ? trim($noteInterne) : $reservation->getNoteInterne());
+        $reservation->setNoteInterne(null !== $noteInterne ? trim($noteInterne) : $reservation->getNoteInterne());
         $reservation->setUpdatedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
 

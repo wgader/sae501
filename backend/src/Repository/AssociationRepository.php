@@ -29,16 +29,16 @@ class AssociationRepository extends ServiceEntityRepository
             ->setFirstResult(($page - 1) * $itemsPerPage)
             ->setMaxResults($itemsPerPage);
 
-        if ($status !== null) {
+        if (null !== $status) {
             $queryBuilder
                 ->andWhere('association.statut = :status')
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && trim($search) !== '') {
+        if (null !== $search && '' !== trim($search)) {
             $queryBuilder
                 ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
-                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+                ->setParameter('search', '%'.strtolower(trim($search)).'%');
         }
 
         return $queryBuilder->getQuery()->getResult();
@@ -49,17 +49,17 @@ class AssociationRepository extends ServiceEntityRepository
         $queryBuilder = $this->createQueryBuilder('association')
             ->select('COUNT(DISTINCT association.id)');
 
-        if ($status !== null) {
+        if (null !== $status) {
             $queryBuilder
                 ->andWhere('association.statut = :status')
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && trim($search) !== '') {
+        if (null !== $search && '' !== trim($search)) {
             $queryBuilder
                 ->leftJoin('association.users', 'user')
                 ->andWhere('LOWER(association.nom) LIKE :search OR LOWER(user.email) LIKE :search OR LOWER(user.nom) LIKE :search OR LOWER(user.prenom) LIKE :search')
-                ->setParameter('search', '%' . strtolower(trim($search)) . '%');
+                ->setParameter('search', '%'.strtolower(trim($search)).'%');
         }
 
         return (int) $queryBuilder->getQuery()->getSingleScalarResult();

@@ -8,8 +8,8 @@ use App\Entity\Association;
 use App\Entity\DemandeSubvention;
 use App\Entity\User;
 use App\Repository\DemandeSubventionRepository;
-use App\Service\SubventionDraftDocumentService;
 use App\Service\GrantStatusNotifier;
+use App\Service\SubventionDraftDocumentService;
 use App\Service\SubventionDraftService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -171,6 +171,7 @@ final class SubventionDraftController extends AbstractController
         if ($draft instanceof JsonResponse) {
             return $draft;
         }
+
         return $this->json($this->documentService->listDocuments($draft));
     }
 

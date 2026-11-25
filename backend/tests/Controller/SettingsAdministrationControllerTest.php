@@ -118,7 +118,7 @@ final class SettingsAdministrationControllerTest extends ControllerRouteTestCase
         self::assertSame('Électricité & Chauffage', $labels['electricite-chauffage']);
         self::assertSame('Cérémonies & Protocole', $labels['ceremonies-protocole']);
         self::assertCount(12, $labels);
-        $barnums = array_values(array_filter($this->responseData(), static fn (array $c): bool => $c['code'] === 'barnums'))[0];
+        $barnums = array_values(array_filter($this->responseData(), static fn (array $c): bool => 'barnums' === $c['code']))[0];
         self::assertSame(1, $barnums['equipmentCount']);
 
         $this->requestJson('POST', '/api/admin/equipment/categories', ['label' => '  Jeux   de société ']);

@@ -10,6 +10,7 @@ interface RoomCatalogCardProps {
   isAvailable: boolean;
   unavailableReason?: string;
   onReserve: (room: PublicRoom) => void;
+  selected?: boolean;
 }
 
 export default function RoomCatalogCard({
@@ -17,12 +18,13 @@ export default function RoomCatalogCard({
   isAvailable,
   unavailableReason,
   onReserve,
+  selected = false,
 }: RoomCatalogCardProps) {
   const [hasBrokenImage, setHasBrokenImage] = useState(false);
   const imageUrl = getMediaUrl(room.imageUrl);
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-card border border-line bg-white shadow-xs transition-shadow duration-200 hover:shadow-card">
+    <article className={`group flex w-full flex-col overflow-hidden rounded-card border bg-white shadow-xs transition-shadow duration-200 hover:shadow-card ${selected ? 'border-primary ring-2 ring-primary-soft' : 'border-line'}`}>
       {/* Photo */}
       <div className="relative h-48 w-full bg-paper overflow-hidden">
         {imageUrl && !hasBrokenImage ? (
@@ -84,7 +86,7 @@ export default function RoomCatalogCard({
               onClick={() => onReserve(room)}
               className="w-full rounded-lg bg-primary py-2.5 text-center text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-primary-hover cursor-pointer"
             >
-              Choisir cette salle
+              {selected ? 'Salle sélectionnée' : 'Choisir cette salle'}
             </button>
           ) : (
             <button

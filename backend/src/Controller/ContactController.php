@@ -41,14 +41,14 @@ final class ContactController extends AbstractController
         $message = is_string($data['message'] ?? null) ? trim($data['message']) : '';
 
         if (
-            $nom === ''
+            '' === $nom
             || mb_strlen($nom) > 120
-            || $email === ''
+            || '' === $email
             || mb_strlen($email) > 254
-            || filter_var($email, FILTER_VALIDATE_EMAIL) === false
-            || $sujet === ''
+            || false === filter_var($email, FILTER_VALIDATE_EMAIL)
+            || '' === $sujet
             || mb_strlen($sujet) > 150
-            || preg_match('/[\r\n]/', $sujet) === 1
+            || 1 === preg_match('/[\r\n]/', $sujet)
             || mb_strlen($message) < 10
             || mb_strlen($message) > 5000
         ) {

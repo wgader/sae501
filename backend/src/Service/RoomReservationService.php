@@ -78,11 +78,11 @@ final class RoomReservationService
                 // 1. Verrouillage pessimiste de la salle pour sérialiser les réservations concurrentes
                 /** @var Salle|null $salle */
                 $salle = $this->entityManager->find(Salle::class, $salleId, LockMode::PESSIMISTIC_WRITE);
-                if ($salle === null) {
+                if (null === $salle) {
                     throw new \InvalidArgumentException('La salle demandée est introuvable.');
                 }
 
-                if (!$salle->isActive() || $salle->getDeletedAt() !== null) {
+                if (!$salle->isActive() || null !== $salle->getDeletedAt()) {
                     throw new \InvalidArgumentException('La salle sélectionnée n’est pas disponible à la réservation.');
                 }
 
@@ -100,22 +100,18 @@ final class RoomReservationService
 
                 // 3. Validation du motif
                 $cleanMotif = trim($motif);
-                if ($cleanMotif === '') {
+                if ('' === $cleanMotif) {
                     throw new \InvalidArgumentException('Le motif de l’événement est obligatoire.');
                 }
 
                 // 4. Validation de la capacité
-                if ($capaciteAttendue !== null) {
+                if (null !== $capaciteAttendue) {
                     if ($capaciteAttendue <= 0) {
                         throw new \InvalidArgumentException('L’effectif attendu doit être strictement supérieur à zéro.');
                     }
 
                     if ($capaciteAttendue > $salle->getCapaciteMax()) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'L’effectif attendu (%d personnes) dépasse la capacité maximale déclarée de la salle (%d personnes).',
-                            $capaciteAttendue,
-                            $salle->getCapaciteMax(),
-                        ));
+                        throw new \InvalidArgumentException(sprintf('L’effectif attendu (%d personnes) dépasse la capacité maximale déclarée de la salle (%d personnes).', $capaciteAttendue, $salle->getCapaciteMax()));
                     }
                 }
 
@@ -130,7 +126,7 @@ final class RoomReservationService
                             || CampaignRequestService::STATUS_ACCEPTED === $r->getStatut(),
                     ));
                 }
-                if ($conflicts !== []) {
+                if ([] !== $conflicts) {
                     $conflictDetails = array_map(static fn (ReservationSalle $r): array => [
                         'id' => $r->getId(),
                         'start' => $r->getDateDebut()?->format(\DateTimeInterface::ATOM),
@@ -138,10 +134,7 @@ final class RoomReservationService
                         'statut' => $r->getStatut(),
                     ], $conflicts);
 
-                    throw new RoomReservationConflictException(
-                        "Ce créneau horaire vient d'être réservé par un autre usager ou chevauche une réservation existante. Veuillez actualiser le calendrier et choisir un autre créneau.",
-                        $conflictDetails,
-                    );
+                    throw new RoomReservationConflictException("Ce créneau horaire vient d'être réservé par un autre usager ou chevauche une réservation existante. Veuillez actualiser le calendrier et choisir un autre créneau.", $conflictDetails);
                 }
 
                 // 6. Enregistrement de la réservation
@@ -167,7 +160,7 @@ final class RoomReservationService
                     'En attente de validation par la mairie',
                     'Demande de réservation déposée',
                     'Demande enregistrée en attente de validation par la mairie.',
-                    trim($user->getPrenom() . ' ' . $user->getNom()),
+                    trim($user->getPrenom().' '.$user->getNom()),
                 );
                 $this->entityManager->persist($history);
 
@@ -191,7 +184,7 @@ final class RoomReservationService
 
         // 9. Déclenchement du traitement asynchrone des emails
         try {
-            if ($reservation->getId() !== null) {
+            if (null !== $reservation->getId()) {
                 $this->messageBus->dispatch(new SendRoomReservationNotificationMessage($reservation->getId()));
             }
         } catch (\Throwable) {
@@ -256,37 +249,24 @@ final class RoomReservationService
                 throw new RoomBookingClosedException();
             }
             if (!$active->coversDay($slotStart)) {
-                throw new \InvalidArgumentException(\sprintf(
-                    'Ce jour est en dehors de la période réservable de la campagne (du %s au %s).',
-                    $active->getEffectivePeriodStart()?->format('d/m/Y'),
-                    $active->getEffectivePeriodEnd()?->format('d/m/Y'),
-                ));
+                throw new \InvalidArgumentException(\sprintf('Ce jour est en dehors de la période réservable de la campagne (du %s au %s).', $active->getEffectivePeriodStart()?->format('d/m/Y'), $active->getEffectivePeriodEnd()?->format('d/m/Y')));
             }
 
             return $active;
         }
 
         if (null !== $active) {
-            throw new RoomBookingClosedException(
-                \sprintf('La campagne « %s » est ouverte : déposez vos demandes depuis la page Campagne.', $active->getSeasonLabel()),
-                RoomBookingClosedException::ONE_OFF_CLOSED,
-            );
+            throw new RoomBookingClosedException(\sprintf('La campagne « %s » est ouverte : déposez vos demandes depuis la page Campagne.', $active->getSeasonLabel()), RoomBookingClosedException::ONE_OFF_CLOSED);
         }
 
         // Réservation ponctuelle : jusqu’à la fin de l’année, jamais sur les jours d’une campagne à venir.
         $lastDay = $this->oneOffLastDay($now);
         if ($slotStart->format('Y-m-d') > $lastDay || $slotEnd->format('Y-m-d') > $lastDay) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Les réservations ponctuelles sont ouvertes jusqu’au %s.',
-                (new \DateTimeImmutable($lastDay))->format('d/m/Y'),
-            ));
+            throw new \InvalidArgumentException(\sprintf('Les réservations ponctuelles sont ouvertes jusqu’au %s.', (new \DateTimeImmutable($lastDay))->format('d/m/Y')));
         }
         foreach ($this->upcomingCampaigns() as $upcoming) {
             if ($upcoming->coversDay($slotStart) || $upcoming->coversDay($slotEnd)) {
-                throw new RoomBookingClosedException(
-                    \sprintf('Ce jour sera attribué lors de la campagne « %s » : il ne peut pas être réservé ponctuellement.', $upcoming->getSeasonLabel()),
-                    RoomBookingClosedException::SLOT_IN_CAMPAIGN,
-                );
+                throw new RoomBookingClosedException(\sprintf('Ce jour sera attribué lors de la campagne « %s » : il ne peut pas être réservé ponctuellement.', $upcoming->getSeasonLabel()), RoomBookingClosedException::SLOT_IN_CAMPAIGN);
             }
         }
 
@@ -304,11 +284,7 @@ final class RoomReservationService
         }
         $settings = $this->settings->current();
         if ($days > $settings->getRoomOneOffMaxDays()) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Une réservation ponctuelle dure au plus %d jour%s consécutif%2$s.',
-                $settings->getRoomOneOffMaxDays(),
-                $settings->getRoomOneOffMaxDays() > 1 ? 's' : '',
-            ));
+            throw new \InvalidArgumentException(\sprintf('Une réservation ponctuelle dure au plus %d jour%s consécutif%2$s.', $settings->getRoomOneOffMaxDays(), $settings->getRoomOneOffMaxDays() > 1 ? 's' : ''));
         }
 
         $opening = $settings->getRoomOpeningHour() * 60;
@@ -317,28 +293,16 @@ final class RoomReservationService
         $endMinutes = (int) $end->format('H') * 60 + (int) $end->format('i');
 
         if ($startMinutes < $opening || $startMinutes >= $closing) {
-            throw new \InvalidArgumentException(\sprintf(
-                'La salle n’ouvre qu’à %02dh00. Veuillez choisir un horaire de début valide.',
-                $settings->getRoomOpeningHour(),
-            ));
+            throw new \InvalidArgumentException(\sprintf('La salle n’ouvre qu’à %02dh00. Veuillez choisir un horaire de début valide.', $settings->getRoomOpeningHour()));
         }
         if ($endMinutes <= $opening || $endMinutes > $closing) {
-            throw new \InvalidArgumentException(\sprintf(
-                'La salle ferme à %02dh00. Veuillez choisir un horaire de fin valide.',
-                $settings->getRoomClosingHour(),
-            ));
+            throw new \InvalidArgumentException(\sprintf('La salle ferme à %02dh00. Veuillez choisir un horaire de fin valide.', $settings->getRoomClosingHour()));
         }
         if (0 !== $startMinutes % self::SLOT_STEP_MINUTES || 0 !== $endMinutes % self::SLOT_STEP_MINUTES) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Les horaires se choisissent par tranches de %d minutes.',
-                self::SLOT_STEP_MINUTES,
-            ));
+            throw new \InvalidArgumentException(\sprintf('Les horaires se choisissent par tranches de %d minutes.', self::SLOT_STEP_MINUTES));
         }
         if (1 === $days && $endMinutes - $startMinutes < self::SLOT_MIN_MINUTES) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Une réservation dure au moins %d minutes.',
-                self::SLOT_MIN_MINUTES,
-            ));
+            throw new \InvalidArgumentException(\sprintf('Une réservation dure au moins %d minutes.', self::SLOT_MIN_MINUTES));
         }
     }
 

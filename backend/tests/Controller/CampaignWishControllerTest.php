@@ -161,8 +161,14 @@ final class CampaignWishControllerTest extends ControllerRouteTestCase
      */
     private function line(Salle $salle, int $day, string $start, string $end, string $frequency = 'weekly', int $attendance = 20): array
     {
+        $startDate = new \DateTimeImmutable('2027-09-01');
+        while ((int) $startDate->format('N') !== $day) {
+            $startDate = $startDate->modify('+1 day');
+        }
+
         return [
             'salleId' => $salle->getId(),
+            'startDate' => $startDate->format('Y-m-d'),
             'dayOfWeek' => $day,
             'startTime' => $start,
             'endTime' => $end,
