@@ -7,9 +7,10 @@ export interface SettingsTab {
   id: string;
   label: string;
   description: string;
-  module: 'rooms' | 'equipment';
+  module: 'rooms' | 'equipment' | 'subventions' | 'faq' | 'legal';
   panel: ReactNode;
 }
+
 
 const tabVariants = cva(
   'flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-soft px-4 py-3 text-left transition-colors sm:flex-none',
@@ -25,9 +26,16 @@ const tabVariants = cva(
 
 const dotVariants = cva('size-3 shrink-0 rounded-full', {
   variants: {
-    module: { rooms: 'bg-module-rooms ring-1 ring-ink/10', equipment: 'bg-module-equipment' },
+    module: {
+      rooms: 'bg-module-rooms ring-1 ring-ink/10',
+      equipment: 'bg-module-equipment',
+      subventions: 'bg-module-grants',
+      faq: 'bg-primary',
+      legal: 'bg-moss',
+    },
   },
 });
+
 
 interface SettingsTabsProps {
   tabs: SettingsTab[];
@@ -50,8 +58,9 @@ export default function SettingsTabs({ tabs, selected, onSelect }: SettingsTabsP
 
   return (
     <div className="space-y-6">
-      <div role="tablist" aria-label="Modules" className="flex gap-1 rounded-card bg-paper p-1.5 sm:inline-flex">
+      <div role="tablist" aria-label="Modules" className="flex flex-wrap gap-1.5 rounded-card bg-paper p-1.5">
         {tabs.map((tab, index) => {
+
           const isSelected = tab.id === current.id;
           return (
             <button

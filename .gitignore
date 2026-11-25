@@ -44,3 +44,19 @@ Thumbs.db
 
 # Rapports générés par le job CI security
 security-reports/
+
+# Secrets and local credentials (renforcement)
+.env.*
+!.env.example
+!.env.*.example
+!backend/.env.test
+.envrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials*.json
+service-account*.json
+offsite.env

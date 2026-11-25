@@ -10,8 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Représente un utilisateur de la plateforme.
@@ -69,7 +69,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
-    #[Assert\Email(message: "Format email invalide.")]
+    #[Assert\Email(message: 'Format email invalide.')]
     #[Assert\Length(max: 180, maxMessage: "L'email ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $email = null;
 
@@ -91,13 +91,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 100)]
-    #[Assert\NotBlank(message: "Le nom est obligatoire.")]
-    #[Assert\Length(max: 100, maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères.")]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
+    #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.')]
     private ?string $nom = null;
 
     #[ORM\Column(length: 100)]
-    #[Assert\NotBlank(message: "Le prénom est obligatoire.")]
-    #[Assert\Length(max: 100, maxMessage: "Le prénom ne peut pas dépasser {{ limit }} caractères.")]
+    #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
+    #[Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.')]
     private ?string $prenom = null;
 
     /**
@@ -106,7 +106,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 20, nullable: true)]
     #[Assert\Regex(
         pattern: '/^(\+33|0)[1-9](\d{2}){4}$/',
-        message: "Format de téléphone invalide. Exemple : 0612345678"
+        message: 'Format de téléphone invalide. Exemple : 0612345678'
     )]
     private ?string $telephone = null;
 
@@ -118,13 +118,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank]
     #[Assert\Choice(
         choices: ['association', 'mairie'],
-        message: "Type de compte invalide."
+        message: 'Type de compte invalide.'
     )]
     private ?string $typeCompte = null;
 
     /**
      * false → compte créé mais pas encore activé (lien d'activation non cliqué)
-     * true  → compte actif, connexion possible
+     * true  → compte actif, connexion possible.
      */
     #[ORM\Column]
     private bool $isVerified = false;
@@ -193,21 +193,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
-        $this->roles     = ['ROLE_USER'];
+        $this->roles = ['ROLE_USER'];
         $this->isVerified = false;
     }
 
     // ── Getters / Setters ────────────────────────────────────────────────────
 
-    public function getId(): ?int { return $this->id; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
 
-    public function getEmail(): ?string { return $this->email; }
-    public function setEmail(string $email): static { $this->email = $email; return $this; }
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
 
     /**
      * Identifiant unique utilisé par Symfony Security (= email).
      */
-    public function getUserIdentifier(): string { return (string) $this->email; }
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
 
     /**
      * Retourne les rôles de l'utilisateur.
@@ -218,21 +233,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-        if ($this->typeCompte === 'mairie') {
+        if ('mairie' === $this->typeCompte) {
             $roles[] = 'ROLE_MAIRIE';
         }
         $roles[] = 'ROLE_USER';
+
         return array_unique($roles);
     }
 
     /** @param list<string> $roles */
-    public function setRoles(array $roles): static { $this->roles = $roles; return $this; }
+    public function setRoles(array $roles): static
+    {
+        $this->roles = $roles;
+
+        return $this;
+    }
 
     /**
      * Mot de passe haché. Null avant activation du compte.
      */
-    public function getPassword(): ?string { return $this->password; }
-    public function setPassword(?string $password): static { $this->password = $password; return $this; }
+    public function getPassword(): ?string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(?string $password): static
+    {
+        $this->password = $password;
+
+        return $this;
+    }
 
     /**
      * Évite que le hash du mot de passe ne soit stocké en clair en session.
@@ -241,9 +271,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __serialize(): array
     {
         $data = (array) $this;
-        $data["\0" . self::class . "\0password"] = $this->password !== null
+        $data["\0".self::class."\0password"] = null !== $this->password
             ? hash('crc32c', $this->password)
             : null;
+
         return $data;
     }
 
@@ -251,30 +282,99 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * Appelé par Symfony après l'authentification pour effacer les données sensibles.
      * Le hash est géré par Symfony — pas besoin de rien faire ici.
      */
-    public function eraseCredentials(): void {}
+    public function eraseCredentials(): void
+    {
+    }
 
-    public function getNom(): ?string { return $this->nom; }
-    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+    public function getNom(): ?string
+    {
+        return $this->nom;
+    }
 
-    public function getPrenom(): ?string { return $this->prenom; }
-    public function setPrenom(string $prenom): static { $this->prenom = $prenom; return $this; }
+    public function setNom(string $nom): static
+    {
+        $this->nom = $nom;
 
-    public function getTelephone(): ?string { return $this->telephone; }
-    public function setTelephone(?string $telephone): static { $this->telephone = $telephone; return $this; }
+        return $this;
+    }
 
-    public function getTypeCompte(): ?string { return $this->typeCompte; }
-    public function setTypeCompte(string $typeCompte): static { $this->typeCompte = $typeCompte; return $this; }
+    public function getPrenom(): ?string
+    {
+        return $this->prenom;
+    }
 
-    public function isVerified(): bool { return $this->isVerified; }
-    public function setIsVerified(bool $isVerified): static { $this->isVerified = $isVerified; return $this; }
+    public function setPrenom(string $prenom): static
+    {
+        $this->prenom = $prenom;
 
-    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
+        return $this;
+    }
 
-    public function getCguValidateAt(): ?\DateTimeImmutable { return $this->cguValidateAt; }
-    public function setCguValidateAt(?\DateTimeImmutable $cguValidateAt): static { $this->cguValidateAt = $cguValidateAt; return $this; }
+    public function getTelephone(): ?string
+    {
+        return $this->telephone;
+    }
 
-    public function getActivationToken(): ?string { return $this->activationToken; }
+    public function setTelephone(?string $telephone): static
+    {
+        $this->telephone = $telephone;
+
+        return $this;
+    }
+
+    public function getTypeCompte(): ?string
+    {
+        return $this->typeCompte;
+    }
+
+    public function setTypeCompte(string $typeCompte): static
+    {
+        $this->typeCompte = $typeCompte;
+
+        return $this;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): static
+    {
+        $this->isVerified = $isVerified;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getCguValidateAt(): ?\DateTimeImmutable
+    {
+        return $this->cguValidateAt;
+    }
+
+    public function setCguValidateAt(?\DateTimeImmutable $cguValidateAt): static
+    {
+        $this->cguValidateAt = $cguValidateAt;
+
+        return $this;
+    }
+
+    public function getActivationToken(): ?string
+    {
+        return $this->activationToken;
+    }
+
     /**
      * Seule l’empreinte SHA-256 du jeton envoyé par e-mail est conservée, comme pour la
      * réinitialisation du mot de passe : une fuite de la base ne donne aucun lien utilisable.
@@ -286,11 +386,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getActivationTokenExpiresAt(): ?\DateTimeImmutable { return $this->activationTokenExpiresAt; }
-    public function setActivationTokenExpiresAt(?\DateTimeImmutable $v): static { $this->activationTokenExpiresAt = $v; return $this; }
+    public function getActivationTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->activationTokenExpiresAt;
+    }
 
-    public function getPasswordResetTokenHash(): ?string { return $this->passwordResetTokenHash; }
-    public function getPasswordResetExpiresAt(): ?\DateTimeImmutable { return $this->passwordResetExpiresAt; }
+    public function setActivationTokenExpiresAt(?\DateTimeImmutable $v): static
+    {
+        $this->activationTokenExpiresAt = $v;
+
+        return $this;
+    }
+
+    public function getPasswordResetTokenHash(): ?string
+    {
+        return $this->passwordResetTokenHash;
+    }
+
+    public function getPasswordResetExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->passwordResetExpiresAt;
+    }
 
     public function startPasswordReset(string $tokenHash, \DateTimeImmutable $expiresAt): static
     {
@@ -308,31 +424,73 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCredentialsChangedAt(): ?\DateTimeImmutable { return $this->credentialsChangedAt; }
-    public function setCredentialsChangedAt(?\DateTimeImmutable $credentialsChangedAt): static { $this->credentialsChangedAt = $credentialsChangedAt; return $this; }
+    public function getCredentialsChangedAt(): ?\DateTimeImmutable
+    {
+        return $this->credentialsChangedAt;
+    }
 
-    public function getInactivatedAt(): ?\DateTimeImmutable { return $this->inactivatedAt; }
-    public function setInactivatedAt(?\DateTimeImmutable $inactivatedAt): static { $this->inactivatedAt = $inactivatedAt; return $this; }
+    public function setCredentialsChangedAt(?\DateTimeImmutable $credentialsChangedAt): static
+    {
+        $this->credentialsChangedAt = $credentialsChangedAt;
 
-    public function getDeletedAt(): ?\DateTimeImmutable { return $this->deletedAt; }
-    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static { $this->deletedAt = $deletedAt; return $this; }
+        return $this;
+    }
 
-    public function getAssociation(): ?Association { return $this->association; }
-    public function setAssociation(?Association $association): static { $this->association = $association; return $this; }
+    public function getInactivatedAt(): ?\DateTimeImmutable
+    {
+        return $this->inactivatedAt;
+    }
+
+    public function setInactivatedAt(?\DateTimeImmutable $inactivatedAt): static
+    {
+        $this->inactivatedAt = $inactivatedAt;
+
+        return $this;
+    }
+
+    public function getDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
+    {
+        $this->deletedAt = $deletedAt;
+
+        return $this;
+    }
+
+    public function getAssociation(): ?Association
+    {
+        return $this->association;
+    }
+
+    public function setAssociation(?Association $association): static
+    {
+        $this->association = $association;
+
+        return $this;
+    }
 
     // ── Helpers métier ───────────────────────────────────────────────────────
 
     /** Vérifie si le compte est suspendu */
-    public function isInactive(): bool { return $this->inactivatedAt !== null; }
+    public function isInactive(): bool
+    {
+        return null !== $this->inactivatedAt;
+    }
 
     /** Vérifie si le compte est soft-deleted */
-    public function isDeleted(): bool { return $this->deletedAt !== null; }
+    public function isDeleted(): bool
+    {
+        return null !== $this->deletedAt;
+    }
 
     /** Vérifie si le token d'activation est encore valide */
     public function isActivationTokenValid(): bool
     {
-        return $this->activationToken !== null
-            && $this->activationTokenExpiresAt !== null
+        return null !== $this->activationToken
+            && null !== $this->activationTokenExpiresAt
             && $this->activationTokenExpiresAt > new \DateTimeImmutable();
     }
 }

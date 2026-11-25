@@ -6,10 +6,10 @@ use App\Entity\Salle;
 use App\Service\ImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -44,17 +44,17 @@ final class SalleAdministrationController extends AbstractController
 
         $errors = [];
 
-        if (!is_string($payload['nom'] ?? null) || trim($payload['nom']) === '') {
+        if (!is_string($payload['nom'] ?? null) || '' === trim($payload['nom'])) {
             $errors['nom'] = 'Le nom de la salle est obligatoire.';
         }
 
         $address = $this->normalizeAddress($payload['adresse'] ?? null);
-        if ($address === null) {
+        if (null === $address) {
             $errors['adresse'] = "L'adresse doit contenir une voie, un code postal à 5 chiffres et une ville.";
         }
 
         $capacity = filter_var($payload['capaciteMax'] ?? null, FILTER_VALIDATE_INT);
-        if ($capacity === false || $capacity <= 0) {
+        if (false === $capacity || $capacity <= 0) {
             $errors['capaciteMax'] = 'La capacité maximale doit être un entier strictement supérieur à zéro.';
         }
 
@@ -63,14 +63,14 @@ final class SalleAdministrationController extends AbstractController
         }
 
         $equipments = $this->parseEquipments($payload['equipementsInclus'] ?? []);
-        if ($equipments === null) {
+        if (null === $equipments) {
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
+        if (null !== $image && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
         }
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(
                 ['errors' => $errors],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -96,7 +96,7 @@ final class SalleAdministrationController extends AbstractController
         try {
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
-            if ($imagePath !== null) {
+            if (null !== $imagePath) {
                 $this->imageStorage->delete($imagePath, self::IMAGE_FOLDER);
             }
             throw $exception;
@@ -115,7 +115,7 @@ final class SalleAdministrationController extends AbstractController
         $errors = [];
 
         if (array_key_exists('nom', $payload)
-            && (!is_string($payload['nom']) || trim($payload['nom']) === '')
+            && (!is_string($payload['nom']) || '' === trim($payload['nom']))
         ) {
             $errors['nom'] = 'Le nom de la salle est obligatoire.';
         }
@@ -123,18 +123,18 @@ final class SalleAdministrationController extends AbstractController
         $address = null;
         if (array_key_exists('adresse', $payload)) {
             $address = $this->normalizeAddress($payload['adresse']);
-            if ($address === null) {
+            if (null === $address) {
                 $errors['adresse'] = "L'adresse doit contenir une voie, un code postal à 5 chiffres et une ville.";
             }
         }
 
         $capacity = filter_var($payload['capaciteMax'] ?? null, FILTER_VALIDATE_INT);
-        if (array_key_exists('capaciteMax', $payload) && ($capacity === false || $capacity <= 0)) {
+        if (array_key_exists('capaciteMax', $payload) && (false === $capacity || $capacity <= 0)) {
             $errors['capaciteMax'] = 'La capacité maximale doit être un entier strictement supérieur à zéro.';
         }
 
         if (array_key_exists('description', $payload)
-            && $payload['description'] !== null
+            && null !== $payload['description']
             && !is_string($payload['description'])
         ) {
             $errors['description'] = 'La description doit être une chaîne de caractères ou null.';
@@ -142,20 +142,20 @@ final class SalleAdministrationController extends AbstractController
 
         $accesPmr = null;
         if (array_key_exists('accesPmr', $payload) && !$this->parseBoolean($payload['accesPmr'], $accesPmr)) {
-                $errors['accesPmr'] = 'Le champ accesPmr doit être un booléen.';
+            $errors['accesPmr'] = 'Le champ accesPmr doit être un booléen.';
         }
 
         $equipments = array_key_exists('equipementsInclus', $payload)
             ? $this->parseEquipments($payload['equipementsInclus'])
             : null;
-        if (array_key_exists('equipementsInclus', $payload) && $equipments === null) {
+        if (array_key_exists('equipementsInclus', $payload) && null === $equipments) {
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
-        if ($image !== null && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
+        if (null !== $image && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
         }
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             return $this->json(
                 ['errors' => $errors],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -191,12 +191,12 @@ final class SalleAdministrationController extends AbstractController
         try {
             $this->entityManager->flush();
         } catch (\Throwable $exception) {
-            if ($newImagePath !== null) {
+            if (null !== $newImagePath) {
                 $this->imageStorage->delete($newImagePath, self::IMAGE_FOLDER);
             }
             throw $exception;
         }
-        if ($newImagePath !== null && $oldImagePath !== null) {
+        if (null !== $newImagePath && null !== $oldImagePath) {
             $this->imageStorage->delete($oldImagePath, self::IMAGE_FOLDER);
         }
 
@@ -225,7 +225,7 @@ final class SalleAdministrationController extends AbstractController
     #[Route('/{id}', name: 'admin_salle_archive', methods: ['DELETE'])]
     public function archive(Salle $salle): JsonResponse
     {
-        if ($salle->getDeletedAt() !== null) {
+        if (null !== $salle->getDeletedAt()) {
             return $this->json(
                 ['message' => 'Cette salle est déjà archivée.'],
                 Response::HTTP_CONFLICT,
@@ -252,13 +252,13 @@ final class SalleAdministrationController extends AbstractController
         }
 
         $address = preg_replace('/\s+/u', ' ', trim($value));
-        if ($address === null || mb_strlen($address) > 255) {
+        if (null === $address || mb_strlen($address) > 255) {
             return null;
         }
 
         $pattern = "/^(?:[\\p{L}\\d][^,]{2,},\\s*\\d{5}(?:\\s+[\\p{L}][\\p{L} .'-]*)?|[\\p{L}\\d][^,]{2,},\\s*[\\p{L}][\\p{L} .'-]*\\s+\\d{5})$/u";
 
-        return preg_match($pattern, $address) === 1 ? $address : null;
+        return 1 === preg_match($pattern, $address) ? $address : null;
     }
 
     /**
@@ -288,7 +288,7 @@ final class SalleAdministrationController extends AbstractController
             return true;
         }
         if (is_string($value) && in_array(strtolower($value), ['true', 'false'], true)) {
-            $result = strtolower($value) === 'true';
+            $result = 'true' === strtolower($value);
 
             return true;
         }
@@ -301,7 +301,7 @@ final class SalleAdministrationController extends AbstractController
      */
     private function parseEquipments(mixed $value): ?array
     {
-        if (!is_array($value) || array_filter($value, static fn (mixed $item): bool => !is_string($item)) !== []) {
+        if (!is_array($value) || [] !== array_filter($value, static fn (mixed $item): bool => !is_string($item))) {
             return null;
         }
 

@@ -4,7 +4,7 @@
 
 ## Dernière mise à jour
 
-- Date : 17 novembre 2026
+- Date : 23 novembre 2026
 - Statut : préproduction et production en ligne derrière Cloudflare (WAF, limitation de débit, accès direct au VPS coupé) ; production déployée depuis `main` ; ZAP bloquant sur la préproduction
 - Prochaine étape : activer ClamAV sur le VPS si la mémoire le permet (`DEPLOYMENT.md` §8 bis), DNSSEC Cloudflare en cours d’activation chez OVH
 
@@ -12,6 +12,7 @@
 
 Les derniers correctifs applicatifs réalisés concernent :
 
+- l’ouverture publique des routes `/api/public/*` dans Symfony, indispensable aux FAQ, CGU, mentions légales et ressources publiques consultées hors connexion ; test PHPUnit dédié couvrant FAQ, CGU et mentions sans authentification (3 tests, 23 assertions), puis vérification HTTP sur les 3 endpoints du conteneur de développement ;
 - la restauration de la zone de dépôt de fichiers de la déclaration d’événement ;
 - le retour de l’icône SVG et du contour pointillé ;
 - la conservation du glisser-déposer et de la sélection classique ;

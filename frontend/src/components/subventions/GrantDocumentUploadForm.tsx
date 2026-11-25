@@ -1,10 +1,13 @@
-import { type FormEvent, useState } from 'react';
+'use client';
+
+import { useEffect, useState, type FormEvent } from 'react';
 import Button from '@/components/ui/Button';
 import { formFieldInputVariants, formFieldLabelVariants } from '@/components/ui/FormField';
 import Notice from '@/components/ui/Notice';
+import { getPublicGrantDocumentTypes } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-const DOCUMENT_TYPES = ['Rapport moral', 'Bilan d’activité récente', 'Autre justificatif'];
+const FALLBACK_DOCUMENT_TYPES = ['Rapport moral', 'Bilan d’activité récente', 'Autre justificatif'];
 
 interface GrantDocumentUploadFormProps {
   error: string;
@@ -14,9 +17,28 @@ interface GrantDocumentUploadFormProps {
 }
 
 export default function GrantDocumentUploadForm({ error, isUploading, onUpload }: GrantDocumentUploadFormProps) {
-  const [documentType, setDocumentType] = useState(DOCUMENT_TYPES[0]);
+  const [types, setTypes] = useState<string[]>(FALLBACK_DOCUMENT_TYPES);
+  const [documentType, setDocumentType] = useState(FALLBACK_DOCUMENT_TYPES[0]);
   const [file, setFile] = useState<File | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    getPublicGrantDocumentTypes()
+      .then((data) => {
+        if (active && data.length > 0) {
+          const labels = data.map((d) => d.label);
+          setTypes(labels);
+          setDocumentType(labels[0]);
+        }
+      })
+      .catch(() => {
+        // Fallback silencieux sur les types statiques
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,7 +55,7 @@ export default function GrantDocumentUploadForm({ error, isUploading, onUpload }
         <label className={formFieldLabelVariants()}>
           <span>Type de document</span>
           <select value={documentType} onChange={(event) => setDocumentType(event.target.value)} className={cn(formFieldInputVariants(), 'w-full')}>
-            {DOCUMENT_TYPES.map((type) => <option key={type}>{type}</option>)}
+            {types.map((type) => <option key={type}>{type}</option>)}
           </select>
         </label>
         <label className={formFieldLabelVariants()}>
@@ -49,7 +71,9 @@ export default function GrantDocumentUploadForm({ error, isUploading, onUpload }
       </div>
       {error && <Notice tone="danger" className="mt-4">{error}</Notice>}
       <div className="mt-5 flex justify-end">
-        <Button type="submit" size="sm" isLoading={isUploading} disabled={!file}>Ajouter le fichier</Button>
+        <Button type="submit" isLoading={isUploading} disabled={!file || isUploading}>
+          Ajouter le fichier
+        </Button>
       </div>
     </form>
   );

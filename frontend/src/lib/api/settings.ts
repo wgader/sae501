@@ -1,4 +1,4 @@
-import { ApiError, request } from './client';
+import { ApiError, publicRequest, request } from './client';
 import type {
   AdminEquipmentCategory,
   EquipmentCategory,
@@ -34,7 +34,7 @@ export function updateEquipmentSettings(input: EquipmentSettingsInput): Promise<
 
 /** Catégories du catalogue, pour les filtres et les libellés (associations et agents du matériel). */
 export function getEquipmentCategories(): Promise<EquipmentCategory[]> {
-  return request<EquipmentCategory[]>('/api/equipment/categories');
+  return publicRequest<EquipmentCategory[]>('/api/equipment/categories');
 }
 
 export function getAdminEquipmentCategories(): Promise<AdminEquipmentCategory[]> {

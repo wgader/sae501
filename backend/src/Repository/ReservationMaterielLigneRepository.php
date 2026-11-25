@@ -16,4 +16,3 @@ class ReservationMaterielLigneRepository extends ServiceEntityRepository
         parent::__construct($registry, ReservationMaterielLigne::class);
     }
 }
-

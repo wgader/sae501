@@ -40,7 +40,7 @@ class AssociationRequestControllerTest extends WebTestCase
     {
         $token = $this->jwtManager->create($user);
         $this->client->request($method, $uri, [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
             'CONTENT_TYPE' => 'application/json',
             'HTTP_ACCEPT' => 'application/json',
         ]);
@@ -196,7 +196,7 @@ class AssociationRequestControllerTest extends WebTestCase
         $this->assertSame('subvention', $data['items'][0]['type']);
 
         // Filter search
-        $this->requestWithAuth($userAsso, 'GET', '/api/association/requests?search=' . urlencode('assemblée'));
+        $this->requestWithAuth($userAsso, 'GET', '/api/association/requests?search='.urlencode('assemblée'));
         $this->assertResponseIsSuccessful();
         $data = json_decode((string) $this->client->getResponse()->getContent(), true);
         $this->assertCount(1, $data['items']);
@@ -231,7 +231,7 @@ class AssociationRequestControllerTest extends WebTestCase
         $this->em->persist($history);
         $this->em->flush();
 
-        $this->requestWithAuth($userAsso, 'GET', '/api/association/requests/sub-' . $sub->getId());
+        $this->requestWithAuth($userAsso, 'GET', '/api/association/requests/sub-'.$sub->getId());
         $this->assertResponseIsSuccessful();
         $data = json_decode((string) $this->client->getResponse()->getContent(), true);
 
@@ -257,7 +257,7 @@ class AssociationRequestControllerTest extends WebTestCase
         $this->em->flush();
 
         // Asso 1 tries to view Asso 2's request
-        $this->requestWithAuth($userAsso1, 'GET', '/api/association/requests/sub-' . $sub->getId());
+        $this->requestWithAuth($userAsso1, 'GET', '/api/association/requests/sub-'.$sub->getId());
         $this->assertResponseStatusCodeSame(403);
     }
 
@@ -289,11 +289,11 @@ class AssociationRequestControllerTest extends WebTestCase
         $token = $this->jwtManager->create($userAsso);
         $this->client->request(
             'POST',
-            '/api/association/requests/mat-' . $reservation->getId() . '/cancel',
+            '/api/association/requests/mat-'.$reservation->getId().'/cancel',
             [],
             [],
             [
-                'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+                'HTTP_AUTHORIZATION' => 'Bearer '.$token,
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
             ],
@@ -333,11 +333,11 @@ class AssociationRequestControllerTest extends WebTestCase
         $token = $this->jwtManager->create($userAsso);
         $this->client->request(
             'POST',
-            '/api/association/requests/sal-' . $reservation->getId() . '/cancel',
+            '/api/association/requests/sal-'.$reservation->getId().'/cancel',
             [],
             [],
             [
-                'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+                'HTTP_AUTHORIZATION' => 'Bearer '.$token,
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
             ],

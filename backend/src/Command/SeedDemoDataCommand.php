@@ -115,11 +115,11 @@ final class SeedDemoDataCommand extends Command
 
     private function emailFor(string $firstName, string $lastName, string $association): string
     {
-        $value = strtolower($firstName . '.' . $lastName . '.' . $association);
+        $value = strtolower($firstName.'.'.$lastName.'.'.$association);
         $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
         $value = preg_replace('/[^a-z0-9]+/', '.', $value) ?? $value;
 
-        return trim($value, '.') . '@demo.feytiat.fr';
+        return trim($value, '.').'@demo.feytiat.fr';
     }
 
     /** @return list<array{name: string, contacts: list<array{firstName: string, lastName: string, phone: ?string}>}> */
@@ -189,6 +189,7 @@ final class SeedDemoDataCommand extends Command
                 'phone' => $row[3],
             ];
         }
+
         return array_values($result);
     }
 

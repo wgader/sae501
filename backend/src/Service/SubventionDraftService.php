@@ -197,16 +197,10 @@ final class SubventionDraftService
         }
 
         if ($expenses !== $revenues) {
-            throw new \InvalidArgumentException(sprintf(
-                'Le budget doit être équilibré. Dépenses : %s €, recettes : %s €.',
-                self::formatCents($expenses),
-                self::formatCents($revenues),
-            ));
+            throw new \InvalidArgumentException(sprintf('Le budget doit être équilibré. Dépenses : %s €, recettes : %s €.', self::formatCents($expenses), self::formatCents($revenues)));
         }
         if (1 !== $municipalGrantCount || $municipalGrant !== $requestedAmount) {
-            throw new \InvalidArgumentException(
-                'La ligne de recette « Subvention demandée à la mairie » doit correspondre au montant demandé.',
-            );
+            throw new \InvalidArgumentException('La ligne de recette « Subvention demandée à la mairie » doit correspondre au montant demandé.');
         }
 
         $draft
@@ -390,9 +384,8 @@ final class SubventionDraftService
             return false;
         }
 
-        $rearranged = substr($iban, 4) . substr($iban, 0, 4);
-        $numeric = preg_replace_callback('/[A-Z]/', static fn (array $matches): string =>
-            (string) (ord($matches[0]) - 55), $rearranged);
+        $rearranged = substr($iban, 4).substr($iban, 0, 4);
+        $numeric = preg_replace_callback('/[A-Z]/', static fn (array $matches): string => (string) (ord($matches[0]) - 55), $rearranged);
         if (!is_string($numeric)) {
             return false;
         }

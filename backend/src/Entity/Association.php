@@ -45,7 +45,7 @@ class Association
 
     /** Renseigné plus tard (demande de subvention, profil, etc.) */
     #[ORM\Column(nullable: true)]
-    #[Assert\Positive(message: "Le nombre de membres doit être positif.")]
+    #[Assert\Positive(message: 'Le nombre de membres doit être positif.')]
     private ?int $nombreMembres = null;
 
     /** Photo de profil de l’association (chemin public sous /uploads/associations/). */
@@ -56,7 +56,7 @@ class Association
      * PENDING_VALIDATION → en attente de validation par la mairie
      * VALIDATED          → validée, lien d'activation envoyé à l'asso
      * REFUSED            → refusée par la mairie
-     * SUSPENDED          → suspendue par l'admin
+     * SUSPENDED          → suspendue par l'admin.
      */
     #[ORM\Column(length: 30)]
     #[Assert\Choice(choices: self::STATUTS)]
@@ -92,52 +92,148 @@ class Association
 
     public function __construct()
     {
-        $this->createdAt             = new \DateTimeImmutable();
-        $this->statut                = 'PENDING_VALIDATION';
+        $this->createdAt = new \DateTimeImmutable();
+        $this->statut = 'PENDING_VALIDATION';
         $this->moduleSubventionActif = false;
-        $this->moduleMaterielActif   = false;
-        $this->moduleSalleActif      = false;
-        $this->moduleEvenementActif  = true;
-        $this->users                 = new ArrayCollection();
+        $this->moduleMaterielActif = false;
+        $this->moduleSalleActif = false;
+        $this->moduleEvenementActif = true;
+        $this->users = new ArrayCollection();
         $this->documentJustificatifs = new ArrayCollection();
     }
 
     // ── Getters / Setters ────────────────────────────────────────────────────
 
-    public function getId(): ?int { return $this->id; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
 
-    public function getNom(): ?string { return $this->nom; }
-    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+    public function getNom(): ?string
+    {
+        return $this->nom;
+    }
 
-    public function getNombreMembres(): ?int { return $this->nombreMembres; }
-    public function setNombreMembres(?int $v): static { $this->nombreMembres = $v; return $this; }
+    public function setNom(string $nom): static
+    {
+        $this->nom = $nom;
 
-    public function getLogoUrl(): ?string { return $this->logoUrl; }
-    public function setLogoUrl(?string $logoUrl): static { $this->logoUrl = $logoUrl; return $this; }
+        return $this;
+    }
 
-    public function getStatut(): ?string { return $this->statut; }
-    public function setStatut(string $statut): static { $this->statut = $statut; return $this; }
+    public function getNombreMembres(): ?int
+    {
+        return $this->nombreMembres;
+    }
 
-    public function isModuleSubventionActif(): bool { return $this->moduleSubventionActif; }
-    public function setModuleSubventionActif(bool $v): static { $this->moduleSubventionActif = $v; return $this; }
+    public function setNombreMembres(?int $v): static
+    {
+        $this->nombreMembres = $v;
 
-    public function isModuleMaterielActif(): bool { return $this->moduleMaterielActif; }
-    public function setModuleMaterielActif(bool $v): static { $this->moduleMaterielActif = $v; return $this; }
+        return $this;
+    }
 
-    public function isModuleSalleActif(): bool { return $this->moduleSalleActif; }
-    public function setModuleSalleActif(bool $v): static { $this->moduleSalleActif = $v; return $this; }
+    public function getLogoUrl(): ?string
+    {
+        return $this->logoUrl;
+    }
 
-    public function isModuleEvenementActif(): bool { return $this->moduleEvenementActif; }
-    public function setModuleEvenementActif(bool $v): static { $this->moduleEvenementActif = $v; return $this; }
+    public function setLogoUrl(?string $logoUrl): static
+    {
+        $this->logoUrl = $logoUrl;
 
-    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
-    public function setCreatedAt(\DateTimeImmutable $v): static { $this->createdAt = $v; return $this; }
+        return $this;
+    }
 
-    public function getValideAt(): ?\DateTimeImmutable { return $this->valideAt; }
-    public function setValideAt(?\DateTimeImmutable $v): static { $this->valideAt = $v; return $this; }
+    public function getStatut(): ?string
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(string $statut): static
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function isModuleSubventionActif(): bool
+    {
+        return $this->moduleSubventionActif;
+    }
+
+    public function setModuleSubventionActif(bool $v): static
+    {
+        $this->moduleSubventionActif = $v;
+
+        return $this;
+    }
+
+    public function isModuleMaterielActif(): bool
+    {
+        return $this->moduleMaterielActif;
+    }
+
+    public function setModuleMaterielActif(bool $v): static
+    {
+        $this->moduleMaterielActif = $v;
+
+        return $this;
+    }
+
+    public function isModuleSalleActif(): bool
+    {
+        return $this->moduleSalleActif;
+    }
+
+    public function setModuleSalleActif(bool $v): static
+    {
+        $this->moduleSalleActif = $v;
+
+        return $this;
+    }
+
+    public function isModuleEvenementActif(): bool
+    {
+        return $this->moduleEvenementActif;
+    }
+
+    public function setModuleEvenementActif(bool $v): static
+    {
+        $this->moduleEvenementActif = $v;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $v): static
+    {
+        $this->createdAt = $v;
+
+        return $this;
+    }
+
+    public function getValideAt(): ?\DateTimeImmutable
+    {
+        return $this->valideAt;
+    }
+
+    public function setValideAt(?\DateTimeImmutable $v): static
+    {
+        $this->valideAt = $v;
+
+        return $this;
+    }
 
     /** @return Collection<int, User> */
-    public function getUsers(): Collection { return $this->users; }
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
 
     public function addUser(User $user): static
     {
@@ -145,6 +241,7 @@ class Association
             $this->users->add($user);
             $user->setAssociation($this);
         }
+
         return $this;
     }
 
@@ -155,11 +252,15 @@ class Association
                 $user->setAssociation(null);
             }
         }
+
         return $this;
     }
 
     /** @return Collection<int, DocumentJustificatif> */
-    public function getDocumentJustificatifs(): Collection { return $this->documentJustificatifs; }
+    public function getDocumentJustificatifs(): Collection
+    {
+        return $this->documentJustificatifs;
+    }
 
     public function addDocumentJustificatif(DocumentJustificatif $doc): static
     {
@@ -167,6 +268,7 @@ class Association
             $this->documentJustificatifs->add($doc);
             $doc->setAssociation($this);
         }
+
         return $this;
     }
 
@@ -177,20 +279,33 @@ class Association
                 $doc->setAssociation(null);
             }
         }
+
         return $this;
     }
 
     // ── Helpers métier ───────────────────────────────────────────────────────
 
     /** L'association est en attente de validation */
-    public function isPending(): bool { return $this->statut === 'PENDING_VALIDATION'; }
+    public function isPending(): bool
+    {
+        return 'PENDING_VALIDATION' === $this->statut;
+    }
 
     /** L'association a été validée par la mairie */
-    public function isValidated(): bool { return $this->statut === 'VALIDATED'; }
+    public function isValidated(): bool
+    {
+        return 'VALIDATED' === $this->statut;
+    }
 
     /** L'association a été refusée par la mairie */
-    public function isRefused(): bool { return $this->statut === 'REFUSED'; }
+    public function isRefused(): bool
+    {
+        return 'REFUSED' === $this->statut;
+    }
 
     /** L'association est suspendue */
-    public function isSuspended(): bool { return $this->statut === 'SUSPENDED'; }
+    public function isSuspended(): bool
+    {
+        return 'SUSPENDED' === $this->statut;
+    }
 }

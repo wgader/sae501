@@ -17,7 +17,8 @@ const MODULE_PAGES: ReadonlyArray<{ path: string; modules: AssociationModule[] }
   { path: '/admin/subvention', modules: ['subventions'] },
   { path: '/admin/evenements', modules: ['evenements'] },
   // Chaque agent y règle seulement les modules qu'il gère.
-  { path: '/admin/reglages', modules: ['salles', 'materiel'] },
+  { path: '/admin/reglages', modules: ['salles', 'materiel', 'subventions'] },
+
 ];
 
 export interface AgentAccess {

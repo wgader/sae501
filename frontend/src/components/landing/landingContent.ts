@@ -9,6 +9,8 @@ export const LANDING_ANCHORS = {
   faq: 'questions',
 } as const;
 
+export const LANDING_FAQ_LIMIT = 6;
+
 export const LANDING_NAV: ReadonlyArray<{ href: string; label: string }> = [
   { href: `#${LANDING_ANCHORS.modules}`, label: 'Modules' },
   { href: `#${LANDING_ANCHORS.steps}`, label: 'Fonctionnement' },

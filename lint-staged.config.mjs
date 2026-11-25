@@ -18,7 +18,7 @@ export default {
       .map((file) => quote(path.resolve(file)))
       .join(" ")}`,
   "backend/**/*.php": (files) =>
-    `docker compose exec -T backend php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --path-mode=intersection ${files
+    `docker compose exec -T app php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --path-mode=intersection ${files
       .map((file) => quote(toBackendPath(file)))
       .join(" ")}`,
 };

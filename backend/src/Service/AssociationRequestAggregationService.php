@@ -13,8 +13,8 @@ use App\Entity\ReservationSalle;
 use App\Repository\DemandeStatusHistoryRepository;
 use App\Repository\DemandeSubventionRepository;
 use App\Repository\DocumentJustificatifRepository;
-use App\Repository\ExternalEventRepository;
 use App\Repository\ExternalEventFileRepository;
+use App\Repository\ExternalEventRepository;
 use App\Repository\ReservationMaterielRepository;
 use App\Repository\ReservationSalleRepository;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -113,47 +113,47 @@ final class AssociationRequestAggregationService
 
         foreach ($all as $item) {
             $category = $item['statusCategory'];
-            if ($category === 'active') {
-                $counts['active']++;
-            } elseif ($category === 'closed') {
-                $counts['closed']++;
+            if ('active' === $category) {
+                ++$counts['active'];
+            } elseif ('closed' === $category) {
+                ++$counts['closed'];
             }
 
             $type = (string) $item['type'];
             if (isset($counts[$type])) {
-                $counts[$type]++;
+                ++$counts[$type];
             }
         }
 
         // Filter by status
         $statusFilter = $filters['status'] ?? null;
-        if ($statusFilter !== null && $statusFilter !== '' && $statusFilter !== 'all') {
+        if (null !== $statusFilter && '' !== $statusFilter && 'all' !== $statusFilter) {
             $statusLower = strtolower((string) $statusFilter);
-            if ($statusLower === 'active' || $statusLower === 'en cours' || $statusLower === 'en-cours') {
-                $all = array_filter($all, static fn(array $item): bool => $item['statusCategory'] === 'active');
-            } elseif ($statusLower === 'closed' || $statusLower === 'clôturé' || $statusLower === 'cloture' || $statusLower === 'cloturee') {
-                $all = array_filter($all, static fn(array $item): bool => $item['statusCategory'] === 'closed');
+            if ('active' === $statusLower || 'en cours' === $statusLower || 'en-cours' === $statusLower) {
+                $all = array_filter($all, static fn (array $item): bool => 'active' === $item['statusCategory']);
+            } elseif ('closed' === $statusLower || 'clôturé' === $statusLower || 'cloture' === $statusLower || 'cloturee' === $statusLower) {
+                $all = array_filter($all, static fn (array $item): bool => 'closed' === $item['statusCategory']);
             } else {
-                $all = array_filter($all, static fn(array $item): bool => mb_strtolower((string) $item['statut']) === mb_strtolower((string) $statusFilter));
+                $all = array_filter($all, static fn (array $item): bool => mb_strtolower((string) $item['statut']) === mb_strtolower((string) $statusFilter));
             }
         }
 
         // Filter by type
         $typeFilter = $filters['type'] ?? null;
-        if ($typeFilter !== null && $typeFilter !== '' && $typeFilter !== 'all') {
-            $all = array_filter($all, static fn(array $item): bool => $item['type'] === $typeFilter);
+        if (null !== $typeFilter && '' !== $typeFilter && 'all' !== $typeFilter) {
+            $all = array_filter($all, static fn (array $item): bool => $item['type'] === $typeFilter);
         }
 
         // Filter by year
         $yearFilter = $filters['year'] ?? null;
-        if ($yearFilter !== null && $yearFilter !== '' && $yearFilter !== 'all') {
+        if (null !== $yearFilter && '' !== $yearFilter && 'all' !== $yearFilter) {
             $yearInt = (int) $yearFilter;
-            $all = array_filter($all, static fn(array $item): bool => $item['year'] === $yearInt);
+            $all = array_filter($all, static fn (array $item): bool => $item['year'] === $yearInt);
         }
 
         // Filter by search
         $search = trim((string) ($filters['search'] ?? ''));
-        if ($search !== '') {
+        if ('' !== $search) {
             $searchLower = mb_strtolower($search);
             $all = array_filter($all, static function (array $item) use ($searchLower): bool {
                 return str_contains(mb_strtolower((string) $item['intitule']), $searchLower)
@@ -188,13 +188,14 @@ final class AssociationRequestAggregationService
 
     /**
      * @return array<string, mixed>|null
+     *
      * @throws AccessDeniedException
      */
     public function getRequestDetail(Association $association, string|int $id, ?string $type = null): ?array
     {
         [$resolvedType, $resolvedId] = $this->resolveTypeAndId((string) $id, $type);
 
-        if ($resolvedType === self::TYPE_SUBVENTION) {
+        if (self::TYPE_SUBVENTION === $resolvedType) {
             $subvention = $this->subventionRepository->find($resolvedId);
             if (!$subvention) {
                 return null;
@@ -202,10 +203,11 @@ final class AssociationRequestAggregationService
             if ($subvention->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Ce dossier de subvention n'appartient pas à votre association.");
             }
+
             return $this->serializeSubventionDetail($subvention);
         }
 
-        if ($resolvedType === self::TYPE_MATERIEL) {
+        if (self::TYPE_MATERIEL === $resolvedType) {
             $materiel = $this->materielRepository->find($resolvedId);
             if (!$materiel) {
                 return null;
@@ -213,10 +215,11 @@ final class AssociationRequestAggregationService
             if ($materiel->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Cette réservation de matériel n'appartient pas à votre association.");
             }
+
             return $this->serializeMaterielDetail($materiel);
         }
 
-        if ($resolvedType === self::TYPE_EVENEMENT) {
+        if (self::TYPE_EVENEMENT === $resolvedType) {
             $event = $this->eventRepository->find($resolvedId);
             if (!$event || $event->getAssoId() !== $association->getId()) {
                 return null;
@@ -225,7 +228,7 @@ final class AssociationRequestAggregationService
             return $this->serializeEventDetail($event);
         }
 
-        if ($resolvedType === self::TYPE_SALLE) {
+        if (self::TYPE_SALLE === $resolvedType) {
             $salle = $this->salleRepository->find($resolvedId);
             if (!$salle) {
                 return null;
@@ -233,6 +236,7 @@ final class AssociationRequestAggregationService
             if ($salle->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Cette réservation de salle n'appartient pas à votre association.");
             }
+
             return $this->serializeSalleDetail($salle);
         }
 
@@ -242,6 +246,7 @@ final class AssociationRequestAggregationService
             if ($mat->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Ce dossier n'appartient pas à votre association.");
             }
+
             return $this->serializeMaterielDetail($mat);
         }
 
@@ -250,6 +255,7 @@ final class AssociationRequestAggregationService
             if ($sub->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Ce dossier n'appartient pas à votre association.");
             }
+
             return $this->serializeSubventionDetail($sub);
         }
 
@@ -258,6 +264,7 @@ final class AssociationRequestAggregationService
             if ($sal->getAssociation()?->getId() !== $association->getId()) {
                 throw new AccessDeniedException("Ce dossier n'appartient pas à votre association.");
             }
+
             return $this->serializeSalleDetail($sal);
         }
 
@@ -269,7 +276,7 @@ final class AssociationRequestAggregationService
      */
     private function resolveTypeAndId(string $rawId, ?string $explicitType): array
     {
-        if ($explicitType !== null && $explicitType !== '') {
+        if (null !== $explicitType && '' !== $explicitType) {
             return [$explicitType, (int) preg_replace('/\D/', '', $rawId)];
         }
 
@@ -308,7 +315,7 @@ final class AssociationRequestAggregationService
         $year = $subvention->getAnneeExercice();
 
         return [
-            'id' => 'sub-' . $id,
+            'id' => 'sub-'.$id,
             'rawId' => $id,
             'type' => self::TYPE_SUBVENTION,
             'typeLabel' => 'Subvention',
@@ -344,7 +351,7 @@ final class AssociationRequestAggregationService
         }
 
         return [
-            'id' => 'mat-' . $id,
+            'id' => 'mat-'.$id,
             'rawId' => $id,
             'type' => self::TYPE_MATERIEL,
             'typeLabel' => 'Matériel',
@@ -361,7 +368,7 @@ final class AssociationRequestAggregationService
             ],
             'decisionMotif' => $materiel->getNoteInterne() ?? $materiel->getObservations(),
             'observations' => $materiel->getObservations(),
-            'summary' => $itemsSummary !== [] ? implode(', ', $itemsSummary) : 'Matériel communal',
+            'summary' => [] !== $itemsSummary ? implode(', ', $itemsSummary) : 'Matériel communal',
         ];
     }
 
@@ -376,7 +383,7 @@ final class AssociationRequestAggregationService
         $year = (int) ($createdAt ? $createdAt->format('Y') : date('Y'));
 
         return [
-            'id' => 'sal-' . $id,
+            'id' => 'sal-'.$id,
             'rawId' => $id,
             'type' => self::TYPE_SALLE,
             'typeLabel' => 'Salle',
@@ -406,7 +413,7 @@ final class AssociationRequestAggregationService
         $createdAt = $event->getCreatedAt();
 
         return [
-            'id' => 'event-' . $id,
+            'id' => 'event-'.$id,
             'rawId' => $id,
             'type' => self::TYPE_EVENEMENT,
             'typeLabel' => 'Événement',
@@ -466,7 +473,7 @@ final class AssociationRequestAggregationService
             'typeSubvention' => $sub->getTypeSubvention(),
             'description' => $sub->getDescription(),
             'montantDemande' => (float) $sub->getMontantDemande(),
-            'montantAccorde' => $sub->getMontantAccorde() !== null ? (float) $sub->getMontantAccorde() : null,
+            'montantAccorde' => null !== $sub->getMontantAccorde() ? (float) $sub->getMontantAccorde() : null,
             'anneeExercice' => $sub->getAnneeExercice(),
             'documents' => $documents,
             'timeline' => $timeline,
@@ -497,7 +504,7 @@ final class AssociationRequestAggregationService
 
         return array_merge($summary, [
             'lignes' => $lignes,
-            'cautionMontant' => $mat->getCautionMontant() !== null ? (float) $mat->getCautionMontant() : null,
+            'cautionMontant' => null !== $mat->getCautionMontant() ? (float) $mat->getCautionMontant() : null,
             'cautionPayeeAt' => $mat->getCautionPayeeAt()?->format(\DateTimeInterface::ATOM),
             'materielRetireAt' => $mat->getMaterielRetireAt()?->format(\DateTimeInterface::ATOM),
             'materielRestitueAt' => $mat->getMaterielRestitueAt()?->format(\DateTimeInterface::ATOM),
@@ -538,10 +545,11 @@ final class AssociationRequestAggregationService
     private function findDocuments(string $type, int $id): array
     {
         $docs = $this->documentRepository->findByLinkedEntity($type, $id);
-        return array_map(static fn(DocumentJustificatif $doc): array => [
+
+        return array_map(static fn (DocumentJustificatif $doc): array => [
             'id' => $doc->getId(),
             'typeDocument' => $doc->getTypeDocument(),
-            'fichierUrl' => $doc->getId() !== null ? '/api/documents/' . $doc->getId() . '/download' : null,
+            'fichierUrl' => null !== $doc->getId() ? '/api/documents/'.$doc->getId().'/download' : null,
             'description' => $doc->getDescription(),
             'createdAt' => $doc->getCreatedAt()?->format(\DateTimeInterface::ATOM),
         ], $docs);
@@ -555,12 +563,12 @@ final class AssociationRequestAggregationService
         int $id,
         string $currentStatus,
         ?\DateTimeImmutable $createdAt,
-        ?string $observations
+        ?string $observations,
     ): array {
         $events = $this->historyRepository->findTimeline($type, $id);
 
-        if ($events !== []) {
-            return array_map(static fn(DemandeStatusHistory $h): array => [
+        if ([] !== $events) {
+            return array_map(static fn (DemandeStatusHistory $h): array => [
                 'id' => $h->getId(),
                 'statut' => $h->getStatut(),
                 'label' => $h->getLabel(),
@@ -582,7 +590,7 @@ final class AssociationRequestAggregationService
             'date' => $created->format(\DateTimeInterface::ATOM),
         ];
 
-        if ($currentStatus !== 'En attente' && $currentStatus !== 'En cours de traitement') {
+        if ('En attente' !== $currentStatus && 'En cours de traitement' !== $currentStatus) {
             $updatedDate = $created->modify('+1 day');
             $label = match ($currentStatus) {
                 'Complément requis' => 'Demande de complément de dossier',

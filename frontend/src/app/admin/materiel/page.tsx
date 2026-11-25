@@ -103,7 +103,7 @@ export default function AdminMaterielPage() {
             description="Gérez le parc communal, les durées d’emprunt et les demandes des associations."
           />
           <Button
-            leftIcon={<IconPlus className="h-4 w-4" />}
+            rightIcon={<IconPlus className="h-4 w-4" />}
             onClick={() => {
               setEditingItem(null);
               setIsFormOpen(true);

@@ -45,7 +45,7 @@ class EquipmentCategoryService
     public function list(): array
     {
         $categories = $this->repository->findAllOrdered();
-        if ($categories !== []) {
+        if ([] !== $categories) {
             return $categories;
         }
 
@@ -124,7 +124,7 @@ class EquipmentCategoryService
     private function validLabel(mixed $label, ?EquipmentCategory $current): string
     {
         $label = is_string($label) ? trim(preg_replace('/\s+/u', ' ', $label) ?? '') : '';
-        if ($label === '') {
+        if ('' === $label) {
             throw new SettingsValidationException(['label' => 'Le nom de la catégorie est obligatoire.']);
         }
         if (mb_strlen($label) > EquipmentCategory::LABEL_MAX_LENGTH) {
@@ -132,7 +132,7 @@ class EquipmentCategoryService
         }
 
         $existing = $this->repository->findOneByLabelInsensitive($label);
-        if ($existing !== null && $existing !== $current) {
+        if (null !== $existing && $existing !== $current) {
             throw new SettingsValidationException(['label' => 'Une catégorie porte déjà ce nom.']);
         }
 
@@ -144,7 +144,7 @@ class EquipmentCategoryService
         $base = $this->slugger->slug($label)->lower()->toString() ?: 'categorie';
         $base = mb_substr($base, 0, 90);
         $code = $base;
-        for ($suffix = 2; $this->repository->findOneBy(['code' => $code]) !== null; ++$suffix) {
+        for ($suffix = 2; null !== $this->repository->findOneBy(['code' => $code]); ++$suffix) {
             $code = $base.'-'.$suffix;
         }
 

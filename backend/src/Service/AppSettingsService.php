@@ -54,10 +54,10 @@ class AppSettingsService
             $errors,
         );
 
-        if ($opening !== null && $closing !== null && $closing <= $opening) {
+        if (null !== $opening && null !== $closing && $closing <= $opening) {
             $errors['closingHour'] = 'La fermeture doit être après l’ouverture.';
         }
-        if ($errors !== []) {
+        if ([] !== $errors) {
             throw new SettingsValidationException($errors);
         }
 
@@ -75,17 +75,17 @@ class AppSettingsService
         $errors = [];
         $opening = $this->readTime($payload, 'deskOpening', $errors);
         $closing = $this->readTime($payload, 'deskClosing', $errors);
-        if ($opening !== null && $closing !== null && self::toMinutes($closing) - self::toMinutes($opening) < self::MIN_DESK_MINUTES) {
+        if (null !== $opening && null !== $closing && self::toMinutes($closing) - self::toMinutes($opening) < self::MIN_DESK_MINUTES) {
             $errors['deskClosing'] = 'La fermeture doit suivre l’ouverture d’au moins 30 minutes.';
         }
 
         $location = $payload['pickupLocation'] ?? null;
-        if ($location !== null && !is_string($location)) {
+        if (null !== $location && !is_string($location)) {
             $errors['pickupLocation'] = 'Le lieu de retrait doit être un texte.';
             $location = null;
         }
-        $location = $location === null || trim($location) === '' ? null : trim($location);
-        if ($location !== null && mb_strlen($location) > self::PICKUP_LOCATION_MAX_LENGTH) {
+        $location = null === $location || '' === trim($location) ? null : trim($location);
+        if (null !== $location && mb_strlen($location) > self::PICKUP_LOCATION_MAX_LENGTH) {
             $errors['pickupLocation'] = sprintf('Le lieu de retrait ne doit pas dépasser %d caractères.', self::PICKUP_LOCATION_MAX_LENGTH);
         }
 
@@ -110,7 +110,7 @@ class AppSettingsService
             $errors,
         );
 
-        if ($errors !== []) {
+        if ([] !== $errors) {
             throw new SettingsValidationException($errors);
         }
 
@@ -181,7 +181,7 @@ class AppSettingsService
 
         return [
             'updatedAt' => $settings->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
-            'updatedBy' => $agent !== null ? trim(sprintf('%s %s', $agent->getPrenom(), $agent->getNom())) : null,
+            'updatedBy' => null !== $agent ? trim(sprintf('%s %s', $agent->getPrenom(), $agent->getNom())) : null,
         ];
     }
 
@@ -192,7 +192,7 @@ class AppSettingsService
     private function readInt(array $payload, string $field, int $min, int $max, string $message, array &$errors): ?int
     {
         $value = $payload[$field] ?? null;
-        if (is_string($value) && preg_match('/^\d+$/', $value) === 1) {
+        if (is_string($value) && 1 === preg_match('/^\d+$/', $value)) {
             $value = (int) $value;
         }
         if (!is_int($value) || $value < $min || $value > $max) {
@@ -211,7 +211,7 @@ class AppSettingsService
     private function readTime(array $payload, string $field, array &$errors): ?string
     {
         $value = $payload[$field] ?? null;
-        if (!is_string($value) || preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value) !== 1) {
+        if (!is_string($value) || 1 !== preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value)) {
             $errors[$field] = 'Indiquez une heure au format HH:mm.';
 
             return null;

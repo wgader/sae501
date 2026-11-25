@@ -177,7 +177,7 @@ export default function AdminCampaignsPage() {
             ) : (
               <span />
             )}
-            <Button variant="secondary" size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setIsCreating(true)}>
+            <Button variant="secondary" size="sm" rightIcon={<IconPlus className="h-4 w-4" />} onClick={() => setIsCreating(true)}>
               Nouvelle campagne
             </Button>
           </div>
@@ -210,7 +210,7 @@ export default function AdminCampaignsPage() {
             <p className="mx-auto mt-2 max-w-md text-body-sm text-muted">
               Créez la campagne annuelle : les demandes de salle déposées pendant son ouverture apparaîtront ici.
             </p>
-            <Button className="mt-6" size="sm" leftIcon={<IconPlus className="h-4 w-4" />} onClick={() => setIsCreating(true)}>
+            <Button className="mt-6" size="sm" rightIcon={<IconPlus className="h-4 w-4" />} onClick={() => setIsCreating(true)}>
               Créer la campagne
             </Button>
           </section>

@@ -23,13 +23,13 @@ class EquipmentCategoryRepository extends ServiceEntityRepository
      */
     public function findAllOrdered(): array
     {
-        /** @var list<EquipmentCategory> */
+        /* @var list<EquipmentCategory> */
         return $this->createQueryBuilder('c')->orderBy('c.label', 'ASC')->getQuery()->getResult();
     }
 
     public function findOneByLabelInsensitive(string $label): ?EquipmentCategory
     {
-        /** @var EquipmentCategory|null */
+        /* @var EquipmentCategory|null */
         return $this->createQueryBuilder('c')
             ->andWhere('LOWER(c.label) = :label')
             ->setParameter('label', mb_strtolower($label))

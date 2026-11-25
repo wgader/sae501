@@ -25,6 +25,9 @@ interface SlotPickerProps {
   startLabel?: string;
   endLabel?: string;
   partialLabel?: string;
+  recurrenceFrequency?: string;
+  recurrenceStart?: string | null;
+  singleMonth?: boolean;
 }
 
 type TimeFieldName = 'start' | 'end';
@@ -49,6 +52,9 @@ export default function SlotPicker({
   startLabel = 'Début',
   endLabel = 'Fin',
   partialLabel = 'Partiellement réservé',
+  recurrenceFrequency,
+  recurrenceStart,
+  singleMonth = false,
 }: SlotPickerProps) {
   const [openField, setOpenField] = useState<TimeFieldName | null>(null);
   const { rules, today } = context;
@@ -76,6 +82,9 @@ export default function SlotPicker({
         getDayState={(day) => getDayState(day, context)}
         getMaxEndDay={(day) => getMaxEndDay(day, context)}
         partialLabel={partialLabel.toLowerCase()}
+        recurrenceFrequency={recurrenceFrequency}
+        recurrenceStart={recurrenceStart}
+        singleMonth={singleMonth}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-line pt-4">

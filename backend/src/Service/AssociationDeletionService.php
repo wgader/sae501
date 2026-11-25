@@ -100,7 +100,7 @@ final class AssociationDeletionService
      */
     private function column(EntityManagerInterface $em, string $dql, int $associationId): array
     {
-        /** @var list<int|string> */
+        /* @var list<int|string> */
         return array_values(array_filter(
             $em->createQuery($dql)->setParameter('id', $associationId)->getSingleColumnResult(),
             static fn (mixed $value): bool => null !== $value && '' !== $value,
@@ -119,7 +119,7 @@ final class AssociationDeletionService
      * Un fichier qui ne peut pas être effacé ne fait pas échouer la suppression déjà validée :
      * il est seulement signalé dans les logs.
      *
-     * @param list<int|string> $paths
+     * @param list<int|string>       $paths
      * @param callable(string): void $remove
      */
     private function removeFiles(array $paths, callable $remove): void

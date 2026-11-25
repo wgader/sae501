@@ -3,8 +3,6 @@
 namespace App\Service;
 
 use App\Entity\Materiel;
-use App\Entity\ReservationMateriel;
-use App\Entity\ReservationMaterielLigne;
 use App\Entity\StockAdjustment;
 use App\Entity\User;
 use App\Exception\StockConflictException;
@@ -37,7 +35,7 @@ final class EquipmentStockService
      */
     public function checkStockReductionConflict(Materiel $materiel, int $newStock, ?\DateTimeImmutable $referenceDate = null): array
     {
-        if ($materiel->getId() === null) {
+        if (null === $materiel->getId()) {
             return [
                 'hasConflict' => false,
                 'maxBooked' => 0,
@@ -83,8 +81,8 @@ final class EquipmentStockService
     /**
      * Ajuste le stock total en appliquant les règles de cohérence.
      *
-     * @throws StockConflictException Si le stock passe sous le seuil d'une réservation validée sans confirmation explicite.
-     * @throws \InvalidArgumentException Si le stock est négatif.
+     * @throws StockConflictException    si le stock passe sous le seuil d'une réservation validée sans confirmation explicite
+     * @throws \InvalidArgumentException si le stock est négatif
      */
     public function adjustStock(
         Materiel $materiel,
@@ -92,27 +90,18 @@ final class EquipmentStockService
         string $reason,
         User $agent,
         bool $force = false,
-    ): void
-    {
+    ): void {
         if ($newStock < 0) {
             throw new \InvalidArgumentException('Le stock doit être un entier positif ou nul.');
         }
 
         $check = $this->checkStockReductionConflict($materiel, $newStock);
         if ($check['hasConflict'] && !$force) {
-            throw new StockConflictException(
-                sprintf(
-                    'Le nouveau stock (%d) est inférieur au volume réservé sur des périodes futures (jusqu\'à %d unités requises).',
-                    $newStock,
-                    $check['maxBooked']
-                ),
-                $check['conflictingReservations'],
-                $check['maxBooked']
-            );
+            throw new StockConflictException(sprintf('Le nouveau stock (%d) est inférieur au volume réservé sur des périodes futures (jusqu\'à %d unités requises).', $newStock, $check['maxBooked']), $check['conflictingReservations'], $check['maxBooked']);
         }
 
         $previousStock = $materiel->getStockTotal();
-        if ($previousStock === null) {
+        if (null === $previousStock) {
             throw new \LogicException('Le stock actuel du matériel est invalide.');
         }
 

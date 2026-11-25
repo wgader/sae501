@@ -604,11 +604,12 @@ export type CampaignWish = {
   type: 'RECURRENT';
   status: CampaignWishStatus;
   salle: { id: number; nom: string };
+  startDate?: string;
   dayOfWeek: number;
   dayLabel: string;
   startTime: string;
   endTime: string;
-  frequency: 'weekly' | 'biweekly';
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly';
   frequencyLabel: string;
   activity: string;
   audience: string;
@@ -630,6 +631,7 @@ export type MyCampaignWishesResponse = {
 
 export type CampaignWishInput = {
   salleId: number;
+  startDate: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -736,3 +738,42 @@ export type AdminDashboard = {
     pendingWishes: number;
   } | null;
 };
+
+export type FaqItem = {
+  id: number;
+  question: string;
+  answer: string;
+  displayOrder: number;
+};
+
+export type LegalSection = {
+  title: string;
+  text: string;
+};
+
+export type LegalContent = {
+  id: number;
+  type: 'cgu' | 'mentions_legales';
+  title: string;
+  subtitle: string | null;
+  lastUpdated: string | null;
+  sections: LegalSection[];
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+};
+
+export type GrantDocumentType = {
+  id: number;
+  label: string;
+  isRequired: boolean;
+  displayOrder: number;
+};
+
+export type GrantResource = {
+  id: number;
+  label: string;
+  url: string;
+  isExternal: boolean;
+  displayOrder: number;
+};
+
