@@ -58,6 +58,8 @@ security:
         - { path: ^/api/admin/(campaigns|campaign-history|campaign-wishes|room-requests|salles), roles: ROLE_GESTION_SALLE }
         - { path: ^/api/admin/equipment, roles: ROLE_GESTION_MATERIEL }
         - { path: ^/api/admin/grants, roles: ROLE_GESTION_SUBVENTION }
+        # Réglages des subventions (justificatifs et modèles) ; FAQ et textes légaux restent aux admins.
+        - { path: ^/api/admin/content/grants, roles: ROLE_GESTION_SUBVENTION }
         - { path: ^/api/admin/associations/\d+/requests/[^/]+/request-documents$, allow_if: "is_granted('ROLE_GESTION_MATERIEL') or is_granted('ROLE_GESTION_SALLE')", methods: [POST] }
         - { path: ^/api/admin, roles: ROLE_ADMIN }
         - { path: ^/(api|uploads)(/|$), roles: IS_AUTHENTICATED_FULLY }

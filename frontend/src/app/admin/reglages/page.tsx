@@ -69,8 +69,7 @@ export default function SettingsPage() {
     if (tab.id === 'salles') return access.modules.includes('salles');
     if (tab.id === 'materiel') return access.modules.includes('materiel');
     if (tab.id === 'subventions') return access.modules.includes('subventions');
-    // FAQ et Légal sont visibles pour tous les agents habilités à l'admin
-    if (tab.id === 'faq' || tab.id === 'legal') return true;
+    // FAQ, CGU et mentions légales concernent tout le site : réservés aux administrateurs (comme l'API).
     return false;
   });
 
