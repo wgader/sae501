@@ -32,24 +32,20 @@ class ReservationSalleRepository extends ServiceEntityRepository
     }
 
     /**
-     * Réservations de salles acceptées sur les saisons déjà écoulées.
+     * Réservations de salles acceptées (passées et à venir), de la plus récente à la plus ancienne.
      *
      * @return list<ReservationSalle>
      */
-    public function findHistoricalValidatedByAssociation(
-        Association $association,
-        \DateTimeImmutable $before,
-    ): array {
+    public function findGrantedByAssociation(Association $association): array
+    {
         return $this->createQueryBuilder('r')
             ->addSelect('salle', 'campaign')
             ->join('r.salle', 'salle')
             ->leftJoin('r.campaign', 'campaign')
             ->andWhere('r.association = :association')
             ->andWhere('r.statut IN (:statuses)')
-            ->andWhere('r.dateDebut < :before')
             ->setParameter('association', $association)
             ->setParameter('statuses', ['Validée', 'Clôturée'])
-            ->setParameter('before', $before)
             ->orderBy('r.dateDebut', 'DESC')
             ->getQuery()
             ->getResult();

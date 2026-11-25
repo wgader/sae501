@@ -33,24 +33,20 @@ class ReservationMaterielRepository extends ServiceEntityRepository
     }
 
     /**
-     * Attributions de matériel acceptées sur les années déjà écoulées.
+     * Attributions de matériel acceptées (passées et à venir), de la plus récente à la plus ancienne.
      *
      * @return list<ReservationMateriel>
      */
-    public function findHistoricalValidatedByAssociation(
-        Association $association,
-        \DateTimeImmutable $before,
-    ): array {
+    public function findGrantedByAssociation(Association $association): array
+    {
         return $this->createQueryBuilder('r')
             ->addSelect('lignes', 'materiel')
             ->innerJoin('r.lignes', 'lignes')
             ->innerJoin('lignes.materiel', 'materiel')
             ->andWhere('r.association = :association')
             ->andWhere('r.statut IN (:statuses)')
-            ->andWhere('r.dateRetrait < :before')
             ->setParameter('association', $association)
             ->setParameter('statuses', ['Validée', 'Clôturée', 'Matériel restitué'])
-            ->setParameter('before', $before)
             ->orderBy('r.dateRetrait', 'DESC')
             ->getQuery()
             ->getResult();

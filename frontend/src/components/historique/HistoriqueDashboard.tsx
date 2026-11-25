@@ -6,6 +6,7 @@ import RequestFilterBar from './RequestFilterBar';
 import RequestCard from './RequestCard';
 import RequestEmptyState from './RequestEmptyState';
 import Pagination from '@/components/ui/Pagination';
+import ScheduleHistoryPanel from '@/components/schedule-history/ScheduleHistoryPanel';
 import { routes } from '@/lib/routes';
 
 export default function HistoriqueDashboard() {
@@ -159,6 +160,11 @@ export default function HistoriqueDashboard() {
             />
           )}
         </section>
+
+        {/* Bilan des salles et du matériel attribués, année par année */}
+        <div className="border-t border-line pt-10">
+          <ScheduleHistoryPanel title="Bilan des salles et du matériel" />
+        </div>
       </div>
 
     </main>

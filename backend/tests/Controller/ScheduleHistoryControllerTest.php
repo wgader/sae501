@@ -31,6 +31,7 @@ final class ScheduleHistoryControllerTest extends ControllerRouteTestCase
         $this->createRoomReservation($other, $room, '2025-04-10 09:00:00');
         $this->createEquipmentReservation($association, $equipment, '2024-06-10 09:00:00', 3);
         $this->createRoomReservation($association, $room, '2026-01-10 09:00:00');
+        $this->createRoomReservation($association, $room, '2026-02-10 09:00:00')->setStatut('Refusée');
         $this->em->flush();
 
         $this->client->request('GET', '/api/schedules/history?asso_id='.$other->getId());
@@ -38,11 +39,20 @@ final class ScheduleHistoryControllerTest extends ControllerRouteTestCase
         $this->assertResponseIsSuccessful();
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame($association->getId(), $data['association']['id']);
-        self::assertSame(1, $data['totals']['roomReservationCount']);
+        // Les attributions acceptées de chaque année, y compris l’année en cours ; un refus n’y figure pas.
+        self::assertSame(2, $data['totals']['roomReservationCount']);
         self::assertSame(1, $data['totals']['equipmentReservationCount']);
         self::assertSame(3, $data['totals']['equipmentQuantity']);
-        self::assertSame(2.5, $data['totals']['roomHoursGranted']);
-        self::assertCount(2, $data['seasons']);
+        self::assertEquals(5.0, $data['totals']['roomHoursGranted']);
+        self::assertSame([2026, 2025, 2024], array_column($data['years'], 'year'));
+
+        [$latest, $previous, $oldest] = $data['years'];
+        self::assertSame(1, $latest['roomReservationCount']);
+        self::assertSame('Validée', $latest['attributions'][0]['statut']);
+        self::assertSame([['id' => $room->getId(), 'nom' => 'Salle des fêtes', 'reservationCount' => 1, 'hours' => 2.5]], $previous['rooms']);
+        self::assertSame('materiel', $oldest['attributions'][0]['type']);
+        self::assertSame(3, $oldest['equipment'][0]['quantity']);
+        self::assertSame('Barnum', $oldest['attributions'][0]['lignes'][0]['designation']);
     }
 
     public function testMairieRequiresAndCanSelectAnAssociation(): void
