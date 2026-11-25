@@ -10,6 +10,9 @@ const campaign = {
     id: 7, seasonLabel: 'Saison 2027-2028', openingAt: '2026-11-01T08:00:00+01:00', closingAt: '2026-12-15T18:00:00+01:00',
     periodStart: '2027-09-01', periodEnd: '2028-06-30', resourceTypes: ['salle'], status: 'ACTIVE', createdAt: '2026-10-01T08:00:00+01:00', updatedAt: '2026-10-01T08:00:00+01:00',
 };
+// Règles des réservations : le calendrier des vœux s’en sert pour les jours et horaires proposés.
+const RULES = { lastDay: '2099-12-31', maxDays: 3, stepMinutes: 10, minMinutes: 30, openingTime: '08:00', closingTime: '23:00', blockedPeriods: [] };
+
 const gym = { id: 3, nom: 'Gymnase municipal', capaciteMax: 80, adresse: 'Feytiat', description: '', imageUrl: null, isActive: true, accesPmr: true, equipementsInclus: [], horairesOuverture: { debut: '08:00', fin: '23:00' } };
 
 const wish = (id: number, club: string, start: string, end: string, status = 'En attente d’arbitrage par la mairie') => ({
@@ -24,6 +27,23 @@ async function signIn(page: Page, user: object, kind: 'association' | 'admin') {
     }, [user, kind] as const);
 }
 
+/** Le premier vœu se règle dans le calendrier de la période réservable (septembre 2027). */
+async function fillFirstWish(page: Page, activity: string, attendance: string) {
+    const wishCard = page.getByRole('group', { name: 'Vœu 1' });
+    // Mardi 7 septembre 2027 : premier mardi de la période réservable.
+    await wishCard.getByRole('button', { name: / 7 septembre 2027, / }).click();
+    await wishCard.getByRole('button', { name: /^Début/ }).click();
+    await wishCard.getByRole('button', { name: '18h', exact: true }).click();
+    await wishCard.getByRole('button', { name: '00', exact: true }).click();
+    await wishCard.getByRole('button', { name: /^Fin/ }).click();
+    await wishCard.getByRole('button', { name: '20h', exact: true }).click();
+    await wishCard.getByRole('button', { name: '00', exact: true }).click();
+    await wishCard.getByLabel('Effectif prévu').fill(attendance);
+    await wishCard.getByLabel('Activité').fill(activity);
+    await wishCard.getByRole('button', { name: 'Choisir cette salle' }).click();
+    return wishCard;
+}
+
 test.describe('Vœux récurrents de la campagne', () => {
     test('L’association saisit, vérifie puis transmet ses vœux', async ({ page }) => {
         await signIn(page, association, 'association');
@@ -32,6 +52,7 @@ test.describe('Vœux récurrents de la campagne', () => {
             const { pathname } = new URL(route.request().url());
             if (pathname === '/api/auth/session') return route.fulfill({ json: { user: association } });
             if (pathname === '/api/rooms') return route.fulfill({ json: [gym] });
+            if (pathname === '/api/rooms/booking-rules') return route.fulfill({ json: RULES });
             if (pathname === '/api/campaigns/current/requests') return route.fulfill({ json: { campaign, requests: [] } });
             if (pathname === '/api/campaigns/current/wishes' && route.request().method() === 'POST') {
                 posted = route.request().postDataJSON();
@@ -42,22 +63,7 @@ test.describe('Vœux récurrents de la campagne', () => {
         });
 
         await page.goto('/campagne');
-        const wishCard = page.getByRole('group', { name: 'Vœu 1' });
-        await wishCard.getByLabel('Salle').selectOption('3');
-        await wishCard.getByLabel('Jour').selectOption('2');
-        await wishCard.getByLabel('Début').fill('20:00');
-        await wishCard.getByLabel('Fin').fill('19:00');
-
-        // Scénario 4 : la fin avant le début est signalée et bloque le récapitulatif.
-        await expect(wishCard.getByText('La fin doit être après le début.')).toBeVisible();
-        await page.getByRole('button', { name: 'Vérifier mes vœux' }).click();
-        await expect(page.getByRole('button', { name: 'Vérifier mes vœux' })).toBeDisabled();
-
-        await wishCard.getByLabel('Début').fill('18:00');
-        await wishCard.getByLabel('Fin').fill('20:00');
-        await wishCard.getByLabel('Public').selectOption('youth');
-        await wishCard.getByLabel('Effectif prévu').fill('24');
-        await wishCard.getByLabel('Activité').fill('Entraînement de basket U13');
+        await fillFirstWish(page, 'Entraînement de basket U13', '24');
         await page.getByRole('button', { name: 'Vérifier mes vœux' }).click();
 
         await expect(page.getByRole('heading', { name: 'Vérifiez vos vœux' })).toBeVisible();
@@ -65,7 +71,7 @@ test.describe('Vœux récurrents de la campagne', () => {
         await page.getByRole('button', { name: 'Transmettre mes 1 vœu' }).click();
 
         await expect(page.getByText('Vœux transmis à la mairie')).toBeVisible();
-        expect(posted).toMatchObject({ wishes: [{ salleId: 3, dayOfWeek: 2, startTime: '18:00', endTime: '20:00', expectedAttendance: 24 }] });
+        expect(posted).toMatchObject({ wishes: [{ salleId: 3, dayOfWeek: 2, startDate: '2027-09-07', startTime: '18:00', endTime: '20:00', expectedAttendance: 24 }] });
     });
 
     test('Une campagne fermée pendant la saisie bloque l’envoi', async ({ page }) => {
@@ -74,6 +80,7 @@ test.describe('Vœux récurrents de la campagne', () => {
             const { pathname } = new URL(route.request().url());
             if (pathname === '/api/auth/session') return route.fulfill({ json: { user: association } });
             if (pathname === '/api/rooms') return route.fulfill({ json: [gym] });
+            if (pathname === '/api/rooms/booking-rules') return route.fulfill({ json: RULES });
             if (pathname === '/api/campaigns/current/requests') return route.fulfill({ json: { campaign, requests: [] } });
             if (pathname === '/api/campaigns/current/wishes' && route.request().method() === 'POST') {
                 return route.fulfill({ status: 403, json: { code: 'CAMPAIGN_CLOSED', message: 'La période de dépôt des vœux est terminée.' } });
@@ -83,12 +90,7 @@ test.describe('Vœux récurrents de la campagne', () => {
         });
 
         await page.goto('/campagne');
-        const wishCard = page.getByRole('group', { name: 'Vœu 1' });
-        await wishCard.getByLabel('Salle').selectOption('3');
-        await wishCard.getByLabel('Jour').selectOption('2');
-        await wishCard.getByLabel('Public').selectOption('adults');
-        await wishCard.getByLabel('Effectif prévu').fill('10');
-        await wishCard.getByLabel('Activité').fill('Yoga');
+        await fillFirstWish(page, 'Yoga', '10');
         await page.getByRole('button', { name: 'Vérifier mes vœux' }).click();
         await page.getByRole('button', { name: 'Transmettre mes 1 vœu' }).click();
 
