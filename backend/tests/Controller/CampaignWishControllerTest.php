@@ -161,8 +161,11 @@ final class CampaignWishControllerTest extends ControllerRouteTestCase
      */
     private function line(Salle $salle, int $day, string $start, string $end, string $frequency = 'weekly', int $attendance = 20): array
     {
+        // Un jour invalide (ex. 9) est ramené dans la semaine : la date reste calculable et le
+        // jour envoyé tel quel déclenche bien l’erreur attendue, sans boucle infinie.
+        $weekday = (($day - 1) % 7 + 7) % 7 + 1;
         $startDate = new \DateTimeImmutable('2027-09-01');
-        while ((int) $startDate->format('N') !== $day) {
+        while ((int) $startDate->format('N') !== $weekday) {
             $startDate = $startDate->modify('+1 day');
         }
 

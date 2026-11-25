@@ -15,7 +15,6 @@ import {
   getEndOptions,
   getMaxEndDay,
   getStartOptions,
-  isSlotComplete,
   normalizeSlot,
   readBookingClock,
   type AvailabilityContext,

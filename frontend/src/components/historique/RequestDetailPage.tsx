@@ -237,7 +237,7 @@ export default function RequestDetailPage() {
     try {
       await downloadEquipmentReservationPdf(detail.rawId);
     } catch (requestError) {
-      console.error(requestError);
+      logger.error('Téléchargement du bon de réservation impossible', requestError);
       setError(requestError instanceof Error
         ? requestError.message
         : 'Impossible de télécharger le bon de réservation.');

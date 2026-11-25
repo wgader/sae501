@@ -72,7 +72,12 @@ final class EquipmentReservationPdfControllerTest extends ControllerRouteTestCas
 
         $this->client->request('GET', '/api/equipment/reservations/'.$reservation->getId().'/pdf?provisional=1');
 
-        $this->assertResponseStatusCodeSame(503);
+        // Dompdf génère le document dans l’application : aucun service externe n’est requis.
+        $this->assertResponseIsSuccessful();
+        $this->assertResponseHeaderSame('Content-Type', 'application/pdf');
+        self::assertStringContainsString('bon-reservation-provisoire-', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+        self::assertStringStartsWith('%PDF-', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
     }
 
     private function createReservation(string $status): ReservationMateriel
