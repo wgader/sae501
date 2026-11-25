@@ -777,3 +777,51 @@ export type GrantResource = {
   displayOrder: number;
 };
 
+
+/* ── Historique des attributions (GET /api/schedules/history) ──────────────── */
+
+export type ScheduleRoomAttribution = {
+  type: 'salle';
+  id: number;
+  statut: string | null;
+  motifEvenement: string | null;
+  campagne: string | null;
+  start: string;
+  end: string;
+  hours: number;
+  salle: { id: number; nom: string | null };
+};
+
+export type ScheduleEquipmentAttribution = {
+  type: 'materiel';
+  id: number;
+  statut: string | null;
+  motifEvenement: string | null;
+  start: string;
+  end: string;
+  lignes: { materielId: number; designation: string | null; quantite: number }[];
+};
+
+export type ScheduleAttribution = ScheduleRoomAttribution | ScheduleEquipmentAttribution;
+
+export type ScheduleHistoryYear = {
+  year: number;
+  roomReservationCount: number;
+  roomHoursGranted: number;
+  equipmentReservationCount: number;
+  equipmentQuantity: number;
+  rooms: { id: number; nom: string | null; reservationCount: number; hours: number }[];
+  equipment: { id: number; designation: string | null; reservationCount: number; quantity: number }[];
+  attributions: ScheduleAttribution[];
+};
+
+export type ScheduleHistory = {
+  association: { id: number; nom: string | null };
+  totals: {
+    roomReservationCount: number;
+    roomHoursGranted: number;
+    equipmentReservationCount: number;
+    equipmentQuantity: number;
+  };
+  years: ScheduleHistoryYear[];
+};

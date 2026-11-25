@@ -15,3 +15,4 @@ export * from './api/notifications';
 export * from './api/campaignWishes';
 export * from './api/settings';
 export * from './api/content';
+export * from './api/scheduleHistory';
