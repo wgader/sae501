@@ -22,3 +22,5 @@ framework:
             # Les JWT révoqués doivent survivre aux redéploiements, qui repartent d’un var/cache vide.
             cache.jwt_blocklist:
                 adapter: cache.adapter.doctrine_dbal
+            cache.equipment_reservation_pdf:
+                adapter: cache.adapter.filesystem

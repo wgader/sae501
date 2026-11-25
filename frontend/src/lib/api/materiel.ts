@@ -1,4 +1,4 @@
-import { accountRequest, publicRequest, request } from './client';
+import { accountRequest, downloadPrivateDocument, publicRequest, request } from './client';
 import type {
   AdminEquipmentReservation,
   AdminEquipmentReservationPage,
@@ -30,6 +30,21 @@ export function createEquipmentReservation(
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export async function downloadEquipmentReservationPdf(
+  id: number,
+  provisional = false,
+): Promise<void> {
+  const query = provisional ? '?provisional=1' : '';
+  const filename = provisional
+    ? `bon-reservation-provisoire-${id}.pdf`
+    : `bon-reservation-${id}.pdf`;
+
+  await downloadPrivateDocument(
+    `/api/equipment/reservations/${id}/pdf${query}`,
+    filename,
+  );
 }
 export function getAdminEquipment(category?: string, archived?: boolean): Promise<Equipment[]> {
   const params = new URLSearchParams();

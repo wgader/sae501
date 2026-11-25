@@ -11,6 +11,8 @@ parameters:
     app.private_document_directory: '%kernel.project_dir%/var/uploads/documents'
     # Images (salles, matériel, logos) : hors de la racine web, servies par MediaController.
     app.image_directory: '%kernel.project_dir%/var/media'
+    # Logo de la mairie intégré aux bons de réservation PDF.
+    app.pdf_logo_path: '%kernel.project_dir%/templates/pdf/logo-feytiat.svg'
     # Cookie de session réservé à HTTPS si JWT_COOKIE_SECURE n’est pas défini.
     app.jwt_cookie_secure_default: '1'
 
@@ -19,6 +21,8 @@ services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $pdfCache: '@cache.equipment_reservation_pdf'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

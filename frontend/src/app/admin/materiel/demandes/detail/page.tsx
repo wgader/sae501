@@ -8,6 +8,7 @@ import EquipmentRequestAssociationCard from '@/components/admin/equipment/reques
 import EquipmentRequestDecisionCard from '@/components/admin/equipment/request/EquipmentRequestDecisionCard';
 import EquipmentRequestDetailsCard from '@/components/admin/equipment/request/EquipmentRequestDetailsCard';
 import EquipmentRequestDocumentsCard from '@/components/admin/equipment/request/EquipmentRequestDocumentsCard';
+import EquipmentReservationPdfActions from '@/components/admin/equipment/request/EquipmentReservationPdfActions';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import Notice from '@/components/ui/Notice';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -120,14 +121,17 @@ function AdminEquipmentReservationDetailPageContent() {
 
         {reservation && (
           <article className="space-y-8">
-            <header className="border-b border-line pb-6">
-              <p className="text-label font-bold uppercase tracking-kicker text-primary">Demande de réservation</p>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-black uppercase tracking-wider text-ink sm:text-3xl">
-                  {reservation.association.nom || 'Association non renseignée'}
-                </h1>
-                <StatusBadge status={statusCode(reservation.statut)} />
+            <header className="flex flex-col justify-between gap-4 border-b border-line pb-6 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-label font-bold uppercase tracking-kicker text-primary">Demande de réservation</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <h1 className="text-2xl font-black uppercase tracking-wider text-ink sm:text-3xl">
+                    {reservation.association.nom || 'Association non renseignée'}
+                  </h1>
+                  <StatusBadge status={statusCode(reservation.statut)} />
+                </div>
               </div>
+              <EquipmentReservationPdfActions reservation={reservation} onError={setError} />
             </header>
 
             <div className="grid items-start gap-8 lg:grid-cols-12">
