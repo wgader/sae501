@@ -1,5 +1,6 @@
 'use client';
 
+import SectionHeader from '@/components/ui/SectionHeader';
 import { useState } from 'react';
 import {
   type Association,
@@ -120,32 +121,28 @@ export default function AssociationDocumentsSection({
   };
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-ink">
-            Documents de l’association
-          </h2>
-          <p className="mt-0.5 text-xs text-muted">
-            Les pièces disponibles dans le dossier de {association.nom}.
-          </p>
-        </div>
+    <section className="space-y-6" aria-labelledby="documents-title">
+      <SectionHeader
+        id="documents-title"
+        title="Documents de l’association"
+        description={`Les pièces disponibles dans le dossier de ${association.nom}.`}
+        actions={
+          <>
+            <span className="rounded-pill bg-paper border border-line px-3 py-1 text-xs font-semibold text-muted">
+              {documents.length} document{documents.length > 1 ? 's' : ''}
+            </span>
 
-        <div className="flex items-center gap-3">
-          <span className="rounded-pill bg-paper border border-line px-3 py-1 text-xs font-semibold text-muted">
-            {documents.length} document{documents.length > 1 ? 's' : ''}
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-primary-hover cursor-pointer"
-          >
-            <IconUpload className="h-3.5 w-3.5" />
-            <span>Ajouter un document</span>
-          </button>
-        </div>
-      </header>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-control bg-primary px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-primary-hover cursor-pointer"
+            >
+              <IconUpload className="h-3.5 w-3.5" />
+              <span>Ajouter un document</span>
+            </button>
+          </>
+        }
+      />
 
       {feedback && (
         <p

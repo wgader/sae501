@@ -118,6 +118,8 @@ final class EquipmentReservationAdministrationController extends AbstractControl
                 static fn (ReservationMaterielLigne $line): array => [
                     'materielId' => $line->getMateriel()?->getId(),
                     'designation' => $line->getMateriel()?->getDesignation(),
+                    // Photo de l’équipement demandé, affichée dans la liste et le détail des demandes.
+                    'imagePath' => $line->getMateriel()?->getImagePath(),
                     'quantite' => $line->getQuantite(),
                 ],
                 $reservation->getLignes()->toArray(),

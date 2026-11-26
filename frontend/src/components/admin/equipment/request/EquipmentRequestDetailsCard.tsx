@@ -1,5 +1,6 @@
 import RequestInfoField from '@/components/admin/equipment/request/RequestInfoField';
 import type { AdminEquipmentReservation } from '@/lib/api';
+import EquipmentPhoto from '@/components/admin/equipment/requests/EquipmentPhoto';
 
 interface EquipmentRequestDetailsCardProps {
   reservation: AdminEquipmentReservation;
@@ -35,8 +36,13 @@ export default function EquipmentRequestDetailsCard({ reservation }: EquipmentRe
       <h3 className="mt-5 text-label font-bold uppercase tracking-label text-muted">Matériel demandé</h3>
       <ul className="mt-2 space-y-2">
         {reservation.lignes.map((line) => (
-          <li key={line.materielId} className="flex items-center justify-between gap-4 rounded-soft bg-paper px-4 py-3 text-body-sm">
-            <span className="min-w-0 font-semibold text-ink">{line.designation || 'Matériel supprimé'}</span>
+          <li key={line.materielId} className="flex items-center justify-between gap-4 rounded-soft bg-paper px-3 py-2.5 text-body-sm">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="relative size-12 shrink-0 overflow-hidden rounded-soft bg-white">
+                <EquipmentPhoto path={line.imagePath} alt={line.designation ?? 'Matériel'} sizes="48px" />
+              </span>
+              <span className="min-w-0 font-semibold text-ink">{line.designation || 'Matériel supprimé'}</span>
+            </span>
             <span className="shrink-0 font-bold text-primary">
               {line.quantite ?? 0} unité{(line.quantite ?? 0) > 1 ? 's' : ''}
             </span>

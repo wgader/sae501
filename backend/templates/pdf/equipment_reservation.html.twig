@@ -4,37 +4,42 @@
     <meta charset="UTF-8">
     <title>Bon de réservation n°{{ reservation.id }}</title>
     <style>
-        @page { margin: 1.4cm 1.3cm 1.8cm; }
+        @page { margin: 1.1cm 1.3cm 1.2cm; }
         * { box-sizing: border-box; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; color: #1E2420; line-height: 1.4; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #1E2420; line-height: 1.3; }
         h1, h2, h3, p { margin: 0; }
         /* Dompdf ne gère pas flexbox : l’en-tête est une table à deux cellules. */
-        .header { display: table; width: 100%; table-layout: fixed; border-bottom: 2px solid #146E67; padding-bottom: 12pt; }
+        .header { display: table; width: 100%; table-layout: fixed; border-bottom: 2px solid #146E67; padding-bottom: 10pt; }
         .header-main, .municipality { display: table-cell; vertical-align: top; }
+        /* Le titre tient sur une ligne : la colonne de la mairie reste étroite. */
+        .header-main { width: 68%; }
+        .municipality { width: 32%; }
         .logo { width: 220px; height: auto; }
         .municipality { text-align: right; color: #4B554E; font-size: 8.5pt; }
         .eyebrow { color: #146E67; font-size: 8pt; font-weight: bold; letter-spacing: 1pt; text-transform: uppercase; }
         h1 { margin-top: 4pt; font-size: 19pt; }
         .meta { margin-top: 5pt; color: #667068; }
-        .status { margin-top: 14pt; padding: 8pt 10pt; background: #DFE9DF; border: 1px solid #A8C6A8; color: #315C35; font-weight: bold; }
-        .grid { display: table; width: 100%; margin-top: 16pt; table-layout: fixed; }
+        .status { margin-top: 10pt; padding: 6pt 10pt; background: #DFE9DF; border: 1px solid #A8C6A8; color: #315C35; font-weight: bold; }
+        .grid { display: table; width: 100%; margin-top: 12pt; table-layout: fixed; }
         .cell { display: table-cell; width: 50%; padding-right: 10pt; vertical-align: top; }
         .cell + .cell { padding-left: 10pt; padding-right: 0; }
-        .card { border: 1px solid #D9DED9; padding: 10pt; }
-        .card h2 { margin-bottom: 7pt; color: #146E67; font-size: 11pt; }
+        .card { border: 1px solid #D9DED9; padding: 9pt; }
+        .card h2 { margin-bottom: 4pt; color: #146E67; font-size: 11pt; }
         .label { color: #667068; font-size: 8pt; text-transform: uppercase; letter-spacing: .4pt; }
         .value { margin-top: 2pt; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16pt; }
-        th { background: #CFEDE5; color: #315C55; font-size: 8pt; text-align: left; text-transform: uppercase; padding: 7pt; }
-        td { border-bottom: 1px solid #E5E9E5; padding: 7pt; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8pt; }
+        th { background: #CFEDE5; color: #315C55; font-size: 8pt; text-align: left; text-transform: uppercase; padding: 5pt 7pt; }
+        td { border-bottom: 1px solid #E5E9E5; padding: 4pt 7pt; }
         .number { text-align: right; }
-        .clauses { margin-top: 16pt; border: 1px solid #D9DED9; padding: 10pt; }
+        /* Un encadré n’est jamais coupé entre deux pages. */
+        .card, .clauses { page-break-inside: avoid; }
+        .clauses { margin-top: 12pt; border: 1px solid #D9DED9; padding: 8pt 10pt; }
         .clauses h2 { color: #146E67; font-size: 11pt; }
-        .clauses ul { margin: 7pt 0 0; padding-left: 16pt; }
-        .signatures { display: table; width: 100%; margin-top: 24pt; table-layout: fixed; }
-        .signature { display: table-cell; width: 50%; height: 75pt; border-top: 1px solid #667068; padding-top: 5pt; color: #667068; }
+        .clauses ul { margin: 4pt 0 0; padding-left: 16pt; }
+        .signatures { display: table; width: 100%; margin-top: 12pt; table-layout: fixed; }
+        .signature { display: table-cell; width: 50%; height: 40pt; border-top: 1px solid #667068; padding-top: 5pt; color: #667068; }
         .signature + .signature { padding-left: 18pt; }
-        .footer { margin-top: 20pt; border-top: 1px solid #D9DED9; padding-top: 7pt; color: #667068; font-size: 8pt; }
+        .footer { margin-top: 6pt; border-top: 1px solid #D9DED9; padding-top: 7pt; color: #667068; font-size: 8pt; }
         .watermark {
             position: fixed;
             left: 0;
@@ -79,23 +84,23 @@
                 <h2>Association bénéficiaire</h2>
                 <p class="label">Nom</p>
                 <p class="value">{{ association.nom }}</p>
-                <p style="margin-top: 5pt"><span class="label">E-mail</span><br>{{ associationContact.email ?: '—' }}</p>
-                <p style="margin-top: 5pt"><span class="label">Téléphone</span><br>{{ associationContact.telephone ?: '—' }}</p>
-                <p style="margin-top: 5pt"><span class="label">Motif de l'événement</span><br>{{ reservation.motifEvenement ?: '—' }}</p>
+                <p style="margin-top: 4pt"><span class="label">E-mail</span><br>{{ associationContact.email ?: '—' }}</p>
+                <p style="margin-top: 4pt"><span class="label">Téléphone</span><br>{{ associationContact.telephone ?: '—' }}</p>
+                <p style="margin-top: 4pt"><span class="label">Motif de l'événement</span><br>{{ reservation.motifEvenement ?: '—' }}</p>
             </section>
         </div>
         <div class="cell">
             <section class="card">
                 <h2>Période d'emprunt</h2>
                 <p><span class="label">Mise à disposition</span><br><strong>{{ reservation.dateRetrait|date('d/m/Y à H:i', 'Europe/Paris') }}</strong></p>
-                <p style="margin-top: 5pt"><span class="label">Retour</span><br><strong>{{ reservation.dateRestitution|date('d/m/Y à H:i', 'Europe/Paris') }}</strong></p>
-                <p style="margin-top: 5pt"><span class="label">Caution</span><br><strong>{{ reservation.cautionMontant ? reservation.cautionMontant|number_format(2, ',', ' ') ~ ' €' : '—' }}</strong></p>
+                <p style="margin-top: 4pt"><span class="label">Retour</span><br><strong>{{ reservation.dateRestitution|date('d/m/Y à H:i', 'Europe/Paris') }}</strong></p>
+                <p style="margin-top: 4pt"><span class="label">Caution</span><br><strong>{{ reservation.cautionMontant ? reservation.cautionMontant|number_format(2, ',', ' ') ~ ' €' : '—' }}</strong></p>
             </section>
         </div>
     </div>
 
     <section>
-        <h2 style="margin-top: 18pt; color: #146E67; font-size: 11pt">Matériel réservé</h2>
+        <h2 style="margin-top: 12pt; color: #146E67; font-size: 11pt">Matériel réservé</h2>
         <table>
             <thead>
             <tr><th>Désignation</th><th>Référence</th><th class="number">Quantité</th></tr>
