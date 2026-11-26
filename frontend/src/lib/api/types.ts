@@ -129,6 +129,8 @@ export type EquipmentReservation = {
   lignes: Array<{
     materielId: number | null;
     designation: string | null;
+    /** Photo de l’équipement (fournie par les routes de l’administration). */
+    imagePath?: string | null;
     quantite: number | null;
   }>;
 };
