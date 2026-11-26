@@ -15,9 +15,9 @@ interface RoomsMapViewProps {
 type MapLayerMode = 'satellite' | 'plan';
 
 const DEFAULT_CENTER: [number, number] = [45.8095, 1.3318]; // Feytiat
-const DEFAULT_ZOOM = 16;
-const MIN_ZOOM = 15.5;
-const FEYTIAT_BOUNDS = L.latLngBounds([45.792, 1.308], [45.826, 1.356]);
+const DEFAULT_ZOOM = 15;
+const MIN_ZOOM = 15;
+const FEYTIAT_BOUNDS = L.latLngBounds([45.798, 1.314], [45.821, 1.350]);
 
 const TYPOLOGIE_LABELS: Record<string, string> = {
   gymnase: 'Gymnase',
@@ -33,8 +33,8 @@ const TYPOLOGIE_PIN_COLORS: Record<string, string> = {
 
 const TILE_LAYERS: Record<MapLayerMode, { url: string; attribution: string }> = {
   satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+    url: 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+    attribution: '&copy; IGN-F/Géoportail',
   },
   plan: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -153,6 +153,7 @@ export default function RoomsMapView({
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       zoomSnap: 0.5,
+      zoomDelta: 0.5,
       minZoom: MIN_ZOOM,
       maxZoom: 19,
       maxBounds: FEYTIAT_BOUNDS,
@@ -263,7 +264,7 @@ export default function RoomsMapView({
     });
 
     if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 16.5 });
+      map.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 });
     }
   }, [rooms]);
 
@@ -291,7 +292,7 @@ export default function RoomsMapView({
   return (
     <section
       aria-label="Carte interactive des salles"
-      className="relative h-144 w-full overflow-hidden bg-paper lg:h-160"
+      className="relative h-144 w-full overflow-hidden bg-ink lg:h-160"
     >
       <div ref={mapContainerRef} className="z-0 h-full w-full" />
 

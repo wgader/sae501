@@ -134,6 +134,7 @@ export default function SalleCreateForm({ onCreated }: SalleCreateFormProps) {
           <label className="text-sm font-bold text-ink">
             Adresse *
             <textarea value={adresse} onChange={(event) => setAdresse(event.target.value)} rows={2} className="mt-2 w-full rounded-control border border-line bg-white px-3 py-2.5 text-sm font-normal text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="185 rue Louis Destouches, Limoges 87000" />
+            <span className="mt-1 block text-xs font-normal text-muted">La position sur la carte (latitude / longitude) est calculée automatiquement depuis cette adresse.</span>
           </label>
           <label className="text-sm font-bold text-ink md:col-span-2">
             Description

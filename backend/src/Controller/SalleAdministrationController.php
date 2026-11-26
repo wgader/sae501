@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Salle;
+use App\Service\AddressGeocoder;
 use App\Service\ImageStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,6 +23,7 @@ final class SalleAdministrationController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly ImageStorage $imageStorage,
+        private readonly AddressGeocoder $addressGeocoder,
     ) {
     }
 
@@ -82,6 +84,14 @@ final class SalleAdministrationController extends AbstractController
                 ['errors' => $errors],
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
+        }
+
+        if (null === $latitude && null === $longitude) {
+            $geocoded = $this->addressGeocoder->geocode($address);
+            if (null !== $geocoded) {
+                $latitude = $geocoded['latitude'];
+                $longitude = $geocoded['longitude'];
+            }
         }
 
         $now = new \DateTimeImmutable();
@@ -189,6 +199,14 @@ final class SalleAdministrationController extends AbstractController
             );
         }
 
+        if (null === $latitude && null === $longitude) {
+            $geocoded = $this->addressGeocoder->geocode($address);
+            if (null !== $geocoded) {
+                $latitude = $geocoded['latitude'];
+                $longitude = $geocoded['longitude'];
+            }
+        }
+
         if (array_key_exists('nom', $payload)) {
             $salle->setNom(trim($payload['nom']));
         }
@@ -210,6 +228,12 @@ final class SalleAdministrationController extends AbstractController
         if ($hasCoordsUpdate) {
             $salle->setLatitude($latitude);
             $salle->setLongitude($longitude);
+        } elseif (null !== $address) {
+            $geocoded = $this->addressGeocoder->geocode($address);
+            if (null !== $geocoded) {
+                $salle->setLatitude($geocoded['latitude']);
+                $salle->setLongitude($geocoded['longitude']);
+            }
         }
         if (array_key_exists('typologie', $payload)) {
             $salle->setTypologie($payload['typologie']);
