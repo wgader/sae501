@@ -163,7 +163,7 @@ export default function HistoriqueDashboard() {
 
         {/* Bilan des salles et du matériel attribués, année par année */}
         <div className="border-t border-line pt-10">
-          <ScheduleHistoryPanel title="Bilan des salles et du matériel" />
+          <ScheduleHistoryPanel title="Bilan des salles et du matériel" description="Les salles et le matériel que la mairie vous a attribués, année par année." />
         </div>
       </div>
 
