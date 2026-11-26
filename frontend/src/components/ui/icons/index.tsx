@@ -383,18 +383,6 @@ export function IconPlus({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = tr
   );
 }
 
-export function IconCalendar({ className = 'h-5 w-5', 'aria-hidden': ariaHidden = true }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden={ariaHidden}>
-      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
-      <line x1="3.5" y1="9.5" x2="20.5" y2="9.5" />
-      <line x1="8" y1="3" x2="8" y2="6.5" />
-      <line x1="16" y1="3" x2="16" y2="6.5" />
-      <path d="M8 13h.01M12 13h.01M16 13h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01" />
-    </svg>
-  );
-}
-
 export function IconClock({ className = 'h-4 w-4', 'aria-hidden': ariaHidden = true }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden={ariaHidden}>

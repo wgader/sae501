@@ -1,5 +1,6 @@
 'use client';
 
+import SectionHeader from '@/components/ui/SectionHeader';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getAdminAssociationEvents, type ExternalEvent } from '@/lib/api';
@@ -42,10 +43,11 @@ export default function AssociationEvenementsPage() {
 
   return (
     <section className="space-y-5" aria-labelledby="events-title">
-      <header>
-        <h2 id="events-title" className="text-base font-bold text-ink">Événements déclarés</h2>
-        <p className="mt-1 text-xs text-muted">Planning des manifestations publiques de l’association.</p>
-      </header>
+      <SectionHeader
+        id="events-title"
+        title="Événements déclarés"
+        description="Planning des manifestations publiques de l’association."
+      />
       {loading && <p className="rounded-card border border-line bg-white p-6 text-sm text-muted" role="status">Chargement des événements...</p>}
       {error && <p className="rounded-card border-l-4 border-danger bg-rose-50/70 p-4 text-sm font-semibold text-danger" role="alert">{error}</p>}
       {!loading && !error && events.length === 0 && (

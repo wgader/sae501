@@ -105,24 +105,32 @@ test.describe('Fiche association · historique', () => {
         await mockAdmin(page);
         await page.goto('/admin/association/fiche/historique?id=7');
 
-        await expect(page.getByRole('heading', { name: 'Historique du dossier' })).toBeVisible();
-        await expect(page.getByRole('heading', { name: /2026\s*2 attributions renseignées/ })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Historique des réservations' })).toBeVisible();
+        await expect(page.getByText('4 attributions au total')).toBeVisible();
 
-        const rooms = page.getByRole('table', { name: 'Salles' });
-        await expect(rooms.getByRole('row', { name: /Salle des fêtes\s*2\s*5 h/ })).toBeVisible();
-        await expect(page.getByRole('table', { name: 'Matériel' }).getByRole('rowheader', { name: 'Barnum' })).toBeVisible();
+        const years = page.getByRole('navigation', { name: 'Années' });
+        await expect(years.getByRole('button', { name: /2026/ })).toHaveAttribute('aria-pressed', 'true');
 
-        await expect(page.getByRole('heading', { name: 'Réservation · Salle des fêtes' })).toBeVisible();
-        await expect(page.getByText('Assemblée générale du club')).toBeVisible();
-        await expect(page.getByText('4 ×', { exact: false })).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Pièces du dossier' }).first()).toHaveAttribute(
+        const recap = page.getByRole('region', { name: 'Bilan 2026' });
+        await expect(recap.getByRole('region', { name: 'Heures par salle' }).getByRole('listitem').filter({ hasText: 'Salle des fêtes' })).toContainText('5 h');
+        await expect(recap.getByRole('region', { name: 'Matériel prêté' }).getByRole('listitem').filter({ hasText: 'Barnum' })).toContainText('4');
+
+        const september = page.getByRole('region', { name: 'septembre 2026' });
+        await expect(september.getByRole('heading', { name: 'Salle des fêtes' })).toBeVisible();
+        await expect(september.getByText('Assemblée générale du club')).toBeVisible();
+        await expect(september.getByRole('link', { name: 'Pièces' })).toHaveAttribute(
             'href',
             '/admin/association/fiche/historique/pieces-annexes?id=7&type=salle&requestId=31',
         );
 
-        await page.getByLabel('Année').selectOption('2025');
-        await expect(page.getByRole('heading', { name: /2025\s*1 attribution renseignée/ })).toBeVisible();
-        await expect(page.getByRole('heading', { name: 'Réservation · Gymnase' })).toBeVisible();
+        // Le filtre ne garde que le matériel.
+        await page.getByRole('button', { name: /^Matériel/ }).click();
+        await expect(page.getByRole('heading', { name: '4 × Barnum' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Salle des fêtes' })).toHaveCount(0);
+
+        await years.getByRole('button', { name: /2025/ }).click();
+        await expect(page.getByRole('region', { name: 'Bilan 2025' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Gymnase' })).toBeVisible();
         await expect(page.getByText('Aucun matériel cette année.')).toBeVisible();
     });
 
@@ -130,6 +138,6 @@ test.describe('Fiche association · historique', () => {
         await mockAdmin(page, 500);
         await page.goto('/admin/association/fiche/historique?id=7');
 
-        await expect(page.getByRole('region', { name: 'Historique du dossier' }).getByText('Erreur serveur')).toBeVisible();
+        await expect(page.getByRole('region', { name: 'Historique des réservations' }).getByText('Erreur serveur')).toBeVisible();
     });
 });
