@@ -1,5 +1,6 @@
 export type AssociationStatus = 'PENDING_VALIDATION' | 'VALIDATED' | 'REFUSED' | 'SUSPENDED';
 export type AssociationModule = 'evenements' | 'subventions' | 'materiel' | 'salles';
+export type RoomTypologie = 'gymnase' | 'salle_polyvalente' | 'salle_reunion';
 
 export type AssociationContact = {
   nom: string;
@@ -61,11 +62,22 @@ export type Salle = {
   adresse: string;
   capaciteMax: number;
   accesPmr: boolean;
+  typologie?: RoomTypologie;
   equipementsInclus: string[];
+  latitude?: number | null;
+  longitude?: number | null;
   createdAt: string | null;
   updatedAt: string | null;
   isActive: boolean;
   deletedAt: string | null;
+};
+
+export type RoomMapFilters = {
+  capacity_min?: number;
+  pmr?: boolean;
+  typologie?: RoomTypologie;
+  amenities?: string[];
+  bbox?: [number, number, number, number];
 };
 
 export type Equipment = {

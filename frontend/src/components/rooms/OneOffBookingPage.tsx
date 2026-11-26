@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import ModulePageHeader from '@/components/ui/ModulePageHeader';
 import { ROOM_BOOKING_STEPS } from '@/lib/moduleGuides';
 import { useEffect, useMemo, useState } from 'react';
@@ -7,7 +8,8 @@ import OneOffRoomView from '@/components/rooms/booking/OneOffRoomView';
 import OneOffSearchDialog, { type OneOffSearch } from '@/components/rooms/booking/OneOffSearchDialog';
 import RoomCampaignNotice from '@/components/rooms/RoomCampaignNotice';
 import RoomCatalogCard from '@/components/rooms/RoomCatalogCard';
-import RoomFiltersDialog from '@/components/rooms/RoomFiltersDialog';
+import RoomFiltersSidebar from '@/components/rooms/RoomFiltersSidebar';
+import RoomMapFiltersSidebar from '@/components/rooms/RoomMapFiltersSidebar';
 import Button from '@/components/ui/Button';
 import Notice from '@/components/ui/Notice';
 import { IconSearch } from '@/components/ui/icons';
@@ -29,9 +31,20 @@ import { DEFAULT_ROOM_FILTERS, countActiveRoomFilters, matchesRoomFilters } from
 import { readSession } from '@/lib/session';
 import { logger } from '@/lib/logger';
 
+const RoomsMapView = dynamic(() => import('@/components/rooms/RoomsMapView'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-135 w-full items-center justify-center rounded-card border border-line bg-paper text-body-sm font-semibold text-muted">
+      Chargement de la carte interactive…
+    </div>
+  ),
+});
+
 const EMPTY_SEARCH: OneOffSearch = { slot: EMPTY_SLOT, attendees: '' };
 
-/** Réservation ponctuelle : on cherche une salle, puis on réserve depuis sa fiche. */
+type CatalogViewMode = 'grid' | 'map';
+
+/** Réservation ponctuelle : on cherche une salle (grille ou carte), puis on réserve depuis sa fiche. */
 export default function OneOffBookingPage() {
   const campaignState = useCurrentCampaign();
   const { rules, failed: rulesFailed } = useRoomBookingRules();
@@ -43,8 +56,8 @@ export default function OneOffBookingPage() {
   const [roomsFailed, setRoomsFailed] = useState(false);
   const [search, setSearch] = useState(EMPTY_SEARCH);
   const [filters, setFilters] = useState(DEFAULT_ROOM_FILTERS);
+  const [viewMode, setViewMode] = useState<CatalogViewMode>('grid');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [chosenRoom, setChosenRoom] = useState<PublicRoom | null>(null);
 
   useEffect(() => {
@@ -82,7 +95,11 @@ export default function OneOffBookingPage() {
       }),
     [rooms, search.attendees, searchedSlot, availability.availableRoomIds],
   );
-  const visibleRooms = candidateRooms.filter((room) => matchesRoomFilters(room, filters));
+
+  const visibleRooms = useMemo(
+    () => candidateRooms.filter((room) => matchesRoomFilters(room, filters)),
+    [candidateRooms, filters],
+  );
 
   const chooseRoom = (room: PublicRoom) => {
     setChosenRoom(room);
@@ -161,6 +178,7 @@ export default function OneOffBookingPage() {
 
         {!isClosed && (
           <>
+            {/* Barre de recherche créneau + Toggle Grille / Carte */}
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <button
                 type="button"
@@ -181,70 +199,164 @@ export default function OneOffBookingPage() {
                   <span className="sr-only">Rechercher</span>
                 </span>
               </button>
-              <Button variant="secondary" onClick={() => setIsFiltersOpen(true)}>
-                {activeFilters > 0 ? `Filtres (${activeFilters})` : 'Filtres'}
-              </Button>
+
+              {/* Sélecteur de vue Grille/Liste vs Carte (Scénario 4) */}
+              <div
+                role="group"
+                aria-label="Mode d'affichage du catalogue"
+                className="inline-flex self-start rounded-pill border border-line bg-paper p-1 lg:self-auto"
+              >
+                <button
+                  type="button"
+                  aria-pressed={viewMode === 'grid'}
+                  onClick={() => setViewMode('grid')}
+                  className={`flex cursor-pointer items-center gap-2 rounded-pill px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                    viewMode === 'grid'
+                      ? 'bg-ink text-white shadow-xs'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  <span>Grille</span>
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={viewMode === 'map'}
+                  onClick={() => setViewMode('map')}
+                  className={`flex cursor-pointer items-center gap-2 rounded-pill px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                    viewMode === 'map'
+                      ? 'bg-ink text-white shadow-xs'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                    <line x1="8" y1="2" x2="8" y2="18" />
+                    <line x1="16" y1="6" x2="16" y2="22" />
+                  </svg>
+                  <span>Carte</span>
+                </button>
+              </div>
             </div>
 
-            <section aria-labelledby="one-off-rooms-title" className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 id="one-off-rooms-title" role="status" className="text-lg font-black text-ink">
-                  {isLoadingList ? 'Recherche des salles…' : countLabel}
-                </h2>
-                {searchedSlot && (
-                  <button
-                    type="button"
-                    onClick={() => setSearch(EMPTY_SEARCH)}
-                    className="cursor-pointer text-meta font-bold text-ink underline underline-offset-2 hover:text-primary"
-                  >
-                    Effacer la recherche
-                  </button>
-                )}
+            {/* Disposition Filtres latéraux + Contenu principal (Grille ou Carte) */}
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr] lg:items-start">
+                <RoomFiltersSidebar
+                  filters={filters}
+                  onChange={setFilters}
+                  totalCount={visibleRooms.length}
+                />
+
+                <section aria-labelledby="one-off-rooms-title" className="min-w-0 space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 id="one-off-rooms-title" role="status" className="text-lg font-black text-ink">
+                      {isLoadingList ? 'Recherche des salles…' : countLabel}
+                    </h2>
+                    {searchedSlot && (
+                      <button
+                        type="button"
+                        onClick={() => setSearch(EMPTY_SEARCH)}
+                        className="cursor-pointer text-meta font-bold text-ink underline underline-offset-2 hover:text-primary"
+                      >
+                        Effacer la recherche
+                      </button>
+                    )}
+                  </div>
+
+                  {availability.failed && (
+                    <Notice
+                      tone="danger"
+                      title="Disponibilités indisponibles"
+                      action={
+                        <Button variant="secondary" size="sm" onClick={availability.refresh}>
+                          Réessayer
+                        </Button>
+                      }
+                    >
+                      Impossible de vérifier les salles libres sur ce créneau.
+                    </Notice>
+                  )}
+
+                  {!isLoadingList && (
+                    <>
+                      {!availability.failed && visibleRooms.length === 0 ? (
+                        <div className="space-y-3 rounded-card border border-dashed border-line px-6 py-12 text-center">
+                          <p className="text-body-sm text-muted">
+                            Aucune salle ne correspond à ces critères. Essayez d’autres dates ou retirez un filtre.
+                          </p>
+                          {activeFilters > 0 && (
+                            <Button variant="secondary" size="sm" onClick={() => setFilters(DEFAULT_ROOM_FILTERS)}>
+                              Réinitialiser les filtres
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                          {visibleRooms.map((room) => (
+                            <li key={room.id} className="flex">
+                              <RoomCatalogCard room={room} isAvailable onReserve={chooseRoom} />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                </section>
               </div>
+            ) : (
+              <div className="space-y-4">
+                {availability.failed && (
+                  <Notice
+                    tone="danger"
+                    title="Disponibilités indisponibles"
+                    action={
+                      <Button variant="secondary" size="sm" onClick={availability.refresh}>
+                        Réessayer
+                      </Button>
+                    }
+                  >
+                    Impossible de vérifier les salles libres sur ce créneau.
+                  </Notice>
+                )}
 
-              {availability.failed && (
-                <Notice
-                  tone="danger"
-                  title="Disponibilités indisponibles"
-                  action={
-                    <Button variant="secondary" size="sm" onClick={availability.refresh}>
-                      Réessayer
-                    </Button>
-                  }
-                >
-                  Impossible de vérifier les salles libres sur ce créneau.
-                </Notice>
-              )}
+                <div className="flex flex-col gap-6 bg-white lg:flex-row lg:items-stretch">
+                  <div className="lg:w-80 lg:shrink-0">
+                    <RoomMapFiltersSidebar
+                      filters={filters}
+                      onChange={setFilters}
+                      totalCount={visibleRooms.length}
+                    />
+                  </div>
 
-              {!isLoadingList && !availability.failed && visibleRooms.length === 0 && (
-                <p className="rounded-card border border-dashed border-line px-6 py-12 text-center text-body-sm text-muted">
-                  Aucune salle ne correspond à ces critères. Essayez d’autres dates ou retirez un filtre.
-                </p>
-              )}
-
-              {!isLoadingList && visibleRooms.length > 0 && (
-                <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {visibleRooms.map((room) => (
-                    <li key={room.id} className="flex">
-                      <RoomCatalogCard room={room} isAvailable onReserve={chooseRoom} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+                  <div className="min-w-0 flex-1 overflow-hidden rounded-card">
+                    {isLoadingList ? (
+                      <div className="flex h-144 w-full items-center justify-center bg-paper text-body-sm font-semibold text-muted lg:h-160">
+                        Chargement de la carte interactive…
+                      </div>
+                    ) : (
+                      <RoomsMapView
+                        rooms={visibleRooms}
+                        onSelectRoom={chooseRoom}
+                        onResetFilters={() => setFilters(DEFAULT_ROOM_FILTERS)}
+                        hasActiveFilters={activeFilters > 0}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
         {context && (
           <OneOffSearchDialog open={isSearchOpen} value={search} context={context} onApply={setSearch} onClose={() => setIsSearchOpen(false)} />
         )}
-        <RoomFiltersDialog
-          open={isFiltersOpen}
-          rooms={candidateRooms}
-          filters={filters}
-          onApply={setFilters}
-          onClose={() => setIsFiltersOpen(false)}
-        />
       </div>
     </main>
   );

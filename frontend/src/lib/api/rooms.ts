@@ -4,11 +4,33 @@ import type {
   PublicRoom,
   RoomAvailabilityResponse,
   RoomBookingRules,
+  RoomMapFilters,
   RoomReservationResponse,
 } from './types';
 
 export function getPublicRooms(): Promise<PublicRoom[]> {
   return publicRequest<PublicRoom[]>('/api/rooms');
+}
+
+export function getMapRooms(filters: RoomMapFilters = {}): Promise<PublicRoom[]> {
+  const params = new URLSearchParams();
+  if (filters.capacity_min && filters.capacity_min > 0) {
+    params.set('capacity_min', String(filters.capacity_min));
+  }
+  if (filters.pmr) {
+    params.set('pmr', 'true');
+  }
+  if (filters.typologie) {
+    params.set('typologie', filters.typologie);
+  }
+  if (filters.amenities && filters.amenities.length > 0) {
+    filters.amenities.forEach((amenity) => params.append('amenities[]', amenity));
+  }
+  if (filters.bbox) {
+    params.set('bbox', filters.bbox.join(','));
+  }
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return publicRequest<PublicRoom[]>(`/api/rooms/map${query}`);
 }
 
 export function getRoomBookingRules(): Promise<RoomBookingRules> {

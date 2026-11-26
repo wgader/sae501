@@ -12,6 +12,7 @@ use App\Service\AppSettingsService;
 use App\Service\RoomReservationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -38,6 +39,53 @@ final class RoomCatalogController extends AbstractController
     }
 
     /**
+     * Endpoint léger pour la vue cartographique interactive avec filtres dynamiques.
+     */
+    #[Route('/api/rooms/map', name: 'app_room_catalog_map', methods: ['GET'])]
+    public function map(Request $request): JsonResponse
+    {
+        $capacityMin = $request->query->get('capacity_min');
+        $pmrParam = $request->query->get('pmr');
+        $typologie = $request->query->get('typologie');
+        $amenities = $request->query->all('amenities');
+        $bboxParam = $request->query->get('bbox');
+
+        $bbox = null;
+        if (is_string($bboxParam) && '' !== trim($bboxParam)) {
+            $parts = array_map('trim', explode(',', $bboxParam));
+            if (4 === count($parts) && [] === array_filter($parts, static fn (string $v): bool => !is_numeric($v))) {
+                $bbox = array_map('floatval', $parts);
+            }
+        }
+
+        $filters = [
+            'capacity_min' => is_numeric($capacityMin) ? (int) $capacityMin : null,
+            'pmr' => filter_var($pmrParam, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            'typologie' => is_string($typologie) && '' !== $typologie ? $typologie : null,
+            'amenities' => is_array($amenities) ? array_values(array_filter($amenities, 'is_string')) : [],
+            'bbox' => $bbox,
+        ];
+
+        $rooms = $this->salleRepository->findForMap($filters);
+
+        return $this->json(array_map(
+            static fn (Salle $salle): array => [
+                'id' => $salle->getId(),
+                'nom' => $salle->getNom(),
+                'adresse' => $salle->getAdresse(),
+                'imageUrl' => $salle->getImagePath(),
+                'capaciteMax' => $salle->getCapaciteMax(),
+                'accesPmr' => $salle->isAccesPmr(),
+                'typologie' => $salle->getTypologie(),
+                'equipementsInclus' => $salle->getEquipementsInclus(),
+                'latitude' => $salle->getLatitude(),
+                'longitude' => $salle->getLongitude(),
+            ],
+            $rooms,
+        ));
+    }
+
+    /**
      * Règles des réservations ponctuelles : dernier jour réservable, durée maximale, pas des horaires.
      */
     #[Route('/api/rooms/booking-rules', name: 'app_room_catalog_booking_rules', methods: ['GET'])]
@@ -59,7 +107,10 @@ final class RoomCatalogController extends AbstractController
             'adresse' => $salle->getAdresse(),
             'capaciteMax' => $salle->getCapaciteMax(),
             'accesPmr' => $salle->isAccesPmr(),
+            'typologie' => $salle->getTypologie(),
             'equipementsInclus' => $salle->getEquipementsInclus(),
+            'latitude' => $salle->getLatitude(),
+            'longitude' => $salle->getLongitude(),
             'horairesOuverture' => [
                 'debut' => sprintf('%02d:00', $settings->getRoomOpeningHour()),
                 'fin' => sprintf('%02d:00', $settings->getRoomClosingHour()),

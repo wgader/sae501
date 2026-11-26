@@ -20,6 +20,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 class Salle
 {
+    public const TYPOLOGIES = [
+        'gymnase',
+        'salle_polyvalente',
+        'salle_reunion',
+    ];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -51,6 +57,29 @@ class Salle
 
     #[ORM\Column]
     private array $equipementsInclus = [];
+
+    #[Assert\Range(
+        min: -90,
+        max: 90,
+        notInRangeMessage: 'La latitude doit être comprise entre {{ min }} et {{ max }}.'
+    )]
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $latitude = null;
+
+    #[Assert\Range(
+        min: -180,
+        max: 180,
+        notInRangeMessage: 'La longitude doit être comprise entre {{ min }} et {{ max }}.'
+    )]
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $longitude = null;
+
+    #[Assert\Choice(
+        choices: self::TYPOLOGIES,
+        message: 'La typologie sélectionnée est invalide.'
+    )]
+    #[ORM\Column(length: 50, options: ['default' => 'salle_polyvalente'])]
+    private string $typologie = 'salle_polyvalente';
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -149,6 +178,42 @@ class Salle
     public function setEquipementsInclus(array $equipementsInclus): static
     {
         $this->equipementsInclus = $equipementsInclus;
+
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): static
+    {
+        $this->latitude = $latitude;
+
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): static
+    {
+        $this->longitude = $longitude;
+
+        return $this;
+    }
+
+    public function getTypologie(): string
+    {
+        return $this->typologie;
+    }
+
+    public function setTypologie(string $typologie): static
+    {
+        $this->typologie = $typologie;
 
         return $this;
     }

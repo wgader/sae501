@@ -2930,3 +2930,21 @@ a {
     grid-row: var(--event-start) / span var(--event-span);
     grid-column: var(--event-lane);
 }
+
+/* Popup personnalisée sur la carte des salles */
+.room-map-popup .leaflet-popup-content-wrapper {
+    padding: 0;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-panel);
+    overflow: hidden;
+    background: var(--White);
+}
+
+.room-map-popup .leaflet-popup-content {
+    margin: 0;
+    width: auto !important;
+}
+
+.room-map-popup .leaflet-popup-tip {
+    background: var(--White);
+}

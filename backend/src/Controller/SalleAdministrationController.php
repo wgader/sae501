@@ -36,7 +36,7 @@ final class SalleAdministrationController extends AbstractController
         ));
     }
 
-    #[Route('', name: 'admin_salle_create', methods: ['POST'])]
+  #[Route('', name: 'admin_salle_create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
         $payload = $this->requestPayload($request);
@@ -67,6 +67,13 @@ final class SalleAdministrationController extends AbstractController
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
+        [$latitude, $longitude] = $this->parseCoordinates($payload, $errors);
+
+        $typologie = $payload['typologie'] ?? 'salle_polyvalente';
+        if (!is_string($typologie) || !in_array($typologie, Salle::TYPOLOGIES, true)) {
+            $errors['typologie'] = 'Typologie de salle invalide.';
+        }
+
         if (null !== $image && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
         }
 
@@ -85,6 +92,9 @@ final class SalleAdministrationController extends AbstractController
         $salle->setCapaciteMax($capacity);
         $salle->setAccesPmr($accesPmr);
         $salle->setEquipementsInclus($equipments);
+        $salle->setLatitude($latitude);
+        $salle->setLongitude($longitude);
+        $salle->setTypologie($typologie);
         $salle->setCreatedAt($now);
         $salle->setUpdatedAt($now);
         $salle->setIsActive(true);
@@ -152,6 +162,23 @@ final class SalleAdministrationController extends AbstractController
             $errors['equipementsInclus'] = 'Le champ equipementsInclus doit être un tableau.';
         }
 
+        $hasCoordsUpdate = array_key_exists('latitude', $payload) || array_key_exists('longitude', $payload);
+        $latitude = $salle->getLatitude();
+        $longitude = $salle->getLongitude();
+        if ($hasCoordsUpdate) {
+            $coordInput = [
+                'latitude' => array_key_exists('latitude', $payload) ? $payload['latitude'] : $latitude,
+                'longitude' => array_key_exists('longitude', $payload) ? $payload['longitude'] : $longitude,
+            ];
+            [$latitude, $longitude] = $this->parseCoordinates($coordInput, $errors);
+        }
+
+        if (array_key_exists('typologie', $payload)
+            && (!is_string($payload['typologie']) || !in_array($payload['typologie'], Salle::TYPOLOGIES, true))
+        ) {
+            $errors['typologie'] = 'Typologie de salle invalide.';
+        }
+
         if (null !== $image && (!$image instanceof UploadedFile || !$this->isValidImage($image, $errors))) {
         }
 
@@ -179,6 +206,13 @@ final class SalleAdministrationController extends AbstractController
         }
         if (array_key_exists('equipementsInclus', $payload)) {
             $salle->setEquipementsInclus($equipments);
+        }
+        if ($hasCoordsUpdate) {
+            $salle->setLatitude($latitude);
+            $salle->setLongitude($longitude);
+        }
+        if (array_key_exists('typologie', $payload)) {
+            $salle->setTypologie($payload['typologie']);
         }
 
         $oldImagePath = $salle->getImagePath();
@@ -327,6 +361,44 @@ final class SalleAdministrationController extends AbstractController
         return true;
     }
 
+   /**
+     * @param array<string, mixed> $payload
+     * @param array<string, string> $errors
+     * @return array{0: float|null, 1: float|null}
+     */
+    private function parseCoordinates(array $payload, array &$errors): array
+    {
+        $rawLat = $payload['latitude'] ?? null;
+        $rawLng = $payload['longitude'] ?? null;
+
+        $latEmpty = null === $rawLat || '' === $rawLat;
+        $lngEmpty = null === $rawLng || '' === $rawLng;
+
+        if ($latEmpty && $lngEmpty) {
+            return [null, null];
+        }
+
+        if ($latEmpty !== $lngEmpty) {
+            $errors['coordinates'] = 'La latitude et la longitude doivent être renseignées ensemble.';
+
+            return [null, null];
+        }
+
+        if (!is_numeric($rawLat) || (float) $rawLat < -90 || (float) $rawLat > 90) {
+            $errors['latitude'] = 'La latitude doit être comprise entre -90 et 90.';
+        }
+
+        if (!is_numeric($rawLng) || (float) $rawLng < -180 || (float) $rawLng > 180) {
+            $errors['longitude'] = 'La longitude doit être comprise entre -180 et 180.';
+        }
+
+        if (isset($errors['latitude']) || isset($errors['longitude'])) {
+            return [null, null];
+        }
+
+        return [(float) $rawLat, (float) $rawLng];
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -340,7 +412,10 @@ final class SalleAdministrationController extends AbstractController
             'adresse' => $salle->getAdresse(),
             'capaciteMax' => $salle->getCapaciteMax(),
             'accesPmr' => $salle->isAccesPmr(),
+            'typologie' => $salle->getTypologie(),
             'equipementsInclus' => $salle->getEquipementsInclus(),
+            'latitude' => $salle->getLatitude(),
+            'longitude' => $salle->getLongitude(),
             'createdAt' => $salle->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $salle->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
             'isActive' => $salle->isActive(),
